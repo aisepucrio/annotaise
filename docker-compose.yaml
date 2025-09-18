@@ -1,0 +1,31 @@
+name: annotaise
+
+services:
+  api:
+    build: ./backend/
+    volumes:
+      - ./backend/:/src
+      - ./backend/static:/static
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      DJANGO_DB_NAME: ${DJANGO_DB_NAME}
+      DJANGO_DB_USER: ${DJANGO_DB_USER}
+      DJANGO_DB_PASS: ${DJANGO_DB_PASS}
+      DJANGO_SUPERUSER_USER: ${DJANGO_SUPERUSER_USER}
+      DJANGO_SUPERUSER_PASSWORD: ${DJANGO_SUPERUSER_PASSWORD}
+      DJANGO_SUPERUSER_EMAIL: ${DJANGO_SUPERUSER_EMAIL}
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${DJANGO_DB_NAME}
+      POSTGRES_USER: ${DJANGO_DB_USER}
+      POSTGRES_PASSWORD: ${DJANGO_DB_PASS}
+    volumes:
+      - pg_annotaise:/var/lib/postgresql/data
+
+volumes:
+  pg_annotaise:
+    driver: local
