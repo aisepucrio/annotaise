@@ -15,10 +15,10 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "django", specifier = "==5.2.6" },
-    { name = "django-filter", specifier = "==25.1" },
-    { name = "djangorestframework", specifier = "==3.16.1" },
-    { name = "markdown", specifier = "==3.9" },
+    { name = "django", specifier = "~=5.2.6" },
+    { name = "django-filter", specifier = "~=25.1" },
+    { name = "djangorestframework", specifier = "~=3.16.1" },
+    { name = "markdown", specifier = "~=3.9" },
 ]
 
 [[package]]
