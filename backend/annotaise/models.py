@@ -1,184 +1,141 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
+# USERS e PROJECTS
+
 class CustomUser(AbstractUser):
-    pass # criei somente caso precisemos de campos novos futuramente, mas por enquanto é dispensável
+    '''deixei somente por organização, se precisarmos de algum campo futuramente'''
+    def __str__(self):
+        return self.username
+
 
 class Project(models.Model):
-    members = models.ManyToManyField(CustomUser,through='ProjectMembership', related_name='users')
-    title = models.CharField(max_length=40)
-    STATUS_CHOICES = [("Feito","done"),("Em andamento","ongoing"),("Não começou","not_started")]
-    status = models.CharField(max_length=90,choices=STATUS_CHOICES)
+    STATUS_CHOICES = [
+        ("active", "active"),
+        ("paused", "paused"),
+        ("closed", "closed"),
+    ]
+
+    title = models.CharField(max_length=255)
+    description = models.CharField(max_length=500)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES)
     rotulation_per_user = models.IntegerField()
 
+    def __str__(self):
+        return self.title
+
+
 class ProjectMembership(models.Model):
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='project_memberships')
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='memberships')
+    ROLE_CHOICES = [
+        ("owner", "owner"),
+        ("manager", "manager"),
+        ("labeler", "labeler"),
+        ("viewer", "viewer"),
+    ]
 
-    rotulations_made = models.PositiveIntegerField(default=0)
+    user = models.ForeignKey("CustomUser", on_delete=models.CASCADE)
+    project = models.ForeignKey("Project", on_delete=models.CASCADE)
+    rotulations_made = models.IntegerField() # usuario -> projeto
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES)
+    joined_at = models.DateField()
 
-    role = models.CharField(max_length=40, default='member')
-    joined_at = models.DateTimeField(auto_now_add=True)
 
-    class Meta:
-        unique_together = ('user', 'project') # isso garante que não terao 2 relações iguais
+# FORM (MOLDES DE ROTULAÇÃO)
 
-class Labeling(models.Model):
+class Form(models.Model):
+    '''o atributo column names serve para oferecer as opções de coluna no seletor na hora de
+    montar o formulário.'''
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    title = models.CharField(max_length=255)
     start_date = models.DateField()
     final_date = models.DateField()
-
-class QuestionBlock(models.Model):
-    '''essa classe define os blocos de perguntas, que futuramente podemos aplicar paginação
-    e outras técnicas'''
-    label = models.ForeignKey(Labeling, on_delete=models.CASCADE)
-    text = models.CharField(max_length=200)
-    order = models.IntegerField()
-
-class QuestionType(models.TextChoices):
-    # algo como um enum
-    TEXT = 'text', 'Text'
-    RANGE = 'range', 'Range Selector'
-    CHECKBOX = 'checkbox', 'Checkbox'
-    MULTICHOICE = 'multichoice', 'Multiple Choice'
-    IMAGE = 'image', 'Image'
-    AUDIO = 'audio', 'Audio'
-
-class QuestionElement(models.Model):
-    '''essa classe é como um molde pra todo tipo de input que possa ter dentro de um
-    bloco. logo, todo input é um question element, e cada question element está dentro
-    de um bloco. o atributo qtype define o tipo de campo desse input. os atributos de
-    imagem e textuais são opcionais e servem so pra contextualizar a pergunta caso
-    o usuario queira'''
-    block = models.ForeignKey(QuestionBlock, on_delete=models.CASCADE, related_name='elements')
-    qtype = models.CharField(max_length=20, choices=QuestionType.choices)
-    text = models.CharField(max_length=200,null=True, blank=True)# opcional
-    image = models.ImageField(null=True, blank=True)  # opcional
-    required = models.BooleanField(default=False)
-    order = models.PositiveIntegerField(default=0)
-
-    class Meta:
-        ordering = ['order']
-
-    def get_element_variant(self):
-        mapping = {
-            'text': 'text_variant',
-            'range': 'range_variant',
-            'checkbox': 'checkbox_variant',
-            'multichoice': 'multichoice_variant',
-            'image': 'image_variant',
-            'audio': 'audio_variant',
-        }
-        attr = mapping.get(self.qtype)
-        return getattr(self, attr, None)
-
-
-class MultipleChoice(models.Model): # cobre multipla escolha e checkboxes
-    element = models.OneToOneField(
-        QuestionElement,
-        on_delete=models.CASCADE,
-        related_name='multichoice_variant',
-        primary_key=True
-    )
-    allow_multiple = models.BooleanField(default=False)# pra checkboxes
-    shuffle_options = models.BooleanField(default=False)
+    done = models.BooleanField(default=False)
+    column_names = models.JSONField(default=list)  
 
     def __str__(self):
-        return f'Multipla Escolha:{self.element.text}'
+        return self.title
+
+
+class FormSection(models.Model):
+    '''uma seção é uma página de varios FormElements(blocos)'''
+    form = models.ForeignKey(Form, on_delete=models.CASCADE)
+    order = models.IntegerField()# ordem que aparece
+    title = models.CharField(max_length=255)
+
+
+class FormElement(models.Model):
+    form_section = models.ForeignKey(FormSection, on_delete=models.CASCADE)
+    order = models.IntegerField()
+    attributes = models.JSONField(default=dict)#se precisar de alguma descrição sobre a imagem, arquivo, etc
+    text = models.CharField(max_length=500)
+    image = models.ImageField(upload_to="form_elements/images/", null=True, blank=True)
+    sound = models.FileField(upload_to="form_elements/sounds/", null=True, blank=True)
+
+
+class FormContext(models.Model):
+    form_element = models.OneToOneField(FormElement, on_delete=models.CASCADE)
+    column_name = models.CharField(max_length=255)
+
+
+class FormQuestion(models.Model):
+    QUESTION_TYPE_CHOICES = [
+        ("text", "text"),
+        ("number", "number"),
+        ("bool", "bool"),
+        ("date", "date"),
+        ("range", "range"),
+        ("single_choice", "single_choice"),
+        ("multi_choice", "multi_choice"),
+        ("image", "image"),
+        ("audio", "audio"),
+        ("file", "file"),
+    ]
+
+    form_element = models.OneToOneField(FormElement, on_delete=models.CASCADE)
+    required = models.BooleanField(default=False)
+    question_type = models.CharField(max_length=20, choices=QUESTION_TYPE_CHOICES)
 
 
 class MultipleChoiceItem(models.Model):
-    element = models.ForeignKey(QuestionElement, on_delete=models.CASCADE, related_name='options')
-    text = models.CharField(max_length=200)
-    value = models.CharField(max_length=100, blank=True)
-    order = models.PositiveIntegerField(default=0)
-
-    class Meta:
-        ordering = ['order']
-
-    def __str__(self):
-        return self.text
-
-
-class QuestionText(models.Model):
-    element = models.OneToOneField(
-        QuestionElement, on_delete=models.CASCADE, related_name='text_variant', primary_key=True
-    )
-    max_length = models.PositiveIntegerField(null=True, blank=True)
-    placeholder = models.CharField(max_length=200, blank=True)
+    form_question = models.ForeignKey(FormQuestion, on_delete=models.CASCADE)
+    text = models.CharField(max_length=255)
+    value = models.BooleanField()
+    order = models.IntegerField() # ordem dentro da múltipla escolha
 
 
 class QuestionRange(models.Model):
-    element = models.OneToOneField(
-        QuestionElement, on_delete=models.CASCADE, related_name='range_variant', primary_key=True
-    )
-    min_value = models.FloatField(default=0)
-    max_value = models.FloatField(default=10)
-    step = models.FloatField(default=1.0)
+    question = models.ForeignKey(FormQuestion, on_delete=models.CASCADE)
+    start = models.FloatField()
+    end = models.FloatField()
+    step = models.FloatField()# de quanto em quanto
 
 
-class Submission(models.Model):
-    """
-    Uma submissão de um usuário para um rotulo (label)
-    """
-    labeling = models.ForeignKey('Labeling', on_delete=models.CASCADE, related_name='submissions')
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, null=True, blank=True, related_name='submissions')
-    started_at = models.DateTimeField(auto_now_add=True)
-    submitted_at = models.DateTimeField(null=True, blank=True)
+# Rotulação (GERAÇÃO A PARTIR DO DATASET)
 
-    class Meta:
-        indexes = [
-            models.Index(fields=['labeling', 'user']),
-        ]
+class Labeling(models.Model):
+    STATUS_CHOICES = [
+        ("pending", "pending"),
+        ("in_progress", "in_progress"),
+        ("done", "done"),
+    ]
 
-    def __str__(self):
-        return f'Submission #{self.pk} ({self.user_id})'
+    row_context = models.JSONField(default=dict)  # "coluna": "valor"
+    row_index = models.IntegerField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES)
+    form = models.ForeignKey(Form, on_delete=models.CASCADE)# o molde a ser preenchido
+
+
+# ANSWER
 
 
 class Answer(models.Model):
-    """
-    Uma resposta para UMA única pergunta dentro de uma submissão.
-    - single choice: use 'selected_option'
-    - multi choice: use AnswerOption (N linhas)
-    - Text/Range/Checkbox/Image/Audio: use os campos abaixo conforme o tipo
-    """
-    submission = models.ForeignKey(Submission, on_delete=models.CASCADE, related_name='answers')
-    question = models.ForeignKey('QuestionElement', on_delete=models.CASCADE, related_name='answers')
+    '''o valor de texto é uma lista, então no caso de checkboxes o answer será um array
+    de strings (as respostas em questão)'''
+    labeling = models.ForeignKey(Labeling, on_delete=models.CASCADE)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    submitted_at = models.DateTimeField()
 
-    # Para SINGLE CHOICE
-    selected_option = models.ForeignKey('MultipleChoiceItem', on_delete=models.CASCADE, null=True, blank=True, related_name='selected_in_answers')
-
-    # Valores genéricos por tipo (todos opcionais)
-    text_value = models.TextField(null=True, blank=True)        # TEXT
-    number_value = models.FloatField(null=True, blank=True)     # RANGE / NUMBER
-    bool_value = models.BooleanField(null=True, blank=True)     # CHECKBOX
-    file = models.FileField(upload_to='uploads/', null=True, blank=True)  # IMAGE/AUDIO/FILE
-
-    answered_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        unique_together = ('submission', 'question')  # 1 resposta por pergunta/submissão
-        indexes = [
-            models.Index(fields=['submission', 'question']),
-        ]
-
-    def __str__(self):
-        return f'Answer #{self.pk} = Question#{self.question_id}'
-
-
-class AnswerOption(models.Model):
-    """
-    isso é para opções marcadas para múltipla escolha (checkbox/multi).
-    pra single choice, use 'selected_option' em Answer.
-    """
-    answer = models.ForeignKey(Answer, on_delete=models.CASCADE, related_name='option_values')
-    option = models.ForeignKey('MultipleChoiceItem', on_delete=models.CASCADE, related_name='chosen_in_answers')
-
-    class Meta:
-        indexes = [
-            models.Index(fields=['answer']), #isso melhora a performance do banco de dados
-        ]
-
-    def __str__(self):
-        return f'AnswerOption #{self.pk} (Answer {self.answer_id})'
-
+    text_value = models.JSONField(default=list, blank=True)  # JsonField -> list
+    number_value = models.FloatField(null=True, blank=True)
+    bool_value = models.BooleanField(null=True, blank=True)
