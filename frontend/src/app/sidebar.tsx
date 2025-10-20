@@ -29,7 +29,6 @@ export default function Sidebar() {
         </div>
         {/* Topo */}
         <ul className="space-y-1 mt-3 -ml-3">
-          
             <SidebarItem icon="/dashboard_icon.png" label="Dashboard" />
             <SidebarItem icon="/user_icon.png" label="Usuários" />
             <SidebarItem icon="/projects_icon.png" label="Projetos" />
