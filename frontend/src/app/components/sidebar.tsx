@@ -6,8 +6,8 @@ export default function Sidebar() {
       <aside
         className="
           fixed top-0 left-0
-          h-screen         /* ocupa toda a altura da tela */
-          w-64               /* largura consistente */
+          h-screen
+          w-64
           bg-white
           shadow-xl
           rounded-r-l
@@ -29,10 +29,10 @@ export default function Sidebar() {
         </div>
         {/* Topo */}
         <ul className="space-y-1 mt-3 -ml-3">
-            <SidebarItem icon="/dashboard_icon.png" label="Dashboard" />
-            <SidebarItem icon="/user_icon.png" label="Usuários" />
-            <SidebarItem icon="/projects_icon.png" label="Projetos" />
-            <SidebarItem icon="/labelings_icon.png" label="Rotulações" /></ul>
+            <SidebarItem icon="/dashboard_icon.png" label="Dashboard" href="/" />
+            <SidebarItem icon="/user_icon.png" label="Usuários" href="users"/>
+            <SidebarItem icon="/projects_icon.png" label="Projetos" href="projects"/>
+            <SidebarItem icon="/labelings_icon.png" label="Rotulações" href="labelings"/></ul>
 
         {/* Rodapé */}
         <div className="text-sm text-gray-500 mt-auto">
