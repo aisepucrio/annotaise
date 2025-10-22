@@ -18,9 +18,9 @@ export default function UserContainer({
   return (
     <div
       className="
-        relative rounded-xl bg-white shadow-md p-3
-        border-t-4
-        border-l-4
+        relative rounded-br-xl rounded-ss-3xl bg-white shadow-md p-3
+        border-t-6
+        border-l-6
         border-blue-800
         hover:shadow-xl
         transition-all duration-300 ease-in-out
@@ -81,7 +81,7 @@ function StatPill({
 
 
 
-//TODO implementar a função onclick do gerenciar projeto
+//TODO implementar a função onclick do gerenciar usuários
 function ManageButton({ onClick }: { onClick?: () => void }) {
   return (
     <button

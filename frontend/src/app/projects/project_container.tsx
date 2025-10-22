@@ -18,16 +18,16 @@ export default function ProjectContainer({
   return (
     <div
       className="
-        relative rounded-xl bg-white shadow-md p-3
-        border-t-4
-        border-l-4
+        relative rounded-br-xl rounded-ss-3xl bg-white shadow-md p-3
+        border-t-6
+        border-l-6
         border-blue-800
         hover:shadow-xl
         transition-all duration-300 ease-in-out
       "
     >
       {/* título */}
-      <h3 className="text-blue-900 font-semibold leading-tight pr-10">
+      <h3 className= {`${labelings_late > 0 ? "text-red-700" : "text-black"} font-semibold leading-tight pr-10`}>
         {title}
       </h3>
 

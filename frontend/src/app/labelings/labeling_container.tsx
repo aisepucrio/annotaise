@@ -1,0 +1,123 @@
+import Image from "next/image";
+
+type LabelingContainerProps = {
+    title : string;
+    project : string;
+    days_passed : number;
+    days_total : number;
+    labelings_done : number;
+    labelings_pending : number;
+};
+
+export default function LabelingContainer({
+  title,
+  project,
+  days_passed,
+  labelings_done,
+  labelings_pending,
+  days_total,
+}: LabelingContainerProps) {
+  
+   return (
+    <div
+      className="
+        relative rounded-br-xl rounded-ss-3xl bg-white shadow-md p-3
+        border-t-6
+        border-l-6
+        border-blue-800
+        hover:shadow-xl
+        transition-all duration-300 ease-in-out
+      "
+    >
+      {/* título */}
+      <h3 className= {`${days_passed > days_total ? "text-red-700" : "text-black"} font-semibold leading-tight pr-10`}>
+        {title}
+      </h3>
+
+      <h3 className="text-gray-500 font-semibold leading-tight pr-10">
+        {project}
+      </h3>
+
+      {/* linha divisória */}
+      <div className="mt-2 h-1 rounded-full bg-blue-200/60" />
+    
+      <div className="mt-3 flex flex-col items-start gap-3 -ml-3">
+        {/* métricas */}
+        
+        <ProgressBar
+            progress_label="Dias"
+            passed={days_passed}
+            total={days_total}
+        />
+        <ProgressBar
+            progress_label="Rotulações"
+            passed={labelings_done}
+            total={labelings_done + labelings_pending}
+        />
+        
+
+        {/* aviso + botão */}
+        <div className="flex items-end gap-2 w-[170px] ml-28">
+
+          <LabelingButton />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+//TODO implementar a função onclick de rotular
+function LabelingButton({ onClick }: { onClick?: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="
+        inline-flex items-center gap-2 rounded-lg px-10.5 py-2
+        bg-blue-800 text-white hover:bg-blue-700
+        transition-colors text-sm cursor-pointer justify-center
+      "
+    >
+      <Image src="/projects_icon.png"
+            alt="Logo"
+            width={20}
+            height={20}
+            className="inline-block" />
+      Rotular
+    </button>
+  );
+}
+
+type ProgressBarProps = {
+  progress_label: string;
+  passed: number;
+  total: number;
+};
+
+function ProgressBar({ progress_label, passed, total }: ProgressBarProps) {
+  const percent = total > 0 ? Math.round((passed / total) * 100) : 0;
+  const bgColor = total > passed ? "bg-blue-700" : "bg-red-700";
+
+  return (
+    <div className="">
+      <div className="relative w-90">
+        {/* track */}
+        <div className="w-full h-8 bg-blue-200 rounded-r-full overflow-hidden">
+          {/* filled portion */}
+          <div
+            className={`h-full ${bgColor} transition-width duration-200`}
+            style={{ width: `${percent}%` }}
+            aria-hidden="true"
+          />
+        </div>
+        <span
+          className={`absolute inset-0 flex items-center justify-center text-sm font-medium pointer-events-none text-white`}
+        >
+          {total > passed
+            ? `${passed} / ${total}`
+            : `${passed - total} atrasadas`}
+        </span>
+      </div>
+    </div>
+  );
+}
