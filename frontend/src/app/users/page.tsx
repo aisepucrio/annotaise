@@ -15,7 +15,7 @@ const users = [
   },
   {
     id: 2,
-    name: "roger",
+    name: "usuariousuariousuariousuario",
     email: "abcbc@gmail.com",
     projects: 2,
     labelings_done: 30,
@@ -23,7 +23,7 @@ const users = [
   },
   {
     id: 3,
-    name: "robson souza",
+    name: "usuariousuariousuario",
     email: "abcbc@gmail.com",
     projects: 2,
     labelings_done: 30,
@@ -31,7 +31,7 @@ const users = [
   },
   {
     id: 4,
-    name: "caça rato",
+    name: "usuario",
     email: "abcbc@gmail.com",
     projects: 2,
     labelings_done: 30,
