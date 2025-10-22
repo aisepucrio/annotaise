@@ -18,7 +18,7 @@ export default function ProjectContainer({
   return (
     <div
       className="
-        relative rounded-xl bg-white shadow-md p-4
+        relative rounded-xl bg-white shadow-md p-3
         border-t-4
         border-l-4
         border-blue-800
@@ -33,20 +33,20 @@ export default function ProjectContainer({
       <div className="mt-2 h-1 rounded-full bg-blue-200/60" />
 
       
-      <div className="mt-3 flex justify-between items-start gap-4">
+      <div className="mt-3 flex justify-between items-start gap-3">
         {/* métricas */}
         <div className="grid grid-cols-1 gap-2 flex-1">
           <StatPill label="Usuários rotulando" value={user_count} tone="blue" />
           <StatPill label="Rotulações finalizadas" value={labelings_done} tone="green" />
-          <StatPill label="Rotulação pendente" value={labelings_pending} tone="amber" />
+          <StatPill label="Rotulações pendentes" value={labelings_pending} tone="amber" />
         </div>
 
         {/* aviso + botão */}
-        <div className="flex flex-col items-end gap-2 min-w-[180px]">
+        <div className="flex flex-col items-end gap-2 w-[170px]">
           {labelings_late > 0 ? (
             <StatusBadge
               type="warning"
-              text={`Há ${labelings_late} rotulação atrasada${labelings_late > 1 ? "s" : ""}`}
+              text={`Há ${labelings_late} ${labelings_late > 1 ? "rotulações atrasadas" : "rotulação atrasada"}`}
             />
           ) : (
             <StatusBadge type="ok" text="Todas as rotulações estão em dia" />
@@ -96,7 +96,10 @@ function StatusBadge({
       ? "bg-blue-100 text-blue-900"
       : "bg-rose-100 text-rose-800";
   return (
-    <span className={`rounded-lg px-3 py-7.5 text-sm ${styles}`}>{text}</span>
+    <span className={`flex items-center justify-center rounded-lg px-2 text-sm w-full h-20 text-center ${styles}`}>
+  {text}
+</span>
+
   );
 }
 

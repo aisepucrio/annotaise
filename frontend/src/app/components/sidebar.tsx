@@ -1,5 +1,8 @@
+"use client";
 import Image from "next/image";
 import SidebarItem from "./sidebar_item";
+
+
 export default function Sidebar() {
   return (
     <div className="flex">
@@ -29,10 +32,10 @@ export default function Sidebar() {
         </div>
         {/* Topo */}
         <ul className="space-y-1 mt-3 -ml-3">
-            <SidebarItem icon="/dashboard_icon.png" label="Dashboard" href="/" />
-            <SidebarItem icon="/user_icon.png" label="Usuários" href="users"/>
-            <SidebarItem icon="/projects_icon.png" label="Projetos" href="projects"/>
-            <SidebarItem icon="/labelings_icon.png" label="Rotulações" href="labelings"/></ul>
+            <SidebarItem icon="/dashboard_icon.png" label="Dashboard" href="/" alias="/"/>
+            <SidebarItem icon="/user_icon.png" label="Usuários" href="/users" alias="/users"/>
+            <SidebarItem icon="/projects_icon.png" label="Projetos" href="/projects" alias="/projects"/>
+            <SidebarItem icon="/labelings_icon.png" label="Rotulações" href="/labelings" alias="/labelings" /></ul>
 
         {/* Rodapé */}
         <div className="text-sm text-gray-500 mt-auto">
