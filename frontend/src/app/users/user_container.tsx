@@ -28,13 +28,13 @@ export default function UserContainer({
       
       <div className="mt-1 flex justify-between items-end gap-3">
         {/* nome e email */}
-        <div className="flex flex-col">
+        <div className="flex flex-col ">
           <div className="flex-col flex mb-12">
-            <span className="text-black font-semibold leading-tight pr-10">
+            <span className="text-black font-semibold leading-tight max-w-40 break-words whitespace-normal">
               {name}
             </span>
             
-            <span className="text-gray-500 font-semibold leading-tight pr-5">
+            <span className="text-gray-500 font-semibold break-words leading-tight">
               {email}
             </span>
           </div>
