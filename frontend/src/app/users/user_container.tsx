@@ -24,6 +24,7 @@ export default function UserContainer({
         border-blue-800
         hover:shadow-xl
         transition-all duration-300 ease-in-out
+        max-w-100
       ">
       
       <div className="mt-1 flex justify-between items-end gap-3">
