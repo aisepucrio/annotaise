@@ -2,7 +2,7 @@ import Image from "next/image";
 import Sidebar from "../components/sidebar";
 import PageHeader from "../components/page_description"
 import UserContainer from "./user_container";
-
+import FilterBar from "../components/filter_bar";
 
 const users = [
   {
@@ -48,8 +48,16 @@ export default function Projects() {
       <div className="bg-white ml-64  p-4 min-h-screen">
         <Sidebar></Sidebar>
         <PageHeader page_title="Usuários" description="Nesta página você pode visualizar todos os usuários cadastrados aos seus projetos assim como informações relevantes sobre eles. Clique em “Gerenciar” para ver mais informações sobre o usuário."></PageHeader>
-        
-        <div className="ml-5 mr-5 mt-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="flex flex-nowrap items-center mt-5">
+                  <FilterBar/>
+                  <button className="ml-auto w-30 mr-6
+                    flex flex-nowrap items-center gap-2 rounded-lg bg-blue-900
+                    hover:bg-blue-800 text-white px-4 py-2
+                    shadow-md text-sm transition-colors cursor-pointer
+                    
+                  ">Novo Usuário</button>
+                </div>
+        <div className="ml-5 mr-5 mt-5 grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
                 
                 {users.map(p => (
                     <UserContainer

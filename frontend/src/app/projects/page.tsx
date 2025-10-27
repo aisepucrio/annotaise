@@ -68,7 +68,6 @@ const projects = [
     status: "ok" as const,
     labelings_late:10
   },
-  // ...
 ];
 
 
@@ -79,16 +78,16 @@ export default function Projects() {
         <Sidebar></Sidebar>
         <PageHeader page_title="Projetos" description="Nesta página você pode visualizar todos os projetos criados, assim como suas informações principais. Clique em “Gerenciar” para ver mais informações sobre o projeto."></PageHeader>
         
-        <div className="flex flex-nowrap items-center mt-5 max-w-305">
+        <div className="flex flex-nowrap items-center mt-5">
           <FilterBar/>
-          <button className="ml-auto
+          <button className="ml-auto w-29 mr-6
             flex flex-nowrap items-center gap-2 rounded-lg bg-blue-900
             hover:bg-blue-800 text-white px-4 py-2
             shadow-md text-sm transition-colors cursor-pointer
             
           ">Novo Projeto</button>
         </div>
-        <div className="ml-5 mr-5 mt-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="ml-5 mr-5 mt-5 grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
         
         {projects.map(p => (
             <ProjectContainer

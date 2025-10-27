@@ -27,6 +27,7 @@ export default function LabelingContainer({
         border-blue-800
         hover:shadow-xl
         transition-all duration-300 ease-in-out
+        max-w-100
       "
     >
       {/* título */}
@@ -41,24 +42,23 @@ export default function LabelingContainer({
       {/* linha divisória */}
       <div className="mt-2 h-1 rounded-full bg-blue-200/60" />
     
-      <div className="mt-3 flex flex-col items-start gap-3 -ml-3">
+      <div className="mt-3 flex flex-col gap-3 min-w-0 w-full">
         {/* métricas */}
-        
         <ProgressBar
-            progress_label="Dias"
+            progress_label="Dias Passados"
+            late_label="Dias Atrasados"
             passed={days_passed}
             total={days_total}
         />
         <ProgressBar
-            progress_label="Rotulações"
+            progress_label="Rotulações Feitas"
+            late_label="Rotulações Atrasadas"
             passed={labelings_done}
             total={labelings_done + labelings_pending}
         />
-        
 
         {/* aviso + botão */}
-        <div className="flex items-end gap-2 w-[170px] ml-28">
-
+        <div className="flex items-center justify-center">
           <LabelingButton />
         </div>
       </div>
@@ -90,34 +90,36 @@ function LabelingButton({ onClick }: { onClick?: () => void }) {
 
 type ProgressBarProps = {
   progress_label: string;
+  late_label?: string;
   passed: number;
   total: number;
 };
 
-function ProgressBar({ progress_label, passed, total }: ProgressBarProps) {
+function ProgressBar({ progress_label, late_label, passed, total }: ProgressBarProps) {
   const percent = total > 0 ? Math.round((passed / total) * 100) : 0;
-  const bgColor = total > passed ? "bg-blue-700" : "bg-red-700";
+  const bgColor = total >= passed ? "bg-blue-300" : "bg-red-300";
+  const textColor = total >= passed ? "text-blue-600" : "text-red-600";
 
   return (
-    <div className="">
-      <div className="relative w-90">
-        {/* track */}
+   <div className="w-full min-w-0 -ml-3"> {/* margem negativa para puxar à esquerda */}
+      <div className="relative w-full">
+        {/* track: usa full width do container e esconde overflow */}
         <div className="w-full h-8 bg-blue-200 rounded-r-full overflow-hidden">
-          {/* filled portion */}
+          {/* filled portion: largura controlada via style, anima largura */}
           <div
-            className={`h-full ${bgColor} transition-width duration-200`}
+            className={`h-full ${bgColor} transition-all duration-200`}
             style={{ width: `${percent}%` }}
-            aria-hidden="true"
+            role="progressbar"
+            aria-valuenow={percent}
+            aria-valuemin={0}
+            aria-valuemax={100}
           />
         </div>
-        <span
-          className={`absolute inset-0 flex items-center justify-center text-sm font-medium pointer-events-none text-white`}
-        >
-          {total > passed
-            ? `${passed} / ${total}`
-            : `${passed - total} atrasadas`}
+        {/* texto sobreposto */}
+        <span className={`absolute inset-0 flex items-center justify-center text-sm font-medium pointer-events-none px-2 truncate ${textColor}`}>
+          {total >= passed ? `${passed} / ${total} ${progress_label}` : `${passed - total} ${late_label}`}
         </span>
       </div>
     </div>
-  );
-}
+   );
+ }

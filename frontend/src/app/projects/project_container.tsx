@@ -24,6 +24,7 @@ export default function ProjectContainer({
         border-blue-800
         hover:shadow-xl
         transition-all duration-300 ease-in-out
+        max-w-100
       "
     >
       {/* título */}

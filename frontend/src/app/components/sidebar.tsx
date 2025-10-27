@@ -8,6 +8,7 @@ export default function Sidebar() {
     <div className="flex">
       <aside
         className="
+        
           fixed top-0 left-0
           h-screen
           w-64
@@ -32,15 +33,19 @@ export default function Sidebar() {
         </div>
         {/* Topo */}
         <ul className="space-y-1 mt-3 -ml-3">
-            <SidebarItem icon="/dashboard_icon.png" label="Dashboard" href="/" alias="/"/>
-            <SidebarItem icon="/user_icon.png" label="Usuários" href="/users" alias="/users"/>
-            <SidebarItem icon="/projects_icon.png" label="Projetos" href="/projects" alias="/projects"/>
-            <SidebarItem icon="/labelings_icon.png" label="Rotulações" href="/labelings" alias="/labelings" /></ul>
+            <SidebarItem icon="/dashboard_icon.png" label="Dashboard" href="/" alias="/" hover_color="blue"/>
+            <SidebarItem icon="/user_icon.png" label="Usuários" href="/users" alias="/users" hover_color="blue"/>
+            <SidebarItem icon="/projects_icon.png" label="Projetos" href="/projects" alias="/projects" hover_color="blue"/>
+            <SidebarItem icon="/labelings_icon.png" label="Rotulações" href="/labelings" alias="/labelings" hover_color="blue" />
+            <div className="">
+            </div>
+            </ul>
 
         {/* Rodapé */}
-        <div className="text-sm text-gray-500 mt-auto">
-          <p>Configurações</p>
-          <p>Log-out</p>
+        <div className="text-sm text-gray-500 mt-auto -ml-3">
+            <SidebarItem icon="/options_icon.svg" label="Configurações" href="/options" alias="/options" hover_color="gray" />
+            <SidebarItem icon="/logout_icon.svg" label="Logout" href="/logout" alias="/logout" hover_color="red" />
+            
         </div>
       </aside>
 
