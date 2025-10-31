@@ -7,7 +7,7 @@ export default function FilterBar() {
       <div className="relative w-[420px]">
         <input
           type="text"
-          placeholder="Digite o nome de um projeto..."
+          placeholder="Pesquisar..."
           className="
             w-full rounded-xs border border-gray-300
             px-5 py-2 pr-12 text-sm text-gray-700

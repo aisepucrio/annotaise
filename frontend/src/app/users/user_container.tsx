@@ -81,7 +81,6 @@ function StatPill({
 }
 
 
-
 //TODO implementar a função onclick do gerenciar usuários a
 function ManageButton({ onClick }: { onClick?: () => void }) {
   return (
