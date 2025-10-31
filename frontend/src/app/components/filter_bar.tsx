@@ -1,5 +1,5 @@
+import { Search, Filter } from "lucide-react";
 
-import Image from "next/image";
 export default function FilterBar() {
   return (
     <div className="flex items-center justify-start gap-3 ml-5">
@@ -17,10 +17,11 @@ export default function FilterBar() {
             border-b-3
             border-b-blue-800
           "
+          aria-label="Buscar projeto"
         />
         {/* Ícone de lupa */}
         <div className="absolute right-4 top-2.5 text-gray-500">
-          <Image src="/search_icon.svg" alt="Buscar" width={18} height={18} />
+          <Search size={18} className="opacity-90" />
         </div>
       </div>
 
@@ -31,14 +32,10 @@ export default function FilterBar() {
           hover:bg-blue-800 text-white px-4 py-2
           shadow-md text-sm transition-colors cursor-pointer
         "
+        type="button"
+        aria-label="Abrir filtros"
       >
-        <Image
-          src="/filter_icon.svg"
-          alt="Filtrar"
-          width={16}
-          height={16}
-          className="opacity-90"
-        />
+        <Filter size={16} className="opacity-90" />
         Filtrar
       </button>
     </div>
