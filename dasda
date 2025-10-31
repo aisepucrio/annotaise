@@ -1,0 +1,15 @@
+[33meecb96a[m[33m ([m[1;36mHEAD[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m HEAD@{0}: checkout: moving from d08682890579cc4df13b9b2fe7fb62c05434c047 to origin/main
+[33md086828[m HEAD@{1}: commit: labelings improvement, screen size fixes
+[33mb85d9ef[m HEAD@{2}: checkout: moving from main to origin/main
+[33meecb96a[m[33m ([m[1;36mHEAD[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m HEAD@{3}: reset: moving to HEAD^
+[33mb85d9ef[m HEAD@{4}: commit: users fix, sidebar fix
+[33meecb96a[m[33m ([m[1;36mHEAD[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m HEAD@{5}: commit: labeling page
+[33m7215f83[m HEAD@{6}: commit: labeling page
+[33m13b96ca[m HEAD@{7}: commit: users page + mocking
+[33m2bf33b8[m HEAD@{8}: commit: search component e projects finalizado
+[33m883c2b6[m HEAD@{9}: commit: sidebar improvements + page content fix
+[33md5b1466[m HEAD@{10}: commit: pagina projects(mocking test) + sidebar links creation
+[33ma4bf6ba[m HEAD@{11}: commit: urls e rotas criadas + ui basica paginas
+[33m7c80731[m HEAD@{12}: commit: homepage, fix
+[33mce0bb39[m HEAD@{13}: commit: setup inicial + sidebar frontend
+[33m6b3c56a[m HEAD@{14}: clone: from https://github.com/aisepucrio/annotaise
