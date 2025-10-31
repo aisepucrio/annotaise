@@ -15,7 +15,7 @@ const users = [
   },
   {
     id: 2,
-    name: "usuariousuariousuariousuario",
+    name: "usuariousuar",
     email: "abcbc@gmail.com",
     projects: 2,
     labelings_done: 30,
@@ -23,7 +23,7 @@ const users = [
   },
   {
     id: 3,
-    name: "usuariousuariousuario",
+    name: "usuariousuar",
     email: "abcbc@gmail.com",
     projects: 2,
     labelings_done: 30,
@@ -57,7 +57,7 @@ export default function Projects() {
                   ml-auto mr-6
                   inline-flex items-center justify-center gap-2
                   rounded-lg bg-blue-900 hover:bg-blue-800 text-white
-                  px-5 py-2 h-10
+                  px-5 py-2
                   min-w-[190px] whitespace-nowrap
                   shadow-md text-sm transition-colors cursor-pointer
                 "
