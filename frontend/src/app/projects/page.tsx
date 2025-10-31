@@ -3,6 +3,7 @@ import Sidebar from "../components/sidebar";
 import PageHeader from "../components/page_description"
 import ProjectContainer from "./project_container";
 import FilterBar from "../components/filter_bar";
+import {Plus} from "lucide-react";
 
 const projects = [
   {
@@ -80,12 +81,12 @@ export default function Projects() {
         
         <div className="flex flex-nowrap items-center mt-5">
           <FilterBar/>
-          <button className="ml-auto w-29 mr-6
+          <button className="ml-auto w-35 mr-6
             flex flex-nowrap items-center gap-2 rounded-lg bg-blue-900
             hover:bg-blue-800 text-white px-4 py-2
             shadow-md text-sm transition-colors cursor-pointer
             
-          ">Novo Projeto</button>
+          "><Plus size={16} strokeWidth={1.75} className="opacity-90" /> Novo Projeto</button>
         </div>
         <div className="ml-5 mr-5 mt-5 grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
         

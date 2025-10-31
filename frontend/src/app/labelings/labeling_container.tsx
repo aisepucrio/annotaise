@@ -1,12 +1,12 @@
-import Image from "next/image";
+import { Tag } from "lucide-react";
 
 type LabelingContainerProps = {
-    title : string;
-    project : string;
-    days_passed : number;
-    days_total : number;
-    labelings_done : number;
-    labelings_pending : number;
+  title: string;
+  project: string;
+  days_passed: number;
+  days_total: number;
+  labelings_done: number;
+  labelings_pending: number;
 };
 
 export default function LabelingContainer({
@@ -17,8 +17,7 @@ export default function LabelingContainer({
   labelings_pending,
   days_total,
 }: LabelingContainerProps) {
-  
-   return (
+  return (
     <div
       className="
         relative rounded-br-xl rounded-ss-3xl bg-white shadow-md p-3
@@ -31,7 +30,7 @@ export default function LabelingContainer({
       "
     >
       {/* título */}
-      <h3 className= {`${days_passed > days_total ? "text-red-700" : "text-black"} font-semibold leading-tight pr-10`}>
+      <h3 className={`${days_passed > days_total ? "text-red-700" : "text-black"} font-semibold leading-tight pr-10`}>
         {title}
       </h3>
 
@@ -41,20 +40,20 @@ export default function LabelingContainer({
 
       {/* linha divisória */}
       <div className="mt-2 h-1 rounded-full bg-blue-200/60" />
-    
+
       <div className="mt-3 flex flex-col gap-3 min-w-0 w-full">
         {/* métricas */}
         <ProgressBar
-            progress_label="Dias Passados"
-            late_label="Dias Atrasados"
-            passed={days_passed}
-            total={days_total}
+          progress_label="Dias Passados"
+          late_label="Dias Atrasados"
+          passed={days_passed}
+          total={days_total}
         />
         <ProgressBar
-            progress_label="Rotulações Feitas"
-            late_label="Rotulações Atrasadas"
-            passed={labelings_done}
-            total={labelings_done + labelings_pending}
+          progress_label="Rotulações Feitas"
+          late_label="Rotulações Atrasadas"
+          passed={labelings_done}
+          total={labelings_done + labelings_pending}
         />
 
         {/* aviso + botão */}
@@ -66,8 +65,7 @@ export default function LabelingContainer({
   );
 }
 
-
-//TODO implementar a função onclick de rotular
+// TODO implementar a função onclick de rotular
 function LabelingButton({ onClick }: { onClick?: () => void }) {
   return (
     <button
@@ -77,12 +75,10 @@ function LabelingButton({ onClick }: { onClick?: () => void }) {
         bg-blue-800 text-white hover:bg-blue-700
         transition-colors text-sm cursor-pointer justify-center
       "
+      type="button"
+      aria-label="Abrir tarefa de rotulação"
     >
-      <Image src="/projects_icon.png"
-            alt="Logo"
-            width={20}
-            height={20}
-            className="inline-block" />
+      <Tag size={20} strokeWidth={1.75} className="opacity-90" />
       Rotular
     </button>
   );
@@ -101,11 +97,9 @@ function ProgressBar({ progress_label, late_label, passed, total }: ProgressBarP
   const textColor = total >= passed ? "text-blue-600" : "text-red-600";
 
   return (
-   <div className="w-full min-w-0 -ml-3"> {/* margem negativa para puxar à esquerda */}
+    <div className="w-full min-w-0 -ml-3">
       <div className="relative w-full">
-        {/* track: usa full width do container e esconde overflow */}
         <div className="w-full h-8 bg-blue-200 rounded-r-full overflow-hidden">
-          {/* filled portion: largura controlada via style, anima largura */}
           <div
             className={`h-full ${bgColor} transition-all duration-200`}
             style={{ width: `${percent}%` }}
@@ -115,11 +109,12 @@ function ProgressBar({ progress_label, late_label, passed, total }: ProgressBarP
             aria-valuemax={100}
           />
         </div>
-        {/* texto sobreposto */}
-        <span className={`absolute inset-0 flex items-center justify-center text-sm font-medium pointer-events-none px-2 truncate ${textColor}`}>
+        <span
+          className={`absolute inset-0 flex items-center justify-center text-sm font-medium pointer-events-none px-2 truncate ${textColor}`}
+        >
           {total >= passed ? `${passed} / ${total} ${progress_label}` : `${passed - total} ${late_label}`}
         </span>
       </div>
     </div>
-   );
- }
+  );
+}
