@@ -37,6 +37,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'drf_spectacular',
+    'drf_spectacular_sidecar',  # serve pra não ter que carregar por cdn mas pode ser removido
 ]
 
 MIDDLEWARE = [
@@ -67,7 +69,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'annotaise.wsgi.application'
-
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
@@ -120,3 +121,44 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# DRF Spectacular settings
+REST_FRAMEWORK = {
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Annotaise API",
+    "DESCRIPTION": "Documentação da API",
+    "VERSION": "1.0.0",
+    
+    "SERVE_INCLUDE_SCHEMA": False,
+    "SCHEMA_PATH_PREFIX": r"/api",
+    "SERVE_YAML": True,
+    
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SECURITY": [{"BearerAuth": []}],
+    "COMPONENTS": {
+        "securitySchemes": {
+            "BearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+            }
+        }
+    },
+    
+}
+
+# DRF Simple JWT settings
+
+REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"] = [
+    "rest_framework_simplejwt.authentication.JWTAuthentication",
+]
+
+from datetime import timedelta
+#tempo de vida dos tokens (caso seja necessário)
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+}
