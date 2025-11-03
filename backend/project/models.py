@@ -1,10 +1,31 @@
 from django.db import models
-
-# Create your models here.
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
 from django.core.validators import MinValueValidator
+
+class Project(models.Model):
+    class status(models.TextChoices):
+        PLANNING = "planning", "Planejamento"
+        ACTIVE = "active", "Ativo"
+        COMPLETED = "completed", "Concluído"
+        CANCELLED = "cancelled", "Cancelado"
+
+
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    status = models.CharField(max_length=50, choices=status.choices, default=status.PLANNING)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING, related_name="projects_created"
+    )
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ["-created_at", "name"]
+
+    def __str__(self):
+        return self.name
+
 
 
 class Labeling(models.Model):
@@ -78,7 +99,8 @@ class LabelingElement(models.Model):
         ordering = ["labeling_section_id", "order", "id"]
         constraints = [
             models.UniqueConstraint(
-                fields=["labeling_section", "order"], name="unique_element_order_per_section"
+                fields=["labeling_section", "order"],
+                name="unique_element_order_per_section"
             ),
         ]
 

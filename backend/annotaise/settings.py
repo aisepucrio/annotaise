@@ -39,6 +39,10 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'drf_spectacular',
     'drf_spectacular_sidecar',  # serve pra não ter que carregar por cdn mas pode ser removido
+    'answer',
+    'authentication',
+    'item',
+    'project',
 ]
 
 MIDDLEWARE = [
