@@ -1,11 +1,87 @@
+"use client";
 
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Sidebar from "@/app/components/sidebar";
+import { ArrowLeft, Save } from "lucide-react";
+import SectionForm from "./section_form";
 
-export default function CreateLabelingPage() {
+export default function LabelingFormPage() {
+  const router = useRouter();
+  const [columns, setColumns] = useState<string[]>([]);
+
+  // Lê as colunas salvas pelo modal (mock ou upload real)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("labeling_csv_columns");
+      const parsed = raw ? (JSON.parse(raw) as string[]) : [];
+      setColumns(Array.isArray(parsed) ? parsed : []);
+    } catch {
+      setColumns([]);
+    }
+  }, []);
+
   return (
-    <div className="bg-gray-300 min-h-screen">
-      <div className="bg-white ml-64 p-4 min-h-screen">
-        
-      </div>
+    <div className="flex bg-gray-200 min-h-screen">
+      {/* Barra lateral fixa */}
+      <Sidebar />
+
+      {/* Corpo principal */}
+      <main className="flex-1 ml-64 p-6">
+        {/* Cabeçalho */}
+        <div className="flex items-center justify-between bg-blue-900 text-white px-6 py-4 rounded-t-xl shadow-md">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => router.push("/labelings")}
+              className="p-1 rounded-md hover:bg-white/10"
+              aria-label="Voltar"
+            >
+              <ArrowLeft size={22} className="cursor-pointer" />
+            </button>
+            <h1 className="text-lg font-semibold">Título da Rotulação</h1>
+          </div>
+          <button
+            type="button"
+            className="bg-white text-blue-900 font-semibold px-5 py-2 rounded-lg hover:bg-gray-100 shadow-sm flex items-center gap-2"
+          >
+            <Save size={18} /> Finalizar Criação
+          </button>
+        </div>
+
+        {/* Informações do CSV importado */}
+        <div className="bg-white border-x border-b border-blue-200 rounded-b-xl shadow-lg p-4">
+          <div className="mb-4">
+            <h2 className="text-sm font-semibold text-blue-900">
+              Colunas importadas do CSV
+            </h2>
+            {columns.length > 0 ? (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {columns.map((c) => (
+                  <span
+                    key={c}
+                    className="rounded-md bg-blue-100 text-blue-800 text-xs px-2 py-1"
+                  >
+                    {c}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-2 text-sm text-gray-500">
+                Nenhuma coluna detectada. Volte e importe um CSV ou use o mock.
+              </p>
+            )}
+          </div>
+
+          {/* Seções */}
+          <div className="mt-2 border border-blue-200 rounded-xl p-6">
+            {/* Mantemos a assinatura atual do SectionForm.
+               Em um próximo passo, podemos passar `columns` via props
+               ou via Context para popular o ContextBlock. */}
+            <SectionForm sectionIndex={1} totalSections={2} />
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
