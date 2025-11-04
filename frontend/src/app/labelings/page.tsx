@@ -2,6 +2,7 @@ import Sidebar from "../components/sidebar";
 import PageHeader from "../components/page_description";
 import LabelingContainer from "./labeling_container";
 import FilterBar from "../components/filter_bar";
+import Link from "next/link";
 import { Plus } from "lucide-react";
 
 const labelings = [
@@ -22,8 +23,8 @@ export default function Labelings() {
         />
         <div className="flex flex-nowrap items-center mt-5">
           <FilterBar />
-          <button
-              type="button"
+          <Link 
+              href='/labelings/create'
               aria-label="Criar nova rotulação"
               className="
                 ml-auto mr-6
@@ -36,7 +37,7 @@ export default function Labelings() {
             >
               <Plus size={16} strokeWidth={1.75} className="opacity-90" />
               Nova Rotulação
-          </button>
+          </Link>
 
         </div>
 
