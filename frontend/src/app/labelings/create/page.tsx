@@ -4,13 +4,14 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/app/components/sidebar";
 import { ArrowLeft, Save } from "lucide-react";
-import SectionForm from "./section_form";
+import SectionForm, { SectionData } from "./section_form";
 
 export default function LabelingFormPage() {
   const router = useRouter();
   const [columns, setColumns] = useState<string[]>([]);
+  const [sections, setSections] = useState<SectionData[]>([]);
 
-  // Lê as colunas salvas pelo modal (mock ou upload real)
+  // carrega colunas do CSV (mock/real)
   useEffect(() => {
     try {
       const raw = localStorage.getItem("labeling_csv_columns");
@@ -21,12 +22,60 @@ export default function LabelingFormPage() {
     }
   }, []);
 
+  // inicia com 1 seção padrão (1 contexto + 1 pergunta)
+  useEffect(() => {
+    setSections([
+      {
+        id: crypto.randomUUID(),
+        title: "",
+        contexts: [{ id: crypto.randomUUID() }],
+        questions: [{ id: crypto.randomUUID() }],
+      },
+    ]);
+  }, []);
+
+  // handlers
+  function addSection() {
+    setSections((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        title: "",
+        contexts: [{ id: crypto.randomUUID() }],
+        questions: [{ id: crypto.randomUUID() }],
+      },
+    ]);
+  }
+
+  function addContext(sectionId: string) {
+    setSections((prev) =>
+      prev.map((s) =>
+        s.id === sectionId
+          ? { ...s, contexts: [...s.contexts, { id: crypto.randomUUID() }] }
+          : s
+      )
+    );
+  }
+
+  function addQuestion(sectionId: string) {
+    setSections((prev) =>
+      prev.map((s) =>
+        s.id === sectionId
+          ? { ...s, questions: [...s.questions, { id: crypto.randomUUID() }] }
+          : s
+      )
+    );
+  }
+
+  function updateSectionTitle(sectionId: string, title: string) {
+    setSections((prev) =>
+      prev.map((s) => (s.id === sectionId ? { ...s, title } : s))
+    );
+  }
+
   return (
     <div className="flex bg-gray-200 min-h-screen">
-      {/* Barra lateral fixa */}
       <Sidebar />
-
-      {/* Corpo principal */}
       <main className="flex-1 ml-64 p-6">
         {/* Cabeçalho */}
         <div className="flex items-center justify-between bg-blue-900 text-white px-6 py-4 rounded-t-xl shadow-md">
@@ -49,9 +98,10 @@ export default function LabelingFormPage() {
           </button>
         </div>
 
-        {/* Informações do CSV importado */}
+        {/* Info CSV + Seções */}
         <div className="bg-white border-x border-b border-blue-200 rounded-b-xl shadow-lg p-4">
-          <div className="mb-4">
+          {/* Colunas do CSV */}
+          <div className="mb-4 max-w-[860px] mx-auto">
             <h2 className="text-sm font-semibold text-blue-900">
               Colunas importadas do CSV
             </h2>
@@ -73,12 +123,21 @@ export default function LabelingFormPage() {
             )}
           </div>
 
-          {/* Seções */}
-          <div className="mt-2 border border-blue-200 rounded-xl p-6">
-            {/* Mantemos a assinatura atual do SectionForm.
-               Em um próximo passo, podemos passar `columns` via props
-               ou via Context para popular o ContextBlock. */}
-            <SectionForm sectionIndex={1} totalSections={2} />
+          {/* Seções (form mais estreito para acomodar os botões) */}
+          <div className="mt-2 space-y-6 max-w-[860px] mx-auto pr-10">
+            {sections.map((section, idx) => (
+              <SectionForm
+                key={section.id}
+                data={section}
+                index={idx}
+                total={sections.length}
+                columns={columns}
+                onAddContext={() => addContext(section.id)}
+                onAddQuestion={() => addQuestion(section.id)}
+                onAddSection={addSection}
+                onChangeTitle={(t) => updateSectionTitle(section.id, t)}
+              />
+            ))}
           </div>
         </div>
       </main>
