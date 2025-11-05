@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/app/components/sidebar";
 import { ArrowLeft, Save } from "lucide-react";
-import SectionForm, { SectionData } from "./section_form";
+import { SectionData } from "./labeling_types";
+import SectionForm from "./section_form";
 
 export default function LabelingFormPage() {
   const router = useRouter();
@@ -136,6 +137,11 @@ export default function LabelingFormPage() {
                 onAddQuestion={() => addQuestion(section.id)}
                 onAddSection={addSection}
                 onChangeTitle={(t) => updateSectionTitle(section.id, t)}
+                onUpdateSection={(updated) => {
+                  setSections((prev) =>
+                    prev.map((s) => (s.id === section.id ? updated : s))
+                  );
+                }}
               />
             ))}
           </div>

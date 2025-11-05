@@ -1,17 +1,14 @@
-import { Trash2, PlusCircle, PlusSquare, CircleQuestionMark } from "lucide-react";
+"use client";
+
+import React, { useMemo } from "react";
+import { PlusCircle, PlusSquare, CircleQuestionMark } from "lucide-react";
 import QuestionBlock from "./question_block";
 import ContextBlock from "./context_block";
-
-export type SectionData = {
-  id: string;
-  title: string;
-  contexts: { id: string }[];
-  questions: { id: string }[];
-};
+import { SectionData } from "./labeling_types";
 
 type Props = {
   data: SectionData;
-  index: number;          // 0-based
+  index: number; // 0-based
   total: number;
   columns?: string[];
   onAddContext: () => void;
@@ -19,6 +16,7 @@ type Props = {
   onAddSection: () => void;
   onChangeTitle: (title: string) => void;
   onRemoveSection?: () => void;
+  onUpdateSection: (updated: SectionData) => void;
 };
 
 export default function SectionForm({
@@ -31,84 +29,93 @@ export default function SectionForm({
   onAddSection,
   onChangeTitle,
   onRemoveSection,
+  onUpdateSection,
 }: Props) {
   const humanIndex = index + 1;
 
-  return (
-    
-      <div className="relative border border-blue-800 rounded-xl p-5 pr-30">
-        {/* Etiqueta "Seção X de Y" */}
-        <div className="inline-flex -mt-9 mb-3 ml-2">
-          <span className="px-3 py-1 bg-blue-900 text-white text-xs rounded-t-md rounded-br-md shadow">
-            Seção {humanIndex} de {total}
-          </span>
-        </div>
+  // merge contexts and questions and sort by `order` so we render in true order
+  const mixed = useMemo(() => {
+    const contexts = (data?.contexts ?? []).map((c) => ({ kind: "context" as const, item: c }));
+    const questions = (data?.questions ?? []).map((q) => ({ kind: "question" as const, item: q }));
+    return [...contexts, ...questions].sort((a, b) => (a.item.order ?? 0) - (b.item.order ?? 0));
+  }, [data?.contexts, data?.questions]);
 
-      {/* Header da seção */}
-      <div className="flex gap-5 pb-5">
-          
-      <input
-        type="text"
-        value={data.title}
-        onChange={(e) => onChangeTitle(e.target.value)}
-        placeholder={`Título da seção ${humanIndex}`}
-        className="w-full border-b-2 border-blue-800 focus:outline-none text-gray-700 text-lg mb-4"
-      />
-      <button
-            type="button"
-            className="text-gray-400 hover:text-red-500 cursor-pointer"
-            onClick={onRemoveSection}
-            aria-label="Remover seção"
-            title="Remover seção"
-          >
-            <Trash2 />
-      </button>
+  return (
+    <div className="relative border border-blue-800 rounded-xl p-5 pr-30">
+      <div className="inline-flex -mt-9 mb-3 ml-2">
+        <span className="px-3 py-1 bg-blue-900 text-white text-xs rounded-t-md rounded-br-md shadow">
+          Seção {humanIndex} de {total}
+        </span>
       </div>
 
-      {/* CONTEXTOS */}
-      {data.contexts.map((ctx) => (
-        <ContextBlock key={ctx.id} columns={columns} />
-      ))}
+      <div className="flex gap-5 pb-5">
+        <input
+          className="text-sm font-semibold text-blue-900 border border-gray-300 rounded-md px-3 py-1 outline-none focus:border-blue-500"
+          placeholder="Título da seção"
+          value={data?.title ?? ""}
+          onChange={(e) => onChangeTitle(e.target.value)}
+        />
+      </div>
 
-      {/* PERGUNTAS */}
-      {data.questions.map((q) => (
-        <QuestionBlock key={q.id} />
-      ))}
+      {/* render merged contexts and questions by order */}
+      <div>
+        {mixed.map((entry) =>
+          entry.kind === "context" ? (
+            <ContextBlock
+              key={entry.item.id}
+              data={entry.item}
+              columns={columns}
+              onUpdate={(patch) => {
+                const updatedContexts = (data?.contexts ?? []).map((c) => (c.id === entry.item.id ? { ...c, ...patch } : c));
+                onUpdateSection({ ...(data ?? { id: crypto.randomUUID(), title: "", contexts: [], questions: [] }), contexts: updatedContexts, questions: data?.questions ?? [] });
+              }}
+              onRemove={() => {
+                console.log("Removing context:", entry.item);
+                const filtered = (data?.contexts ?? []).filter((c) => c.id !== entry.item.id);
+                onUpdateSection({ ...(data ?? { id: crypto.randomUUID(), title: "", contexts: [], questions: [] }), contexts: filtered, questions: data?.questions ?? [] });
+              }}
+            />
+          ) : (
+            <QuestionBlock
+              key={entry.item.id}
+              data={entry.item}
+              onUpdate={(patch) => {
+                const updatedQuestions = (data?.questions ?? []).map((q) => (q.id === entry.item.id ? { ...q, ...patch } : q));
+                onUpdateSection({ ...(data ?? { id: crypto.randomUUID(), title: "", contexts: [], questions: [] }), contexts: data?.contexts ?? [], questions: updatedQuestions });
+              }}
+              onRemove={() => {
+                console.log("Removing question:", entry.item);
+                const filtered = (data?.questions ?? []).filter((q) => q.id !== entry.item.id);
+                onUpdateSection({ ...(data ?? { id: crypto.randomUUID(), title: "", contexts: [], questions: [] }), contexts: data?.contexts ?? [], questions: filtered });
+              }}
+            />
+          )
+        )}
+      </div>
 
-      {/* Trilho lateral com botões (sobrepondo levemente a seção) */}
-      <div className="absolute top-0 right-0 p-10 items-start z-10">
-        {/* trilho cinza */}
-        <div className="w-1 bg-gray-300 rounded-full h-full mr-2" />
-
+      {/* lateral actions */}
+      <div className="absolute top-0 right-0 p-6 items-start z-10">
         <div className="flex flex-col gap-2 ">
-          {/* Adicionar pergunta */}
           <button
             type="button"
             onClick={onAddQuestion}
             title="Adicionar pergunta"
-            aria-label="Adicionar pergunta"
             className="w-10 h-10 bg-blue-900 hover:bg-blue-800 text-white rounded-md shadow flex items-center justify-center cursor-pointer"
           >
             <PlusCircle size={20} />
           </button>
-
-          {/* Adicionar contexto */}
           <button
             type="button"
             onClick={onAddContext}
             title="Adicionar contexto"
-            aria-label="Adicionar contexto"
             className="w-10 h-10 bg-blue-900 hover:bg-blue-800 text-white rounded-md shadow flex items-center justify-center cursor-pointer"
           >
             <CircleQuestionMark size={20} />
           </button>
-
-          {/* Adicionar seção */}
           <button
             type="button"
             onClick={onAddSection}
             title="Adicionar seção"
-            aria-label="Adicionar seção"
             className="w-10 h-10 bg-blue-900 hover:bg-blue-800 text-white rounded-md shadow flex items-center justify-center cursor-pointer"
           >
             <PlusSquare size={20} />
@@ -118,3 +125,4 @@ export default function SectionForm({
     </div>
   );
 }
+
