@@ -1,36 +1,63 @@
-import { Plus, Trash2 } from "lucide-react";
-import { QuestionData, QuestionType } from "./labeling_types";
+import type { ChangeEvent, ComponentType } from "react";
+import { Trash2 } from "lucide-react";
+import {
+  QuestionConfig,
+  QuestionElement,
+  QuestionType,
+  getDefaultQuestionConfig,
+} from "./labeling_types";
+import {
+  QUESTION_TYPE_COMPONENTS,
+  QuestionTypeComponentProps,
+} from "./questiontypes";
 
 type QuestionBlockProps = {
-  data: QuestionData;
-  onUpdate: (patch: Partial<QuestionData>) => void;
+  data: QuestionElement;
+  onUpdate: (patch: Partial<QuestionElement>) => void;
   onRemove: () => void;
 };
 
 export default function QuestionBlock({ data, onUpdate, onRemove }: QuestionBlockProps) {
-  // handler for question type changes
-  const handleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleTypeChange = (e: ChangeEvent<HTMLSelectElement>) => {
     const newType = e.target.value as QuestionType;
-    onUpdate({ question_type: newType });
+    onUpdate({
+      question_type: newType,
+      config: getDefaultQuestionConfig(newType),
+    });
   };
 
-  // handler for required checkbox
-  const handleRequiredChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleRequiredChange = (e: ChangeEvent<HTMLInputElement>) => {
     onUpdate({ required: e.target.checked });
   };
 
-  // handler for question text
-  const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleTextChange = (e: ChangeEvent<HTMLInputElement>) => {
     onUpdate({ text: e.target.value });
   };
 
+  const handleConfigChange = (config: QuestionConfig) => {
+    onUpdate({ config });
+  };
+
+  const selectedType = data.question_type;
+  const TypeComponent = selectedType
+    ? (QUESTION_TYPE_COMPONENTS[selectedType] as ComponentType<
+        QuestionTypeComponentProps<QuestionConfig>
+      >)
+    : undefined;
+  const effectiveConfig =
+    selectedType && data.config && data.config.type === selectedType
+      ? data.config
+      : selectedType
+      ? getDefaultQuestionConfig(selectedType)
+      : undefined;
+
   return (
-    <div className="border-blue-800 border-l-4 border-t-4 rounded-tl-xl rounded-br-xl p-4 mb-4 shadow-xl relative">
-      <div className="flex justify-between items-center mb-3">
-        <h3 className="text-blue-900 font-semibold text-sm">Pergunta</h3>
+    <div className="relative mb-4 rounded-tl-xl rounded-br-xl border-l-4 border-t-4 border-blue-800 p-4 shadow-xl">
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-blue-900">Pergunta</h3>
         <button
           type="button"
-          className="text-gray-400 hover:text-red-500 cursor-pointer"
+          className="cursor-pointer text-gray-400 hover:text-red-500"
           aria-label="Remover pergunta"
           title="Remover pergunta"
           onClick={onRemove}
@@ -39,21 +66,22 @@ export default function QuestionBlock({ data, onUpdate, onRemove }: QuestionBloc
         </button>
       </div>
 
-      {/* Campos da pergunta */}
-      <div className="flex gap-2 mb-3">
+      <div className="mb-3 flex gap-2">
         <input
           type="text"
           placeholder="Texto da pergunta"
-          value={data.text || ''}
+          value={data.text || ""}
           onChange={handleTextChange}
-          className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:border-blue-500"
+          className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none"
         />
-        <select 
-          className="w-1/3 border border-gray-300 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:border-blue-500"
-          value={data.question_type || ''}
+        <select
+          className="w-1/3 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none"
+          value={data.question_type || ""}
           onChange={handleTypeChange}
         >
-          <option value="" disabled>Selecione um tipo</option>
+          <option value="" disabled>
+            Selecione um tipo
+          </option>
           <option value="text">Texto</option>
           <option value="number">Número</option>
           <option value="range">Intervalo Numérico</option>
@@ -62,19 +90,24 @@ export default function QuestionBlock({ data, onUpdate, onRemove }: QuestionBloc
         </select>
       </div>
 
-      {/* Alternador "Obrigatória" */}
       <div className="flex items-center gap-2 text-sm">
         <label htmlFor={`required-${data.id}`} className="text-gray-600">
           Obrigatória
         </label>
-        <input 
+        <input
           id={`required-${data.id}`}
           type="checkbox"
           checked={data.required || false}
           onChange={handleRequiredChange}
-          className="accent-blue-700 w-4 h-4"
+          className="h-4 w-4 accent-blue-700"
         />
       </div>
+
+      {selectedType && TypeComponent && effectiveConfig && (
+        <div className="mt-4 border-t border-blue-100 pt-4">
+          <TypeComponent config={effectiveConfig} onChange={handleConfigChange} />
+        </div>
+      )}
     </div>
   );
 }

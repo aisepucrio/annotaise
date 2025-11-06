@@ -4,8 +4,42 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/app/components/sidebar";
 import { ArrowLeft, Save } from "lucide-react";
-import { SectionData } from "./labeling_types";
+import { SectionData, ContextElement, QuestionElement, getDefaultQuestionConfig } from "./labeling_types";
 import SectionForm from "./section_form";
+
+const createContextElement = (order: number): ContextElement => ({
+  id: crypto.randomUUID(),
+  kind: "context",
+  order,
+  contextType: "text",
+});
+
+const createQuestionElement = (order: number): QuestionElement => ({
+  id: crypto.randomUUID(),
+  kind: "question",
+  order,
+  question_type: "text",
+  required: false,
+  text: "",
+  config: getDefaultQuestionConfig("text"),
+});
+
+const createDefaultSection = (): SectionData => {
+  const context = createContextElement(0);
+  const question = createQuestionElement(1);
+
+  return {
+    id: crypto.randomUUID(),
+    title: "",
+    elements: [context, question],
+  };
+};
+
+const nextOrder = (section: SectionData): number => {
+  const orders = (section.elements ?? []).map((item) => item.order ?? -1);
+  const maxOrder = orders.length > 0 ? Math.max(...orders) : -1;
+  return maxOrder + 1;
+};
 
 export default function LabelingFormPage() {
   const router = useRouter();
@@ -25,34 +59,19 @@ export default function LabelingFormPage() {
 
   // inicia com 1 seção padrão (1 contexto + 1 pergunta)
   useEffect(() => {
-    setSections([
-      {
-        id: crypto.randomUUID(),
-        title: "",
-        contexts: [{ id: crypto.randomUUID() }],
-        questions: [{ id: crypto.randomUUID() }],
-      },
-    ]);
+    setSections([createDefaultSection()]);
   }, []);
 
   // handlers
   function addSection() {
-    setSections((prev) => [
-      ...prev,
-      {
-        id: crypto.randomUUID(),
-        title: "",
-        contexts: [{ id: crypto.randomUUID() }],
-        questions: [{ id: crypto.randomUUID() }],
-      },
-    ]);
+    setSections((prev) => [...prev, createDefaultSection()]);
   }
 
   function addContext(sectionId: string) {
     setSections((prev) =>
       prev.map((s) =>
         s.id === sectionId
-          ? { ...s, contexts: [...s.contexts, { id: crypto.randomUUID() }] }
+          ? { ...s, elements: [...s.elements, createContextElement(nextOrder(s))] }
           : s
       )
     );
@@ -62,7 +81,10 @@ export default function LabelingFormPage() {
     setSections((prev) =>
       prev.map((s) =>
         s.id === sectionId
-          ? { ...s, questions: [...s.questions, { id: crypto.randomUUID() }] }
+          ? {
+              ...s,
+              elements: [...s.elements, createQuestionElement(nextOrder(s))],
+            }
           : s
       )
     );
@@ -137,6 +159,9 @@ export default function LabelingFormPage() {
                 onAddQuestion={() => addQuestion(section.id)}
                 onAddSection={addSection}
                 onChangeTitle={(t) => updateSectionTitle(section.id, t)}
+                onRemoveSection={() => {
+                  setSections((prev) => prev.filter((s) => s.id !== section.id));
+                }}
                 onUpdateSection={(updated) => {
                   setSections((prev) =>
                     prev.map((s) => (s.id === section.id ? updated : s))

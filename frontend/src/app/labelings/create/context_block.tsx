@@ -1,10 +1,10 @@
 import { Trash2 } from "lucide-react";
-import type { ContextData } from "./labeling_types";
+import type { ContextElement } from "./labeling_types";
 
 type ContextBlockProps = {
-  data: ContextData;
+  data: ContextElement;
   columns?: string[];
-  onUpdate: (patch: Partial<ContextData>) => void;
+  onUpdate: (patch: Partial<ContextElement>) => void;
   onRemove: () => void;
 };
 
@@ -14,7 +14,7 @@ export default function ContextBlock({ data, columns = [], onUpdate, onRemove }:
   };
 
   const handleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    onUpdate({ type: e.target.value });
+    onUpdate({ contextType: e.target.value });
   };
 
   return (
@@ -54,7 +54,7 @@ export default function ContextBlock({ data, columns = [], onUpdate, onRemove }:
 
         <select
           className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:border-blue-500"
-          value={data.type ?? ""}
+          value={data.contextType ?? ""}
           onChange={handleTypeChange}
         >
           <option value="" disabled>

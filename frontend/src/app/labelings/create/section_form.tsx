@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { PlusCircle, PlusSquare, CircleQuestionMark } from "lucide-react";
+import { PlusCircle, PlusSquare, CircleQuestionMark, TrashIcon } from "lucide-react";
 import QuestionBlock from "./question_block";
 import ContextBlock from "./context_block";
-import { SectionData } from "./labeling_types";
+import { SectionData, SectionElement } from "./labeling_types";
 
 type Props = {
   data: SectionData;
@@ -33,12 +33,32 @@ export default function SectionForm({
 }: Props) {
   const humanIndex = index + 1;
 
-  // merge contexts and questions and sort by `order` so we render in true order
-  const mixed = useMemo(() => {
-    const contexts = (data?.contexts ?? []).map((c) => ({ kind: "context" as const, item: c }));
-    const questions = (data?.questions ?? []).map((q) => ({ kind: "question" as const, item: q }));
-    return [...contexts, ...questions].sort((a, b) => (a.item.order ?? 0) - (b.item.order ?? 0));
-  }, [data?.contexts, data?.questions]);
+  const safeSection = (): SectionData => ({
+    id: data?.id ?? crypto.randomUUID(),
+    title: data?.title ?? "",
+    order: data?.order,
+    elements: data?.elements ?? [],
+  });
+
+  // sort elements by order so we render in true order
+  const orderedElements = useMemo(
+    () => [...(data?.elements ?? [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+    [data?.elements]
+  );
+
+  const handleUpdateElement = (elementId: string, patch: Partial<SectionElement>) => {
+    const current = safeSection();
+    const updatedElements = current.elements.map((el) =>
+      el.id === elementId ? { ...el, ...patch } : el
+    );
+    onUpdateSection({ ...current, elements: updatedElements });
+  };
+
+  const handleRemoveElement = (elementId: string) => {
+    const current = safeSection();
+    const filteredElements = current.elements.filter((el) => el.id !== elementId);
+    onUpdateSection({ ...current, elements: filteredElements });
+  };
 
   return (
     <div className="relative border border-blue-800 rounded-xl p-5 pr-30">
@@ -53,41 +73,29 @@ export default function SectionForm({
           className="text-sm font-semibold text-blue-900 border border-gray-300 rounded-md px-3 py-1 outline-none focus:border-blue-500"
           placeholder="Título da seção"
           value={data?.title ?? ""}
-          onChange={(e) => onChangeTitle(e.target.value)}
+          onChange={(e) => {
+            onChangeTitle(e.target.value);
+          }}
         />
       </div>
 
-      {/* render merged contexts and questions by order */}
+      {/* render elements by order */}
       <div>
-        {mixed.map((entry) =>
-          entry.kind === "context" ? (
+        {orderedElements.map((element) =>
+          element.kind === "context" ? (
             <ContextBlock
-              key={entry.item.id}
-              data={entry.item}
+              key={element.id}
+              data={element}
               columns={columns}
-              onUpdate={(patch) => {
-                const updatedContexts = (data?.contexts ?? []).map((c) => (c.id === entry.item.id ? { ...c, ...patch } : c));
-                onUpdateSection({ ...(data ?? { id: crypto.randomUUID(), title: "", contexts: [], questions: [] }), contexts: updatedContexts, questions: data?.questions ?? [] });
-              }}
-              onRemove={() => {
-                console.log("Removing context:", entry.item);
-                const filtered = (data?.contexts ?? []).filter((c) => c.id !== entry.item.id);
-                onUpdateSection({ ...(data ?? { id: crypto.randomUUID(), title: "", contexts: [], questions: [] }), contexts: filtered, questions: data?.questions ?? [] });
-              }}
+              onUpdate={(patch) => handleUpdateElement(element.id, patch)}
+              onRemove={() => handleRemoveElement(element.id)}
             />
           ) : (
             <QuestionBlock
-              key={entry.item.id}
-              data={entry.item}
-              onUpdate={(patch) => {
-                const updatedQuestions = (data?.questions ?? []).map((q) => (q.id === entry.item.id ? { ...q, ...patch } : q));
-                onUpdateSection({ ...(data ?? { id: crypto.randomUUID(), title: "", contexts: [], questions: [] }), contexts: data?.contexts ?? [], questions: updatedQuestions });
-              }}
-              onRemove={() => {
-                console.log("Removing question:", entry.item);
-                const filtered = (data?.questions ?? []).filter((q) => q.id !== entry.item.id);
-                onUpdateSection({ ...(data ?? { id: crypto.randomUUID(), title: "", contexts: [], questions: [] }), contexts: data?.contexts ?? [], questions: filtered });
-              }}
+              key={element.id}
+              data={element}
+              onUpdate={(patch) => handleUpdateElement(element.id, patch)}
+              onRemove={() => handleRemoveElement(element.id)}
             />
           )
         )}
@@ -96,6 +104,16 @@ export default function SectionForm({
       {/* lateral actions */}
       <div className="absolute top-0 right-0 p-6 items-start z-10">
         <div className="flex flex-col gap-2 ">
+
+          <button
+            type="button"
+            onClick={onRemoveSection}
+            title="Apagar Seção"
+            className="w-10 h-10 bg-red-700 hover:bg-red-800 text-white rounded-md shadow flex items-center justify-center cursor-pointer"
+          >
+            <TrashIcon size={20} />
+          </button>
+          
           <button
             type="button"
             onClick={onAddQuestion}
