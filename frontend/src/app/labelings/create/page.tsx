@@ -97,9 +97,9 @@ export default function LabelingFormPage() {
   }
 
   return (
-    <div className="flex bg-gray-200 min-h-screen">
+    <div className="bg-gray-200 min-h-screen">
       <Sidebar />
-      <main className="flex-1 ml-64 p-6">
+      <main className="bg-white ml-64 p-4 min-h-screen">
         {/* Cabeçalho */}
         <div className="flex items-center justify-between bg-blue-900 text-white px-6 py-4 rounded-t-xl shadow-md">
           <div className="flex items-center gap-3">

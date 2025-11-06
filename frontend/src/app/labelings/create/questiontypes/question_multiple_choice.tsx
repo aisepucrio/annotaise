@@ -53,7 +53,7 @@ export default function QuestionMultipleChoiceEditor({ config, onChange }: Props
           <div key={choice.id} className="flex items-center gap-2">
             <input
               type="text"
-              className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none"
+              className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none text-gray-700"
               value={choice.text}
               onChange={handleChoiceTextChange(choice.id)}
             />

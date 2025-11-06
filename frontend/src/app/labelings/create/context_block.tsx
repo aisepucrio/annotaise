@@ -34,9 +34,12 @@ export default function ContextBlock({ data, columns = [], onUpdate, onRemove }:
           <Trash2 size={18} />
         </button>
       </div>
+      <textarea placeholder="Descrição do contexto" className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:border-blue-500 w-full"></textarea>
+      
 
       {/* Campos de contexto */}
       <div className="flex gap-2 mb-3">
+        
         <select
           className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:border-blue-500"
           value={data.column ?? ""}
@@ -61,9 +64,10 @@ export default function ContextBlock({ data, columns = [], onUpdate, onRemove }:
             Selecione um tipo
           </option>
           <option value="text">Texto</option>
+          <option value="link">Link</option>
           <option value="number">Número</option>
-          <option value="date">Data</option>
-          <option value="category">Categoria</option>
+          <option value="image">Imagem</option>
+          <option value="audio">Áudio</option>
         </select>
       </div>
     </div>
