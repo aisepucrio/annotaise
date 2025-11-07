@@ -31,6 +31,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'user',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -44,6 +45,7 @@ INSTALLED_APPS = [
     'item',
     'project',
     'labeling',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
@@ -127,8 +129,11 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# DRF Spectacular settings
+# DRF settings
 REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
@@ -155,11 +160,7 @@ SPECTACULAR_SETTINGS = {
     
 }
 
-# DRF Simple JWT settings
 
-REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"] = [
-    "rest_framework_simplejwt.authentication.JWTAuthentication",
-]
 
 from datetime import timedelta
 #tempo de vida dos tokens (caso seja necessário)
@@ -167,3 +168,7 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
 }
+
+
+#modelo de usuário customizado 
+AUTH_USER_MODEL = 'user.CustomUser'
