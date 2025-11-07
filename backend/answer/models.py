@@ -3,8 +3,8 @@ from django.conf import settings
 
 class Answer(models.Model):
     item = models.ForeignKey("item.Item", on_delete=models.CASCADE, related_name="answers")
-    labeling = models.ForeignKey("project.Labeling", on_delete=models.CASCADE, related_name="answers")
-    labeling_question = models.ForeignKey("project.LabelingElement", on_delete=models.CASCADE, related_name="answers")
+    labeling = models.ForeignKey("labeling.Labeling", on_delete=models.CASCADE, related_name="answers")
+    labeling_question = models.ForeignKey("labeling.LabelingElement", on_delete=models.CASCADE, related_name="answers")
     answered_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING, related_name="answers_given"
     )

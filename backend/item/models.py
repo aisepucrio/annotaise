@@ -5,7 +5,7 @@ class Item(models.Model):
         PENDING = "pending", "Pendente"
         LABELED = "labeled", "Rotulado"
         SKIPPED = "skipped", "Ignorado"
-    labeling = models.ForeignKey("project.Labeling", on_delete=models.CASCADE, related_name="items")
+    labeling = models.ForeignKey("labeling.Labeling", on_delete=models.CASCADE, related_name="items")
     payload = models.JSONField()
     row_index = models.PositiveIntegerField()
     status = models.CharField(max_length=50, default="pending")

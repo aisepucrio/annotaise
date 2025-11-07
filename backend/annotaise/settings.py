@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'authentication',
     'item',
     'project',
+    'labeling',
 ]
 
 MIDDLEWARE = [

@@ -2,7 +2,8 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.utils.timezone import now
 from item.models import Item 
-from project.models import Labeling, LabelingElement , Project, LabelingSection
+from project.models import Project
+from labeling.models import Labeling, LabelingSection, LabelingElement
 from .models import Answer
 from .serializers import AnswerSerializer
 

@@ -1,6 +1,7 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
-from project.models import Project, Labeling
+from project.models import Project
+from labeling.models import Labeling
 from .models import Item
 from .serializers import ItemSerializer
 
