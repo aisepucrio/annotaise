@@ -2,8 +2,6 @@
 
 # ANNOTAISE
 
-The **AnnotAISE** platform enables the creation of research labeling forms based on **CSV files**, allowing users to map columns into *contexts*, define *questions* (various types), and generate **N** forms for **N** rows of data.
-
 **Repository:** [https://github.com/aisepucrio/annotaise](https://github.com/aisepucrio/annotaise)
 
 ---
