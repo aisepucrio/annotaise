@@ -19,7 +19,7 @@ class CustomUserSerializerTest(TestCase):
 
     def test_serialization_success(self):
         serializer = CustomUserSerializer(self.user)
-        self.assertEqual(serializer.data["username"], "serializer_user")
+        self.assertEqual(serializer.data["first_name"], "Serial")
         self.assertEqual(serializer.data["email"], "serializer@example.com")
         self.assertNotIn("password", serializer.data)
 
@@ -48,9 +48,9 @@ class CustomUserCreateSerializerTest(TestCase):
         self.assertTrue(user.check_password("strongpass"))
 
     def test_missing_required_field_fails(self):
-        serializer = CustomUserCreateSerializer(data={"email": "missing@example.com"})
+        serializer = CustomUserCreateSerializer(data={"username": "missing@example.com"})
         self.assertFalse(serializer.is_valid())
-        self.assertIn("username", serializer.errors)
+        self.assertIn("email", serializer.errors)
         self.assertIn("password", serializer.errors)
 
 
@@ -61,7 +61,6 @@ class RegisterAPITest(TestCase):
 
     def test_register_user_success(self):
         payload = {
-            "username": "apiuser",
             "email": "api@example.com",
             "first_name": "Api",
             "last_name": "User",
@@ -74,7 +73,7 @@ class RegisterAPITest(TestCase):
         self.assertNotIn("password", response.data)
 
         User = get_user_model()
-        self.assertTrue(User.objects.filter(username="apiuser").exists())
+        self.assertTrue(User.objects.filter(email="api@example.com").exists())
 
     def test_register_user_missing_fields(self):
         response = self.client.post(self.url, {"username": ""}, format="json")
@@ -103,7 +102,7 @@ class CurrentUserAPITest(TestCase):
         self.client.force_authenticate(self.user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["username"], "currentuser")
+        self.assertEqual(response.data["email"], "current@example.com")
 
     def test_updates_current_user(self):
         self.client.force_authenticate(self.user)

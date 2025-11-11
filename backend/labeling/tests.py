@@ -218,7 +218,7 @@ class LabelingMembershipSerializerTest(BaseSerializerTest):
 
     def test_deserialization_success(self):
         User = get_user_model()
-        other_user = User.objects.create_user(username="otheruser", password="pwd123")
+        other_user = User.objects.create_user(username="otheruser",email="testest@g.com", password="pwd123")
         payload = {
             "id": 999,
             "user": other_user.id,  # usa outro usuário criado para o teste pra nao violar a unicidade da relacao

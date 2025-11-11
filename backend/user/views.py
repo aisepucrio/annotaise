@@ -5,6 +5,8 @@ from .serializers import CustomUserSerializer
 from django.contrib.auth import get_user_model
 from rest_framework import viewsets, permissions, filters
 from .serializers import AdminUserReadSerializer, AdminUserWriteSerializer
+from rest_framework.response import Response
+from rest_framework import status
 
 #TODO falta um endpoint de alterar a senha... caso não tenha questoes de segurança, tem como fazer por aqui, mas nao é o ideal
 class CurrentAPIView(RetrieveUpdateDestroyAPIView):
@@ -24,6 +26,7 @@ class AdminUserViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["username", "email", "first_name", "last_name"]
     ordering_fields = ["date_joined", "username", "email"]
+
 
     def get_serializer_class(self):
         if self.action in ("create", "update", "partial_update"):

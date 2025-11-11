@@ -4,6 +4,7 @@ version = "0.1.0"
 requires-python = ">=3.13"
 dependencies = [
     "django~=5.2.6",
+    "django-cors-headers>=4.9.0",
     "django-filter~=25.1",
     "djangorestframework~=3.16.1",
     "djangorestframework-simplejwt[crypto]>=5.5.1",

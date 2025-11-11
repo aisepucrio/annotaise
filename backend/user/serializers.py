@@ -1,24 +1,30 @@
 from rest_framework import serializers
 from .models import CustomUser
 from django.contrib.auth import get_user_model
+import uuid
 
 
+'''o username a princípio será o email do usuário, mas o campo username é obrigatório no modelo padrão do django, 
+então ele permanece e vai ser um id aleatorio.'''
 class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'date_joined']
+        fields = ['id', 'email', 'first_name', 'last_name', 'date_joined']
         read_only_fields = ['id', 'date_joined']
 
 class CustomUserCreateSerializer(serializers.ModelSerializer):
     '''Esse serializer é usado para criar novos usuários. não usar em nenhum outro contexto porque a senha ficará exposta.'''
     class Meta:
         model = CustomUser
-        fields = ['username', 'email', 'first_name', 'last_name', 'password']
+        fields = ['email', 'first_name', 'last_name', 'password']
         write_only_fields = ['password']
 
     def create(self, validated_data):
+
+        user_id = uuid.uuid4()          
+        user_id_str = user_id.hex
         user = CustomUser.objects.create_user(
-            username=validated_data['username'],
+            username=user_id_str,
             email=validated_data['email'],
             first_name=validated_data.get('first_name', ''),
             last_name=validated_data.get('last_name', ''),

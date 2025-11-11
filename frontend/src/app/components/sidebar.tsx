@@ -1,9 +1,19 @@
 "use client";
-import Image from "next/image";            // mantém para o LOGO
+import Image from "next/image"; // mantem para o LOGO
 import SidebarItem from "./sidebar_item";
 import { Home, Users, FolderKanban, Tags, Settings, LogOut } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { AuthActions } from "../../../utils";
 
 export default function Sidebar() {
+  const router = useRouter();
+  const { removeTokens } = AuthActions();
+
+  const handleLogout = () => {
+    removeTokens();
+    router.push("/login");
+  };
+
   return (
     <div className="flex">
       <aside
@@ -34,15 +44,17 @@ export default function Sidebar() {
         {/* Topo */}
         <ul className="space-y-1 mt-3 -ml-3">
           <SidebarItem icon={<Home size={18} />} label="Dashboard" href="/" alias="/" hover_color="blue" />
-          <SidebarItem icon={<Users size={18} />} label="Usuários" href="/users" alias="/users" hover_color="blue" />
+          <SidebarItem icon={<Users size={18} />} label="Usuarios" href="/users" alias="/users" hover_color="blue" />
           <SidebarItem icon={<FolderKanban size={18} />} label="Projetos" href="/projects" alias="/projects" hover_color="blue" />
-          <SidebarItem icon={<Tags size={18} />} label="Rotulações" href="/labelings" alias="/labelings" hover_color="blue" />
+          <SidebarItem icon={<Tags size={18} />} label="Rotulacoes" href="/labelings" alias="/labelings" hover_color="blue" />
         </ul>
 
-        {/* Rodapé */}
+        {/* Rodape */}
         <div className="text-sm text-gray-500 mt-auto -ml-3 space-y-1">
-          <SidebarItem icon={<Settings size={18} />} label="Configurações" href="/options" alias="/options" hover_color="gray" />
-          <SidebarItem icon={<LogOut size={18} />} label="Logout" href="/logout" alias="/logout" hover_color="red" />
+          <SidebarItem icon={<Settings size={18} />} label="Configuracoes" href="/options" alias="/options" hover_color="gray" />
+          <button type="button" className="w-55" onClick={handleLogout}>
+            <SidebarItem icon={<LogOut size={18} />} label="Logout" href="/login" alias="/logout" hover_color="red" />
+          </button>
         </div>
       </aside>
     </div>
