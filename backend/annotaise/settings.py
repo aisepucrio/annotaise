@@ -170,7 +170,7 @@ SPECTACULAR_SETTINGS = {
 from datetime import timedelta
 #tempo de vida dos tokens (caso seja necessário)
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=500),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=10),
 }
 

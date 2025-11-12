@@ -53,7 +53,7 @@ class AdminUserWriteSerializer(serializers.ModelSerializer):
         if pwd:
             user.set_password(pwd); user.save()
         return user
-
+    ''' TODO : recuperação de senha. por enquanto vou deixar desativado
     def update(self, instance, validated_data):
         pwd = validated_data.pop("password", None)
         for k, v in validated_data.items():
@@ -62,3 +62,4 @@ class AdminUserWriteSerializer(serializers.ModelSerializer):
             instance.set_password(pwd)
         instance.save()
         return instance
+        '''

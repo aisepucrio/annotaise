@@ -24,3 +24,23 @@ class Project(models.Model):
     def __str__(self):
         return self.name
 
+
+class ProjectMembership(models.Model):
+    class RoleChoices(models.TextChoices):
+        OWNER = "owner", "Proprietário"
+        CONTRIBUTOR = "contributor", "Colaborador"
+        VIEWER = "viewer", "Visualizador"
+
+    role = models.CharField(max_length=50, choices=RoleChoices.choices, default=RoleChoices.VIEWER)
+    project = models.ForeignKey("Project", on_delete=models.CASCADE, related_name="memberships")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="project_memberships"
+    )
+    joined_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        unique_together = ("project", "user")
+        ordering = ["-joined_at"]
+
+    def __str__(self):
+        return f"{self.user} in {self.project}"

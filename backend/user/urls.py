@@ -5,9 +5,9 @@ from django.urls import path
 from .views import AdminUserViewSet
 
 urlpatterns = [
-    path("current/", CurrentAPIView.as_view(), name="current_user"),
+    path("users/current/", CurrentAPIView.as_view(), name="current_user"),
 ]
 router = DefaultRouter()
-router.register(r"", AdminUserViewSet, basename="admin-users")
+router.register(r"users", AdminUserViewSet, basename="admin-users")
 
 urlpatterns += router.urls

@@ -35,7 +35,9 @@ urlpatterns = [
     path("api/redoc/", SpectacularRedocView.as_view(), name="redoc"),
 
     # JWT Auth endpoints em um app separado
-    path("api/auth/", include("authentication.urls")),
+    path("", include("authentication.urls")),
 
-    path("users/", include("user.urls")),
+    path("", include("user.urls")),
+
+    path("", include("project.urls")),
 ]
