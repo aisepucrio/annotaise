@@ -94,16 +94,30 @@ WSGI_APPLICATION = 'annotaise.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+
+DB_NAME = os.getenv("DJANGO_DB_NAME")
+DB_USER = os.getenv("DJANGO_DB_USER")
+DB_PASS = os.getenv("DJANGO_DB_PASS")
+DB_HOST = os.getenv("DJANGO_DB_HOST", "localhost")
+DB_PORT = os.getenv("DJANGO_DB_PORT", "5432")
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("DJANGO_DB_NAME", "postgres"),
-        "USER": os.environ.get("DJANGO_DB_USER", "postgres"),
-        "PASSWORD": os.environ.get("DJANGO_DB_PASS", ""),
-        "HOST": os.environ.get("DJANGO_DB_HOST", "localhost"),
-        "PORT": os.environ.get("DJANGO_DB_PORT", "5432"),
+        "NAME": DB_NAME,
+        "USER": DB_USER,
+        "PASSWORD": DB_PASS,
+        "HOST": DB_HOST,
+        "PORT": DB_PORT,
     }
 }
+
+# opcional: fallback para SQLite local (fora do CI) se NAME não vier
+if not DB_NAME:
+    DATABASES["default"] = {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+    }
 
 
 # Password validation
@@ -205,3 +219,5 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 CORS_ALLOW_CREDENTIALS = True
+
+
