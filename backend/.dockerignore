@@ -1,0 +1,36 @@
+# Python
+.venv
+backend/venv
+venv
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.pytest_cache
+.mypy_cache
+pip-wheel-metadata/
+
+# Django
+media/
+staticfiles/
+
+# Node (se houver frontend junto)
+node_modules
+.next
+dist
+build
+
+# Ambiente / secrets
+.env
+.env.*
+
+# Git / editor
+.git
+.gitignore
+.idea
+.vscode
+
+# SO
+.DS_Store
+Thumbs.db

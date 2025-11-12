@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -19,14 +20,25 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
+def env_bool(value: str | None, default: bool) -> bool:
+    if value is None:
+        return default
+    return value.lower() in {"1", "true", "t", "yes", "on"}
+
+
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-x3z-j*iai!w6@)=sore*4l2vzc*yzc7q2f1w!3l3-9m(p9n95f'
+SECRET_KEY = os.getenv(
+    "DJANGO_SECRET_KEY",
+    "django-insecure-x3z-j*iai!w6@)=sore*4l2vzc*yzc7q2f1w!3l3-9m(p9n95f",
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env_bool(os.getenv("DJANGO_DEBUG"), True)
 
-ALLOWED_HOSTS = ["*"]
-
+allowed_hosts = os.getenv("DJANGO_ALLOWED_HOSTS", "*")
+ALLOWED_HOSTS = [host.strip() for host in allowed_hosts.split(",") if host.strip()]
+if not ALLOWED_HOSTS:
+    ALLOWED_HOSTS = ["*"]
 
 # Application definition
 
@@ -83,9 +95,13 @@ WSGI_APPLICATION = 'annotaise.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.environ.get("DJANGO_DB_NAME", "postgres"),
+        "USER": os.environ.get("DJANGO_DB_USER", "postgres"),
+        "PASSWORD": os.environ.get("DJANGO_DB_PASS", ""),
+        "HOST": os.environ.get("DJANGO_DB_HOST", "localhost"),
+        "PORT": os.environ.get("DJANGO_DB_PORT", "5432"),
     }
 }
 

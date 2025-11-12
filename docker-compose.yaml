@@ -11,6 +11,8 @@ services:
     depends_on:
       - db
     environment:
+      DJANGO_DB_HOST: db
+      DJANGO_DB_PORT: 5432
       DJANGO_DB_NAME: ${DJANGO_DB_NAME}
       DJANGO_DB_USER: ${DJANGO_DB_USER}
       DJANGO_DB_PASS: ${DJANGO_DB_PASS}

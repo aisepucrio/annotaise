@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { PlusCircle, PlusSquare, CircleQuestionMark, TrashIcon } from "lucide-react";
+import { PlusCircle, PlusSquare, CircleQuestionMark, Trash2 } from "lucide-react";
 import QuestionBlock from "./question_block";
 import ContextBlock from "./context_block";
 import { SectionData, SectionElement } from "./labeling_types";
@@ -111,7 +111,7 @@ export default function SectionForm({
             title="Apagar Seção"
             className="w-10 h-10 bg-red-700 hover:bg-red-800 text-white rounded-md shadow flex items-center justify-center cursor-pointer"
           >
-            <TrashIcon size={20} />
+            <Trash2 size={20} />
           </button>
           
           <button

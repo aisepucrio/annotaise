@@ -11,4 +11,6 @@ dependencies = [
     "drf-spectacular>=0.28.0",
     "drf-spectacular-sidecar>=2025.10.1",
     "markdown~=3.9",
+    "psycopg>=3.2.12",
+    "psycopg2-binary>=2.9.11",
 ]
