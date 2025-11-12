@@ -11,30 +11,35 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Docker
+      - name: Create .env for CI
+        run: |
+          cat > .env << 'EOF'
+          DJANGO_DB_NAME=${{ secrets.DJANGO_DB_NAME }}
+          DJANGO_DB_USER=${{ secrets.DJANGO_DB_USER }}
+          DJANGO_DB_PASS=${{ secrets.DJANGO_DB_PASS }}
+          DJANGO_SUPERUSER_USER=${{ secrets.DJANGO_SUPERUSER_USER }}
+          DJANGO_SUPERUSER_PASSWORD=${{ secrets.DJANGO_SUPERUSER_PASSWORD }}
+          DJANGO_SUPERUSER_EMAIL=${{ secrets.DJANGO_SUPERUSER_EMAIL }}
+          EOF
+
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and start containers
+      - name: Start DB
         run: docker compose --env-file .env -f docker-compose.yml up -d --build db
 
       - name: Wait for Postgres
-        run: |
-          echo "Aguardando o banco iniciar..."
-          sleep 10
+        run: sleep 10
 
       - name: Run migrations
-        run: |
-          docker compose --env-file .env -f docker-compose.yml run --rm api \
-            uv run python manage.py migrate --noinput
+        run: docker compose --env-file .env -f docker-compose.yml run --rm api uv run python manage.py migrate --noinput
 
       - name: Run Django tests
-        run: |
-          docker compose --env-file .env -f docker-compose.yml run --rm api \
-            uv run python manage.py test -v 2
+        run: docker compose --env-file .env -f docker-compose.yml run --rm api uv run python manage.py test -v 2
 
-      - name: Stop containers
+      - name: Tear down
         if: always()
         run: docker compose -f docker-compose.yml down -v
