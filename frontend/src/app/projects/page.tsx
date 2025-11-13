@@ -1,78 +1,60 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useState } from "react";
+import type { AxiosError } from "axios";
+import api from "@/app/fetcher";
 import Sidebar from "../components/sidebar";
-import PageHeader from "../components/page_description"
+import PageHeader from "../components/page_description";
 import ProjectContainer from "./project_container";
 import FilterBar from "../components/filter_bar";
-import {Plus} from "lucide-react";
+import { Plus } from "lucide-react";
 
-const projects = [
-  {
-    id: 1,
-    title: "Avaliação de sentimentos com ChatGpt",
-    annotators: 5,
-    finished: 2,
-    pending: 1,
-    status: "overdue" as const,
-    labelings_late:1
-  },
-  {
-    id: 2,
-    title: "Classificação de imagens",
-    annotators: 5,
-    finished: 3,
-    pending: 0,
-    status: "ok" as const,
-    labelings_late:0
-  },
-  {
-    id: 3,
-    title: "Etc etc de imagens",
-    annotators: 10,
-    finished: 3,
-    pending: 0,
-    status: "ok" as const,
-    labelings_late:2
-  },
-  {
-    id: 4,
-    title: "Classificação de imagens",
-    annotators: 5,
-    finished: 3,
-    pending: 0,
-    status: "ok" as const,
-    labelings_late:10
-  },
-  {
-    id: 5,
-    title: "Classificação de imagens",
-    annotators: 5,
-    finished: 3,
-    pending: 0,
-    status: "ok" as const,
-    labelings_late:10
-  },
-  {
-    id: 6,
-    title: "Classificação de imagens",
-    annotators: 5,
-    finished: 3,
-    pending: 0,
-    status: "ok" as const,
-    labelings_late:10
-  },
-  {
-    id: 7,
-    title: "Classificação de imagens",
-    annotators: 5,
-    finished: 3,
-    pending: 0,
-    status: "ok" as const,
-    labelings_late:10
-  },
-];
-
+type DashboardProject = {
+  id: number;
+  name: string;
+  labeling_users: number;
+  finished_labelings: number;
+  pending_labelings: number;
+  late_labelings: number;
+};
 
 export default function Projects() {
+  const [projects, setProjects] = useState<DashboardProject[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadProjects() {
+      try {
+        const { data } = await api.get<DashboardProject[]>("/projects/dashboard/");
+        if (isMounted) {
+          setProjects(data);
+          setError(null);
+        }
+      } catch (err) {
+        const message =
+          (err as AxiosError<{ detail?: string }>)?.response?.data?.detail ??
+          "Não foi possível carregar os projetos.";
+        if (isMounted) {
+          setError(message);
+          setProjects([]);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadProjects();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   return (
     <div className="bg-gray-300 min-h-screen">
       <div className="bg-white ml-64  p-4 min-h-screen">
@@ -88,18 +70,25 @@ export default function Projects() {
             
           "><Plus size={16} strokeWidth={1.75} className="opacity-90" /> Novo Projeto</button>
         </div>
-        <div className="ml-5 mr-5 mt-5 grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
-        
-        {projects.map(p => (
-            <ProjectContainer
-            key={p.id}
-            title={p.title}
-            user_count={p.annotators}
-            labelings_done={p.finished}
-            labelings_pending={p.pending}
-            labelings_late={p.labelings_late}
-            />
-        ))}
+        <div className="ml-5 mr-5 mt-5">
+          {loading ? (
+            <p className="text-sm text-gray-500">Carregando projetos...</p>
+          ) : error ? (
+            <p className="text-sm text-red-600">{error}</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
+              {projects.map((project) => (
+                <ProjectContainer
+                  key={project.id}
+                  title={project.name}
+                  user_count={project.labeling_users}
+                  labelings_done={project.finished_labelings}
+                  labelings_pending={project.pending_labelings}
+                  labelings_late={project.late_labelings}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

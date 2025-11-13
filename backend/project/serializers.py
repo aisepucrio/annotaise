@@ -26,3 +26,12 @@ class ProjectMembershipSerializer(serializers.ModelSerializer):
             })
         
         return super().update(instance, validated_data)
+
+
+class ProjectDashboardSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    labeling_users = serializers.IntegerField()
+    finished_labelings = serializers.IntegerField()
+    pending_labelings = serializers.IntegerField()
+    late_labelings = serializers.IntegerField()

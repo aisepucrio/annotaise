@@ -5,7 +5,7 @@ from .models import Labeling, LabelingSection, LabelingElement, MultipleChoiceIt
 class LabelingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Labeling
-        fields = ['id', 'project', 'title', 'created_at']
+        fields = ['id', 'project', 'title', 'created_at','status']
         read_only_fields = ['id', 'created_at','created_by']
 
     def update (self, instance, validated_data):

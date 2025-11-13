@@ -1,14 +1,47 @@
 from django.shortcuts import render
 from rest_framework import viewsets
 from .models import Project, ProjectMembership
-from .serializers import ProjectSerializer, ProjectMembershipSerializer
+from .serializers import ProjectSerializer, ProjectMembershipSerializer, ProjectDashboardSerializer
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.decorators import action
 
 class ProjectViewSet(viewsets.ModelViewSet):
     serializer_class = ProjectSerializer
     queryset = Project.objects.all()
     http_method_names = ['get', 'post', 'patch', 'delete']
+
+
+
+    def get_serializer_class(self):
+        if self.action == "dashboard":
+            return ProjectDashboardSerializer
+        return ProjectSerializer
+
+    @action(detail=False, methods=["get"], url_path="dashboard")
+    def dashboard(self, request):
+        projects = Project.objects.filter(memberships__user = request.user)
+
+        response_data = []
+        '''TODO implementar late labelings'''
+        for project in projects:
+            data = {
+                "id": project.id,
+                "name": project.name,
+                "labeling_users": project.labelings.values("memberships__user").distinct().count(),
+                "finished_labelings": project.labelings.filter(status="finished").count(),
+                "pending_labelings": project.labelings.filter(status="pending").count(),
+                "late_labelings": project.labelings.filter(status="late").count(), 
+            }
+            
+            response_data.append(data)
+
+        serializer = self.get_serializer(data=response_data, many=True)
+
+        if serializer.is_valid():
+            return Response(serializer.data)
+        else:
+            return Response("Erro ao retornar dados",status= status.HTTP_403_FORBIDDEN)
 
     def get_queryset(self):
         user = getattr(self.request, "user", None)
