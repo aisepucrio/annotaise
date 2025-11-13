@@ -5,9 +5,18 @@ from .models import Labeling, LabelingSection, LabelingElement, MultipleChoiceIt
 class LabelingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Labeling
-        fields = ['id', 'project', 'title', 'created_by', 'created_at']
-        read_only_fields = ['id', 'created_at']
+        fields = ['id', 'project', 'title', 'created_at']
+        read_only_fields = ['id', 'created_at','created_by']
 
+    def update (self, instance, validated_data):
+        # bloqueia a troca de projeto
+        if "project" in validated_data and validated_data["project"].id != instance.project_id:
+            raise serializers.ValidationError({
+                "project": "Você não pode alterar o projeto de uma rotulação existente, crie outra."
+            })
+        
+        return super().update(instance, validated_data)
+      
 class LabelingSectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = LabelingSection
@@ -36,4 +45,20 @@ class LabelingMembershipSerializer(serializers.ModelSerializer):
     class Meta:
         model = LabelingMembership
         fields = ['id', 'user', 'labeling', 'items_done', 'role', 'joined_at']
-        read_only_fields = ['id', 'joined_at']
+        read_only_fields = ['id', 'joined_at','items_done']
+
+    def update(self, instance, validated_data):
+        # bloqueia a troca de rotulação
+        if "labeling" in validated_data and validated_data["labeling"].id != instance.labeling_id:
+            raise serializers.ValidationError({
+                "project": "Você não pode alterar a rotulação de uma relação existente, crie outra."
+            })
+
+        # bloqueia mudança de dono
+        if "created_by" in validated_data and validated_data["created_by"].id != instance.created_by_id:
+            raise serializers.ValidationError({
+                "created_by": "Você não pode trocar o dono da relacao."
+            })
+        
+
+        return super().update(instance, validated_data)

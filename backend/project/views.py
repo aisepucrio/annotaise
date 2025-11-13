@@ -8,7 +8,8 @@ from rest_framework import status
 class ProjectViewSet(viewsets.ModelViewSet):
     serializer_class = ProjectSerializer
     queryset = Project.objects.all()
-    
+    http_method_names = ['get', 'post', 'patch', 'delete']
+
     def get_queryset(self):
         user = getattr(self.request, "user", None)
 
@@ -50,6 +51,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
 class ProjectMembershipViewSet(viewsets.ModelViewSet):
     serializer_class = ProjectMembershipSerializer
     queryset = ProjectMembership.objects.select_related('project', 'user')
+    http_method_names = ['get', 'post','put', 'patch', 'delete']
 
     def create(self, request):
         is_owner = ProjectMembership.objects.filter(

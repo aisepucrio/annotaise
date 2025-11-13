@@ -23,21 +23,14 @@ urlpatterns = [
     # Schema JSON
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     # Schema YAML
-    path(
-        "api/schema.yaml",
-        SpectacularAPIView.as_view(),
-        name="schema-yaml",
-    ),
+    path("api/schema.yaml", SpectacularAPIView.as_view(), name="schema-yaml"),
     # Swagger
     path("api/docs/", SpectacularSwaggerView.as_view(), name="swagger-ui"),
-
     # Redoc
     path("api/redoc/", SpectacularRedocView.as_view(), name="redoc"),
-
     # JWT Auth endpoints em um app separado
     path("", include("authentication.urls")),
-
     path("", include("user.urls")),
-
     path("", include("project.urls")),
+    path("", include("labeling.urls")),
 ]

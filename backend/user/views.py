@@ -26,7 +26,7 @@ class AdminUserViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["username", "email", "first_name", "last_name"]
     ordering_fields = ["date_joined", "username", "email"]
-
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_serializer_class(self):
         if self.action in ("create", "update", "partial_update"):

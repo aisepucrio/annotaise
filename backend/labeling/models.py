@@ -10,9 +10,9 @@ class Labeling(models.Model):
         ARCHIVED = "archived", "Arquivada"
         FINISHED = "finished", "Finalizada"
 
-    project = models.ForeignKey("project.Project", on_delete=models.CASCADE, related_name="rotulations")
+    project = models.ForeignKey("project.Project", on_delete=models.CASCADE, related_name="labelings")
     created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING, related_name="rotulations_created"
+        settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING, related_name="labelings_created"
     )
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
