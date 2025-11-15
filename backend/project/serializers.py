@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Project, ProjectMembership
+from user.serializers import AdminUserReadSerializer
 
 class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
@@ -8,10 +9,12 @@ class ProjectSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'created_by']
 
 class ProjectMembershipSerializer(serializers.ModelSerializer):
+    user_detail = AdminUserReadSerializer(source="user", read_only=True)
+
     class Meta:
         model = ProjectMembership
-        fields = ['id', 'role', 'project', 'user', 'joined_at']
-        read_only_fields = ['id', 'joined_at']
+        fields = ['id', 'role', 'project', 'user', 'user_detail', 'joined_at']
+        read_only_fields = ['id', 'joined_at', 'user_detail']
     def update (self, instance, validated_data):
         # bloqueia a troca de projeto
         if "project" in validated_data and validated_data["project"].id != instance.project_id:

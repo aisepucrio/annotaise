@@ -6,6 +6,7 @@ type ProjectContainerProps = {
   labelings_done: number;
   labelings_pending: number;
   labelings_late: number;
+  onManage?: () => void;
 };
 
 export default function ProjectContainer({
@@ -14,6 +15,7 @@ export default function ProjectContainer({
   labelings_done,
   labelings_pending,
   labelings_late,
+  onManage,
 }: ProjectContainerProps) {
   return (
     <div
@@ -70,7 +72,7 @@ export default function ProjectContainer({
             <StatusBadge type="ok" text="Todas as rotulações estão em dia" />
           )}
 
-          <ManageButton />
+          <ManageButton onClick={onManage} />
         </div>
       </div>
     </div>

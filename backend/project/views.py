@@ -99,18 +99,23 @@ class ProjectMembershipViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         user = getattr(self.request, "user", None)
-        username = getattr(user, "username", "anonymous")
+        project_param = self.request.query_params.get("project")
 
         if not user or not getattr(user, "is_authenticated", False):
             return self.queryset.none()
 
         if user.is_staff:
-            return self.queryset
-
-        return (
-            self.queryset.filter(
-                project__memberships__user=user,
-                project__memberships__role=ProjectMembership.RoleChoices.OWNER,
+            qs = self.queryset
+        else:
+            qs = (
+                self.queryset.filter(
+                    project__memberships__user=user,
+                    project__memberships__role=ProjectMembership.RoleChoices.OWNER,
+                )
+                .distinct()
             )
-            .distinct()
-        )
+
+        if project_param and project_param.isdigit():
+            qs = qs.filter(project_id=project_param)
+
+        return qs

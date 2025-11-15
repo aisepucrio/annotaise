@@ -1,59 +1,34 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import type { AxiosError } from "axios";
-import api from "@/app/fetcher";
+import { useState } from "react";
+import useSWR from "swr";
+import { useRouter } from "next/navigation";
 import Sidebar from "../components/sidebar";
 import PageHeader from "../components/page_description";
 import ProjectContainer from "./project_container";
 import FilterBar from "../components/filter_bar";
 import { Plus } from "lucide-react";
-
-type DashboardProject = {
-  id: number;
-  name: string;
-  labeling_users: number;
-  finished_labelings: number;
-  pending_labelings: number;
-  late_labelings: number;
-};
+import NewProjectModal from "./new_project_modal";
+import { createProject, fetchProjectDashboard, type ProjectPayload } from "./api";
 
 export default function Projects() {
-  const [projects, setProjects] = useState<DashboardProject[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const [modalOpen, setModalOpen] = useState(false);
+  const {
+    data: projects,
+    error,
+    isLoading,
+    mutate,
+  } = useSWR("projects-dashboard", fetchProjectDashboard);
 
-  useEffect(() => {
-    let isMounted = true;
+  const projectList = projects ?? [];
+  const loadError =
+    error && error instanceof Error ? error.message : error ? "Não foi possível carregar os projetos." : null;
 
-    async function loadProjects() {
-      try {
-        const { data } = await api.get<DashboardProject[]>("/projects/dashboard/");
-        if (isMounted) {
-          setProjects(data);
-          setError(null);
-        }
-      } catch (err) {
-        const message =
-          (err as AxiosError<{ detail?: string }>)?.response?.data?.detail ??
-          "Não foi possível carregar os projetos.";
-        if (isMounted) {
-          setError(message);
-          setProjects([]);
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    }
-
-    loadProjects();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const handleCreateProject = async (payload: ProjectPayload) => {
+    await createProject(payload);
+    await mutate();
+  };
 
   return (
     <div className="bg-gray-300 min-h-screen">
@@ -63,21 +38,28 @@ export default function Projects() {
         
         <div className="flex flex-nowrap items-center mt-5">
           <FilterBar/>
-          <button className="ml-auto w-35 mr-6
+          <button
+            type="button"
+            onClick={() => setModalOpen(true)}
+            className="ml-auto w-35 mr-6
             flex flex-nowrap items-center gap-2 rounded-lg bg-blue-900
             hover:bg-blue-800 text-white px-4 py-2
             shadow-md text-sm transition-colors cursor-pointer
-            
-          "><Plus size={16} strokeWidth={1.75} className="opacity-90" /> Novo Projeto</button>
+          "
+          >
+            <Plus size={16} strokeWidth={1.75} className="opacity-90" /> Novo Projeto
+          </button>
         </div>
         <div className="ml-5 mr-5 mt-5">
-          {loading ? (
+          {isLoading ? (
             <p className="text-sm text-gray-500">Carregando projetos...</p>
-          ) : error ? (
-            <p className="text-sm text-red-600">{error}</p>
+          ) : loadError ? (
+            <p className="text-sm text-red-600">{loadError}</p>
+          ) : projectList.length === 0 ? (
+            <p className="text-sm text-gray-500">Nenhum projeto encontrado.</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
-              {projects.map((project) => (
+              {projectList.map((project) => (
                 <ProjectContainer
                   key={project.id}
                   title={project.name}
@@ -85,12 +67,18 @@ export default function Projects() {
                   labelings_done={project.finished_labelings}
                   labelings_pending={project.pending_labelings}
                   labelings_late={project.late_labelings}
+                  onManage={() => router.push(`/projects/${project.id}`)}
                 />
               ))}
             </div>
           )}
         </div>
       </div>
+      <NewProjectModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSubmit={handleCreateProject}
+      />
     </div>
   );
 }
