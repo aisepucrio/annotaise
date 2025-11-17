@@ -3,6 +3,7 @@ from django.utils import timezone
 from django.conf import settings
 from django.core.validators import MinValueValidator
 
+
 class Labeling(models.Model):
     class Status(models.TextChoices):
         DRAFT = "draft", "Rascunho"

@@ -252,7 +252,7 @@ export default function ProjectDetailsPage() {
                   type="button"
                   onClick={handleDeleteProject}
                   disabled={deleteLoading}
-                  className="rounded-lg border border-red-200 px-4 py-2 text-sm text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="rounded-lg border border-red-200 px-4 py-2 text-sm text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
                 >
                   {deleteLoading ? "Deletando..." : "Excluir projeto"}
                 </button>
@@ -260,7 +260,7 @@ export default function ProjectDetailsPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="rounded-lg bg-blue-900 px-5 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="rounded-lg bg-blue-900 px-5 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
                 >
                   {isSubmitting ? "Salvando..." : "Salvar alterações"}
                 </button>
@@ -330,7 +330,7 @@ export default function ProjectDetailsPage() {
                           type="button"
                           onClick={() => handleRemoveMember(membership)}
                           disabled={isCurrentUser}
-                          className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                          className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
                         >
                           Remover
                         </button>
@@ -373,7 +373,7 @@ export default function ProjectDetailsPage() {
                   <button
                     type="submit"
                     disabled={!newMemberId}
-                    className="rounded-lg bg-blue-900 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="rounded-lg bg-blue-900 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
                   >
                     Adicionar membro
                   </button>

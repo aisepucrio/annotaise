@@ -33,4 +33,5 @@ urlpatterns = [
     path("", include("user.urls")),
     path("", include("project.urls")),
     path("", include("labeling.urls")),
+    path("", include("item.urls")),
 ]

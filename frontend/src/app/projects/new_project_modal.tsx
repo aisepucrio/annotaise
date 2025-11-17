@@ -135,7 +135,7 @@ export default function NewProjectModal({ open, onClose, onSubmit }: NewProjectM
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
+              className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 cursor-pointer"
               disabled={submitting}
             >
               Cancelar
@@ -143,7 +143,7 @@ export default function NewProjectModal({ open, onClose, onSubmit }: NewProjectM
             <button
               type="submit"
               disabled={submitting}
-              className="rounded-lg bg-blue-900 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-lg bg-blue-900 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
             >
               {submitting ? "Salvando..." : "Criar projeto"}
             </button>

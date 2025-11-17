@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
 from project.models import Project
 from django.shortcuts import get_object_or_404
+from rest_framework.decorators import action
 
 class LabelingViewSet(viewsets.ModelViewSet):
     serializer_class = LabelingSerializer
