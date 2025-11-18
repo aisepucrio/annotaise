@@ -1,8 +1,9 @@
 from .views import LabelingViewSet
 from rest_framework.routers import DefaultRouter
-from .views import ProjectMembershipViewSet
+from .views import ProjectMembershipViewSet, CreateReadLabelingStructureView
+from django.urls import path
 
-urlpatterns = []
+urlpatterns = [path('labelings/<int:labeling_id>/structure',CreateReadLabelingStructureView.as_view(),name='labeling-structure')]
 
 router = DefaultRouter()
 

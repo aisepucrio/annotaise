@@ -40,56 +40,31 @@ class LabelingSectionSerializerTest(BaseSerializerTest):
         serializer = LabelingSectionSerializer(self.section)
         self.assertEqual(serializer.data['title'], "Test Section")
         self.assertEqual(serializer.data['order'], 1)
-
-    def test_deserialization_success(self):
-        payload = {
-            "id": 999,
-            "labeling": self.labeling.id,
-            "title": "New Section",
-            "order": 2
-        }
-        serializer = LabelingSectionSerializer(data=payload)
-        self.assertTrue(serializer.is_valid(), serializer.errors)
-        obj = serializer.save()
-        self.assertNotEqual(obj.id, 999)
-
-    def test_deserialization_failure(self):
-        bad_payload = {
-            # labeling is required
-            "title": "Test"
-        }
-        serializer = LabelingSectionSerializer(data=bad_payload)
-        self.assertFalse(serializer.is_valid())
-        self.assertIn("labeling", serializer.errors)
+        self.assertEqual(len(serializer.data["elements"]), 1)
+        self.assertEqual(serializer.data["elements"][0]["text"], "Test Question")
 
 class LabelingElementSerializerTest(BaseSerializerTest):
+    def setUp(self):
+        super().setUp()
+        self.choice = MultipleChoiceItem.objects.create(
+            labeling_element=self.element,
+            text="Choice A",
+            value=True,
+            order=1
+        )
+        self.range = QuestionRange.objects.create(
+            labeling_element=self.element,
+            start=0,
+            end=10,
+            step=1
+        )
+
     def test_serialization_success(self):
         serializer = LabelingElementSerializer(self.element)
         self.assertEqual(serializer.data['text'], "Test Question")
         self.assertEqual(serializer.data['question_type'], "text")
-
-    def test_deserialization_success(self):
-        payload = {
-            "id": 999,
-            "labeling_section": self.section.id,
-            "text": "New Question",
-            "question_type": "text",
-            "order": 2,
-            "required": False
-        }
-        serializer = LabelingElementSerializer(data=payload)
-        self.assertTrue(serializer.is_valid(), serializer.errors)
-        obj = serializer.save()
-        self.assertNotEqual(obj.id, 999)
-
-    def test_deserialization_failure(self):
-        bad_payload = {
-            # labeling_section is required
-            "text": "Test"
-        }
-        serializer = LabelingElementSerializer(data=bad_payload)
-        self.assertFalse(serializer.is_valid())
-        self.assertIn("labeling_section", serializer.errors)
+        self.assertEqual(serializer.data['multiple_choice_items'][0]['text'], "Choice A")
+        self.assertEqual(serializer.data['question_range']['start'], 0)
 
 class MultipleChoiceItemSerializerTest(BaseSerializerTest):
     def setUp(self):
@@ -107,32 +82,10 @@ class MultipleChoiceItemSerializerTest(BaseSerializerTest):
         self.assertEqual(serializer.data['value'], True)
         self.assertEqual(serializer.data['order'], 1)
 
-    def test_deserialization_success(self):
-        payload = {
-            "id": 999,
-            "labeling_element": self.element.id,
-            "text": "New Choice",
-            "value": False,
-            "order": 2
-        }
-        serializer = MultipleChoiceItemSerializer(data=payload)
-        self.assertTrue(serializer.is_valid(), serializer.errors)
-        obj = serializer.save()
-        self.assertNotEqual(obj.id, 999)
-
-    def test_deserialization_failure(self):
-        bad_payload = {
-            # labeling_element is required
-            "text": "Test Choice"
-        }
-        serializer = MultipleChoiceItemSerializer(data=bad_payload)
-        self.assertFalse(serializer.is_valid())
-        self.assertIn("labeling_element", serializer.errors)
-
 class QuestionRangeSerializerTest(BaseSerializerTest):
     def setUp(self):
         super().setUp()
-        # criado um segundo labeling element para uso nos testes de desserialização
+        # segundo elemento para confirmar que a faixa pertence ao elemento esperado
         self.element2 = LabelingElement.objects.create(
             labeling_section=self.section,
             text="Another Question",
@@ -151,29 +104,6 @@ class QuestionRangeSerializerTest(BaseSerializerTest):
         self.assertEqual(serializer.data['start'], 0)
         self.assertEqual(serializer.data['end'], 10)
         self.assertEqual(serializer.data['step'], 1)
- 
-    def test_deserialization_success(self):
-        payload = {
-            "id": 999,
-            # usa o segundo elemento criado para testar desserialização em um elemento diferente
-            "labeling_element": self.element2.id,
-            "start": 1,
-            "end": 5,
-            "step": 0.5
-        }
-        serializer = QuestionRangeSerializer(data=payload)
-        self.assertTrue(serializer.is_valid(), serializer.errors)
-        obj = serializer.save()
-        self.assertNotEqual(obj.id, 999)
-
-    def test_deserialization_failure(self):
-        bad_payload = {
-            "labeling_element": self.element.id,
-            "start": 10,
-            "end": 5  
-        }
-        serializer = QuestionRangeSerializer(data=bad_payload)
-        self.assertFalse(serializer.is_valid())
 
 class LabelingMembershipSerializerTest(BaseSerializerTest):
     def setUp(self):
@@ -489,4 +419,245 @@ class LabelingMembershipViewSetTest(TestCase):
             LabelingMembership.objects.filter(
                 labeling=self.labeling_one, user=self.project_member
             ).exists()
+        )
+
+
+class LabelingStructureViewTest(TestCase):
+    def setUp(self):
+        User = get_user_model()
+        self.user = User.objects.create_user(
+            username="structure_owner", password="pass123", email="owner@example.com"
+        )
+        self.project = Project.objects.create(
+            name="Structure Project",
+            description="For structure tests",
+            created_by=self.user,
+        )
+        ProjectMembership.objects.create(
+            project=self.project,
+            user=self.user,
+            role=ProjectMembership.RoleChoices.OWNER,
+        )
+        self.labeling = Labeling.objects.create(
+            project=self.project,
+            title="Structured Labeling",
+            created_by=self.user,
+        )
+        LabelingMembership.objects.create(
+            labeling=self.labeling,
+            user=self.user,
+            role=LabelingMembership.Role.OWNER,
+        )
+
+        self.client = APIClient()
+        self.client.force_authenticate(self.user)
+        self.structure_url = reverse("labeling-structure", args=[self.labeling.id])
+
+        self.valid_payload = {
+            "sections": [
+                {
+                    "title": "Informações gerais",
+                    "order": 1,
+                    "elements": [
+                        {
+                            "order": 1,
+                            "text": "Qual é o seu nome?",
+                            "required": True,
+                            "question_type": "text",
+                            "column_name": "nome",
+                            "multiple_choice_items": [],
+                            "question_range": None,
+                        },
+                        {
+                            "order": 2,
+                            "text": "Qual sua idade?",
+                            "required": True,
+                            "question_type": "number",
+                            "column_name": "idade",
+                            "multiple_choice_items": [],
+                            "question_range": {
+                                "start": 0,
+                                "end": 120,
+                                "step": 1,
+                            },
+                        },
+                    ],
+                },
+                {
+                    "title": "Preferências",
+                    "order": 2,
+                    "elements": [
+                        {
+                            "order": 1,
+                            "text": "Qual seu esporte favorito?",
+                            "required": False,
+                            "question_type": "multiple_choice",
+                            "column_name": "esporte",
+                            "multiple_choice_items": [
+                                {
+                                    "text": "Futebol",
+                                    "value": True,
+                                    "order": 1,
+                                },
+                                {
+                                    "text": "Basquete",
+                                    "value": False,
+                                    "order": 2,
+                                },
+                                {
+                                    "text": "Natação",
+                                    "value": False,
+                                    "order": 3,
+                                },
+                            ],
+                            "question_range": None,
+                        },
+                        {
+                            "order": 2,
+                            "text": "Quantas horas dorme por noite?",
+                            "required": False,
+                            "question_type": "number",
+                            "column_name": "sono",
+                            "multiple_choice_items": [],
+                            "question_range": {
+                                "start": 0,
+                                "end": 24,
+                                "step": 1,
+                            },
+                        },
+                    ],
+                },
+            ]
+        }
+
+    def _persist_structure(self, payload):
+        for section_data in payload["sections"]:
+            section = LabelingSection.objects.create(
+                labeling=self.labeling,
+                title=section_data["title"],
+                order=section_data["order"],
+            )
+            for element_data in section_data.get("elements", []):
+                element = LabelingElement.objects.create(
+                    labeling_section=section,
+                    order=element_data["order"],
+                    text=element_data["text"],
+                    required=element_data.get("required", False),
+                    question_type=element_data["question_type"],
+                    column_name=element_data.get("column_name", ""),
+                )
+                for item_data in element_data.get("multiple_choice_items", []):
+                    MultipleChoiceItem.objects.create(
+                        labeling_element=element,
+                        text=item_data["text"],
+                        value=item_data["value"],
+                        order=item_data["order"],
+                    )
+
+                question_range_data = element_data.get("question_range")
+                if question_range_data is not None:
+                    QuestionRange.objects.create(
+                        labeling_element=element,
+                        start=question_range_data["start"],
+                        end=question_range_data["end"],
+                        step=question_range_data["step"],
+                    )
+
+    def _simplify_structure(self, sections):
+        simplified = []
+        for section in sections:
+            elements = []
+            for element in section.get("elements", []):
+                question_range = element.get("question_range")
+                elements.append(
+                    {
+                        "order": element["order"],
+                        "text": element["text"],
+                        "required": element.get("required", False),
+                        "question_type": element["question_type"],
+                        "column_name": element.get("column_name", ""),
+                        "multiple_choice_items": [
+                            {
+                                "text": item["text"],
+                                "value": item["value"],
+                                "order": item["order"],
+                            }
+                            for item in element.get("multiple_choice_items", [])
+                        ],
+                        "question_range": None
+                        if question_range is None
+                        else {
+                            "start": question_range["start"],
+                            "end": question_range["end"],
+                            "step": question_range["step"],
+                        },
+                    }
+                )
+
+            simplified.append(
+                {
+                    "title": section["title"],
+                    "order": section["order"],
+                    "elements": elements,
+                }
+            )
+        return simplified
+
+    def test_get_returns_labeling_structure(self):
+        self._persist_structure(self.valid_payload)
+
+        response = self.client.get(self.structure_url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        expected_structure = self._simplify_structure(self.valid_payload["sections"])
+        self.assertEqual(self._simplify_structure(response.data), expected_structure)
+
+    def test_put_replaces_structure_with_payload(self):
+        old_section = LabelingSection.objects.create(
+            labeling=self.labeling, title="Old Section", order=10
+        )
+        LabelingElement.objects.create(
+            labeling_section=old_section,
+            order=1,
+            text="Legacy question",
+            required=False,
+            question_type=LabelingElement.QuestionType.TEXT,
+            column_name="legacy",
+        )
+
+        response = self.client.put(
+            self.structure_url, self.valid_payload, format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(
+            LabelingSection.objects.filter(id=old_section.id).exists(),
+            "Existing sections should be replaced before saving the new structure.",
+        )
+        self.assertEqual(
+            LabelingSection.objects.filter(labeling=self.labeling).count(), 2
+        )
+        self.assertEqual(
+            LabelingElement.objects.filter(labeling_section__labeling=self.labeling).count(),
+            4,
+        )
+        self.assertEqual(
+            MultipleChoiceItem.objects.filter(
+                labeling_element__labeling_section__labeling=self.labeling
+            ).count(),
+            3,
+        )
+        self.assertEqual(
+            QuestionRange.objects.filter(
+                labeling_element__labeling_section__labeling=self.labeling
+            ).count(),
+            2,
+        )
+
+        expected_structure = self._simplify_structure(self.valid_payload["sections"])
+        self.assertEqual(self._simplify_structure(response.data), expected_structure)
+
+        persisted_structure = self.client.get(self.structure_url).data
+        self.assertEqual(
+            self._simplify_structure(persisted_structure), expected_structure
         )

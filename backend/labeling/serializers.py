@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Labeling, LabelingSection, LabelingElement, MultipleChoiceItem, QuestionRange, LabelingMembership
+from django.db import transaction
 
 
 class LabelingSerializer(serializers.ModelSerializer):
@@ -17,29 +18,40 @@ class LabelingSerializer(serializers.ModelSerializer):
         
         return super().update(instance, validated_data)
       
-class LabelingSectionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = LabelingSection
-        fields = ['id', 'labeling', 'title', 'order']
-        read_only_fields = ['id']
-
-class LabelingElementSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = LabelingElement
-        fields = ['id', 'labeling_section', 'order', 'text', 'required', 'question_type', 'column_name']
-        read_only_fields = ['id']
-
 class MultipleChoiceItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = MultipleChoiceItem
-        fields = ['id', 'labeling_element', 'text', 'value', 'order']
-        read_only_fields = ['id']
+        fields = ["id", "text", "value", "order"]
 
 class QuestionRangeSerializer(serializers.ModelSerializer):
     class Meta:
         model = QuestionRange
-        fields = ['id', 'labeling_element', 'start', 'end', 'step']
-        read_only_fields = ['id']
+        fields = ["id", "start", "end", "step"]  # idem
+
+class LabelingElementSerializer(serializers.ModelSerializer):
+    multiple_choice_items = MultipleChoiceItemSerializer(many=True, read_only=True)
+    question_range = QuestionRangeSerializer(read_only=True)
+
+    class Meta:
+        model = LabelingElement
+        fields = [
+            "id",
+            "order",
+            "text",
+            "required",
+            "question_type",
+            "column_name",
+            "multiple_choice_items",
+            "question_range",
+        ]
+
+class LabelingSectionSerializer(serializers.ModelSerializer):
+    elements = LabelingElementSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = LabelingSection
+        fields = ["id", "title", "order", "elements"]
+        
 
 class LabelingMembershipSerializer(serializers.ModelSerializer):
     class Meta:
@@ -62,3 +74,123 @@ class LabelingMembershipSerializer(serializers.ModelSerializer):
         
 
         return super().update(instance, validated_data)
+
+
+# ---------- SERIALIZERS DE ESCRITA ----------
+
+class MultipleChoiceItemWriteSerializer(serializers.ModelSerializer):
+    """
+    Usado dentro do elemento. Não expõe labeling_element, pois vem do pai.
+    """
+    class Meta:
+        model = MultipleChoiceItem
+        fields = ['id', 'text', 'value', 'order']
+        read_only_fields = ['id']
+
+
+class QuestionRangeWriteSerializer(serializers.ModelSerializer):
+    """
+    Usado dentro do elemento. Não expõe labeling_element, pois vem do pai.
+    """
+    class Meta:
+        model = QuestionRange
+        fields = ['id', 'start', 'end', 'step']
+        read_only_fields = ['id']
+    def validate(self, attrs):
+        if(attrs['start'] >= attrs['end']):
+            raise serializers.ValidationError({'detail':'o campo start deve ser menor que end'})
+        return super().validate(attrs)
+
+
+# ---------- ELEMENTO (pergunta / texto / etc) ----------
+
+class LabelingElementWriteSerializer(serializers.ModelSerializer):
+    """
+    Elemento com os filhos (multiple_choice_items e question_range).
+    """
+    multiple_choice_items = MultipleChoiceItemWriteSerializer(
+        many=True, required=False
+    )
+    question_range = QuestionRangeWriteSerializer(
+        required=False, allow_null=True
+    )
+
+    class Meta:
+        model = LabelingElement
+        
+        fields = [
+            'id',
+            'order',
+            'text',
+            'required',
+            'question_type',
+            'column_name',
+            'multiple_choice_items',
+            'question_range',
+        ]
+        read_only_fields = ['id']
+
+
+# ---------- SEÇÃO ----------
+
+class LabelingSectionWriteSerializer(serializers.ModelSerializer):
+    """
+    Seção como lista de elementos.
+    """
+    elements = LabelingElementWriteSerializer(many=True)
+
+    class Meta:
+        model = LabelingSection
+        fields = ['id', 'title', 'order', 'elements']
+        read_only_fields = ['id']
+
+
+# ---------- LABELING FORM COMPLETO ----------
+
+class LabelingSectionsBulkCreateSerializer(serializers.Serializer):
+    """
+    Recebe somente as sections e cria tudo em um Labeling EXISTENTE.
+    O labeling vem de self.context['labeling'], passado pela View.
+    """
+    sections = LabelingSectionWriteSerializer(many=True)
+
+    @transaction.atomic
+    def create(self, validated_data):
+        labeling = self.context['labeling']   # deve estar setado na view
+        sections_data = validated_data.get('sections', [])
+
+        created_sections = []
+
+        for section_data in sections_data:
+            elements_data = section_data.pop('elements', [])
+            section = LabelingSection.objects.create(
+                labeling=labeling,
+                **section_data,
+            )
+            created_sections.append(section)
+
+            for element_data in elements_data:
+                mc_items_data = element_data.pop('multiple_choice_items', [])
+                range_data = element_data.pop('question_range', None)
+
+                element = LabelingElement.objects.create(
+                    labeling_section=section,
+                    **element_data,
+                )
+
+                for item_data in mc_items_data:
+                    MultipleChoiceItem.objects.create(
+                        labeling_element=element,
+                        **item_data,
+                    )
+
+                if range_data is not None:
+                    QuestionRange.objects.create(
+                        labeling_element=element,
+                        **range_data,
+                    )
+        return {
+            "sections": created_sections,
+        }
+
+#TODO validações individuais de cada serializer, pra não cair em internal server error

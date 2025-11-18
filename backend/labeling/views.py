@@ -1,13 +1,16 @@
 from django.shortcuts import render
 from rest_framework import viewsets, status
-from .models import Labeling, LabelingMembership
+from .models import Labeling, LabelingMembership, LabelingSection
 from project.models import ProjectMembership
-from .serializers import LabelingSerializer, LabelingMembershipSerializer
+from .serializers import LabelingSerializer, LabelingMembershipSerializer, LabelingSectionsBulkCreateSerializer, LabelingSectionSerializer
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
 from project.models import Project
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import action
+from rest_framework.views import APIView
+from django.db import transaction
+from drf_spectacular.utils import extend_schema
 
 class LabelingViewSet(viewsets.ModelViewSet):
     serializer_class = LabelingSerializer
@@ -134,3 +137,43 @@ class ProjectMembershipViewSet(viewsets.ModelViewSet):
             )
             .distinct()
         )
+
+class CreateReadLabelingStructureView(APIView):
+    
+    @extend_schema(
+        responses={200: [LabelingSectionSerializer]},      # resposta
+        examples=None)    
+    def get(self, request, labeling_id):
+        labeling = get_object_or_404(Labeling, id=labeling_id)
+        sections = LabelingSection.objects.filter(labeling=labeling)
+        out = LabelingSectionSerializer(sections, many=True).data
+        return Response(out, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        request=LabelingSectionsBulkCreateSerializer,         # corpo esperado
+        responses={200: [LabelingSectionSerializer]},      # resposta
+        examples=None)
+    @transaction.atomic # importante pra se der problema nao deletar o que ja existe
+    def put(self, request, labeling_id):
+        labeling = get_object_or_404(Labeling, id=labeling_id)
+
+        # Remove toda a estrutura atual
+        LabelingSection.objects.filter(labeling=labeling).delete()
+
+        # Serializa e valida as novas sections
+        serializer = LabelingSectionsBulkCreateSerializer(
+            data=request.data,
+            context={
+                'request': request,
+                'labeling': labeling,
+            }
+        )
+        serializer.is_valid(raise_exception=True)
+
+        result = serializer.save()
+        sections = result['sections']
+
+        out = LabelingSectionSerializer(sections, many=True).data
+
+        return Response(out, status=status.HTTP_200_OK)
+        

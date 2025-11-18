@@ -87,7 +87,7 @@ class LabelingElement(models.Model):
 
 class MultipleChoiceItem(models.Model):
     labeling_element = models.ForeignKey(
-        LabelingElement, on_delete=models.CASCADE, related_name="choices"
+        LabelingElement, on_delete=models.CASCADE, related_name="multiple_choice_items"
     )
     text = models.CharField(max_length=300)
     value = models.BooleanField(default=False)
@@ -107,7 +107,7 @@ class MultipleChoiceItem(models.Model):
 
 class QuestionRange(models.Model):
     labeling_element = models.OneToOneField(
-        LabelingElement, on_delete=models.CASCADE, related_name="range_cfg"
+        LabelingElement, on_delete=models.CASCADE, related_name="question_range"
     )
     start = models.FloatField()
     end = models.FloatField()
