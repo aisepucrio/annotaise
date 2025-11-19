@@ -1,9 +1,7 @@
 "use client";
-"use client";
 
 import { useEffect, useState } from "react";
-import { api } from "../../../utils";
-import { redirect } from "next/dist/server/api-utils";
+import api from "../fetcher";
 
 type User = {
   id: number;

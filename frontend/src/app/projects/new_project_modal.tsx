@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import type { ProjectPayload, ProjectStatus } from "./api";
+import type { ProjectPayload, ProjectStatus } from "../../lib/services/project_service";
 
 type NewProjectModalProps = {
   open: boolean;

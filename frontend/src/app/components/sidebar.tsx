@@ -3,7 +3,7 @@ import Image from "next/image"; // mantem para o LOGO
 import SidebarItem from "./sidebar_item";
 import { Home, Users, FolderKanban, Tags, Settings, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { AuthActions } from "../../../utils";
+import { AuthActions } from "../../../authClient";
 
 export default function Sidebar() {
   const router = useRouter();

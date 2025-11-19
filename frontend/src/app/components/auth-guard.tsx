@@ -3,7 +3,9 @@
 import { PropsWithChildren, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import type { AxiosError, InternalAxiosRequestConfig } from "axios";
-import { api, AuthActions } from "../../../utils";
+import type { AxiosRequestHeaders } from "axios";
+import { api } from "../../lib/api";
+import { AuthActions } from "../../../authClient";
 
 const PUBLIC_PATH = "/login";
 
@@ -93,8 +95,9 @@ export default function AuthGuard({ children }: PropsWithChildren) {
           }
 
           storeToken(newAccess, "access");
-          originalRequest.headers = originalRequest.headers ?? {};
-          (originalRequest.headers as any).Authorization = `Bearer ${newAccess}`;
+          const headers: AxiosRequestHeaders = originalRequest.headers ?? {};
+          headers.Authorization = `Bearer ${newAccess}`;
+          originalRequest.headers = headers;
 
           return api(originalRequest);
         } catch (refreshError) {

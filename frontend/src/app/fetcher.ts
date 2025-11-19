@@ -1,9 +1,10 @@
-import axios, {
+import {
   AxiosError,
-  AxiosInstance,
   InternalAxiosRequestConfig,
+  AxiosRequestHeaders,
 } from "axios";
-import { AuthActions, api } from "../../utils";
+import { api } from "../lib/api";
+import { AuthActions } from "../../authClient";
 
 // Extrai utilitários
 const { handleJWTRefresh, storeToken, getToken } = AuthActions();
@@ -16,8 +17,9 @@ let queue: Array<(token: string | null) => void> = [];
 api.interceptors.request.use((config) => {
   const access = getToken("access");
   if (access) {
-    config.headers = config.headers ?? {};
-    (config.headers as any).Authorization = `Bearer ${access}`;
+    const headers: AxiosRequestHeaders = config.headers ?? {};
+    headers.Authorization = `Bearer ${access}`;
+    config.headers = headers;
   }
   return config;
 });
@@ -68,8 +70,9 @@ api.interceptors.response.use(
         queue = [];
 
         if (newAccess) {
-          original.headers = original.headers ?? {};
-          (original.headers as any).Authorization = `Bearer ${newAccess}`;
+          const headers: AxiosRequestHeaders = original.headers ?? {};
+          headers.Authorization = `Bearer ${newAccess}`;
+          original.headers = headers;
           return api(original); // refaz a request original
         } else {
           window.location.replace("/login");
@@ -92,16 +95,17 @@ api.interceptors.response.use(
           window.location.replace("/login");
           return reject(error);
         }
-        original.headers = original.headers ?? {};
-        (original.headers as any).Authorization = `Bearer ${newAccess}`;
+        const headers: AxiosRequestHeaders = original.headers ?? {};
+        headers.Authorization = `Bearer ${newAccess}`;
+        original.headers = headers;
         resolve(api(original));
       });
     });
   }
 );
 
-export const fetcher = async (url: string): Promise<any> => {
-  const { data } = await api.get(url);
+export const fetcher = async <T = unknown>(url: string): Promise<T> => {
+  const { data } = await api.get<T>(url);
   return data;
 };
 

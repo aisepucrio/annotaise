@@ -18,8 +18,8 @@ class Labeling(models.Model):
     )
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
-    start_date = models.DateField(null=True, blank=True)
-    final_date = models.DateField(null=True, blank=True)
+    start_date = models.DateField(default=timezone.now())
+    final_date = models.DateField(null=False, blank=False)
 
     items_per_user = models.PositiveIntegerField(null=True, blank=True,)
 

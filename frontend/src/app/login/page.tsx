@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { AuthActions } from "../../../utils";
+import { AuthActions } from "../../../authClient";
 import { EyeIcon, Mail } from "lucide-react";
 type FormData = {
   email: string;
@@ -147,7 +147,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={isLoading}
-          className="mt-2 w-full flex items-center justify-center gap-2 rounded-lg bg-blue-900 hover:bg-blue-800 text-white px-4 py-3 shadow-md text-sm transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+          className="mt-2 w-full flex items-center justify-center gap-2 rounded-lg bg-blue-900 hover:bg-blue-800 text-white px-4 py-3 shadow-md text-sm transition-colors disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
         >
           {isLoading ? "Entrando..." : "Login"}
         </button>

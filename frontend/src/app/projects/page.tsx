@@ -9,7 +9,7 @@ import ProjectContainer from "./project_container";
 import FilterBar from "../components/filter_bar";
 import { Plus } from "lucide-react";
 import NewProjectModal from "./new_project_modal";
-import { createProject, fetchProjectDashboard, type ProjectPayload } from "./api";
+import { createProject, fetchProjectDashboard, type ProjectPayload } from "../../lib/services/project_service";
 
 export default function Projects() {
   const router = useRouter();

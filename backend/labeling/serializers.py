@@ -6,7 +6,7 @@ from django.db import transaction
 class LabelingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Labeling
-        fields = ['id', 'project', 'title', 'created_at','status','column_names']
+        fields = ['id', 'project', 'title', 'created_at','status','column_names','start_date','final_date']
         read_only_fields = ['id', 'created_at','created_by','column_names']
 
     def update (self, instance, validated_data):
@@ -193,4 +193,14 @@ class LabelingSectionsBulkCreateSerializer(serializers.Serializer):
             "sections": created_sections,
         }
 
+class LabelingDashboardSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+
+    labeling_name = serializers.CharField()
+    project_name = serializers.CharField()
+    total_days = serializers.IntegerField()
+    days_passed = serializers.IntegerField()
+
+    items_done = serializers.IntegerField()
+    total_items = serializers.IntegerField()
 #TODO validações individuais de cada serializer, pra não cair em internal server error

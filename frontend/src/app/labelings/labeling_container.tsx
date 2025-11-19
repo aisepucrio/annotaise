@@ -94,7 +94,7 @@ type ProgressBarProps = {
 function ProgressBar({ progress_label, late_label, passed, total }: ProgressBarProps) {
   const percent = total > 0 ? Math.round((passed / total) * 100) : 0;
   const bgColor = total >= passed ? "bg-blue-300" : "bg-red-300";
-  const textColor = total >= passed ? "text-blue-600" : "text-red-600";
+  const textColor = total >= passed ? "text-gray-800" : "text-gray-800";//se for mudar a cor pra cada barra é aqui
 
   return (
     <div className="w-full min-w-0 -ml-3">

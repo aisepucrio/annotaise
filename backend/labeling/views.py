@@ -2,7 +2,8 @@ from django.shortcuts import render
 from rest_framework import viewsets, status
 from .models import Labeling, LabelingMembership, LabelingSection
 from project.models import ProjectMembership
-from .serializers import LabelingSerializer, LabelingMembershipSerializer, LabelingSectionsBulkCreateSerializer, LabelingSectionSerializer
+from .serializers import (LabelingSerializer, LabelingMembershipSerializer,
+LabelingSectionsBulkCreateSerializer, LabelingSectionSerializer, LabelingDashboardSerializer)
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
 from project.models import Project
@@ -10,12 +11,50 @@ from django.shortcuts import get_object_or_404
 from rest_framework.decorators import action
 from rest_framework.views import APIView
 from django.db import transaction
+from django.db.models import Count, Q
 from drf_spectacular.utils import extend_schema
+from datetime import datetime, timedelta
 
 class LabelingViewSet(viewsets.ModelViewSet):
-    serializer_class = LabelingSerializer
     queryset = Labeling.objects.all()
     http_method_names = ['get', 'post', 'patch', 'delete']
+
+    def get_serializer_class(self):
+        if self.action == 'dashboard':
+            return LabelingDashboardSerializer
+        else: return LabelingSerializer
+
+    @action(methods=['get'], detail=False, url_path='dashboard')
+    def dashboard(self, request):
+        today = datetime.now().date()
+        output = []
+        qs = (
+            self.get_queryset()
+            .select_related('project')
+            .annotate(
+                total_labelings=Count('items', distinct=True),
+                done_labelings=Count(
+                    'items',
+                    filter=Q(items__status='finished'),
+                    distinct=True),
+            )
+        )
+        for element in qs:
+            output.append({
+                "id" : element.id,
+                "labeling_name" : element.title,
+                "project_name" : element.project.name,
+                "total_days" : (element.final_date - element.start_date).days,
+                "days_passed" : (today - element.start_date).days,
+                "items_done" : element.done_labelings,
+                "total_items" : element.total_labelings,
+            })
+        ser = self.get_serializer_class() 
+        ser = ser(data=output,many=True)   
+        if ser.is_valid():
+            return Response(ser.data, status=200)
+        else:
+            return Response('Erro ao carregar labelings dashboard', status=400)
 
     def get_queryset(self):
         user = getattr(self.request, "user", None)

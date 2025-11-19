@@ -18,7 +18,7 @@ import {
   type ProjectPayload,
   updateProject,
   updateProjectMembership,
-} from "../api";
+} from "../../../lib/services/project_service";
 import useCurrent from "@/app/hooks/current_user_hook";
 
 type Params = {

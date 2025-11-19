@@ -7,23 +7,56 @@ import FilterBar from "../components/filter_bar";
 import LabelingContainer from "./labeling_container";
 import { Plus } from "lucide-react";
 import UploadCsvModal from "./upload_csv_modal";
-import { useRouter } from "next/navigation";
+import useSWR from "swr";
+import axios from "axios";
+import {
+  createLabeling,
+  fetchLabelingDashboard,
+  importLabelingItemsCsv,
+} from "@/lib/services/labeling_service";
 
-const labelings = [
-  { id: 1, title: "Sentimento em Reviews", project: "Projeto A", days_passed: 7, days_total: 10, labelings_done: 120, labelings_pending: 30 },
-  { id: 2, title: "Classificação de Imagens", project: "Projeto B", days_passed: 12, days_total: 10, labelings_done: 80, labelings_pending: 40 },
-  { id: 3, title: "Extração de Entidades", project: "Projeto C", days_passed: 3, days_total: 15, labelings_done: 15, labelings_pending: 5 },
-];
+type UploadPayload = {
+  file: File;
+  title: string;
+  projectId: number;
+  startDate?: string;
+  finalDate?: string;
+};
 
 export default function LabelingsPage() {
   const [open, setOpen] = useState(false);
-  const router = useRouter();
+  const {
+    data: labelings,
+    error,
+    isLoading,
+    mutate,
+  } = useSWR("labelings-dashboard", fetchLabelingDashboard);
 
-  function handleConfirm(columns: string[]) {
-    // guarda as colunas para a próxima tela (mock de “upload feito”)
-    localStorage.setItem("labeling_csv_columns", JSON.stringify(columns));
-    setOpen(false);
-    router.push("/labelings/create");
+  const labelingsList = labelings ?? [];
+  const loadError =
+    error && error instanceof Error ? error.message : error ? "Não foi possível carregar as rotulações." : null;
+
+  async function handleConfirm({ file, title, projectId, startDate, finalDate }: UploadPayload) {
+    try {
+      const labeling = await createLabeling({
+        title,
+        project: projectId,
+        start_date: startDate || undefined,
+        final_date: finalDate || undefined,
+      });
+      await importLabelingItemsCsv(labeling.id, file);
+      setOpen(false);
+      await mutate();
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        const detail =
+          (err.response?.data as { detail?: string })?.detail ||
+          err.message ||
+          "Não foi possível criar a rotulação.";
+        throw new Error(detail);
+      }
+      throw err;
+    }
   }
 
   return (
@@ -48,16 +81,20 @@ export default function LabelingsPage() {
           </button>
         </div>
 
+        {loadError && (
+          <div className="ml-5 mr-5 mt-4 text-sm text-red-600">{loadError}</div>
+        )}
+
         <div className="ml-5 mr-5 mt-5 grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
-          {labelings.map((l) => (
+          {labelingsList.map((l) => (
             <LabelingContainer
               key={l.id}
-              title={l.title}
-              project={l.project}
+              title={l.labeling_name}
+              project={l.project_name}
               days_passed={l.days_passed}
-              days_total={l.days_total}
-              labelings_done={l.labelings_done}
-              labelings_pending={l.labelings_pending}
+              days_total={l.total_days}
+              labelings_done={l.items_done}
+              labelings_pending={l.total_items}
             />
           ))}
         </div>
