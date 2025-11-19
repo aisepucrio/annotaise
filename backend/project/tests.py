@@ -3,6 +3,7 @@ from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
+from django.utils import timezone
 
 from .models import Project, ProjectMembership
 from .serializers import ProjectSerializer, ProjectMembershipSerializer
@@ -20,7 +21,9 @@ class BaseSerializerTest(TestCase):
         self.labeling = Labeling.objects.create(
             project=self.project,
             title="Test Labeling",
-            created_by=self.user
+            created_by=self.user,
+            start_date=timezone.now().date(),
+            final_date=timezone.now().date(),
         )
         self.section = LabelingSection.objects.create(
             labeling=self.labeling,

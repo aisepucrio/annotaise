@@ -6,6 +6,7 @@ from .serializers import LabelingSerializer, LabelingSectionSerializer, Labeling
 from .models import Labeling, LabelingSection, LabelingElement, MultipleChoiceItem, QuestionRange, LabelingMembership
 from project.models import Project, ProjectMembership
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 
 User = get_user_model()
 
@@ -21,7 +22,9 @@ class BaseSerializerTest(TestCase):
         self.labeling = Labeling.objects.create(
             project=self.project,
             title="Test Labeling",
-            created_by=self.user
+            created_by=self.user,
+            start_date=timezone.now().date(),
+            final_date=timezone.now().date(),
         )
         self.section = LabelingSection.objects.create(
             labeling=self.labeling,
@@ -153,6 +156,8 @@ class LabelingMembershipSerializerTest(BaseSerializerTest):
             project=self.project,
             title="Other Labeling",
             created_by=self.user,
+            start_date=timezone.now().date(),
+            final_date=timezone.now().date(),
         )
         serializer = LabelingMembershipSerializer(
             instance=self.membership,
@@ -207,6 +212,8 @@ class LabelingViewSetTest(TestCase):
             project=self.project,
             title="Owned Labeling",
             created_by=self.owner,
+            start_date=timezone.now().date(),
+            final_date=timezone.now().date(),
         )
         LabelingMembership.objects.create(
             labeling=self.labeling,
@@ -223,6 +230,8 @@ class LabelingViewSetTest(TestCase):
             project=self.other_project,
             title="Foreign Labeling",
             created_by=self.other_owner,
+            start_date=timezone.now().date(),
+            final_date=timezone.now().date(),
         )
         LabelingMembership.objects.create(
             labeling=self.foreign_labeling,
@@ -248,13 +257,13 @@ class LabelingViewSetTest(TestCase):
 
     def test_create_requires_project_owner(self):
         self.client.force_authenticate(self.viewer)
-        payload = {"title": "Blocked Labeling", "project": self.project.id}
+        payload = {"title": "Blocked Labeling", "project": self.project.id, "final_date":timezone.now().date()}
         response = self.client.post(self.list_url, payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_owner_can_create_labeling_and_becomes_owner_membership(self):
         self.client.force_authenticate(self.owner)
-        payload = {"title": "API Labeling", "project": self.project.id}
+        payload = {"title": "API Labeling", "project": self.project.id, "final_date":timezone.now().date()}
         response = self.client.post(self.list_url, payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         labeling_id = response.data["id"]
@@ -315,11 +324,15 @@ class LabelingMembershipViewSetTest(TestCase):
             project=self.project,
             title="Labeling One",
             created_by=self.owner,
+            start_date=timezone.now().date(),
+            final_date=timezone.now().date(),
         )
         self.labeling_two = Labeling.objects.create(
             project=self.project,
             title="Labeling Two",
             created_by=self.owner,
+            start_date=timezone.now().date(),
+            final_date=timezone.now().date(),
         )
 
         LabelingMembership.objects.create(
@@ -442,6 +455,8 @@ class LabelingStructureViewTest(TestCase):
             project=self.project,
             title="Structured Labeling",
             created_by=self.user,
+            start_date=timezone.now().date(),
+            final_date=timezone.now().date(),
         )
         LabelingMembership.objects.create(
             labeling=self.labeling,

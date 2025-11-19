@@ -19,6 +19,8 @@ class AnswerSerializerTest(TestCase):
             title="Test Labeling",
             created_by=self.user,
             project=self.project,
+            start_date=now().date(),
+            final_date=now().date(),
         )
         self.labeling_section = LabelingSection.objects.create(
             labeling=self.labeling,

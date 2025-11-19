@@ -4,13 +4,20 @@ from project.models import Project
 from labeling.models import Labeling
 from .models import Item
 from .serializers import ItemSerializer
+from django.utils import timezone
 
 class ItemSerializerTest(TestCase):
     def setUp(self):
         User = get_user_model()
         self.user = User.objects.create_user(username="testuser", password="pass")
         self.project = Project.objects.create(name="Test Project", created_by=self.user)
-        self.labeling = Labeling.objects.create(project=self.project, title="Test Labeling", created_by=self.user)
+        self.labeling = Labeling.objects.create(
+            project=self.project,
+            title="Test Labeling",
+            created_by=self.user,
+            start_date=timezone.now().date(),
+            final_date=timezone.now().date(),
+        )
         self.item = Item.objects.create(labeling=self.labeling, payload={"a": 1}, row_index=0)
 
     def test_serialization_success(self):
