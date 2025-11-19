@@ -19,7 +19,7 @@ export default function QuestionNumberEditor({ config, onChange }: Props) {
 
   return (
     <div className="grid grid-cols-3 gap-3">
-      <label className="flex flex-col text-xs text-blue-900">
+      {/* <label className="flex flex-col text-xs text-blue-900">
         Valor mínimo
         <input
           type="number"
@@ -36,7 +36,7 @@ export default function QuestionNumberEditor({ config, onChange }: Props) {
           value={max ?? ""}
           onChange={handleNumericChange("max")}
         />
-      </label>
+      </label>  acho que não precisamos desse campo...*/}
       
     </div>
   );

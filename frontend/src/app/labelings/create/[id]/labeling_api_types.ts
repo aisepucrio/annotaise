@@ -24,6 +24,7 @@ export type ElementDTO = {
   required?: boolean;
   question_type: QuestionTypeDTO;
   column_name?: string;
+  context_type?: string | null;
   multiple_choice_items?: MultipleChoiceItemDTO[];
   question_range?: QuestionRangeDTO | null;
 };

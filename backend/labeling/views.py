@@ -5,7 +5,7 @@ from project.models import ProjectMembership
 from .serializers import (LabelingSerializer, LabelingMembershipSerializer,
 LabelingSectionsBulkCreateSerializer, LabelingSectionSerializer, LabelingDashboardSerializer)
 from rest_framework.response import Response
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from project.models import Project
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import action
@@ -14,6 +14,7 @@ from django.db import transaction
 from django.db.models import Count, Q
 from drf_spectacular.utils import extend_schema
 from datetime import datetime, timedelta
+import json
 
 class LabelingViewSet(viewsets.ModelViewSet):
     queryset = Labeling.objects.all()
@@ -207,7 +208,12 @@ class CreateReadLabelingStructureView(APIView):
                 'labeling': labeling,
             }
         )
-        serializer.is_valid(raise_exception=True)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except ValidationError as exc:
+            print("Labeling structure validation errors:")
+            print(json.dumps(serializer.errors, ensure_ascii=False))
+            raise exc
 
         result = serializer.save()
         sections = result['sections']

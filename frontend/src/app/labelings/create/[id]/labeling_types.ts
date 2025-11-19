@@ -53,6 +53,7 @@ export type QuestionElement = {
   text?: string;
   question_type?: QuestionType;
   required?: boolean;
+  column_name?: string;
   config?: QuestionConfig;
 };
 

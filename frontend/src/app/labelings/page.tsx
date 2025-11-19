@@ -89,6 +89,7 @@ export default function LabelingsPage() {
           {labelingsList.map((l) => (
             <LabelingContainer
               key={l.id}
+              id={l.id}
               title={l.labeling_name}
               project={l.project_name}
               days_passed={l.days_passed}

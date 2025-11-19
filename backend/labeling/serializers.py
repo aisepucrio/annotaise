@@ -43,6 +43,7 @@ class LabelingElementSerializer(serializers.ModelSerializer):
             "column_name",
             "multiple_choice_items",
             "question_range",
+            "context_type",
         ]
 
 class LabelingSectionSerializer(serializers.ModelSerializer):
@@ -125,6 +126,7 @@ class LabelingElementWriteSerializer(serializers.ModelSerializer):
             'required',
             'question_type',
             'column_name',
+            'context_type',
             'multiple_choice_items',
             'question_range',
         ]

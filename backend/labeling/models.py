@@ -63,13 +63,20 @@ class LabelingElement(models.Model):
         RANGE = "range", "Faixa"
         CONTEXT = "context", "Contexto"
 
+    class ContextType(models.TextChoices):
+        TEXT = "text", "Texto"
+        NUMBER = "number", "Número"
+        DATE = "date", "Data"
+        CATEGORY = "category", "categoria"
+
     labeling_section = models.ForeignKey(
         LabelingSection, on_delete=models.CASCADE, related_name="elements"
     )
     order = models.PositiveIntegerField(default=1)
-    text = models.CharField(max_length=500)
+    text = models.CharField(max_length=500, blank=True)
     required = models.BooleanField(default=False)
     question_type = models.CharField(max_length=32, choices=QuestionType.choices)
+    context_type = models.CharField(max_length=32, choices=ContextType.choices, blank=True, null=True)
     column_name = models.CharField(max_length=200, blank=True)
 
     class Meta:

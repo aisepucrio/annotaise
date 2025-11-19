@@ -1,5 +1,5 @@
 import { Trash2 } from "lucide-react";
-import type { ContextElement } from "./labeling_types";
+import type { ContextElement, ContextType } from "./labeling_types";
 
 
 type ContextBlockProps = {
@@ -12,6 +12,13 @@ type ContextBlockProps = {
 export default function ContextBlock({ data, columns = [], onUpdate, onRemove }: ContextBlockProps) {
   const handleColumnChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     onUpdate({ column: e.target.value });
+  };
+  const handleTitleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    onUpdate({ title: e.target.value });
+  };
+  const handleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value as ContextType;
+    onUpdate({ contextType: value });
   };
   /*
   const handleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -37,7 +44,12 @@ export default function ContextBlock({ data, columns = [], onUpdate, onRemove }:
           <Trash2 size={18} />
         </button>
       </div>
-      <textarea placeholder="Descrição do contexto" className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:border-blue-500 w-full"></textarea>
+      <textarea
+        value={data.title ?? ""}
+        onChange={handleTitleChange}
+        placeholder="Descrição do contexto"
+        className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:border-blue-500 w-full"
+      ></textarea>
       
 
       {/* Campos de contexto */}
@@ -61,7 +73,7 @@ export default function ContextBlock({ data, columns = [], onUpdate, onRemove }:
         <select
           className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:border-blue-500"
           value={data.contextType ?? ""}
-          /*onChange={handleTypeChange}*/
+          onChange={handleTypeChange}
         >
           <option value="" disabled>
             Selecione um tipo

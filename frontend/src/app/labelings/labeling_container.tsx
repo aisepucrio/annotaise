@@ -1,6 +1,9 @@
 import { Tag } from "lucide-react";
+import { Pen } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 type LabelingContainerProps = {
+  id: number;
   title: string;
   project: string;
   days_passed: number;
@@ -10,6 +13,7 @@ type LabelingContainerProps = {
 };
 
 export default function LabelingContainer({
+  id,
   title,
   project,
   days_passed,
@@ -17,6 +21,13 @@ export default function LabelingContainer({
   labelings_pending,
   days_total,
 }: LabelingContainerProps) {
+
+  const router = useRouter();
+
+  function handleEditLabelingButton() {
+    router.push(`/labelings/create/${id}`);
+  }
+
   return (
     <div
       className="
@@ -57,13 +68,33 @@ export default function LabelingContainer({
         />
 
         {/* aviso + botão */}
-        <div className="flex items-center justify-center">
+        <div className="flex items-center justify-center gap-2">
           <LabelingButton />
+          <EditLabelingButton onClick={handleEditLabelingButton} />
         </div>
       </div>
     </div>
   );
 }
+
+function EditLabelingButton({ onClick }: { onClick?: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="
+        inline-flex items-center gap-2 rounded-lg px-10.5 py-2
+        bg-blue-800 text-white hover:bg-blue-700
+        transition-colors text-sm cursor-pointer justify-center
+      "
+      type="button"
+      aria-label="Abrir tarefa de rotulação"
+    >
+      <Pen size={20} strokeWidth={1.75} className="opacity-90" />
+      Editar
+    </button>
+  );
+}
+
 
 // TODO implementar a função onclick de rotular
 function LabelingButton({ onClick }: { onClick?: () => void }) {

@@ -1,11 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter, useParams } from "next/navigation";
+import axios from "axios";
 import Sidebar from "@/app/components/sidebar";
 import { ArrowLeft, Save } from "lucide-react";
-import { SectionData, ContextElement, QuestionElement, getDefaultQuestionConfig } from "./labeling_types";
+import {
+  SectionData,
+  ContextElement,
+  QuestionElement,
+  getDefaultQuestionConfig,
+} from "./labeling_types";
 import SectionForm from "./section_form";
+import { mapSectionsToDTO, mapSectionsFromDTO } from "./labeling_mappers";
+import {
+  fetchLabelingById,
+  fetchLabelingStructure,
+  saveLabelingStructure,
+  type LabelingStructureSection,
+} from "@/lib/services/labeling_create_service";
 
 const createContextElement = (order: number): ContextElement => ({
   id: crypto.randomUUID(),
@@ -43,19 +56,57 @@ const nextOrder = (section: SectionData): number => {
 
 export default function LabelingFormPage() {
   const router = useRouter();
+  const params = useParams<{ id: string }>();
+  const labelingId = useMemo(() => {
+    const parsed = Number(params?.id);
+    return Number.isFinite(parsed) ? parsed : NaN;
+  }, [params]);
+
   const [columns, setColumns] = useState<string[]>([]);
   const [sections, setSections] = useState<SectionData[]>([]);
+  const [labelingTitle, setLabelingTitle] = useState<string>("");
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingLabeling, setIsLoadingLabeling] = useState(true);
 
-  // carrega colunas do CSV (mock/real)
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("labeling_csv_columns");
-      const parsed = raw ? (JSON.parse(raw) as string[]) : [];
-      setColumns(Array.isArray(parsed) ? parsed : []);
-    } catch {
-      setColumns([]);
+    if (Number.isNaN(labelingId)) {
+      setLoadError("ID da rotulação inválido.");
+      setIsLoadingLabeling(false);
+      return;
     }
-  }, []);
+
+    let active = true;
+    setIsLoadingLabeling(true);
+    setLoadError(null);
+    Promise.all([fetchLabelingById(labelingId), fetchLabelingStructure(labelingId)])
+      .then(([labeling, structure]) => {
+        if (!active) {
+          return;
+        }
+        setLabelingTitle(labeling.title);
+        const csvColumns = Array.isArray(labeling.column_names) ? labeling.column_names : [];
+        const structureColumns = deriveColumnsFromStructure(structure);
+        setColumns(csvColumns.length > 0 ? csvColumns : structureColumns);
+        const mappedSections = mapSectionsFromDTO(structure);
+        setSections(mappedSections.length > 0 ? mappedSections : [createDefaultSection()]);
+      })
+      .catch(() => {
+        if (!active) {
+          return;
+        }
+        setLoadError("Não foi possível carregar os dados da rotulação.");
+      })
+      .finally(() => {
+        if (active) {
+          setIsLoadingLabeling(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [labelingId]);
 
   // inicia com 1 seção padrão (1 contexto + 1 pergunta)
   useEffect(() => {
@@ -96,6 +147,37 @@ export default function LabelingFormPage() {
     );
   }
 
+  async function handleSaveStructure() {
+    if (Number.isNaN(labelingId)) {
+      setLoadError("ID da rotulação inválido.");
+      return;
+    }
+
+    setIsSaving(true);
+    setLoadError(null);
+    try {
+      const payload = { sections: mapSectionsToDTO(sections) };
+      console.log(payload);
+      await saveLabelingStructure(labelingId, payload);
+      router.push("/labelings");
+    } catch (error) {
+      let message = "Não foi possível salvar a estrutura da rotulação.";
+      if (axios.isAxiosError(error)) {
+        const data = error.response?.data as { detail?: string } | undefined;
+        if (typeof data?.detail === "string") {
+          message = data.detail;
+        } else if (typeof error.message === "string" && error.message.length > 0) {
+          message = error.message;
+        }
+      } else if (error instanceof Error) {
+        message = error.message;
+      }
+      setLoadError(message);
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   return (
     <div className="bg-gray-200 min-h-screen">
       <Sidebar />
@@ -111,18 +193,26 @@ export default function LabelingFormPage() {
             >
               <ArrowLeft size={22} className="cursor-pointer" />
             </button>
-            <input className="text-lg font-semibold" defaultValue="Título da Rotulação"></input>
+            <span className="text-lg font-semibold">
+              {labelingTitle || (isLoadingLabeling ? "Carregando..." : "Rotulação")}
+            </span>
           </div>
           <button
             type="button"
+            onClick={handleSaveStructure}
             className="bg-white text-blue-900 font-semibold px-5 py-2 rounded-lg hover:bg-gray-100 shadow-sm flex items-center gap-2 cursor-pointer"
+            disabled={isSaving || isLoadingLabeling}
           >
-            <Save size={18} /> Finalizar Criação
+            <Save size={18} />
+            {isSaving ? "Salvando..." : "Finalizar Criação"}
           </button>
         </div>
 
         {/* Info CSV + Seções */}
         <div className="bg-white border-x border-b border-blue-200 rounded-b-xl shadow-lg p-4">
+          {loadError && (
+            <div className="mb-4 text-sm text-red-600">{loadError}</div>
+          )}
           {/* Colunas do CSV */}
           <div className="mb-4 max-w-[860px] mx-auto">
             <h2 className="text-sm font-semibold text-blue-900">
@@ -141,7 +231,9 @@ export default function LabelingFormPage() {
               </div>
             ) : (
               <p className="mt-2 text-sm text-gray-500">
-                Nenhuma coluna detectada. Volte e importe um CSV ou use o mock.
+                {isLoadingLabeling
+                  ? "Carregando colunas..."
+                  : "Nenhuma coluna detectada para esta rotulação."}
               </p>
             )}
           </div>
@@ -174,4 +266,16 @@ export default function LabelingFormPage() {
       </main>
     </div>
   );
+}
+
+function deriveColumnsFromStructure(sections: LabelingStructureSection[]): string[] {
+  const unique = new Set<string>();
+  sections.forEach((section) => {
+    section.elements.forEach((element) => {
+      if (element.column_name) {
+        unique.add(element.column_name);
+      }
+    });
+  });
+  return Array.from(unique);
 }
