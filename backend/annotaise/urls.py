@@ -34,4 +34,5 @@ urlpatterns = [
     path("", include("project.urls")),
     path("", include("labeling.urls")),
     path("", include("item.urls")),
+    path("", include("answer.urls"))
 ]
