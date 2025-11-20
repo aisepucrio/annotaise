@@ -9,8 +9,8 @@ então ele permanece e vai ser um id aleatorio.'''
 class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ['id', 'email', 'first_name', 'last_name', 'date_joined']
-        read_only_fields = ['id', 'date_joined']
+        fields = ["id", "email", "first_name", "last_name", "date_joined", "account_type", "is_staff"]
+        read_only_fields = ["id", "date_joined", "is_staff"]
 
 class CustomUserCreateSerializer(serializers.ModelSerializer):
     '''Esse serializer é usado para criar novos usuários. não usar em nenhum outro contexto porque a senha ficará exposta.'''
@@ -38,23 +38,50 @@ User = get_user_model()
 class AdminUserReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id", "username", "email", "first_name", "last_name", "is_active", "is_staff", "date_joined"]
+        fields = [
+            "id",
+            "username",
+            "email",
+            "first_name",
+            "last_name",
+            "is_active",
+            "is_staff",
+            "account_type",
+            "date_joined",
+        ]
 
 class AdminUserWriteSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False, allow_blank=True)
 
     class Meta:
         model = User
-        fields = ["username", "email", "first_name", "last_name", "is_active", "is_staff", "password"]
+        fields = [
+            "username",
+            "email",
+            "first_name",
+            "last_name",
+            "is_active",
+            "is_staff",
+            "account_type",
+            "password",
+        ]
 
     def create(self, validated_data):
+        account_type = validated_data.get("account_type")
+        if account_type == getattr(User.accountType, "ADMIN", "admin"):
+            validated_data["is_staff"] = True
+
         pwd = validated_data.pop("password", None)
         user = User.objects.create_user(**validated_data)
         if pwd:
             user.set_password(pwd); user.save()
         return user
-    ''' TODO : recuperação de senha. por enquanto vou deixar desativado
+
     def update(self, instance, validated_data):
+        account_type = validated_data.get("account_type")
+        if account_type == getattr(User.accountType, "ADMIN", "admin"):
+            validated_data.setdefault("is_staff", True)
+
         pwd = validated_data.pop("password", None)
         for k, v in validated_data.items():
             setattr(instance, k, v)
@@ -62,4 +89,3 @@ class AdminUserWriteSerializer(serializers.ModelSerializer):
             instance.set_password(pwd)
         instance.save()
         return instance
-        '''

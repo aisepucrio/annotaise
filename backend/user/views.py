@@ -7,6 +7,7 @@ from rest_framework import viewsets, permissions, filters
 from .serializers import AdminUserReadSerializer, AdminUserWriteSerializer
 from rest_framework.response import Response
 from rest_framework import status
+from .permissions import IsAdminAccount
 
 #TODO falta um endpoint de alterar a senha... caso não tenha questoes de segurança, tem como fazer por aqui, mas nao é o ideal
 class CurrentAPIView(RetrieveUpdateDestroyAPIView):
@@ -22,7 +23,7 @@ User = get_user_model()
 
 class AdminUserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().order_by("-date_joined")
-    #permission_classes = [permissions.IsAdminUser] TODO adicionar permissão de admin para esse viewset
+    permission_classes = [IsAdminAccount]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["username", "email", "first_name", "last_name"]
     ordering_fields = ["date_joined", "username", "email"]

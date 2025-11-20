@@ -1,45 +1,33 @@
+"use client";
+
+import { useState } from "react";
+import useSWR from "swr";
 import Sidebar from "../components/sidebar";
 import PageHeader from "../components/page_description";
 import UserContainer from "./user_container";
 import FilterBar from "../components/filter_bar";
 import { UserPlus } from "lucide-react";
+import { createUser, fetchUsers, type User } from "@/lib/services/user_service";
+import NewUserModal from "./new_user_modal";
+import useCurrent from "../hooks/current_user_hook";
 
-const users = [
-  {
-    id: 1,
-    name: "João",
-    email: "abcbc@gmail.com",
-    projects: 2,
-    labelings_done: 30,
-    labelings_pending: 10,
-  },
-  {
-    id: 2,
-    name: "usuariousuar",
-    email: "abcbc@gmail.com",
-    projects: 2,
-    labelings_done: 30,
-    labelings_pending: 10,
-  },
-  {
-    id: 3,
-    name: "usuariousuariousuario",
-    email: "abcbc@gmail.com",
-    projects: 2,
-    labelings_done: 30,
-    labelings_pending: 10,
-  },
-  {
-    id: 4,
-    name: "usuario",
-    email: "abcbc@gmail.com",
-    projects: 2,
-    labelings_done: 30,
-    labelings_pending: 10,
-  },
-];
+export default function UsersPage() {
+  const currentUser = useCurrent();
+  const isAdmin = Boolean(currentUser?.is_staff || currentUser?.account_type === "admin");
+  const { data: users, error, isLoading, mutate } = useSWR<User[]>(
+    isAdmin ? "users" : null,
+    fetchUsers
+  );
+  const [modalOpen, setModalOpen] = useState(false);
 
-export default function Projects() {
+  const loadError =
+    error && error instanceof Error ? error.message : error ? "Não foi possível carregar os usuários." : null;
+
+  const handleCreateUser = async (payload: { email: string; first_name?: string; last_name?: string; password: string }) => {
+    await createUser(payload);
+    await mutate();
+  };
+
   return (
     <div className="bg-gray-300 min-h-screen">
       <div className="bg-white ml-64 p-4 min-h-screen">
@@ -53,13 +41,15 @@ export default function Projects() {
           <button
                 type="button"
                 aria-label="Criar novo usuário"
+                onClick={() => setModalOpen(true)}
+                disabled={!isAdmin}
                 className="
                   ml-auto mr-6
                   inline-flex items-center justify-center gap-2
                   rounded-lg bg-blue-900 hover:bg-blue-800 text-white
                   px-5 py-2 h-10
                   min-w-[190px] whitespace-nowrap
-                  shadow-md text-sm transition-colors cursor-pointer
+                  shadow-md text-sm transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed
                 "
               >
                 {/* ícone + texto */}
@@ -68,19 +58,36 @@ export default function Projects() {
           </button>
         </div>
 
-        <div className="ml-5 mr-5 mt-5 grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
-          {users.map((p) => (
-            <UserContainer
-              key={p.id}
-              name={p.name}
-              email={p.email}
-              projects={p.projects}
-              labelings_done={p.labelings_done}
-              labelings_pending={p.labelings_pending}
-            />
-          ))}
+        <div className="ml-5 mr-5 mt-5">
+          {!isAdmin ? (
+            <p className="text-sm text-red-600">Apenas administradores podem acessar a gestão de usuários.</p>
+          ) : isLoading ? (
+            <p className="text-sm text-gray-500">Carregando usuários...</p>
+          ) : loadError ? (
+            <p className="text-sm text-red-600">{loadError}</p>
+          ) : (users?.length ?? 0) === 0 ? (
+            <p className="text-sm text-gray-500">Nenhum usuário encontrado.</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
+              {users?.map((user) => (
+                <UserContainer
+                  key={user.id}
+                  name={`${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() || user.username}
+                  email={user.email}
+                  projects={0}
+                  labelings_done={0}
+                  labelings_pending={0}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
+      <NewUserModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSubmit={handleCreateUser}
+      />
     </div>
   );
 }

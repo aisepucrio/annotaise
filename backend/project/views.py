@@ -5,6 +5,8 @@ from .serializers import ProjectSerializer, ProjectMembershipSerializer, Project
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
+from user.permissions import IsAdminAccount
 
 class ProjectViewSet(viewsets.ModelViewSet):
     serializer_class = ProjectSerializer
@@ -61,7 +63,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
         return qs
 
     def perform_create(self, serializer):
-        # usuário tem que estar autenticado
+        if not IsAdminAccount().has_permission(self.request, self):
+            raise PermissionDenied("Somente administradores podem criar projetos.")
         project = serializer.save(created_by=self.request.user)
     
         ProjectMembership.objects.get_or_create(
@@ -71,14 +74,25 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         project = self.get_object()
         user = request.user
+        is_admin = IsAdminAccount().has_permission(request, self)
+        is_owner = ProjectMembership.objects.filter(project=project, user=user, role="owner").exists()
 
-        # Verifica se o usuário é o proprietário do projeto
-        membership = ProjectMembership.objects.filter(project=project, user=user, role='owner').first()
-        if not membership:
-            
+        if not is_admin:
             return Response({'detail': 'Você não tem permissão para deletar este projeto.'}, status=status.HTTP_403_FORBIDDEN)
 
         return super().destroy(request, *args, **kwargs)
+    
+    def update(self, request, *args, **kwargs):
+        project = self.get_object()
+        if not IsAdminAccount().has_permission(request, self):
+            raise PermissionDenied("Somente administradores podem editar projetos.")
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        project = self.get_object()
+        if not IsAdminAccount().has_permission(request, self):
+            raise PermissionDenied("Somente administradores podem editar projetos.")
+        return super().partial_update(request, *args, **kwargs)
     
 
 class ProjectMembershipViewSet(viewsets.ModelViewSet):

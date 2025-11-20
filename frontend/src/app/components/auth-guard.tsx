@@ -7,7 +7,8 @@ import type { AxiosRequestHeaders } from "axios";
 import { api } from "../../lib/api";
 import { AuthActions } from "../../../authClient";
 
-const PUBLIC_PATH = "/login";
+const LOGIN_PATH = "/login";
+const PUBLIC_PATHS = [LOGIN_PATH];
 
 export default function AuthGuard({ children }: PropsWithChildren) {
   const router = useRouter();
@@ -27,18 +28,19 @@ export default function AuthGuard({ children }: PropsWithChildren) {
 
     const enforceAuth = () => {
       const hasToken = Boolean(getToken("refresh") ?? getToken("access"));
+      const isPublic = PUBLIC_PATHS.includes(pathname);
 
       if (!hasToken) {
         removeTokens();
-        if (pathname === PUBLIC_PATH) {
+        if (isPublic) {
           allow();
         } else {
-          router.replace(PUBLIC_PATH);
+          router.replace(LOGIN_PATH);
         }
         return;
       }
 
-      if (pathname === PUBLIC_PATH) {
+      if (isPublic) {
         router.replace("/");
         return;
       }
@@ -48,7 +50,7 @@ export default function AuthGuard({ children }: PropsWithChildren) {
 
     setIsAllowed(false);
 
-    if (pathname === PUBLIC_PATH) {
+    if (PUBLIC_PATHS.includes(pathname)) {
       const hasToken = Boolean(getToken("refresh") ?? getToken("access"));
       if (!hasToken) {
         allow();
@@ -80,7 +82,7 @@ export default function AuthGuard({ children }: PropsWithChildren) {
 
         if (isRefreshCall || originalRequest._retry) {
           removeTokens();
-          router.replace(PUBLIC_PATH);
+          router.replace(LOGIN_PATH);
           return Promise.reject(error);
         }
 
@@ -102,7 +104,7 @@ export default function AuthGuard({ children }: PropsWithChildren) {
           return api(originalRequest);
         } catch (refreshError) {
           removeTokens();
-          router.replace(PUBLIC_PATH);
+          router.replace(LOGIN_PATH);
           return Promise.reject(refreshError);
         }
       }
