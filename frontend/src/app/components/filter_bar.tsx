@@ -12,7 +12,6 @@ export default function FilterBar() {
             w-full rounded-xs border border-gray-300
             px-5 py-2 pr-12 text-sm text-gray-700
             placeholder-gray-400 focus:outline-none
-            focus:ring-2 focus:ring-blue-800
             shadow-sm
             border-b-3
             border-b-blue-800

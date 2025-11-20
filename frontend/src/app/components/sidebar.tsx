@@ -46,12 +46,12 @@ export default function Sidebar() {
           <SidebarItem icon={<Home size={18} />} label="Dashboard" href="/" alias="/" hover_color="blue" />
           <SidebarItem icon={<Users size={18} />} label="Usuarios" href="/users" alias="/users" hover_color="blue" />
           <SidebarItem icon={<FolderKanban size={18} />} label="Projetos" href="/projects" alias="/projects" hover_color="blue" />
-          <SidebarItem icon={<Tags size={18} />} label="Rotulacoes" href="/labelings" alias="/labelings" hover_color="blue" />
+          <SidebarItem icon={<Tags size={18} />} label="Rotulações" href="/labelings" alias="/labelings" hover_color="blue" />
         </ul>
 
         {/* Rodape */}
         <div className="text-sm text-gray-500 mt-auto -ml-3 space-y-1">
-          <SidebarItem icon={<Settings size={18} />} label="Configuracoes" href="/options" alias="/options" hover_color="gray" />
+          <SidebarItem icon={<Settings size={18} />} label="Configurações" href="/options" alias="/options" hover_color="gray" />
           <button type="button" className="w-55" onClick={handleLogout}>
             <SidebarItem icon={<LogOut size={18} />} label="Logout" href="/login" alias="/logout" hover_color="red" />
           </button>
