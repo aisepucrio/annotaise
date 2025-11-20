@@ -12,13 +12,13 @@ import {
   deleteProjectMembership,
   fetchProject,
   fetchProjectMemberships,
-  fetchUsers,
   type ProjectMembership,
   type ProjectMembershipPayload,
   type ProjectPayload,
   updateProject,
   updateProjectMembership,
 } from "../../../lib/services/project_service";
+import { fetchUsers } from "../../../lib/services/user_service";
 import useCurrent from "@/app/hooks/current_user_hook";
 
 type Params = {
@@ -29,6 +29,7 @@ export default function ProjectDetailsPage() {
   const router = useRouter();
   const params = useParams<Params>();
   const currentUser = useCurrent();
+  const isAdmin = Boolean(currentUser?.is_staff || currentUser?.account_type === "admin");
   const projectId = Number(params?.projectId);
 
   const {
@@ -90,6 +91,10 @@ export default function ProjectDetailsPage() {
   }, [users, memberships]);
 
   const handleSaveProject = handleSubmit(async (values) => {
+    if (!isAdmin) {
+      setProjectErrorMessage("Apenas administradores podem editar projetos.");
+      return;
+    }
     if (!projectId) return;
     try {
       setProjectMessage(null);
@@ -106,6 +111,10 @@ export default function ProjectDetailsPage() {
   });
 
   const handleDeleteProject = async () => {
+    if (!isAdmin) {
+      setProjectErrorMessage("Apenas administradores podem deletar projetos.");
+      return;
+    }
     if (!projectId) return;
     const confirmed = window.confirm("Tem certeza que deseja excluir este projeto?");
     if (!confirmed) return;
@@ -126,6 +135,10 @@ export default function ProjectDetailsPage() {
 
   const handleAddMember = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!isAdmin) {
+      setMembershipErrorMessage("Apenas administradores podem adicionar membros.");
+      return;
+    }
     if (!projectId || !newMemberId) {
       return;
     }
@@ -148,6 +161,10 @@ export default function ProjectDetailsPage() {
   };
 
   const handleRoleChange = async (membership: ProjectMembership, nextRole: ProjectMembershipPayload["role"]) => {
+    if (!isAdmin) {
+      setMembershipErrorMessage("Apenas administradores podem alterar permissões.");
+      return;
+    }
     if (membership.role === nextRole) return;
     try {
       setMembershipErrorMessage(null);
@@ -162,6 +179,10 @@ export default function ProjectDetailsPage() {
   };
 
   const handleRemoveMember = async (membership: ProjectMembership) => {
+    if (!isAdmin) {
+      setMembershipErrorMessage("Apenas administradores podem remover membros.");
+      return;
+    }
     const confirmed = window.confirm("Remover este membro do projeto?");
     if (!confirmed) return;
     try {
@@ -211,12 +232,13 @@ export default function ProjectDetailsPage() {
                 <label htmlFor="project-name" className="text-sm font-medium text-gray-700">
                   Nome
                 </label>
-                <input
-                  id="project-name"
-                  type="text"
-                  {...register("name", { required: true })}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                />
+              <input
+                id="project-name"
+                type="text"
+                {...register("name", { required: true })}
+                disabled={!isAdmin}
+                className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:bg-gray-100 disabled:text-gray-500"
+              />
               </div>
 
               <div className="space-y-1">
@@ -227,7 +249,8 @@ export default function ProjectDetailsPage() {
                   id="project-description"
                   rows={4}
                   {...register("description")}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  disabled={!isAdmin}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:bg-gray-100 disabled:text-gray-500"
                 />
               </div>
 
@@ -238,7 +261,8 @@ export default function ProjectDetailsPage() {
                 <select
                   id="project-status"
                   {...register("status", { required: true })}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  disabled={!isAdmin}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:bg-gray-100 disabled:text-gray-500"
                 >
                   <option value="planning">Planejamento</option>
                   <option value="active">Ativo</option>
@@ -251,7 +275,7 @@ export default function ProjectDetailsPage() {
                 <button
                   type="button"
                   onClick={handleDeleteProject}
-                  disabled={deleteLoading}
+                  disabled={deleteLoading || !isAdmin}
                   className="rounded-lg border border-red-200 px-4 py-2 text-sm text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
                 >
                   {deleteLoading ? "Deletando..." : "Excluir projeto"}
@@ -259,7 +283,7 @@ export default function ProjectDetailsPage() {
 
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !isAdmin}
                   className="rounded-lg bg-blue-900 px-5 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
                 >
                   {isSubmitting ? "Salvando..." : "Salvar alterações"}
@@ -319,7 +343,7 @@ export default function ProjectDetailsPage() {
                           onChange={(event) =>
                             handleRoleChange(membership, event.target.value as ProjectMembershipPayload["role"])
                           }
-                          disabled={isCurrentUser}
+                          disabled={isCurrentUser || !isAdmin}
                           className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           <option value="owner">Proprietário</option>
@@ -329,7 +353,7 @@ export default function ProjectDetailsPage() {
                         <button
                           type="button"
                           onClick={() => handleRemoveMember(membership)}
-                          disabled={isCurrentUser}
+                          disabled={isCurrentUser || !isAdmin}
                           className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
                         >
                           Remover
@@ -346,7 +370,8 @@ export default function ProjectDetailsPage() {
                   <select
                     value={newMemberId}
                     onChange={(event) => setNewMemberId(event.target.value)}
-                    className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                    disabled={!isAdmin}
+                    className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:bg-gray-100 disabled:text-gray-500"
                   >
                     <option value="">Selecione um usuário</option>
                     {availableUsers.map((user) => (
@@ -362,7 +387,8 @@ export default function ProjectDetailsPage() {
                     onChange={(event) =>
                       setNewMemberRole(event.target.value as ProjectMembershipPayload["role"])
                     }
-                    className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                    disabled={!isAdmin}
+                    className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:bg-gray-100 disabled:text-gray-500"
                   >
                     <option value="owner">Proprietário</option>
                     <option value="contributor">Colaborador</option>
@@ -372,7 +398,7 @@ export default function ProjectDetailsPage() {
                 <div className="flex justify-end">
                   <button
                     type="submit"
-                    disabled={!newMemberId}
+                    disabled={!newMemberId || !isAdmin}
                     className="rounded-lg bg-blue-900 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
                   >
                     Adicionar membro

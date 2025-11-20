@@ -14,6 +14,7 @@ import {
   fetchLabelingDashboard,
   importLabelingItemsCsv,
 } from "@/lib/services/labeling_service";
+import useCurrent from "../hooks/current_user_hook";
 
 type UploadPayload = {
   file: File;
@@ -24,6 +25,8 @@ type UploadPayload = {
 };
 
 export default function LabelingsPage() {
+  const currentUser = useCurrent();
+  const isAdmin = Boolean(currentUser?.is_staff || currentUser?.account_type === "admin");
   const [open, setOpen] = useState(false);
   const {
     data: labelings,
@@ -37,6 +40,9 @@ export default function LabelingsPage() {
     error && error instanceof Error ? error.message : error ? "Não foi possível carregar as rotulações." : null;
 
   async function handleConfirm({ file, title, projectId, startDate, finalDate }: UploadPayload) {
+    if (!isAdmin) {
+      throw new Error("Apenas administradores podem criar rotulações.");
+    }
     try {
       const labeling = await createLabeling({
         title,
@@ -74,7 +80,8 @@ export default function LabelingsPage() {
             type="button"
             onClick={() => setOpen(true)}
             aria-label="Abrir nova rotulação"
-            className="ml-auto mr-6 flex items-center gap-2 rounded-lg bg-blue-900 hover:bg-blue-800 text-white px-4 py-2 shadow-md text-sm transition-colors cursor-pointer"
+            disabled={!isAdmin}
+            className="ml-auto mr-6 flex items-center gap-2 rounded-lg bg-blue-900 hover:bg-blue-800 text-white px-4 py-2 shadow-md text-sm transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <Plus size={16} strokeWidth={1.75} className="opacity-90" />
             Nova Rotulação
@@ -99,6 +106,11 @@ export default function LabelingsPage() {
             />
           ))}
         </div>
+        {!isAdmin && (
+          <div className="ml-5 mr-5 mt-4 text-sm text-gray-600">
+            Você pode visualizar e responder às rotulações em que participa, mas somente administradores podem criar novas.
+          </div>
+        )}
       </div>
 
       {/* Modal */}

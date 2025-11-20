@@ -10,9 +10,12 @@ import FilterBar from "../components/filter_bar";
 import { Plus } from "lucide-react";
 import NewProjectModal from "./new_project_modal";
 import { createProject, fetchProjectDashboard, type ProjectPayload } from "../../lib/services/project_service";
+import useCurrent from "../hooks/current_user_hook";
 
 export default function Projects() {
   const router = useRouter();
+  const currentUser = useCurrent();
+  const isAdmin = Boolean(currentUser?.is_staff || currentUser?.account_type === "admin");
   const [modalOpen, setModalOpen] = useState(false);
   const {
     data: projects,
@@ -26,6 +29,9 @@ export default function Projects() {
     error && error instanceof Error ? error.message : error ? "Não foi possível carregar os projetos." : null;
 
   const handleCreateProject = async (payload: ProjectPayload) => {
+    if (!isAdmin) {
+      throw new Error("Apenas administradores podem criar projetos.");
+    }
     await createProject(payload);
     await mutate();
   };
@@ -41,10 +47,11 @@ export default function Projects() {
           <button
             type="button"
             onClick={() => setModalOpen(true)}
+            disabled={!isAdmin}
             className="ml-auto w-35 mr-6
             flex flex-nowrap items-center gap-2 rounded-lg bg-blue-900
             hover:bg-blue-800 text-white px-4 py-2
-            shadow-md text-sm transition-colors cursor-pointer
+            shadow-md text-sm transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed
           "
           >
             <Plus size={16} strokeWidth={1.75} className="opacity-90" /> Novo Projeto
@@ -67,7 +74,8 @@ export default function Projects() {
                   labelings_done={project.finished_labelings}
                   labelings_pending={project.pending_labelings}
                   labelings_late={project.late_labelings}
-                  onManage={() => router.push(`/projects/${project.id}`)}
+                  onManage={isAdmin ? () => router.push(`/projects/${project.id}`) : undefined}
+                  canManage={isAdmin}
                 />
               ))}
             </div>

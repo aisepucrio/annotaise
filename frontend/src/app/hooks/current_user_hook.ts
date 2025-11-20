@@ -10,6 +10,7 @@ type User = {
   last_name: string;
   is_active: boolean;
   is_staff: boolean;
+  account_type: "standard" | "editor" | "admin";
   created_at: string;
 };
 

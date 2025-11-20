@@ -4,10 +4,13 @@ import SidebarItem from "./sidebar_item";
 import { Home, Users, FolderKanban, Tags, Settings, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { AuthActions } from "../../../authClient";
+import useCurrent from "../hooks/current_user_hook";
 
 export default function Sidebar() {
   const router = useRouter();
   const { removeTokens } = AuthActions();
+  const currentUser = useCurrent();
+  const isAdmin = Boolean(currentUser?.is_staff || currentUser?.account_type === "admin");
 
   const handleLogout = () => {
     removeTokens();
@@ -44,7 +47,9 @@ export default function Sidebar() {
         {/* Topo */}
         <ul className="space-y-1 mt-3 -ml-3">
           <SidebarItem icon={<Home size={18} />} label="Dashboard" href="/" alias="/" hover_color="blue" />
-          <SidebarItem icon={<Users size={18} />} label="Usuarios" href="/users" alias="/users" hover_color="blue" />
+          {isAdmin ? (
+            <SidebarItem icon={<Users size={18} />} label="Usuarios" href="/users" alias="/users" hover_color="blue" />
+          ) : null}
           <SidebarItem icon={<FolderKanban size={18} />} label="Projetos" href="/projects" alias="/projects" hover_color="blue" />
           <SidebarItem icon={<Tags size={18} />} label="Rotulacoes" href="/labelings" alias="/labelings" hover_color="blue" />
         </ul>

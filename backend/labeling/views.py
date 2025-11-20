@@ -15,6 +15,7 @@ from django.db.models import Count, Q
 from drf_spectacular.utils import extend_schema
 from datetime import datetime, timedelta
 import json
+from user.permissions import IsAdminAccount
 
 class LabelingViewSet(viewsets.ModelViewSet):
     queryset = Labeling.objects.all()
@@ -75,23 +76,8 @@ class LabelingViewSet(viewsets.ModelViewSet):
         return qs
 
     def perform_create(self, serializer):
-        project_id = serializer.validated_data['project'].id
-        
-
-        allowed_roles = [
-            getattr(ProjectMembership.RoleChoices, "OWNER", "owner"),
-            getattr(ProjectMembership.RoleChoices, "EDITOR", "editor"),
-        ]
-
-        can_edit_project = ProjectMembership.objects.filter(
-            project_id=project_id,
-            user=self.request.user,
-            role__in=allowed_roles,
-        ).exists()
-
-        if not can_edit_project:
-            raise PermissionDenied("Você não tem permissão para adicionar rotulações a este projeto.")
-
+        if not IsAdminAccount().has_permission(self.request, self):
+            raise PermissionDenied("Somente administradores podem criar rotulações.")
         labeling = serializer.save(created_by=self.request.user)
 
         LabelingMembership.objects.get_or_create(
@@ -99,6 +85,8 @@ class LabelingViewSet(viewsets.ModelViewSet):
         )
 
     def destroy(self, request, *args, **kwargs):
+        if not IsAdminAccount().has_permission(request, self):
+            raise PermissionDenied("Somente administradores podem deletar rotulações.")
         labeling = self.get_object()
         user = request.user
 
@@ -108,6 +96,16 @@ class LabelingViewSet(viewsets.ModelViewSet):
             return Response({'detail': 'Você não tem permissão para deletar esta rotulação.'}, status=status.HTTP_403_FORBIDDEN)
 
         return super().destroy(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        if not IsAdminAccount().has_permission(request, self):
+            raise PermissionDenied("Somente administradores podem editar rotulações.")
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        if not IsAdminAccount().has_permission(request, self):
+            raise PermissionDenied("Somente administradores podem editar rotulações.")
+        return super().partial_update(request, *args, **kwargs)
     
 
 class ProjectMembershipViewSet(viewsets.ModelViewSet):
