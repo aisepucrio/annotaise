@@ -17,6 +17,9 @@ type UploadCsvModalProps = {
   }) => Promise<void>;
 };
 
+//TODO URGENTE!!!! é necessario definir a quantidade de usuarios por validação
+
+
 export default function UploadCsvModal({ open, onClose, onConfirm }: UploadCsvModalProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -228,14 +231,6 @@ export default function UploadCsvModal({ open, onClose, onConfirm }: UploadCsvMo
                 Selecionar arquivo
               </button>
 
-              <button
-                type="button"
-                onClick={handleUseMock}
-                className="text-blue-800 hover:text-blue-600 text-sm underline mt-1"
-              >
-                Usar CSV mock
-              </button>
-
               <p className="text-xs text-gray-500 text-center">
                 {selectedFile ? `Arquivo selecionado: ${selectedFile.name}` : "Nenhum arquivo selecionado"}
               </p>
@@ -247,14 +242,14 @@ export default function UploadCsvModal({ open, onClose, onConfirm }: UploadCsvMo
           <div className="mt-6 flex justify-end gap-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-100"
+              className="px-4 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-100 cursor-pointer"
               disabled={isSubmitting}
             >
               Cancelar
             </button>
             <button
               onClick={handleConfirm}
-              className="px-5 py-2 rounded-lg bg-blue-900 hover:bg-blue-800 text-white text-sm shadow inline-flex items-center gap-2 disabled:opacity-60"
+              className="px-5 py-2 rounded-lg bg-blue-900 hover:bg-blue-800 text-white text-sm shadow inline-flex items-center gap-2 disabled:opacity-60 cursor-pointer"
               disabled={isSubmitting}
             >
               {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
