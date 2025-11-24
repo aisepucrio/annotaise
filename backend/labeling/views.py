@@ -76,35 +76,62 @@ class LabelingViewSet(viewsets.ModelViewSet):
         return qs
 
     def perform_create(self, serializer):
-        if not IsAdminAccount().has_permission(self.request, self):
-            raise PermissionDenied("Somente administradores podem criar rotulações.")
-        labeling = serializer.save(created_by=self.request.user)
+        user = self.request.user
+        project = serializer.validated_data.get("project")
+
+        is_staff = getattr(user, "is_staff", False)
+        is_project_owner = ProjectMembership.objects.filter(
+            project=project, user=user, role=ProjectMembership.RoleChoices.OWNER
+        ).exists()
+
+        if not (is_staff or is_project_owner):
+            raise PermissionDenied("Somente donos do projeto (ou administradores) podem criar rotulações.")
+
+        labeling = serializer.save(created_by=user)
 
         LabelingMembership.objects.get_or_create(
-            labeling=labeling, user=self.request.user, defaults={"role": "owner"}
+            labeling=labeling,
+            user=user,
+            defaults={"role": LabelingMembership.Role.OWNER},
         )
 
     def destroy(self, request, *args, **kwargs):
-        if not IsAdminAccount().has_permission(request, self):
-            raise PermissionDenied("Somente administradores podem deletar rotulações.")
         labeling = self.get_object()
         user = request.user
 
-        is_owner = LabelingMembership.objects.filter(labeling=labeling, user=user, role='owner').first()
-        if not is_owner:
+        is_owner = LabelingMembership.objects.filter(
+            labeling=labeling,
+            user=user,
+            role=LabelingMembership.Role.OWNER,
+        ).exists()
 
+        if not (getattr(user, "is_staff", False) or is_owner):
             return Response({'detail': 'Você não tem permissão para deletar esta rotulação.'}, status=status.HTTP_403_FORBIDDEN)
 
         return super().destroy(request, *args, **kwargs)
 
     def update(self, request, *args, **kwargs):
-        if not IsAdminAccount().has_permission(request, self):
-            raise PermissionDenied("Somente administradores podem editar rotulações.")
+        labeling = self.get_object()
+        user = request.user
+        is_owner = LabelingMembership.objects.filter(
+            labeling=labeling,
+            user=user,
+            role=LabelingMembership.Role.OWNER,
+        ).exists()
+        if not (getattr(user, "is_staff", False) or is_owner):
+            raise PermissionDenied("Somente donos da rotulação (ou administradores) podem editar.")
         return super().update(request, *args, **kwargs)
 
     def partial_update(self, request, *args, **kwargs):
-        if not IsAdminAccount().has_permission(request, self):
-            raise PermissionDenied("Somente administradores podem editar rotulações.")
+        labeling = self.get_object()
+        user = request.user
+        is_owner = LabelingMembership.objects.filter(
+            labeling=labeling,
+            user=user,
+            role=LabelingMembership.Role.OWNER,
+        ).exists()
+        if not (getattr(user, "is_staff", False) or is_owner):
+            raise PermissionDenied("Somente donos da rotulação (ou administradores) podem editar.")
         return super().partial_update(request, *args, **kwargs)
     
 

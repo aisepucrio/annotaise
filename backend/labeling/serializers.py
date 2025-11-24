@@ -1,13 +1,19 @@
 from rest_framework import serializers
 from .models import Labeling, LabelingSection, LabelingElement, MultipleChoiceItem, QuestionRange, LabelingMembership
 from django.db import transaction
+from django.utils import timezone
 
 
 class LabelingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Labeling
-        fields = ['id', 'project', 'title', 'created_at','status','column_names','start_date','final_date']
+        fields = ['id', 'project', 'title', 'created_at','status','column_names','start_date','final_date','users_per_item']
         read_only_fields = ['id', 'created_at','created_by','column_names']
+
+    def create(self, validated_data):
+        if not validated_data.get("start_date"):
+            validated_data["start_date"] = timezone.now().date()
+        return super().create(validated_data)
 
     def update (self, instance, validated_data):
         # bloqueia a troca de projeto
