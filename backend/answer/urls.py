@@ -7,7 +7,7 @@ urlpatterns = [
 
 router = DefaultRouter()
 
-router.register(r"answer",AnswerViewset,basename="answer")
+router.register(r"answers",AnswerViewset,basename="answers")
 
 urlpatterns += router.urls
 

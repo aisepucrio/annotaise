@@ -9,6 +9,7 @@ export type Labeling = {
   status: LabelingStatus;
   start_date?: string | null;
   final_date?: string | null;
+  users_per_item: number;
   column_names: string[];
   created_at: string;
   created_by: number;
@@ -17,6 +18,7 @@ export type Labeling = {
 export type LabelingPayload = {
   title: string;
   project: number;
+  users_per_item: number;
   start_date?: string;
   final_date?: string;
   status?: LabelingStatus;

@@ -12,12 +12,11 @@ type UploadCsvModalProps = {
     file: File;
     title: string;
     projectId: number;
+    usersPerItem: number;
     startDate?: string;
     finalDate?: string;
   }) => Promise<void>;
 };
-
-//TODO URGENTE!!!! é necessario definir a quantidade de usuarios por validação
 
 
 export default function UploadCsvModal({ open, onClose, onConfirm }: UploadCsvModalProps) {
@@ -27,6 +26,7 @@ export default function UploadCsvModal({ open, onClose, onConfirm }: UploadCsvMo
   const [projectId, setProjectId] = useState<number | null>(null);
   const [startDate, setStartDate] = useState("");
   const [finalDate, setFinalDate] = useState("");
+  const [usersPerItem, setUsersPerItem] = useState<string>("1");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -49,6 +49,7 @@ export default function UploadCsvModal({ open, onClose, onConfirm }: UploadCsvMo
       setProjectId(null);
       setStartDate("");
       setFinalDate("");
+      setUsersPerItem("1");
       setError(null);
       setIsSubmitting(false);
       if (fileInputRef.current) {
@@ -108,6 +109,12 @@ export default function UploadCsvModal({ open, onClose, onConfirm }: UploadCsvMo
       return;
     }
 
+    const parsedUsersPerItem = Number(usersPerItem);
+    if (!Number.isInteger(parsedUsersPerItem) || parsedUsersPerItem <= 0) {
+      setError("Defina a quantidade de usuários por item com um número inteiro a partir de 1.");
+      return;
+    }
+
     if (startDate && finalDate && startDate > finalDate) {
       setError("A data final deve ser maior ou igual à data inicial.");
       return;
@@ -121,6 +128,7 @@ export default function UploadCsvModal({ open, onClose, onConfirm }: UploadCsvMo
         file: selectedFile,
         title: title.trim(),
         projectId,
+        usersPerItem: parsedUsersPerItem,
         startDate: startDate || undefined,
         finalDate: finalDate || undefined,
       });
@@ -211,6 +219,23 @@ export default function UploadCsvModal({ open, onClose, onConfirm }: UploadCsvMo
                   className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700">Usuários por item</label>
+              <input
+                type="number"
+                min={1}
+                step={1}
+                inputMode="numeric"
+                value={usersPerItem}
+                onChange={(e) => setUsersPerItem(e.target.value)}
+                className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                placeholder="1"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Quantas pessoas devem rotular cada item antes de ser finalizado.
+              </p>
             </div>
 
             <div className="flex flex-col items-center gap-3 border rounded-lg border-dashed border-blue-200 p-4">

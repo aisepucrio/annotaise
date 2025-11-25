@@ -20,6 +20,7 @@ type UploadPayload = {
   file: File;
   title: string;
   projectId: number;
+  usersPerItem: number;
   startDate?: string;
   finalDate?: string;
 };
@@ -39,7 +40,14 @@ export default function LabelingsPage() {
   const loadError =
     error && error instanceof Error ? error.message : error ? "Não foi possível carregar as rotulações." : null;
 
-  async function handleConfirm({ file, title, projectId, startDate, finalDate }: UploadPayload) {
+  async function handleConfirm({
+    file,
+    title,
+    projectId,
+    usersPerItem,
+    startDate,
+    finalDate,
+  }: UploadPayload) {
     if (!isAdmin) {
       throw new Error("Apenas administradores podem criar rotulações.");
     }
@@ -47,6 +55,7 @@ export default function LabelingsPage() {
       const labeling = await createLabeling({
         title,
         project: projectId,
+        users_per_item: usersPerItem,
         start_date: startDate || undefined,
         final_date: finalDate || undefined,
       });
