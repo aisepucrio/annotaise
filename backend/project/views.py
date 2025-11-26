@@ -14,7 +14,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
 
 
-
     def get_serializer_class(self):
         if self.action == "dashboard":
             return ProjectDashboardSerializer
@@ -50,10 +49,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
         if not user or not getattr(user, "is_authenticated", False):
             return self.queryset.none()
-
-        # admin (opcional):
-        if user.is_staff:
-            return self.queryset.prefetch_related('memberships__user')
 
         # Filtra projetos onde o usuário é membro
         qs = (self.queryset

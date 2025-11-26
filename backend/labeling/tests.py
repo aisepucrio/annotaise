@@ -249,12 +249,6 @@ class LabelingViewSetTest(TestCase):
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["title"], "Owned Labeling")
 
-    def test_staff_sees_all_labelings(self):
-        self.client.force_authenticate(self.staff)
-        response = self.client.get(self.list_url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 2)
-
     def test_create_requires_project_owner(self):
         self.client.force_authenticate(self.viewer)
         payload = {"title": "Blocked Labeling", "project": self.project.id, "final_date":timezone.now().date()}

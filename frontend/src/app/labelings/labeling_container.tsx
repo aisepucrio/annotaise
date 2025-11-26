@@ -28,6 +28,10 @@ export default function LabelingContainer({
     router.push(`/labelings/create/${id}`);
   }
 
+  function handleAnswerLabelingButton() {
+    router.push(`/labelings/${id}/answer`);
+  }
+
   return (
     <div
       className="
@@ -69,7 +73,7 @@ export default function LabelingContainer({
 
         {/* aviso + botão */}
         <div className="flex items-center justify-center gap-2">
-          <LabelingButton />
+          <LabelingButton onClick={handleAnswerLabelingButton} />
           <EditLabelingButton onClick={handleEditLabelingButton} />
         </div>
       </div>

@@ -177,6 +177,10 @@ class NextItemView(RetrieveAPIView):
         labeling = get_object_or_404(Labeling, id=kwargs['labeling_id'])
         user = request.user
 
+        if not LabelingMembership.objects.filter(labeling=labeling,user=user).exists():
+            return Response('Você não faz parte dessa rotulação',status=403)
+
+
         item = self.get_next_item_for_user(labeling, user)
         if not item:
             return Response({'detail': 'Você não tem rotulações para responder.'}, status=404)

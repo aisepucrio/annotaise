@@ -3,6 +3,7 @@ from .models import Answer
 from item.models import ItemMembership
 from .serializers import AnswerSerializer
 from rest_framework.response import Response
+from item.models import Item
 
 class AnswerViewset(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
@@ -44,5 +45,10 @@ class AnswerViewset(viewsets.ModelViewSet):
         membership.delete()
 
         headers = self.get_success_headers(serializer.data)
+
+        obj = Item.objects.get(id=item_id)
+        obj.status = 'finished'
+        obj.save()
+        
         return Response(serializer.data, status=201, headers=headers)
     

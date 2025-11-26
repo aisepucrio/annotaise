@@ -43,7 +43,6 @@ class AnswerSerializerTest(TestCase):
         answer = Answer.objects.create(
             labeling=self.labeling,
             item=self.item,
-            labeling_question=self.question,
             answered_by=self.user,
             answer_payload={"color": "blue"},
             created_at=now(),
@@ -61,7 +60,10 @@ class AnswerSerializerTest(TestCase):
             "answered_by": self.user.id,
             "answer_payload": {"color": "red"},
         }
-        ser = AnswerSerializer(data=payload)
+        class request():
+            user = self.user
+
+        ser = AnswerSerializer(data=payload,context={'request':request()})
         self.assertTrue(ser.is_valid(), ser.errors)
         obj = ser.save()
         self.assertTrue(isinstance(obj, Answer))

@@ -157,14 +157,9 @@ class ProjectViewSetTest(TestCase):
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["name"], "Owned")
 
-    def test_staff_sees_all_projects(self):
-        self.client.force_authenticate(self.staff)
-        response = self.client.get(self.projects_url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 2)
-
     def test_create_project_sets_owner_membership(self):
         self.client.force_authenticate(self.owner)
+        self.owner.is_staff = True
         payload = {"name": "API Created", "description": "via test"}
         response = self.client.post(self.projects_url, payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)

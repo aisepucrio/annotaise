@@ -64,10 +64,6 @@ class LabelingViewSet(viewsets.ModelViewSet):
         if not user or not getattr(user, "is_authenticated", False):
             return self.queryset.none()
 
-        # admin (opcional):
-        if user.is_staff:
-            return self.queryset.prefetch_related('memberships__user')
-
         # Filtra rotulações onde o usuário participa
         qs = (self.queryset
               .filter(memberships__user=user)

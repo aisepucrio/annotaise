@@ -1,0 +1,221 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import useSWR from "swr";
+import axios from "axios";
+import { ArrowLeft, RefreshCw, Send } from "lucide-react";
+import Sidebar from "@/app/components/sidebar";
+import { fetchLabelingById, type LabelingStructureSection } from "@/lib/services/labeling_create_service";
+import { fetchNextAnswer, submitAnswer } from "@/lib/services/answer_service";
+import { fetchProject } from "@/lib/services/project_service";
+import SectionCard from "./section_card";
+import { buildInitialAnswers, validateRequired } from "./answer_utils";
+import type { AnswerMap } from "./answer_types";
+
+export default function LabelingAnswerPage() {
+  const params = useParams<{ id: string }>();
+  const router = useRouter();
+  const labelingId = useMemo(() => {
+    const parsed = Number(params?.id);
+    return Number.isFinite(parsed) ? parsed : NaN;
+  }, [params]);
+
+  const [labelingTitle, setLabelingTitle] = useState<string>("");
+  const [projectId, setProjectId] = useState<number | null>(null);
+  const [sections, setSections] = useState<LabelingStructureSection[]>([]);
+  const [answers, setAnswers] = useState<AnswerMap>({});
+  const [payload, setPayload] = useState<Record<string, unknown>>({});
+  const [currentItemId, setCurrentItemId] = useState<number | null>(null);
+  const [rowIndex, setRowIndex] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [submitMessage, setSubmitMessage] = useState<string | null>(null);
+
+  const { data: project } = useSWR(projectId ? ["project", projectId] : null, () => fetchProject(projectId!));
+
+  const loadItem = useCallback(async () => {
+    if (Number.isNaN(labelingId)) {
+      setLoadError("ID da rotulação inválido.");
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setLoadError(null);
+    setSubmitMessage(null);
+
+    try {
+      const labeling = await fetchLabelingById(labelingId);
+      setLabelingTitle(labeling.title);
+      setProjectId(labeling.project);
+
+      const nextAnswer = await fetchNextAnswer(labelingId);
+      const sectionsResponse = nextAnswer.sections ?? [];
+      setSections(sectionsResponse);
+      setPayload((nextAnswer.item?.payload as Record<string, unknown>) ?? {});
+      setCurrentItemId(nextAnswer.item?.id ?? null);
+      setRowIndex(nextAnswer.item?.row_index ?? null);
+      setAnswers(buildInitialAnswers(sectionsResponse));
+    } catch (error) {
+      setSections([]);
+      setPayload({});
+      setCurrentItemId(null);
+      setRowIndex(null);
+
+      let message = "Não foi possível carregar um item para responder.";
+      if (axios.isAxiosError(error)) {
+        const detail = (error.response?.data as { detail?: string } | undefined)?.detail;
+        if (detail) {
+          message = detail;
+        } else if (error.message) {
+          message = error.message;
+        }
+      } else if (error instanceof Error) {
+        message = error.message;
+      }
+      setLoadError(message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [labelingId]);
+
+  useEffect(() => {
+    void loadItem();
+  }, [loadItem]);
+
+  const handleAnswerChange = (questionId: number | string, value: unknown) => {
+    setAnswers((prev) => ({ ...prev, [String(questionId)]: value }));
+  };
+
+  const handleSubmit = async () => {
+    if (Number.isNaN(labelingId)) {
+      setLoadError("ID da rotulação inválido.");
+      return;
+    }
+    if (!currentItemId) {
+      setLoadError("Nenhum item disponível para responder.");
+      return;
+    }
+
+    const validationError = validateRequired(sections, answers);
+    if (validationError) {
+      setLoadError(validationError);
+      return;
+    }
+
+    setIsSubmitting(true);
+    setLoadError(null);
+    setSubmitMessage(null);
+
+    try {
+      await submitAnswer({
+        labeling: labelingId,
+        item: currentItemId,
+        answer_payload: answers,
+      });
+      setSubmitMessage("Resposta enviada! Buscando próximo item...");
+      await loadItem();
+    } catch (error) {
+      let message = "Não foi possível enviar a resposta.";
+      if (axios.isAxiosError(error)) {
+        const detail = (error.response?.data as { detail?: string } | undefined)?.detail;
+        if (detail) {
+          message = detail;
+        } else if (error.message) {
+          message = error.message;
+        }
+      } else if (error instanceof Error) {
+        message = error.message;
+      }
+      setLoadError(message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const orderedSections = useMemo(
+    () => [...sections].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+    [sections]
+  );
+
+  return (
+    <div className="bg-gray-200 min-h-screen">
+      <Sidebar />
+      <main className="bg-white ml-64 p-4 min-h-screen">
+        <header className="flex flex-col gap-3 rounded-xl bg-blue-900 px-6 py-4 text-white shadow-md lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => router.push("/labelings")}
+              className="rounded-md p-1 hover:bg-white/10"
+              aria-label="Voltar"
+            >
+              <ArrowLeft size={22} />
+            </button>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-blue-100">
+                {project?.name ? `Projeto: ${project.name}` : projectId ? "Carregando projeto..." : "Projeto"}
+              </p>
+              <h1 className="text-lg font-semibold leading-tight">
+                {labelingTitle || (isLoading ? "Carregando rotulação..." : "Responder rotulação")}
+              </h1>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            {rowIndex !== null ? (
+              <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-blue-50">
+                Item #{rowIndex + 1}
+              </span>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => void loadItem()}
+              disabled={isLoading || isSubmitting}
+              className="inline-flex items-center gap-2 rounded-lg border border-white/30 px-4 py-2 text-sm font-medium text-white hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <RefreshCw size={16} />
+              Recarregar item
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleSubmit()}
+              disabled={isLoading || isSubmitting || !currentItemId || orderedSections.length === 0}
+              className="inline-flex items-center gap-2 rounded-lg bg-white px-5 py-2 text-sm font-semibold text-blue-900 shadow-sm hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Send size={16} />
+              {isSubmitting ? "Enviando..." : "Enviar resposta"}
+            </button>
+          </div>
+        </header>
+
+        <section className="mt-4 rounded-xl border border-blue-200 bg-white p-4 shadow-lg">
+          {loadError ? <p className="mb-3 text-sm text-red-600">{loadError}</p> : null}
+          {submitMessage ? <p className="mb-3 text-sm text-green-700">{submitMessage}</p> : null}
+
+          {isLoading ? (
+            <p className="text-sm text-gray-600">Carregando item e perguntas...</p>
+          ) : orderedSections.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-blue-200 bg-blue-50 px-4 py-6 text-center text-sm text-blue-900">
+              Nenhum item disponível para resposta agora. Clique em "Recarregar item" para tentar novamente.
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {orderedSections.map((section, sectionIndex) => (
+                <SectionCard
+                  key={section.id ?? sectionIndex}
+                  section={section}
+                  payload={payload}
+                  answers={answers}
+                  onChange={handleAnswerChange}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      </main>
+    </div>
+  );
+}
