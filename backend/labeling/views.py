@@ -91,6 +91,28 @@ class LabelingViewSet(viewsets.ModelViewSet):
             defaults={"role": LabelingMembership.Role.OWNER},
         )
 
+        # Distribui a rotulação para todos os membros do projeto (não-admin),
+        # garantindo que usuários comuns já possam responder itens.
+        project_memberships = ProjectMembership.objects.filter(project=project).select_related("user")
+
+        # Evita IntegrityError de duplicidade buscando existentes em uma vez
+        existing_user_ids = set(
+            LabelingMembership.objects.filter(labeling=labeling).values_list("user_id", flat=True)
+        )
+        to_create = []
+        for pm in project_memberships:
+            if pm.user_id in existing_user_ids:
+                continue
+            role = LabelingMembership.Role.ANNOTATOR
+            if pm.role == ProjectMembership.RoleChoices.OWNER:
+                role = LabelingMembership.Role.OWNER
+            to_create.append(
+                LabelingMembership(labeling=labeling, user=pm.user, role=role)
+            )
+
+        if to_create:
+            LabelingMembership.objects.bulk_create(to_create, ignore_conflicts=True)
+
     def destroy(self, request, *args, **kwargs):
         labeling = self.get_object()
         user = request.user

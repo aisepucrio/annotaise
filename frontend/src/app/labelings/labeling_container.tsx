@@ -1,6 +1,7 @@
 import { Tag } from "lucide-react";
 import { Pen } from "lucide-react";
 import { useRouter } from "next/navigation";
+import useCurrent from "../hooks/current_user_hook";
 
 type LabelingContainerProps = {
   id: number;
@@ -23,9 +24,15 @@ export default function LabelingContainer({
 }: LabelingContainerProps) {
 
   const router = useRouter();
+  const currentUser = useCurrent();
+  const isAdmin = Boolean(currentUser?.is_staff || currentUser?.account_type === "admin");
 
   function handleEditLabelingButton() {
-    router.push(`/labelings/create/${id}`);
+    if (isAdmin) {
+      router.push(`/labelings/create/${id}`);
+    } else {
+      router.push(`/labelings/${id}/my-answers`);
+    }
   }
 
   function handleAnswerLabelingButton() {
