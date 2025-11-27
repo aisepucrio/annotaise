@@ -7,6 +7,7 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from user.permissions import IsAdminAccount
+from django.db.models import Count, Q
 
 class ProjectViewSet(viewsets.ModelViewSet):
     serializer_class = ProjectSerializer
@@ -21,18 +22,37 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="dashboard")
     def dashboard(self, request):
-        projects = Project.objects.filter(memberships__user = request.user)
+        projects = (
+            Project.objects.filter(memberships__user=request.user)
+            .annotate(
+                labeling_users=Count("labelings__memberships__user", distinct=True),
+                finished_labelings=Count(
+                    "labelings__items",
+                    filter=Q(labelings__items__status="finished"),
+                    distinct=True,
+                ),
+                pending_labelings=Count(
+                    "labelings__items",
+                    filter=Q(labelings__items__status="pending"),
+                    distinct=True,
+                ),
+                late_labelings=Count(
+                    "labelings__items",
+                    filter=Q(labelings__items__status="late"),
+                    distinct=True,
+                ),
+            )
+        )
 
         response_data = []
-        '''TODO implementar late labelings'''
         for project in projects:
             data = {
                 "id": project.id,
                 "name": project.name,
-                "labeling_users": project.labelings.values("memberships__user").distinct().count(),
-                "finished_labelings": project.labelings.filter(status="finished").count(),
-                "pending_labelings": project.labelings.filter(status="pending").count(),
-                "late_labelings": project.labelings.filter(status="late").count(), 
+                "labeling_users": project.labeling_users,
+                "finished_labelings": project.finished_labelings,
+                "pending_labelings": project.pending_labelings,
+                "late_labelings": project.late_labelings,
             }
             
             response_data.append(data)

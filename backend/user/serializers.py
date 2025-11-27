@@ -36,6 +36,11 @@ class CustomUserCreateSerializer(serializers.ModelSerializer):
 User = get_user_model()
 
 class AdminUserReadSerializer(serializers.ModelSerializer):
+    projects_count = serializers.IntegerField(read_only=True)
+    labelings_total = serializers.IntegerField(read_only=True)
+    answers_count = serializers.IntegerField(read_only=True)
+    pending_items_count = serializers.IntegerField(read_only=True)
+
     class Meta:
         model = User
         fields = [
@@ -48,6 +53,10 @@ class AdminUserReadSerializer(serializers.ModelSerializer):
             "is_staff",
             "account_type",
             "date_joined",
+            "projects_count",
+            "labelings_total",
+            "answers_count",
+            "pending_items_count",
         ]
 
 class AdminUserWriteSerializer(serializers.ModelSerializer):
