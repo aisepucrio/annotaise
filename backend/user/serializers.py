@@ -89,3 +89,9 @@ class AdminUserWriteSerializer(serializers.ModelSerializer):
             instance.set_password(pwd)
         instance.save()
         return instance
+
+class UserDashboardSerializer(serializers.Serializer):
+    id = serializers.IntegerField(),
+    first_name = serializers.CharField(),
+    last_name = serializers.CharField(),
+    

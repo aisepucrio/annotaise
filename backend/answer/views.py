@@ -4,6 +4,7 @@ from item.models import ItemMembership
 from .serializers import AnswerSerializer
 from rest_framework.response import Response
 from item.models import Item
+from answer.models import Answer
 
 class AnswerViewset(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
@@ -38,6 +39,11 @@ class AnswerViewset(viewsets.ModelViewSet):
         serializer = self.get_serializer(data=data, context={'request':request})
         serializer.is_valid(raise_exception=True)
 
+        obj = Item.objects.select_related('labeling').get(id=item_id)
+        if obj.labeling.users_per_item <= Answer.objects.filter(item=item).count():
+            obj.status = 'finished'
+            obj.save()
+
         # Cria a Answer (se tiver campo answered_by, labeling etc, você pode setar aqui)
         self.perform_create(serializer)
 
@@ -46,9 +52,7 @@ class AnswerViewset(viewsets.ModelViewSet):
 
         headers = self.get_success_headers(serializer.data)
 
-        obj = Item.objects.get(id=item_id)
-        obj.status = 'finished'
-        obj.save()
+        
         
         return Response(serializer.data, status=201, headers=headers)
     
