@@ -59,24 +59,61 @@ export default function QuestionInput({ element, value, onChange }: QuestionInpu
       const items = [...(element.multiple_choice_items ?? [])].sort(
         (a, b) => (a.order ?? 0) - (b.order ?? 0)
       );
-      const selected = typeof value === "string" ? value : "";
+      const allowMultiple = element.allow_multiple ?? false;
+      const selectedList =
+        allowMultiple && Array.isArray(value)
+          ? value.map(String)
+          : typeof value === "string" && value.length > 0
+            ? [value]
+            : [];
+      const selected = selectedList[0] ?? "";
       const groupName = `mc-${element.id ?? element.order ?? "question"}`;
 
       return (
         <div className="space-y-2">
-          {items.map((item, index) => (
-            <label key={item.id ?? index} className="flex items-center gap-2 text-sm text-gray-800">
-              <input
-                type="radio"
-                name={groupName}
-                value={item.text}
-                checked={selected === item.text}
-                onChange={() => onChange(item.text)}
-                className="h-4 w-4 text-blue-900"
-              />
-              <span>{item.text}</span>
-            </label>
-          ))}
+          {items.map((item, index) => {
+            const optionValue = item.text;
+            if (allowMultiple) {
+              const isChecked = selectedList.includes(optionValue);
+              return (
+                <label
+                  key={item.id ?? index}
+                  className="flex items-center gap-2 text-sm text-gray-800"
+                >
+                  <input
+                    type="checkbox"
+                    value={optionValue}
+                    checked={isChecked}
+                    onChange={() => {
+                      const next = isChecked
+                        ? selectedList.filter((val) => val !== optionValue)
+                        : [...selectedList, optionValue];
+                      onChange(next);
+                    }}
+                    className="h-4 w-4 accent-blue-900"
+                  />
+                  <span>{optionValue}</span>
+                </label>
+              );
+            }
+
+            return (
+              <label
+                key={item.id ?? index}
+                className="flex items-center gap-2 text-sm text-gray-800"
+              >
+                <input
+                  type="radio"
+                  name={groupName}
+                  value={optionValue}
+                  checked={selected === optionValue}
+                  onChange={() => onChange(optionValue)}
+                  className="h-4 w-4 text-blue-900"
+                />
+                <span>{optionValue}</span>
+              </label>
+            );
+          })}
           {items.length === 0 ? (
             <p className="text-xs text-gray-500">Nenhuma opção disponível.</p>
           ) : null}

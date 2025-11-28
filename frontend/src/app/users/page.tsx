@@ -74,9 +74,9 @@ export default function UsersPage() {
                   key={user.id}
                   name={`${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() || user.username}
                   email={user.email}
-                  projects={0}
-                  labelings_done={0}
-                  labelings_pending={0}
+                  projects={user.projects_count ?? 0}
+                  labelings_done={user.answers_count ?? 0}
+                  labelings_pending={user.pending_items_count ?? 0}
                 />
               ))}
             </div>

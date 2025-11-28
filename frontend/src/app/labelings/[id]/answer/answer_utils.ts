@@ -9,6 +9,9 @@ export function buildInitialAnswers(sections: LabelingStructureSection[]): Answe
       if (!element.id || element.question_type === "context") return;
 
       switch (element.question_type) {
+        case "multiple_choice":
+          initial[element.id] = element.allow_multiple ? [] : "";
+          break;
         case "range":
           initial[element.id] = element.question_range?.start ?? 0;
           break;
@@ -40,7 +43,8 @@ export function validateRequired(
       const isEmpty =
         value === undefined ||
         value === null ||
-        (typeof value === "string" && value.trim() === "");
+        (typeof value === "string" && value.trim() === "") ||
+        (Array.isArray(value) && value.length === 0);
 
       if (isEmpty) {
         missing.push(element.id ?? element.text ?? "pergunta");

@@ -53,6 +53,7 @@ const mapQuestionElementToDTO = (q: QuestionElement, fallbackOrder: number): Ele
       return {
         ...base,
         question_type: "multiple_choice",
+        allow_multiple: q.config.allowMultiple ?? false,
         multiple_choice_items: q.config.choices.map((c, index) => ({
           text: c.text,
           value: c.value,
@@ -128,7 +129,7 @@ const resolveQuestionConfig = (
     case "multiple_choice":
       return {
         type: "multiple_choice",
-        allowMultiple: false,
+        allowMultiple: element.allow_multiple ?? false,
         choices: element.multiple_choice_items.map((item) => ({
           id: crypto.randomUUID(),
           text: item.text,

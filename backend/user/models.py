@@ -20,5 +20,10 @@ class CustomUser(AbstractUser):
         default=accountType.STANDARD,
     )
 
+    def save(self, force_insert = ..., force_update = ..., using = ..., update_fields = ...):
+        if self.is_superuser:
+            self.account_type = self.accountType.ADMIN
+        return super().save(force_insert, force_update, using, update_fields)
+
     def __str__(self):
         return f"{self.first_name} {self.last_name}"

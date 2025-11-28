@@ -25,6 +25,7 @@ export type ElementDTO = {
   question_type: QuestionTypeDTO;
   column_name?: string;
   context_type?: string | null;
+  allow_multiple?: boolean;
   multiple_choice_items?: MultipleChoiceItemDTO[];
   question_range?: QuestionRangeDTO | null;
 };

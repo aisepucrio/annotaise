@@ -47,6 +47,7 @@ class LabelingElementSerializer(serializers.ModelSerializer):
             "required",
             "question_type",
             "column_name",
+            "allow_multiple",
             "multiple_choice_items",
             "question_range",
             "context_type",
@@ -133,6 +134,7 @@ class LabelingElementWriteSerializer(serializers.ModelSerializer):
             'question_type',
             'column_name',
             'context_type',
+            'allow_multiple',
             'multiple_choice_items',
             'question_range',
         ]

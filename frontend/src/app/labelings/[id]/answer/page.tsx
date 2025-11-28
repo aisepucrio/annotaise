@@ -6,7 +6,7 @@ import useSWR from "swr";
 import axios from "axios";
 import { ArrowLeft, RefreshCw, Send } from "lucide-react";
 import Sidebar from "@/app/components/sidebar";
-import { fetchLabelingById, type LabelingStructureSection } from "@/lib/services/labeling_create_service";
+import { fetchLabelingById, fetchLabelingStructure, type LabelingStructureSection } from "@/lib/services/labeling_create_service";
 import { fetchNextAnswer, submitAnswer } from "@/lib/services/answer_service";
 import { fetchProject } from "@/lib/services/project_service";
 import SectionCard from "./section_card";
@@ -35,6 +35,31 @@ export default function LabelingAnswerPage() {
 
   const { data: project } = useSWR(projectId ? ["project", projectId] : null, () => fetchProject(projectId!));
 
+  // garante que sempre temos a estrutura da rotulação (mesmo sem item disponível)
+  useEffect(() => {
+    if (Number.isNaN(labelingId)) return;
+    let cancelled = false;
+    const loadStructure = async () => {
+      try {
+        const labeling = await fetchLabelingById(labelingId);
+        if (!cancelled) {
+          setLabelingTitle(labeling.title);
+          setProjectId(labeling.project);
+        }
+        const structure = await fetchLabelingStructure(labelingId);
+        if (!cancelled && structure.length > 0) {
+          setSections(structure);
+        }
+      } catch {
+        // silencia erro aqui; loadItem trata mensagens de erro
+      }
+    };
+    void loadStructure();
+    return () => {
+      cancelled = true;
+    };
+  }, [labelingId]);
+
   const loadItem = useCallback(async () => {
     if (Number.isNaN(labelingId)) {
       setLoadError("ID da rotulação inválido.");
@@ -59,7 +84,6 @@ export default function LabelingAnswerPage() {
       setRowIndex(nextAnswer.item?.row_index ?? null);
       setAnswers(buildInitialAnswers(sectionsResponse));
     } catch (error) {
-      setSections([]);
       setPayload({});
       setCurrentItemId(null);
       setRowIndex(null);

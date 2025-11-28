@@ -10,6 +10,10 @@ export type User = {
   is_staff: boolean;
   account_type: "standard" | "editor" | "admin";
   date_joined: string;
+  projects_count?: number;
+  labelings_total?: number;
+  answers_count?: number;
+  pending_items_count?: number;
 };
 
 export type CreateUserPayload = {

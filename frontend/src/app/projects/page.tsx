@@ -65,7 +65,7 @@ export default function Projects() {
           ) : projectList.length === 0 ? (
             <p className="text-sm text-gray-500">Nenhum projeto encontrado.</p>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
+            <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(380px,1fr))]">
               {projectList.map((project) => (
                 <ProjectContainer
                   key={project.id}

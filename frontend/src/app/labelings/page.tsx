@@ -101,19 +101,22 @@ export default function LabelingsPage() {
           <div className="ml-5 mr-5 mt-4 text-sm text-red-600">{loadError}</div>
         )}
 
-        <div className="ml-5 mr-5 mt-5 grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
-          {labelingsList.map((l) => (
-            <LabelingContainer
-              key={l.id}
-              id={l.id}
-              title={l.labeling_name}
-              project={l.project_name}
-              days_passed={l.days_passed}
-              days_total={l.total_days}
-              labelings_done={l.items_done}
-              labelings_pending={l.total_items}
-            />
-          ))}
+        <div className="mt-5 ml-5 w-97/100 grid gap-4 grid-cols-[repeat(auto-fill,minmax(320px,1fr))]">
+          {labelingsList.map((l) => {
+            const pending = Math.max((l.total_items ?? 0) - (l.items_done ?? 0), 0);
+            return (
+              <LabelingContainer
+                key={l.id}
+                id={l.id}
+                title={l.labeling_name}
+                project={l.project_name}
+                days_passed={l.days_passed}
+                days_total={l.total_days}
+                labelings_done={l.items_done}
+                labelings_pending={pending}
+              />
+            );
+          })}
         </div>
         {!isAdmin && (
           <div className="ml-5 mr-5 mt-4 text-sm text-gray-600">

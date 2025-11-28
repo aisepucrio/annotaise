@@ -24,6 +24,7 @@ export type AnswerResponse = AnswerPayload & {
   id: number;
   answered_by: number;
   created_at: string;
+  item_detail?: ItemStructure;
 };
 
 export async function fetchNextAnswer(labelingId: number): Promise<AnswerStructure> {
@@ -33,5 +34,20 @@ export async function fetchNextAnswer(labelingId: number): Promise<AnswerStructu
 
 export async function submitAnswer(payload: AnswerPayload): Promise<AnswerResponse> {
   const { data } = await api.post<AnswerResponse>(`/answers/`, payload);
+  return data;
+}
+
+export async function fetchMyAnswers(labelingId: number): Promise<AnswerResponse[]> {
+  const { data } = await api.get<AnswerResponse[]>(`/answers/`, {
+    params: { labeling: labelingId },
+  });
+  return data;
+}
+
+export async function updateAnswer(
+  id: number,
+  payload: Pick<AnswerPayload, "answer_payload">
+): Promise<AnswerResponse> {
+  const { data } = await api.patch<AnswerResponse>(`/answers/${id}/`, payload);
   return data;
 }

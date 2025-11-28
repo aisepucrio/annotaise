@@ -86,7 +86,6 @@ export default function QuestionBlock({ data, onUpdate, onRemove }: QuestionBloc
           <option value="number">Número</option>
           <option value="range">Intervalo Numérico</option>
           <option value="multiple_choice">Seleção múltipla</option>
-          <option value="bool">Sim/Não</option>
         </select>
       </div>
 

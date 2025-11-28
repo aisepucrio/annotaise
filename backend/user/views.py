@@ -13,6 +13,11 @@ from rest_framework import viewsets, permissions, filters
 from rest_framework.decorators import action
 
 from django.contrib.auth import get_user_model
+from .serializers import AdminUserReadSerializer, AdminUserWriteSerializer
+from rest_framework.response import Response
+from rest_framework import status
+from .permissions import IsAdminAccount
+from django.db.models import Count, Q, F
 
 #TODO falta um endpoint de alterar a senha... caso não tenha questoes de segurança, tem como fazer por aqui, mas nao é o ideal
 class CurrentAPIView(RetrieveUpdateDestroyAPIView):
@@ -33,22 +38,7 @@ class AdminUserViewSet(viewsets.ModelViewSet):
     search_fields = ["username", "email", "first_name", "last_name"]
     ordering_fields = ["date_joined", "username", "email"]
     http_method_names = ['get', 'post', 'patch', 'delete']
-    @action(methods=['get'],detail=False,url_path=('dashboard'))
-    def dashboard(self,request):
-        users = self.get_queryset()
-        output = []
-        for user in users:
-            cur = {
-                'id': user.id,
-                'first_name' : user.first_name,
-                'last_name' : user.last_name,
-                'projects': Project.objects.filter(memberships__user=user).distinct().count(),
-                'pending_labelings': ItemMembership.objects.filter(user=user).distinct().count(),
-                'finished_labelings': Answer.objects.filter(answered_by=user).distinct().count(),
-            }
-        
 
-        return Response(status=200)
 
     def get_serializer_class(self):
         if self.action in ("create", "update", "partial_update"):
@@ -56,3 +46,21 @@ class AdminUserViewSet(viewsets.ModelViewSet):
         elif self.action == "dashboard":
             return 
         return AdminUserReadSerializer
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        # estatísticas agregadas para admins
+        qs = qs.annotate(
+            projects_count=Count("project_memberships", distinct=True),
+            labelings_total=Count("labeling_memberships", distinct=True),
+            answers_count=Count("answers_given", distinct=True),
+            pending_items_count=Count(
+                "labeling_memberships__labeling__items",
+                filter=Q(
+                    labeling_memberships__labeling__items__status="pending"
+                )
+                & ~Q(labeling_memberships__labeling__items__answers__answered_by_id=F("id")),
+                distinct=True,
+            ),
+        )
+        return qs

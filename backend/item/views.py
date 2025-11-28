@@ -1,19 +1,21 @@
-from django.shortcuts import get_object_or_404
+from .models import Item, ItemMembership
+from .serializers import UploadItemCSVSerializer, ItemSerializer, NextItemResponseSerializer
+from labeling.models import Labeling, LabelingMembership
+from answer.models import Answer
+
+from datetime import timedelta
+import pandas as pd
+
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.response import Response
-from labeling.models import Labeling, LabelingMembership
-import pandas as pd
-from .serializers import UploadItemCSVSerializer, ItemSerializer, NextItemResponseSerializer
-from drf_spectacular.utils import extend_schema, OpenApiResponse
 from rest_framework.parsers import MultiPartParser
-from .models import Item, ItemMembership
-from answer.models import Answer
+from drf_spectacular.utils import extend_schema, OpenApiResponse
+from django.shortcuts import get_object_or_404
 from django.db.models import Count, F, Value
 from django.db.models.functions import Coalesce
 from django.db import transaction
 from django.utils import timezone
-from datetime import timedelta
 
 
 class ListItemsView(ListAPIView):
@@ -116,6 +118,7 @@ class NextItemView(RetrieveAPIView):
             .first()
         )
         if membership:
+            membership.created_at = timezone.now() # TODO esse atributo tem um nome bem enganoso...
             return membership.item
 
         # 2) Pega um novo item elegível (sem membership prévio do user)
@@ -128,7 +131,7 @@ class NextItemView(RetrieveAPIView):
                 required_answers=Coalesce('labeling__users_per_item', Value(1)),
             )
             .filter(num_answers__lt=F('required_answers'))  # ainda tem "vagas"
-            .exclude(answers__answered_by=user)                     # user ainda não respondeu
+            .exclude(answers__answered_by=user)
             .exclude(memberships__user=user)                        # sem membership prévio
             .first()
         )
@@ -156,7 +159,7 @@ class NextItemView(RetrieveAPIView):
                 num_answers__lt=F('required_answers'),  # ainda cabe mais gente
             )
             .exclude(user=user)                             # não rouba de si mesmo
-            .exclude(item__answers__answered_by=user)       # user ainda não respondeu o item
+            .exclude(item__answers__answered_by=user)
             .order_by('created_at')                         # o mais antigo primeiro
             .first()
         )

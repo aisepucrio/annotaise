@@ -57,7 +57,6 @@ class LabelingSection(models.Model):
 class LabelingElement(models.Model):
     class QuestionType(models.TextChoices):
         TEXT = "text", "Texto"
-        BOOL = "bool", "Booleano"
         NUMBER = "number", "Numérico"
         MULTIPLE_CHOICE = "multiple_choice", "Múltipla escolha"
         RANGE = "range", "Faixa"
@@ -78,6 +77,7 @@ class LabelingElement(models.Model):
     question_type = models.CharField(max_length=32, choices=QuestionType.choices)
     context_type = models.CharField(max_length=32, choices=ContextType.choices, blank=True, null=True)
     column_name = models.CharField(max_length=200, blank=True)
+    allow_multiple = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["labeling_section_id", "order", "id"]
