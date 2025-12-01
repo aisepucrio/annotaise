@@ -21,6 +21,7 @@ export type CreateUserPayload = {
   first_name?: string;
   last_name?: string;
   password: string;
+  account_type: User["account_type"];
 };
 
 export async function fetchUsers(): Promise<User[]> {
@@ -29,6 +30,9 @@ export async function fetchUsers(): Promise<User[]> {
 }
 
 export async function createUser(payload: CreateUserPayload): Promise<User> {
-  const { data } = await api.post<User>("/api/auth/register/", payload);
+  const { data } = await api.post<User>("/users/", {
+    ...payload,
+    username: payload.email,
+  });
   return data;
 }

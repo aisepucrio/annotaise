@@ -5,7 +5,7 @@ from django.contrib.auth.models import AbstractUser
 class CustomUser(AbstractUser):
     '''a pk do usuario é o email. o username é um id aleatorio.'''
 
-    class accountType(models.TextChoices):
+    class AccountType(models.TextChoices):
         STANDARD = "standard", "Padrao"
         EDITOR = "editor", "Editor"
         ADMIN = "admin", "Administrador"
@@ -16,14 +16,20 @@ class CustomUser(AbstractUser):
     account_type = models.CharField(
         max_length=50,
         blank=True,
-        choices=accountType.choices,
-        default=accountType.STANDARD,
+        choices=AccountType.choices,
+        default=AccountType.STANDARD,
     )
 
-    def save(self, force_insert = ..., force_update = ..., using = ..., update_fields = ...):
+    def save(self, *args, **kwargs):
         if self.is_superuser:
-            self.account_type = self.accountType.ADMIN
-        return super().save(force_insert, force_update, using, update_fields)
+            self.account_type = self.AccountType.ADMIN
+        return super().save(*args, **kwargs)
+
+    def can_edit(self):
+        return self.account_type in {
+            self.AccountType.EDITOR,
+            self.AccountType.ADMIN,
+        }
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"

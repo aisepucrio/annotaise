@@ -11,6 +11,7 @@ export default function Sidebar() {
   const { removeTokens } = AuthActions();
   const currentUser = useCurrent();
   const isAdmin = Boolean(currentUser?.is_staff || currentUser?.account_type === "admin");
+  const canSeeProjects = Boolean(currentUser && (currentUser.is_staff || currentUser.account_type !== "standard"));
 
   const handleLogout = () => {
     removeTokens();
@@ -50,7 +51,9 @@ export default function Sidebar() {
           {isAdmin ? (
             <SidebarItem icon={<Users size={18} />} label="Usuarios" href="/users" alias="/users" hover_color="blue" />
           ) : null}
-          <SidebarItem icon={<FolderKanban size={18} />} label="Projetos" href="/projects" alias="/projects" hover_color="blue" />
+          {canSeeProjects ? (
+            <SidebarItem icon={<FolderKanban size={18} />} label="Projetos" href="/projects" alias="/projects" hover_color="blue" />
+          ) : null}
           <SidebarItem icon={<Tags size={18} />} label="Rotulações" href="/labelings" alias="/labelings" hover_color="blue" />
         </ul>
 

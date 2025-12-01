@@ -55,9 +55,11 @@ class AdminUserViewSet(viewsets.ModelViewSet):
             labelings_total=Count("labeling_memberships", distinct=True),
             answers_count=Count("answers_given", distinct=True),
             pending_items_count=Count(
-                "labeling_memberships__labeling__items",
+                "labeling_memberships__labeling__items__memberships",
                 filter=Q(
-                    labeling_memberships__labeling__items__status="pending"
+                    labeling_memberships__labeling__items__status="pending",
+                    labeling_memberships__labeling__items__memberships__user_id=F("id")
+
                 )
                 & ~Q(labeling_memberships__labeling__items__answers__answered_by_id=F("id")),
                 distinct=True,

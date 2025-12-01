@@ -7,6 +7,7 @@ export type Labeling = {
   title: string;
   project: number;
   status: LabelingStatus;
+  description?: string;
   start_date?: string | null;
   final_date?: string | null;
   users_per_item: number;
@@ -24,6 +25,33 @@ export type LabelingPayload = {
   status?: LabelingStatus;
 };
 
+export type LabelingMembershipRole = "owner" | "admin" | "annotator" | "viewer";
+
+export type LabelingMembership = {
+  id: number;
+  user: number;
+  labeling: number;
+  role: LabelingMembershipRole;
+  items_done: number;
+  joined_at: string;
+  user_detail?: {
+    id: number;
+    email: string;
+    first_name: string;
+    last_name: string;
+    username: string;
+  };
+};
+
+export type LabelingMembershipDashboard = {
+  id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  role: LabelingMembershipRole;
+  joined_at: string;
+};
+
 export type LabelingDashboard = {
   id: number;
   labeling_name: string;
@@ -39,8 +67,18 @@ export async function fetchLabelingDashboard(): Promise<LabelingDashboard[]> {
   return data;
 }
 
+export async function fetchLabeling(id: number): Promise<Labeling> {
+  const { data } = await api.get<Labeling>(`/labelings/${id}/`);
+  return data;
+}
+
 export async function createLabeling(payload: LabelingPayload): Promise<Labeling> {
   const { data } = await api.post<Labeling>("/labelings/", payload);
+  return data;
+}
+
+export async function updateLabeling(id: number, payload: Partial<LabelingPayload>): Promise<Labeling> {
+  const { data } = await api.patch<Labeling>(`/labelings/${id}/`, payload);
   return data;
 }
 
@@ -51,4 +89,30 @@ export async function importLabelingItemsCsv(labelingId: number, file: File): Pr
   await api.post(`/labelings/${labelingId}/import-items-csv/`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
+}
+
+export async function fetchLabelingMemberships(labelingId: number): Promise<LabelingMembershipDashboard[]> {
+  const { data } = await api.get<LabelingMembershipDashboard[]>(`/labelings/${labelingId}/memberships/`);
+  return data;
+}
+
+export async function createLabelingMembership(payload: {
+  labeling: number;
+  user: number;
+  role: LabelingMembershipRole;
+}): Promise<LabelingMembership> {
+  const { data } = await api.post<LabelingMembership>("/labeling-memberships/", payload);
+  return data;
+}
+
+export async function updateLabelingMembership(
+  id: number,
+  payload: Partial<Pick<LabelingMembership, "role">>
+): Promise<LabelingMembership> {
+  const { data } = await api.patch<LabelingMembership>(`/labeling-memberships/${id}/`, payload);
+  return data;
+}
+
+export async function deleteLabelingMembership(id: number): Promise<void> {
+  await api.delete(`/labeling-memberships/${id}/`);
 }

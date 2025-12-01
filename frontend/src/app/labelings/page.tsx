@@ -114,6 +114,7 @@ export default function LabelingsPage() {
                 days_total={l.total_days}
                 labelings_done={l.items_done}
                 labelings_pending={pending}
+                onUpdated={mutate}
               />
             );
           })}

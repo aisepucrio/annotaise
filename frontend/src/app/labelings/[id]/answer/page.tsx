@@ -6,9 +6,8 @@ import useSWR from "swr";
 import axios from "axios";
 import { ArrowLeft, RefreshCw, Send } from "lucide-react";
 import Sidebar from "@/app/components/sidebar";
-import { fetchLabelingById, fetchLabelingStructure, type LabelingStructureSection } from "@/lib/services/labeling_create_service";
+import { fetchLabelingById, type LabelingStructureSection } from "@/lib/services/labeling_create_service";
 import { fetchNextAnswer, submitAnswer } from "@/lib/services/answer_service";
-import { fetchProject } from "@/lib/services/project_service";
 import SectionCard from "./section_card";
 import { buildInitialAnswers, validateRequired } from "./answer_utils";
 import type { AnswerMap } from "./answer_types";
@@ -22,7 +21,6 @@ export default function LabelingAnswerPage() {
   }, [params]);
 
   const [labelingTitle, setLabelingTitle] = useState<string>("");
-  const [projectId, setProjectId] = useState<number | null>(null);
   const [sections, setSections] = useState<LabelingStructureSection[]>([]);
   const [answers, setAnswers] = useState<AnswerMap>({});
   const [payload, setPayload] = useState<Record<string, unknown>>({});
@@ -33,32 +31,6 @@ export default function LabelingAnswerPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
 
-  const { data: project } = useSWR(projectId ? ["project", projectId] : null, () => fetchProject(projectId!));
-
-  // garante que sempre temos a estrutura da rotulação (mesmo sem item disponível)
-  useEffect(() => {
-    if (Number.isNaN(labelingId)) return;
-    let cancelled = false;
-    const loadStructure = async () => {
-      try {
-        const labeling = await fetchLabelingById(labelingId);
-        if (!cancelled) {
-          setLabelingTitle(labeling.title);
-          setProjectId(labeling.project);
-        }
-        const structure = await fetchLabelingStructure(labelingId);
-        if (!cancelled && structure.length > 0) {
-          setSections(structure);
-        }
-      } catch {
-        // silencia erro aqui; loadItem trata mensagens de erro
-      }
-    };
-    void loadStructure();
-    return () => {
-      cancelled = true;
-    };
-  }, [labelingId]);
 
   const loadItem = useCallback(async () => {
     if (Number.isNaN(labelingId)) {
@@ -74,7 +46,6 @@ export default function LabelingAnswerPage() {
     try {
       const labeling = await fetchLabelingById(labelingId);
       setLabelingTitle(labeling.title);
-      setProjectId(labeling.project);
 
       const nextAnswer = await fetchNextAnswer(labelingId);
       const sectionsResponse = nextAnswer.sections ?? [];
@@ -173,15 +144,13 @@ export default function LabelingAnswerPage() {
             <button
               type="button"
               onClick={() => router.push("/labelings")}
-              className="rounded-md p-1 hover:bg-white/10"
+              className="rounded-md p-1 hover:bg-white/10 cursor-pointer"
               aria-label="Voltar"
             >
               <ArrowLeft size={22} />
             </button>
             <div>
-              <p className="text-xs uppercase tracking-wide text-blue-100">
-                {project?.name ? `Projeto: ${project.name}` : projectId ? "Carregando projeto..." : "Projeto"}
-              </p>
+              
               <h1 className="text-lg font-semibold leading-tight">
                 {labelingTitle || (isLoading ? "Carregando rotulação..." : "Responder rotulação")}
               </h1>
@@ -196,9 +165,9 @@ export default function LabelingAnswerPage() {
             ) : null}
             <button
               type="button"
-              onClick={() => void loadItem()}
+              onClick={() => void loadItem()}// TODO esse botao é debug... mais pro futuro pode tirar 
               disabled={isLoading || isSubmitting}
-              className="inline-flex items-center gap-2 rounded-lg border border-white/30 px-4 py-2 text-sm font-medium text-white hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-lg border border-white/30 px-4 py-2 text-sm font-medium text-white cursor-pointer hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <RefreshCw size={16} />
               Recarregar item
@@ -207,7 +176,7 @@ export default function LabelingAnswerPage() {
               type="button"
               onClick={() => void handleSubmit()}
               disabled={isLoading || isSubmitting || !currentItemId || orderedSections.length === 0}
-              className="inline-flex items-center gap-2 rounded-lg bg-white px-5 py-2 text-sm font-semibold text-blue-900 shadow-sm hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-lg bg-white px-5 py-2 text-sm font-semibold text-blue-900 shadow-sm hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
             >
               <Send size={16} />
               {isSubmitting ? "Enviando..." : "Enviar resposta"}
@@ -223,7 +192,7 @@ export default function LabelingAnswerPage() {
             <p className="text-sm text-gray-600">Carregando item e perguntas...</p>
           ) : orderedSections.length === 0 ? (
             <div className="rounded-lg border border-dashed border-blue-200 bg-blue-50 px-4 py-6 text-center text-sm text-blue-900">
-              Nenhum item disponível para resposta agora. Clique em "Recarregar item" para tentar novamente.
+              Nenhum item disponível para resposta agora.
             </div>
           ) : (
             <div className="space-y-6">

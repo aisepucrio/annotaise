@@ -1,15 +1,16 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from rest_framework import viewsets, status
 from .models import Labeling, LabelingMembership, LabelingSection
 from project.models import ProjectMembership
 from .serializers import (LabelingSerializer, LabelingMembershipSerializer,
-LabelingSectionsBulkCreateSerializer, LabelingSectionSerializer, LabelingDashboardSerializer)
+LabelingSectionsBulkCreateSerializer, LabelingSectionSerializer, LabelingDashboardSerializer, LabelingMembershipDashboardSerializer)
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from project.models import Project
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import action
 from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
 from django.db import transaction
 from django.db.models import Count, Q
 from drf_spectacular.utils import extend_schema
@@ -25,6 +26,37 @@ class LabelingViewSet(viewsets.ModelViewSet):
         if self.action == 'dashboard':
             return LabelingDashboardSerializer
         else: return LabelingSerializer
+    
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy','list_labeling_memberships']:
+            self.permission_classes = [IsAdminAccount]
+        else:
+            self.permission_classes = [IsAuthenticated] 
+        return super().get_permissions()
+    
+    @action(methods=['get'], detail=True, url_path='memberships')
+    def list_labeling_memberships(self,request, pk=None):
+        labeling = get_object_or_404(Labeling,pk=pk)
+        memberships = LabelingMembership.objects.filter(labeling=labeling).select_related('user')
+
+        output = []
+        for membership in memberships:
+            output.append({
+                "id": membership.id,
+                "first_name": membership.user.first_name,
+                "last_name": membership.user.last_name,
+                "email": membership.user.email,
+                "role": membership.role,
+                "joined_at": membership.joined_at,
+            })
+        
+        ser = LabelingMembershipDashboardSerializer(data=output, many=True)
+        
+        if ser.is_valid(raise_exception=True):
+            return Response(ser.data, status=200)
+        else:
+            return Response('Erro ao carregar membros da rotulação',ser.errors, status=400)
+
 
     @action(methods=['get'], detail=False, url_path='dashboard')
     def dashboard(self, request):
@@ -63,6 +95,9 @@ class LabelingViewSet(viewsets.ModelViewSet):
 
         if not user or not getattr(user, "is_authenticated", False):
             return self.queryset.none()
+        
+        if user.can_edit():
+            return self.queryset
 
         # Filtra rotulações onde o usuário participa
         qs = (self.queryset
@@ -153,8 +188,10 @@ class LabelingViewSet(viewsets.ModelViewSet):
         return super().partial_update(request, *args, **kwargs)
     
 
-class ProjectMembershipViewSet(viewsets.ModelViewSet):
+class LabelingMembershipViewSet(viewsets.ModelViewSet):
+    '''Alguns métodos foram alterados por conta do sistema de admin simplificado, mas estao comentados caso seja usado no futuro'''
     serializer_class = LabelingMembershipSerializer
+    permission_classes = [IsAdminAccount]
     queryset = LabelingMembership.objects.select_related('labeling', 'user')
     http_method_names = ['get', 'post', 'patch', 'delete']
 
@@ -174,7 +211,7 @@ class ProjectMembershipViewSet(viewsets.ModelViewSet):
         return super().update(request, *args, **kwargs)
 
     def create(self, request):
-
+        '''
         labeling_id = request.data.get('labeling')
 
         m = get_object_or_404(
@@ -200,7 +237,7 @@ class ProjectMembershipViewSet(viewsets.ModelViewSet):
 
         elif not is_in_project:
             return Response({'detail': 'O usuário adicionado não faz parte do projeto associado a esta rotulação.'}, status=status.HTTP_400_BAD_REQUEST)
-        
+        '''
         return super().create(request)
     
     def get_queryset(self):
@@ -222,7 +259,12 @@ class ProjectMembershipViewSet(viewsets.ModelViewSet):
         )
 
 class CreateReadLabelingStructureView(APIView):
-    
+
+    def get_permissions(self):
+        if self.request.method in ['GET']:
+            return [IsAuthenticated()]
+        return [IsAdminAccount()]
+
     @extend_schema(
         responses={200: [LabelingSectionSerializer]},      # resposta
         examples=None)    

@@ -23,7 +23,13 @@ export default function UsersPage() {
   const loadError =
     error && error instanceof Error ? error.message : error ? "Não foi possível carregar os usuários." : null;
 
-  const handleCreateUser = async (payload: { email: string; first_name?: string; last_name?: string; password: string }) => {
+  const handleCreateUser = async (payload: {
+    email: string;
+    first_name?: string;
+    last_name?: string;
+    password: string;
+    account_type: User["account_type"];
+  }) => {
     await createUser(payload);
     await mutate();
   };

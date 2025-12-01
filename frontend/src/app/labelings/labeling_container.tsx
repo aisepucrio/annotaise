@@ -2,6 +2,9 @@ import { Tag } from "lucide-react";
 import { Pen } from "lucide-react";
 import { useRouter } from "next/navigation";
 import useCurrent from "../hooks/current_user_hook";
+import { GroupIcon } from "lucide-react";
+import { useState } from "react";
+import EditLabelingModal from "./edit_labeling_modal";
 
 type LabelingContainerProps = {
   id: number;
@@ -11,6 +14,7 @@ type LabelingContainerProps = {
   days_total: number;
   labelings_done: number;
   labelings_pending: number;
+  onUpdated?: () => Promise<void> | void;
 };
 
 export default function LabelingContainer({
@@ -21,11 +25,13 @@ export default function LabelingContainer({
   labelings_done,
   labelings_pending,
   days_total,
+  onUpdated,
 }: LabelingContainerProps) {
 
   const router = useRouter();
   const currentUser = useCurrent();
   const isAdmin = Boolean(currentUser?.is_staff || currentUser?.account_type === "admin");
+  const [editOpen, setEditOpen] = useState(false);
 
   function handleEditLabelingButton() {
     if (isAdmin) {
@@ -37,6 +43,15 @@ export default function LabelingContainer({
 
   function handleAnswerLabelingButton() {
     router.push(`/labelings/${id}/answer`);
+  }
+
+  function handleManageMemberships() {
+    if (!isAdmin) return;
+    setEditOpen(true);
+  }
+
+  if(labelings_done != 0 && labelings_pending ===0){
+    days_total = -1;
   }
 
   return (
@@ -65,6 +80,8 @@ export default function LabelingContainer({
 
       <div className="mt-3 flex flex-col gap-3 min-w-0 w-full">
         {/* métricas */}
+
+        
         <ProgressBar
           progress_label="Dias Passados"
           late_label="Dias Atrasados"
@@ -81,19 +98,26 @@ export default function LabelingContainer({
         {/* aviso + botão */}
         <div className="flex items-center justify-center gap-2">
           <LabelingButton onClick={handleAnswerLabelingButton} />
-          <EditLabelingButton onClick={handleEditLabelingButton} />
+          <EditLabelingFormButton onClick={handleEditLabelingButton} />
+          <EditLabelingButton onClick={handleManageMemberships} disabled={!isAdmin} />
         </div>
       </div>
+      <EditLabelingModal
+        open={editOpen}
+        labelingId={id}
+        onClose={() => setEditOpen(false)}
+        onUpdated={onUpdated}
+      />
     </div>
   );
 }
 
-function EditLabelingButton({ onClick }: { onClick?: () => void }) {
+function EditLabelingFormButton({ onClick }: { onClick?: () => void }) {
   return (
     <button
       onClick={onClick}
       className="
-        inline-flex items-center gap-2 rounded-lg px-10.5 py-2
+        inline-flex items-center gap-2 rounded-lg px-3 py-2
         bg-blue-800 text-white hover:bg-blue-700
         transition-colors text-sm cursor-pointer justify-center
       "
@@ -101,7 +125,26 @@ function EditLabelingButton({ onClick }: { onClick?: () => void }) {
       aria-label="Abrir tarefa de rotulação"
     >
       <Pen size={20} strokeWidth={1.75} className="opacity-90" />
-      Editar
+      Formulário
+    </button>
+  );
+}
+
+function EditLabelingButton({ onClick, disabled }: { onClick?: () => void; disabled?: boolean }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className="
+        inline-flex items-center gap-2 rounded-lg px-3 py-2
+        bg-blue-800 text-white hover:bg-blue-700
+        transition-colors text-sm cursor-pointer justify-center disabled:opacity-60 disabled:cursor-not-allowed
+      "
+      type="button"
+      aria-label="Abrir tarefa de rotulação"
+    >
+      <GroupIcon size={20} strokeWidth={1.75} className="opacity-90" />
+      Atribuir
     </button>
   );
 }
@@ -113,7 +156,7 @@ function LabelingButton({ onClick }: { onClick?: () => void }) {
     <button
       onClick={onClick}
       className="
-        inline-flex items-center gap-2 rounded-lg px-10.5 py-2
+        inline-flex items-center gap-2 rounded-lg px-3 py-2
         bg-blue-800 text-white hover:bg-blue-700
         transition-colors text-sm cursor-pointer justify-center
       "
@@ -134,9 +177,27 @@ type ProgressBarProps = {
 };
 
 function ProgressBar({ progress_label, late_label, passed, total }: ProgressBarProps) {
-  const percent = total > 0 ? Math.round((passed / total) * 100) : 0;
-  const bgColor = total >= passed ? "bg-blue-300" : "bg-red-300";
-  const textColor = total >= passed ? "text-gray-800" : "text-gray-800";//se for mudar a cor pra cada barra é aqui
+
+  let percent = total > 0 ? Math.round((passed / total) * 100) : 0;
+
+  let bgColor = total >= passed ? "bg-blue-300" : "bg-red-300";
+  const textColor = "text-gray-800";
+
+  let finished = false;
+
+  if (total === -1) {
+    finished = true;
+    percent = 100;
+    progress_label = "Concluído";
+  }
+
+  if (passed < 0){
+    passed = 0;
+  }
+
+  if (finished) {
+    bgColor = "bg-green-400";
+  }
 
   return (
     <div className="w-full min-w-0 -ml-3">
@@ -154,7 +215,7 @@ function ProgressBar({ progress_label, late_label, passed, total }: ProgressBarP
         <span
           className={`absolute inset-0 flex items-center justify-center text-sm font-medium pointer-events-none px-2 truncate ${textColor}`}
         >
-          {total >= passed ? `${passed} / ${total} ${progress_label}` : `${passed - total} ${late_label}`}
+          {finished===false?(total >= passed ? `${passed} / ${total} ${progress_label}` : `${passed - total} ${late_label}`):`${progress_label}`}
         </span>
       </div>
     </div>

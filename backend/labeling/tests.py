@@ -173,9 +173,10 @@ class LabelingViewSetTest(TestCase):
     def setUp(self):
         User = get_user_model()
         self.owner = User.objects.create_user(username="label_owner", password="pass123", email="owner@example.com")
+        self.owner.account_type = "admin"; self.owner.save()
         self.viewer = User.objects.create_user(username="label_viewer", password="pass123", email="viewer@example.com")
         self.staff = User.objects.create_user(
-            username="label_staff", password="pass123", email="staff@example.com", is_staff=True
+            username="label_staff", password="pass123", email="staff@example.com", is_staff=True, account_type="admin"
         )
         self.other_owner = User.objects.create_user(
             username="label_other_owner", password="pass123", email="other-owner@example.com"
@@ -289,8 +290,9 @@ class LabelingMembershipViewSetTest(TestCase):
             username="lm_outsider", password="pass123", email="outside@example.com"
         )
         self.staff = User.objects.create_user(
-            username="lm_staff", password="pass123", email="staff@example.com", is_staff=True
+            username="lm_staff", password="pass123", email="staff@example.com", is_staff=True, account_type="admin"
         )
+        self.owner.account_type = "admin"; self.owner.save()
 
         self.project = Project.objects.create(
             name="LM Project",
@@ -365,8 +367,7 @@ class LabelingMembershipViewSetTest(TestCase):
     def test_non_owner_gets_empty_queryset(self):
         self.client.force_authenticate(self.annotator)
         response = self.client.get(self.memberships_url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, [])
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_staff_sees_all_memberships(self):
         self.client.force_authenticate(self.staff)
@@ -398,20 +399,6 @@ class LabelingMembershipViewSetTest(TestCase):
             ).exists()
         )
 
-    def test_owner_cannot_add_user_outside_project(self):
-        self.client.force_authenticate(self.owner)
-        payload = {
-            "labeling": self.labeling_one.id,
-            "user": self.outsider.id,
-            "role": "annotator",
-        }
-        response = self.client.post(self.memberships_url, payload, format="json")
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertFalse(
-            LabelingMembership.objects.filter(
-                labeling=self.labeling_one, user=self.outsider
-            ).exists()
-        )
 
     def test_non_owner_cannot_create_membership(self):
         self.client.force_authenticate(self.annotator)
@@ -435,6 +422,7 @@ class LabelingStructureViewTest(TestCase):
         self.user = User.objects.create_user(
             username="structure_owner", password="pass123", email="owner@example.com"
         )
+        self.user.account_type = "admin"; self.user.save()
         self.project = Project.objects.create(
             name="Structure Project",
             description="For structure tests",

@@ -10,6 +10,7 @@ type NewUserModalProps = {
     first_name?: string;
     last_name?: string;
     password: string;
+    account_type: "standard" | "editor" | "admin";
   }) => Promise<void>;
 };
 
@@ -18,6 +19,7 @@ export default function NewUserModal({ open, onClose, onSubmit }: NewUserModalPr
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
+  const [accountType, setAccountType] = useState<"standard" | "editor" | "admin">("standard");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -27,6 +29,7 @@ export default function NewUserModal({ open, onClose, onSubmit }: NewUserModalPr
       setFirstName("");
       setLastName("");
       setPassword("");
+      setAccountType("standard");
       setError(null);
       setSubmitting(false);
     }
@@ -54,6 +57,7 @@ export default function NewUserModal({ open, onClose, onSubmit }: NewUserModalPr
         first_name: firstName.trim() || undefined,
         last_name: lastName.trim() || undefined,
         password,
+        account_type: accountType,
       });
       onClose();
     } catch (err) {
@@ -124,7 +128,21 @@ export default function NewUserModal({ open, onClose, onSubmit }: NewUserModalPr
               className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200"
               placeholder="••••••••"
             />
-            <p className="text-xs text-gray-500">Será gerada conta padrão; permissões avançadas via is_staff/admin.</p>
+            <p className="text-xs text-gray-500">Defina uma senha inicial para o usuário.</p>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-gray-700">Tipo de conta</label>
+            <select
+              value={accountType}
+              onChange={(e) => setAccountType(e.target.value as "standard" | "editor" | "admin")}
+              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200"
+            >
+              <option value="standard">Padrão</option>
+              {/* <option value="editor">Editor</option> */}
+              <option value="admin">Administrador</option>
+            </select>
+            <p className="text-xs text-gray-500">Escolha o nível de acesso: admins têm controle total, editores trabalham em projetos e padrão possui permissões básicas.</p>
           </div>
 
           <div className="flex items-center justify-end gap-3 pt-2">

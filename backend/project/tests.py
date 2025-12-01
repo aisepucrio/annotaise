@@ -110,11 +110,12 @@ class ProjectViewSetTest(TestCase):
     def setUp(self):
         User = get_user_model()
         self.owner = User.objects.create_user(username="proj_owner", password="pass123", email="owner@example.com")
+        self.owner.account_type = "admin"; self.owner.save()
         self.contributor = User.objects.create_user(
             username="proj_contrib", password="pass123", email="contrib@example.com"
         )
         self.staff = User.objects.create_user(
-            username="proj_staff", password="pass123", email="staff@example.com", is_staff=True
+            username="proj_staff", password="pass123", email="staff@example.com", is_staff=True, account_type="admin"
         )
         self.other_owner = User.objects.create_user(
             username="other_owner", password="pass123", email="other@example.com"
@@ -150,34 +151,38 @@ class ProjectViewSetTest(TestCase):
         self.client = APIClient()
         self.projects_url = reverse("projects-list")
 
-    def test_list_projects_returns_only_memberships_of_user(self):
-        self.client.force_authenticate(self.contributor)
+    def test_admin_lists_all_projects(self):
+        self.client.force_authenticate(self.owner)
         response = self.client.get(self.projects_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["name"], "Owned")
+        self.assertEqual(len(response.data), Project.objects.count())
 
-    def test_create_project_sets_owner_membership(self):
+    def test_non_admin_cannot_access_projects(self):
+        self.client.force_authenticate(self.contributor)
+        response = self.client.get(self.projects_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_admin_can_create_project(self):
         self.client.force_authenticate(self.owner)
-        self.owner.is_staff = True
         payload = {"name": "API Created", "description": "via test"}
         response = self.client.post(self.projects_url, payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        project_id = response.data["id"]
-        self.assertTrue(
-            ProjectMembership.objects.filter(
-                project_id=project_id,
-                user=self.owner,
-                role=ProjectMembership.RoleChoices.OWNER,
-            ).exists()
-        )
+        project = Project.objects.get(id=response.data["id"])
+        self.assertEqual(project.created_by, self.owner)
 
-    def test_delete_requires_owner_membership(self):
+    def test_non_admin_cannot_delete_project(self):
         self.client.force_authenticate(self.contributor)
         url = reverse("projects-detail", args=[self.project_owned.id])
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertTrue(Project.objects.filter(id=self.project_owned.id).exists())
+
+    def test_admin_can_delete_project(self):
+        self.client.force_authenticate(self.owner)
+        url = reverse("projects-detail", args=[self.project_other.id])
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Project.objects.filter(id=self.project_other.id).exists())
 
 
 class ProjectMembershipViewSetTest(TestCase):
@@ -295,4 +300,3 @@ class ProjectMembershipViewSetTest(TestCase):
                 project=self.project_one, user=self.new_user
             ).exists()
         )
-

@@ -16,7 +16,7 @@ type User = {
 
 
 export default function useCurrent() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null | undefined>(undefined);
   useEffect(() => {
     api.get<User>("/users/current/")
       .then((res) => setUser(res.data))

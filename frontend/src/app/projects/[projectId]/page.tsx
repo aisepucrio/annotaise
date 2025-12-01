@@ -29,6 +29,8 @@ export default function ProjectDetailsPage() {
   const router = useRouter();
   const params = useParams<Params>();
   const currentUser = useCurrent();
+  const userLoading = currentUser === undefined;
+  const canSeeProjects = Boolean(currentUser && (currentUser.is_staff || currentUser.account_type !== "standard"));
   const isAdmin = Boolean(currentUser?.is_staff || currentUser?.account_type === "admin");
   const projectId = Number(params?.projectId);
 
@@ -37,20 +39,20 @@ export default function ProjectDetailsPage() {
     isLoading: loadingProject,
     error: projectError,
     mutate: mutateProject,
-  } = useSWR(projectId ? ["project", projectId] : null, () => fetchProject(projectId));
+  } = useSWR(projectId && canSeeProjects ? ["project", projectId] : null, () => fetchProject(projectId));
 
   const {
     data: memberships,
     isLoading: loadingMemberships,
     mutate: mutateMemberships,
     error: membershipsError,
-  } = useSWR(projectId ? ["project-memberships", projectId] : null, () => fetchProjectMemberships(projectId));
+  } = useSWR(projectId && canSeeProjects ? ["project-memberships", projectId] : null, () => fetchProjectMemberships(projectId));
 
   const {
     data: users,
     isLoading: loadingUsers,
     error: usersError,
-  } = useSWR("project-users", fetchUsers);
+  } = useSWR(canSeeProjects ? "project-users" : null, fetchUsers);
 
   const {
     register,
@@ -201,6 +203,32 @@ export default function ProjectDetailsPage() {
     return null;
   }
 
+  if (userLoading) {
+    return (
+      <div className="bg-gray-300 min-h-screen">
+        <div className="bg-white ml-64 p-4 min-h-screen">
+          <Sidebar />
+          <p className="mt-6 text-sm text-gray-500">Carregando informações do usuário...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!canSeeProjects) {
+    return (
+      <div className="bg-gray-300 min-h-screen">
+        <div className="bg-white ml-64 p-4 min-h-screen">
+          <Sidebar />
+          <PageHeader
+            page_title="Projeto"
+            description="Apenas editores ou administradores podem acessar detalhes de projetos."
+          />
+          <p className="mt-6 ml-5 text-sm text-red-600">Seu perfil não possui permissão para visualizar este projeto.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-gray-300 min-h-screen">
       <div className="bg-white ml-64 p-4 min-h-screen">
@@ -294,14 +322,14 @@ export default function ProjectDetailsPage() {
         </section>
 
         <section className="mx-5 mt-8 rounded-xl bg-white p-6 shadow-sm">
-          <header className="mb-4 flex flex-col gap-1">
+          {/* <header className="mb-4 flex flex-col gap-1">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Membros do projeto</h2>
               <p className="text-sm text-gray-500">
                 Controle quem tem acesso ao projeto e quais permissões cada pessoa possui.
               </p>
             </div>
-          </header>
+          </header> */}
 
           {membershipsError || usersError || membershipErrorMessage ? (
             <p className="mb-4 text-sm text-red-600">
@@ -364,7 +392,7 @@ export default function ProjectDetailsPage() {
                 })}
               </ul>
 
-              <form onSubmit={handleAddMember} className="mt-6 grid gap-3 rounded-lg border border-dashed border-gray-300 p-4">
+              {/* <form onSubmit={handleAddMember} className="mt-6 grid gap-3 rounded-lg border border-dashed border-gray-300 p-4">
                 <p className="text-sm font-medium text-gray-900">Adicionar novo membro</p>
                 <div className="grid gap-3 md:grid-cols-2">
                   <select
@@ -404,7 +432,7 @@ export default function ProjectDetailsPage() {
                     Adicionar membro
                   </button>
                 </div>
-              </form>
+              </form> */}
             </>
           )}
         </section>

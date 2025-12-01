@@ -1,6 +1,6 @@
 from .models import Item, ItemMembership
 from .serializers import UploadItemCSVSerializer, ItemSerializer, NextItemResponseSerializer
-from labeling.models import Labeling, LabelingMembership
+from labeling.models import Labeling, LabelingMembership, LabelingSection
 from answer.models import Answer
 
 from datetime import timedelta
@@ -10,6 +10,7 @@ from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser
+from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 from django.shortcuts import get_object_or_404
 from django.db.models import Count, F, Value
@@ -67,8 +68,6 @@ class ImportItemsCsvView(APIView):
         df = pd.read_csv(uploaded_file)
         
         cols = df.columns
-        print(cols)
-
 
         labeling.column_names = list(cols)
         labeling.save()
@@ -124,7 +123,6 @@ class NextItemView(RetrieveAPIView):
         # 2) Pega um novo item elegível (sem membership prévio do user)
         item = (
             Item.objects
-            .select_for_update(skip_locked=True)
             .filter(labeling=labeling, status='pending')
             .annotate(
                 num_answers=Count('answers'),
@@ -134,11 +132,20 @@ class NextItemView(RetrieveAPIView):
             .exclude(answers__answered_by=user)
             .exclude(memberships__user=user)                        # sem membership prévio
             .first()
-        )
+            )
+        
+        if item is None:
+            return None
 
-        if item:
+        
+        item_obj = (Item.objects
+            .select_for_update(skip_locked=True)
+            .filter(id=item.id)).first()
+
+
+        if item_obj:
             ItemMembership.objects.create(item=item, user=user)
-            return item
+            return item_obj
 
         # 3) Rouba membership expirada de outra pessoa
         STALE_MINUTES = 10  # define a janela de expiração que fizer sentido pra você
@@ -180,9 +187,11 @@ class NextItemView(RetrieveAPIView):
         labeling = get_object_or_404(Labeling, id=kwargs['labeling_id'])
         user = request.user
 
+        if not LabelingSection.objects.filter(labeling=labeling).exists():
+            return Response('o formulário dessa rotulação está vazio',status=403)
+
         if not LabelingMembership.objects.filter(labeling=labeling,user=user).exists():
             return Response('Você não faz parte dessa rotulação',status=403)
-
 
         item = self.get_next_item_for_user(labeling, user)
         if not item:

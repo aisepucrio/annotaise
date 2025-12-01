@@ -15,6 +15,8 @@ import useCurrent from "../hooks/current_user_hook";
 export default function Projects() {
   const router = useRouter();
   const currentUser = useCurrent();
+  const userLoading = currentUser === undefined;
+  const canSeeProjects = Boolean(currentUser && (currentUser.is_staff || currentUser.account_type !== "standard"));
   const isAdmin = Boolean(currentUser?.is_staff || currentUser?.account_type === "admin");
   const [modalOpen, setModalOpen] = useState(false);
   const {
@@ -22,7 +24,7 @@ export default function Projects() {
     error,
     isLoading,
     mutate,
-  } = useSWR("projects-dashboard", fetchProjectDashboard);
+  } = useSWR(canSeeProjects ? "projects-dashboard" : null, fetchProjectDashboard);
 
   const projectList = projects ?? [];
   const loadError =
@@ -35,6 +37,32 @@ export default function Projects() {
     await createProject(payload);
     await mutate();
   };
+
+  if (userLoading) {
+    return (
+      <div className="bg-gray-300 min-h-screen">
+        <div className="bg-white ml-64 p-4 min-h-screen">
+          <Sidebar />
+          <p className="mt-6 text-sm text-gray-500">Carregando informações do usuário...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!canSeeProjects) {
+    return (
+      <div className="bg-gray-300 min-h-screen">
+        <div className="bg-white ml-64 p-4 min-h-screen">
+          <Sidebar />
+          <PageHeader
+            page_title="Projetos"
+            description="Apenas editores ou administradores podem acessar esta página."
+          />
+          <p className="mt-6 ml-5 text-sm text-red-600">Seu perfil não possui permissão para visualizar projetos.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-300 min-h-screen">

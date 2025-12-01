@@ -214,3 +214,13 @@ class LabelingDashboardSerializer(serializers.Serializer):
     items_done = serializers.IntegerField()
     total_items = serializers.IntegerField()
 #TODO validações individuais de cada serializer, pra não cair em internal server error
+
+class LabelingMembershipDashboardSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+
+    first_name = serializers.CharField(allow_blank=True, allow_null=True)
+    last_name = serializers.CharField(allow_blank=True, allow_null=True)
+    email = serializers.EmailField()
+    role = serializers.CharField()
+
+    joined_at = serializers.DateTimeField()
