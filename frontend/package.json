@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@fontsource/montserrat": "^5.2.8",
     "axios": "^1.13.2",
     "js-cookie": "^3.0.5",
     "js-cookies": "^1.0.4",
