@@ -23,6 +23,7 @@ type UploadPayload = {
   usersPerItem: number;
   startDate?: string;
   finalDate?: string;
+  blockSectionBack?: boolean;
 };
 
 export default function LabelingsPage() {
@@ -47,6 +48,7 @@ export default function LabelingsPage() {
     usersPerItem,
     startDate,
     finalDate,
+    blockSectionBack,
   }: UploadPayload) {
     if (!isAdmin) {
       throw new Error("Apenas administradores podem criar rotulações.");
@@ -58,6 +60,7 @@ export default function LabelingsPage() {
         users_per_item: usersPerItem,
         start_date: startDate || undefined,
         final_date: finalDate || undefined,
+        block_section_back: blockSectionBack,
       });
       await importLabelingItemsCsv(labeling.id, file);
       setOpen(false);

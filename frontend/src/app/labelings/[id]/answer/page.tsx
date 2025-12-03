@@ -8,7 +8,7 @@ import { ArrowLeft, RefreshCw, Send } from "lucide-react";
 import { fetchLabelingById, type LabelingStructureSection } from "@/lib/services/labeling_create_service";
 import { fetchNextAnswer, submitAnswer } from "@/lib/services/answer_service";
 import SectionCard from "./section_card";
-import { buildInitialAnswers, validateRequired } from "./answer_utils";
+import { buildInitialAnswers, validateRequired, validateSectionRequired } from "./answer_utils";
 import type { AnswerMap } from "./answer_types";
 import SidebarLayout from "@/app/components/sidebar_layout";
 
@@ -30,6 +30,8 @@ export default function LabelingAnswerPage() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
+  const [currentSectionIdx, setCurrentSectionIdx] = useState<number>(0);
+  const [blockSectionBack, setBlockSectionBack] = useState<boolean>(false);
 
 
   const loadItem = useCallback(async () => {
@@ -46,6 +48,7 @@ export default function LabelingAnswerPage() {
     try {
       const labeling = await fetchLabelingById(labelingId);
       setLabelingTitle(labeling.title);
+      setBlockSectionBack(Boolean(labeling.block_section_back));
 
       const nextAnswer = await fetchNextAnswer(labelingId);
       const sectionsResponse = nextAnswer.sections ?? [];
@@ -54,6 +57,7 @@ export default function LabelingAnswerPage() {
       setCurrentItemId(nextAnswer.item?.id ?? null);
       setRowIndex(nextAnswer.item?.row_index ?? null);
       setAnswers(buildInitialAnswers(sectionsResponse));
+      setCurrentSectionIdx(0);
     } catch (error) {
       setPayload({});
       setCurrentItemId(null);
@@ -80,6 +84,15 @@ export default function LabelingAnswerPage() {
     void loadItem();
   }, [loadItem]);
 
+  const orderedSections = useMemo(
+    () => [...sections].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+    [sections]
+  );
+  const totalSections = orderedSections.length;
+  const currentSection =
+    currentSectionIdx >= 0 && currentSectionIdx < totalSections ? orderedSections[currentSectionIdx] : null;
+  const isLastSection = currentSectionIdx === totalSections - 1;
+
   const handleAnswerChange = (questionId: number | string, value: unknown) => {
     setAnswers((prev) => ({ ...prev, [String(questionId)]: value }));
   };
@@ -92,6 +105,14 @@ export default function LabelingAnswerPage() {
     if (!currentItemId) {
       setLoadError("Nenhum item disponível para responder.");
       return;
+    }
+
+    if (currentSection) {
+      const sectionError = validateSectionRequired(currentSection, answers);
+      if (sectionError) {
+        setLoadError(sectionError);
+        return;
+      }
     }
 
     const validationError = validateRequired(sections, answers);
@@ -130,10 +151,24 @@ export default function LabelingAnswerPage() {
     }
   };
 
-  const orderedSections = useMemo(
-    () => [...sections].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
-    [sections]
-  );
+  const goToNextSection = () => {
+    if (!currentSection) return;
+    const error = validateSectionRequired(currentSection, answers);
+    if (error) {
+      setLoadError(error);
+      return;
+    }
+    setLoadError(null);
+    setSubmitMessage(null);
+    setCurrentSectionIdx((idx) => Math.min(idx + 1, totalSections - 1));
+  };
+
+  const goToPreviousSection = () => {
+    if (blockSectionBack) return;
+    setLoadError(null);
+    setSubmitMessage(null);
+    setCurrentSectionIdx((idx) => Math.max(idx - 1, 0));
+  };
 
   return (
     <SidebarLayout>
@@ -161,6 +196,11 @@ export default function LabelingAnswerPage() {
               Item #{rowIndex + 1}
             </span>
           ) : null}
+          {totalSections > 0 ? (
+            <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-blue-50">
+              Seção {currentSectionIdx + 1} de {totalSections}
+            </span>
+          ) : null}
           <button
             type="button"
             onClick={() => void loadItem()}// TODO esse botao é debug... mais pro futuro pode tirar 
@@ -169,15 +209,6 @@ export default function LabelingAnswerPage() {
           >
             <RefreshCw size={16} />
             Recarregar item
-          </button>
-          <button
-            type="button"
-            onClick={() => void handleSubmit()}
-            disabled={isLoading || isSubmitting || !currentItemId || orderedSections.length === 0}
-            className="inline-flex items-center gap-2 rounded-lg bg-white px-5 py-2 text-sm font-semibold text-blue-900 shadow-sm hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
-          >
-            <Send size={16} />
-            {isSubmitting ? "Enviando..." : "Enviar resposta"}
           </button>
         </div>
       </header>
@@ -192,19 +223,51 @@ export default function LabelingAnswerPage() {
           <div className="rounded-lg border border-dashed border-blue-200 bg-blue-50 px-4 py-6 text-center text-sm text-blue-900">
             Nenhum item disponível para resposta agora.
           </div>
-        ) : (
+        ) : currentSection ? (
           <div className="space-y-6">
-            {orderedSections.map((section, sectionIndex) => (
-              <SectionCard
-                key={section.id ?? sectionIndex}
-                section={section}
-                payload={payload}
-                answers={answers}
-                onChange={handleAnswerChange}
-              />
-            ))}
+            <SectionCard
+              key={currentSection.id ?? currentSectionIdx}
+              section={currentSection}
+              payload={payload}
+              answers={answers}
+              onChange={handleAnswerChange}
+            />
+            <div className="flex justify-between items-center pt-2">
+              {blockSectionBack ? <div /> : (
+                <button
+                  type="button"
+                  onClick={goToPreviousSection}
+                  disabled={currentSectionIdx === 0 || isLoading || isSubmitting}
+                  className="inline-flex items-center gap-2 rounded-lg border border-blue-200 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Voltar
+                </button>
+              )}
+              <div className="flex gap-3">
+                {!isLastSection ? (
+                  <button
+                    type="button"
+                    onClick={goToNextSection}
+                    disabled={isLoading || isSubmitting}
+                    className="inline-flex items-center gap-2 rounded-lg bg-blue-900 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Avançar
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => void handleSubmit()}
+                    disabled={isLoading || isSubmitting || !currentItemId || orderedSections.length === 0}
+                    className="inline-flex items-center gap-2 rounded-lg bg-blue-900 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+                  >
+                    <Send size={16} />
+                    {isSubmitting ? "Enviando..." : "Enviar resposta"}
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
-        )}
+        ) : null}
       </section>
     </SidebarLayout>
   );

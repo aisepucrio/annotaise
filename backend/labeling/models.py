@@ -22,6 +22,7 @@ class Labeling(models.Model):
     final_date = models.DateField(null=False, blank=False)
 
     users_per_item = models.PositiveIntegerField(null=False, blank=False,default=1)
+    block_section_back = models.BooleanField(default=False)
 
     column_names = models.JSONField(
         default=list, blank=True,

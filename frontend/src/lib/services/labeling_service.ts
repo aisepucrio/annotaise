@@ -14,6 +14,7 @@ export type Labeling = {
   column_names: string[];
   created_at: string;
   created_by: number;
+  block_section_back?: boolean;
 };
 
 export type LabelingPayload = {
@@ -23,6 +24,7 @@ export type LabelingPayload = {
   start_date?: string;
   final_date?: string;
   status?: LabelingStatus;
+  block_section_back?: boolean;
 };
 
 export type LabelingMembershipRole = "owner" | "admin" | "annotator" | "viewer";

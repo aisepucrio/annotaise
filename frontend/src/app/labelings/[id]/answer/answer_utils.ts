@@ -59,6 +59,35 @@ export function validateRequired(
   return null;
 }
 
+export function validateSectionRequired(
+  section: LabelingStructureSection,
+  answers: AnswerMap
+): string | null {
+  const missing: Array<string | number> = [];
+
+  section.elements.forEach((element) => {
+    if (element.question_type === "context" || !element.required) return;
+
+    const key = String(element.id ?? "");
+    const value = answers[key];
+    const isEmpty =
+      value === undefined ||
+      value === null ||
+      (typeof value === "string" && value.trim() === "") ||
+      (Array.isArray(value) && value.length === 0);
+
+    if (isEmpty) {
+      missing.push(element.id ?? element.text ?? "pergunta");
+    }
+  });
+
+  if (missing.length > 0) {
+    return "Preencha todas as perguntas obrigatórias antes de avançar.";
+  }
+
+  return null;
+}
+
 export function formatPayloadValue(value: unknown): string {
   if (value === null || value === undefined) return "—";
   if (typeof value === "object") {

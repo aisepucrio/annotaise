@@ -15,6 +15,7 @@ type UploadCsvModalProps = {
     usersPerItem: number;
     startDate?: string;
     finalDate?: string;
+    blockSectionBack?: boolean;
   }) => Promise<void>;
 };
 
@@ -27,6 +28,7 @@ export default function UploadCsvModal({ open, onClose, onConfirm }: UploadCsvMo
   const [startDate, setStartDate] = useState("");
   const [finalDate, setFinalDate] = useState("");
   const [usersPerItem, setUsersPerItem] = useState<string>("1");
+  const [blockSectionBack, setBlockSectionBack] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -50,6 +52,7 @@ export default function UploadCsvModal({ open, onClose, onConfirm }: UploadCsvMo
       setStartDate("");
       setFinalDate("");
       setUsersPerItem("1");
+      setBlockSectionBack(false);
       setError(null);
       setIsSubmitting(false);
       if (fileInputRef.current) {
@@ -131,6 +134,7 @@ export default function UploadCsvModal({ open, onClose, onConfirm }: UploadCsvMo
         usersPerItem: parsedUsersPerItem,
         startDate: startDate || undefined,
         finalDate: finalDate || undefined,
+        blockSectionBack,
       });
     } catch (err) {
       const message =
@@ -262,6 +266,25 @@ export default function UploadCsvModal({ open, onClose, onConfirm }: UploadCsvMo
             </div>
 
             {error && <div className="text-sm text-red-600">{error}</div>}
+            <label
+              htmlFor="block-section-back"
+              className="flex items-center gap-3 pt-2 cursor-pointer select-none"
+            >
+              <span className="relative inline-flex items-center">
+                <input
+                  id="block-section-back"
+                  type="checkbox"
+                  checked={blockSectionBack}
+                  onChange={(e) => setBlockSectionBack(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <span className="w-14 h-7 rounded-full bg-gray-200 transition-colors duration-200 peer-checked:bg-blue-900" />
+                <span className="pointer-events-none absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 peer-checked:translate-x-7" />
+              </span>
+              <span className="text-base text-gray-800 font-medium">
+                Bloquear voltar em seções já respondidas
+              </span>
+            </label>
           </div>
 
           <div className="mt-6 flex justify-end gap-3">
