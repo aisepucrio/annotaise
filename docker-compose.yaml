@@ -25,6 +25,8 @@ services:
       POSTGRES_DB: ${DJANGO_DB_NAME}
       POSTGRES_USER: ${DJANGO_DB_USER}
       POSTGRES_PASSWORD: ${DJANGO_DB_PASS}
+    ports:
+      - "5432:5432"
     volumes:
       - pg_annotaise:/var/lib/postgresql/data
 
