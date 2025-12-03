@@ -21,7 +21,7 @@ export default function QuestionTextEditor({ config, onChange }: Props) {
 
   return (
     <div className="flex gap-3">
-      <label className="flex flex-1 flex-col text-xs text-blue-900">
+      {/* <label className="flex flex-1 flex-col text-xs text-blue-900">
         Placeholder
         <input
           type="text"
@@ -39,7 +39,7 @@ export default function QuestionTextEditor({ config, onChange }: Props) {
           value={config.maxLength ?? ""}
           onChange={handleMaxLengthChange}
         />
-      </label>
+      </label> */}
     </div>
   );
 }

@@ -3,7 +3,6 @@
 import { useState } from "react";
 import useSWR from "swr";
 import { useRouter } from "next/navigation";
-import Sidebar from "../components/sidebar";
 import PageHeader from "../components/page_description";
 import ProjectContainer from "./project_container";
 import FilterBar from "../components/filter_bar";
@@ -11,6 +10,7 @@ import { Plus } from "lucide-react";
 import NewProjectModal from "./new_project_modal";
 import { createProject, fetchProjectDashboard, type ProjectPayload } from "../../lib/services/project_service";
 import useCurrent from "../hooks/current_user_hook";
+import SidebarLayout from "../components/sidebar_layout";
 
 export default function Projects() {
   const router = useRouter();
@@ -40,34 +40,27 @@ export default function Projects() {
 
   if (userLoading) {
     return (
-      <div className="bg-gray-300 min-h-screen">
-        <div className="bg-white ml-64 p-4 min-h-screen">
-          <Sidebar />
-          <p className="mt-6 text-sm text-gray-500">Carregando informações do usuário...</p>
-        </div>
-      </div>
+      <SidebarLayout>
+        <p className="mt-6 text-sm text-gray-500">Carregando informações do usuário...</p>
+      </SidebarLayout>
     );
   }
 
   if (!canSeeProjects) {
     return (
-      <div className="bg-gray-300 min-h-screen">
-        <div className="bg-white ml-64 p-4 min-h-screen">
-          <Sidebar />
-          <PageHeader
-            page_title="Projetos"
-            description="Apenas editores ou administradores podem acessar esta página."
-          />
-          <p className="mt-6 ml-5 text-sm text-red-600">Seu perfil não possui permissão para visualizar projetos.</p>
-        </div>
-      </div>
+      <SidebarLayout>
+        <PageHeader
+          page_title="Projetos"
+          description="Apenas editores ou administradores podem acessar esta página."
+        />
+        <p className="mt-6 ml-5 text-sm text-red-600">Seu perfil não possui permissão para visualizar projetos.</p>
+      </SidebarLayout>
     );
   }
 
   return (
-    <div className="bg-gray-300 min-h-screen">
-      <div className="bg-white ml-64  p-4 min-h-screen">
-        <Sidebar></Sidebar>
+    <>
+      <SidebarLayout>
         <PageHeader page_title="Projetos" description="Nesta página você pode visualizar todos os projetos criados, assim como suas informações principais. Clique em “Gerenciar” para ver mais informações sobre o projeto."></PageHeader>
         
         <div className="flex flex-nowrap items-center mt-5">
@@ -109,12 +102,12 @@ export default function Projects() {
             </div>
           )}
         </div>
-      </div>
+      </SidebarLayout>
       <NewProjectModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         onSubmit={handleCreateProject}
       />
-    </div>
+    </>
   );
 }

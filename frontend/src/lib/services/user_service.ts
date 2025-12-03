@@ -24,6 +24,15 @@ export type CreateUserPayload = {
   account_type: User["account_type"];
 };
 
+export type UpdateUserPayload = Partial<{
+  email: string;
+  first_name: string;
+  last_name: string;
+  password: string;
+  account_type: User["account_type"];
+  is_active: boolean;
+}>;
+
 export async function fetchUsers(): Promise<User[]> {
   const { data } = await api.get<User[]>("/users/");
   return data;
@@ -33,6 +42,14 @@ export async function createUser(payload: CreateUserPayload): Promise<User> {
   const { data } = await api.post<User>("/users/", {
     ...payload,
     username: payload.email,
+  });
+  return data;
+}
+
+export async function updateUser(id: number, payload: UpdateUserPayload): Promise<User> {
+  const { data } = await api.patch<User>(`/users/${id}/`, {
+    ...payload,
+    ...(payload.email ? { username: payload.email } : {}),
   });
   return data;
 }

@@ -9,6 +9,7 @@ import {
   type Labeling,
   type LabelingMembershipDashboard,
   type LabelingMembershipRole,
+  deleteLabeling,
   updateLabeling,
   updateLabelingMembership,
 } from "@/lib/services/labeling_service";
@@ -31,6 +32,7 @@ export default function EditLabelingModal({ open, labelingId, onClose, onUpdated
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [membershipSaving, setMembershipSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -52,6 +54,7 @@ export default function EditLabelingModal({ open, labelingId, onClose, onUpdated
       setLoading(false);
       setSaving(false);
       setMembershipSaving(false);
+      setDeleting(false);
       setNewMemberId("");
       setNewMemberRole("annotator");
       return;
@@ -189,6 +192,27 @@ export default function EditLabelingModal({ open, labelingId, onClose, onUpdated
     }
   };
 
+  const handleDeleteLabeling = async () => {
+    if (!labeling) return;
+    const confirmed = window.confirm("Deseja excluir esta rotulação? Esta ação não pode ser desfeita.");
+    if (!confirmed) return;
+    setDeleting(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      await deleteLabeling(labeling.id);
+      await onUpdated?.();
+      onClose();
+    } catch (err) {
+      const detail =
+        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
+        (err instanceof Error ? err.message : "Não foi possível excluir a rotulação.");
+      setError(detail);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (!open) return null;
 
   return (
@@ -255,8 +279,9 @@ export default function EditLabelingModal({ open, labelingId, onClose, onUpdated
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-700">Usuários por item</label>
+                  <label className="text-sm font-medium text-gray-700">Usuários por item (não pode ser alterado)</label>
                   <input
+                    disabled
                     type="number"
                     min={1}
                     value={usersPerItem}
@@ -365,6 +390,14 @@ export default function EditLabelingModal({ open, labelingId, onClose, onUpdated
         )}
 
         <footer className="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={handleDeleteLabeling}
+            disabled={saving || membershipSaving || deleting}
+            className="mr-auto rounded-lg border border-red-200 px-4 py-2 text-sm text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {deleting ? "Excluindo..." : "Excluir rotulação"}
+          </button>
           <button
             type="button"
             onClick={onClose}

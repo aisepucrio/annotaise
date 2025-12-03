@@ -127,33 +127,31 @@ class NextItemView(RetrieveAPIView):
             .annotate(
                 num_answers=Count('answers'),
                 required_answers=Coalesce('labeling__users_per_item', Value(1)),
+                membership_count=Count('memberships'),
             )
+            .filter(membership_count__lt=F('required_answers'))
             .filter(num_answers__lt=F('required_answers'))  # ainda tem "vagas"
             .exclude(answers__answered_by=user)
             .exclude(memberships__user=user)                        # sem membership prévio
-            .first()
+            .values_list('id', flat=True)
             )
         
-        if item is None:
-            return None
-
-        
+        '''aqui tem que ser duas queries porque o select_for_update não funciona com annotations '''
         item_obj = (Item.objects
             .select_for_update(skip_locked=True)
-            .filter(id=item.id)).first()
-
+            .filter(id__in=item)
+            .first())
 
         if item_obj:
-            ItemMembership.objects.create(item=item, user=user)
+            ItemMembership.objects.create(item=item_obj, user=user)
             return item_obj
 
         # 3) Rouba membership expirada de outra pessoa
-        STALE_MINUTES = 10  # define a janela de expiração que fizer sentido pra você
+        STALE_MINUTES = 1  
         stale_limit = timezone.now() - timedelta(minutes=STALE_MINUTES)
 
-        expired_membership = (
+        membership = (
             ItemMembership.objects
-            .select_for_update(skip_locked=True)
             .select_related('item', 'item__labeling')
             .annotate(
                 num_answers=Count('item__answers'),
@@ -168,8 +166,10 @@ class NextItemView(RetrieveAPIView):
             .exclude(user=user)                             # não rouba de si mesmo
             .exclude(item__answers__answered_by=user)
             .order_by('created_at')                         # o mais antigo primeiro
-            .first()
+            .values_list('id', flat=True)
         )
+
+        expired_membership = ItemMembership.objects.select_for_update(skip_locked=True).filter(id__in=membership).first()
 
         if expired_membership:
             item = expired_membership.item

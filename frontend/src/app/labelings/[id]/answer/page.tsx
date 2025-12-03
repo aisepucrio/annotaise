@@ -5,12 +5,12 @@ import { useParams, useRouter } from "next/navigation";
 import useSWR from "swr";
 import axios from "axios";
 import { ArrowLeft, RefreshCw, Send } from "lucide-react";
-import Sidebar from "@/app/components/sidebar";
 import { fetchLabelingById, type LabelingStructureSection } from "@/lib/services/labeling_create_service";
 import { fetchNextAnswer, submitAnswer } from "@/lib/services/answer_service";
 import SectionCard from "./section_card";
 import { buildInitialAnswers, validateRequired } from "./answer_utils";
 import type { AnswerMap } from "./answer_types";
+import SidebarLayout from "@/app/components/sidebar_layout";
 
 export default function LabelingAnswerPage() {
   const params = useParams<{ id: string }>();
@@ -136,79 +136,76 @@ export default function LabelingAnswerPage() {
   );
 
   return (
-    <div className="bg-gray-200 min-h-screen">
-      <Sidebar />
-      <main className="bg-white ml-64 p-4 min-h-screen">
-        <header className="flex flex-col gap-3 rounded-xl bg-blue-900 px-6 py-4 text-white shadow-md lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => router.push("/labelings")}
-              className="rounded-md p-1 hover:bg-white/10 cursor-pointer"
-              aria-label="Voltar"
-            >
-              <ArrowLeft size={22} />
-            </button>
-            <div>
-              
-              <h1 className="text-lg font-semibold leading-tight">
-                {labelingTitle || (isLoading ? "Carregando rotulação..." : "Responder rotulação")}
-              </h1>
-            </div>
+    <SidebarLayout>
+      <header className="flex flex-col gap-3 rounded-xl bg-blue-900 px-6 py-4 text-white shadow-md lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => router.push("/labelings")}
+            className="rounded-md p-1 hover:bg-white/10 cursor-pointer"
+            aria-label="Voltar"
+          >
+            <ArrowLeft size={22} />
+          </button>
+          <div>
+            
+            <h1 className="text-lg font-semibold leading-tight">
+              {labelingTitle || (isLoading ? "Carregando rotulação..." : "Responder rotulação")}
+            </h1>
           </div>
+        </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            {rowIndex !== null ? (
-              <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-blue-50">
-                Item #{rowIndex + 1}
-              </span>
-            ) : null}
-            <button
-              type="button"
-              onClick={() => void loadItem()}// TODO esse botao é debug... mais pro futuro pode tirar 
-              disabled={isLoading || isSubmitting}
-              className="inline-flex items-center gap-2 rounded-lg border border-white/30 px-4 py-2 text-sm font-medium text-white cursor-pointer hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <RefreshCw size={16} />
-              Recarregar item
-            </button>
-            <button
-              type="button"
-              onClick={() => void handleSubmit()}
-              disabled={isLoading || isSubmitting || !currentItemId || orderedSections.length === 0}
-              className="inline-flex items-center gap-2 rounded-lg bg-white px-5 py-2 text-sm font-semibold text-blue-900 shadow-sm hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
-            >
-              <Send size={16} />
-              {isSubmitting ? "Enviando..." : "Enviar resposta"}
-            </button>
+        <div className="flex flex-wrap items-center gap-3">
+          {rowIndex !== null ? (
+            <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-blue-50">
+              Item #{rowIndex + 1}
+            </span>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => void loadItem()}// TODO esse botao é debug... mais pro futuro pode tirar 
+            disabled={isLoading || isSubmitting}
+            className="inline-flex items-center gap-2 rounded-lg border border-white/30 px-4 py-2 text-sm font-medium text-white cursor-pointer hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <RefreshCw size={16} />
+            Recarregar item
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleSubmit()}
+            disabled={isLoading || isSubmitting || !currentItemId || orderedSections.length === 0}
+            className="inline-flex items-center gap-2 rounded-lg bg-white px-5 py-2 text-sm font-semibold text-blue-900 shadow-sm hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+          >
+            <Send size={16} />
+            {isSubmitting ? "Enviando..." : "Enviar resposta"}
+          </button>
+        </div>
+      </header>
+
+      <section className="mt-4 rounded-xl border border-blue-200 bg-white p-4 shadow-lg">
+        {loadError ? <p className="mb-3 text-sm text-red-600">{loadError}</p> : null}
+        {submitMessage ? <p className="mb-3 text-sm text-green-700">{submitMessage}</p> : null}
+
+        {isLoading ? (
+          <p className="text-sm text-gray-600">Carregando item e perguntas...</p>
+        ) : orderedSections.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-blue-200 bg-blue-50 px-4 py-6 text-center text-sm text-blue-900">
+            Nenhum item disponível para resposta agora.
           </div>
-        </header>
-
-        <section className="mt-4 rounded-xl border border-blue-200 bg-white p-4 shadow-lg">
-          {loadError ? <p className="mb-3 text-sm text-red-600">{loadError}</p> : null}
-          {submitMessage ? <p className="mb-3 text-sm text-green-700">{submitMessage}</p> : null}
-
-          {isLoading ? (
-            <p className="text-sm text-gray-600">Carregando item e perguntas...</p>
-          ) : orderedSections.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-blue-200 bg-blue-50 px-4 py-6 text-center text-sm text-blue-900">
-              Nenhum item disponível para resposta agora.
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {orderedSections.map((section, sectionIndex) => (
-                <SectionCard
-                  key={section.id ?? sectionIndex}
-                  section={section}
-                  payload={payload}
-                  answers={answers}
-                  onChange={handleAnswerChange}
-                />
-              ))}
-            </div>
-          )}
-        </section>
-      </main>
-    </div>
+        ) : (
+          <div className="space-y-6">
+            {orderedSections.map((section, sectionIndex) => (
+              <SectionCard
+                key={section.id ?? sectionIndex}
+                section={section}
+                payload={payload}
+                answers={answers}
+                onChange={handleAnswerChange}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+    </SidebarLayout>
   );
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Sidebar from "../components/sidebar";
 import PageHeader from "../components/page_description";
 import FilterBar from "../components/filter_bar";
 import LabelingContainer from "./labeling_container";
@@ -15,6 +14,7 @@ import {
   importLabelingItemsCsv,
 } from "@/lib/services/labeling_service";
 import useCurrent from "../hooks/current_user_hook";
+import SidebarLayout from "../components/sidebar_layout";
 
 type UploadPayload = {
   file: File;
@@ -75,9 +75,8 @@ export default function LabelingsPage() {
   }
 
   return (
-    <div className="bg-gray-300 min-h-screen">
-      <div className="bg-white ml-64 p-4 min-h-screen">
-        <Sidebar />
+    <>
+      <SidebarLayout>
         <PageHeader
           page_title="Rotulações"
           description="Visualize e gerencie rotulações. Clique em 'Nova Rotulação' para importar um CSV e iniciar a configuração."
@@ -124,7 +123,7 @@ export default function LabelingsPage() {
             Você pode visualizar e responder às rotulações em que participa, mas somente administradores podem criar novas.
           </div>
         )}
-      </div>
+      </SidebarLayout>
 
       {/* Modal */}
       <UploadCsvModal
@@ -132,6 +131,6 @@ export default function LabelingsPage() {
         onClose={() => setOpen(false)}
         onConfirm={handleConfirm}
       />
-    </div>
+    </>
   );
 }

@@ -82,6 +82,10 @@ export async function updateLabeling(id: number, payload: Partial<LabelingPayloa
   return data;
 }
 
+export async function deleteLabeling(id: number): Promise<void> {
+  await api.delete(`/labelings/${id}/`);
+}
+
 export async function importLabelingItemsCsv(labelingId: number, file: File): Promise<void> {
   const formData = new FormData();
   formData.append("file", file);

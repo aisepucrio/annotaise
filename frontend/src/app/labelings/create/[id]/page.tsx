@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import axios from "axios";
-import Sidebar from "@/app/components/sidebar";
 import { ArrowLeft, Save } from "lucide-react";
 import {
   SectionData,
@@ -19,6 +18,7 @@ import {
   saveLabelingStructure,
   type LabelingStructureSection,
 } from "@/lib/services/labeling_create_service";
+import SidebarLayout from "@/app/components/sidebar_layout";
 
 const createContextElement = (order: number): ContextElement => ({
   id: crypto.randomUUID(),
@@ -179,92 +179,89 @@ export default function LabelingFormPage() {
   }
 
   return (
-    <div className="bg-gray-200 min-h-screen">
-      <Sidebar />
-      <main className="bg-white ml-64 p-4 min-h-screen">
-        {/* Cabeçalho */}
-        <div className="flex items-center justify-between bg-blue-900 text-white px-6 py-4 rounded-t-xl shadow-md">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => router.push("/labelings")}
-              className="p-1 rounded-md hover:bg-white/10"
-              aria-label="Voltar"
-            >
-              <ArrowLeft size={22} className="cursor-pointer" />
-            </button>
-            <span className="text-lg font-semibold">
-              {labelingTitle || (isLoadingLabeling ? "Carregando..." : "Rotulação")}
-            </span>
-          </div>
+    <SidebarLayout>
+      {/* Cabeçalho */}
+      <div className="flex items-center justify-between bg-blue-900 text-white px-6 py-4 rounded-t-xl shadow-md">
+        <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={handleSaveStructure}
-            className="bg-white text-blue-900 font-semibold px-5 py-2 rounded-lg hover:bg-gray-100 shadow-sm flex items-center gap-2 cursor-pointer"
-            disabled={isSaving || isLoadingLabeling}
+            onClick={() => router.push("/labelings")}
+            className="p-1 rounded-md hover:bg-white/10"
+            aria-label="Voltar"
           >
-            <Save size={18} />
-            {isSaving ? "Salvando..." : "Finalizar Criação"}
+            <ArrowLeft size={22} className="cursor-pointer" />
           </button>
+          <span className="text-lg font-semibold">
+            {labelingTitle || (isLoadingLabeling ? "Carregando..." : "Rotulação")}
+          </span>
         </div>
+        <button
+          type="button"
+          onClick={handleSaveStructure}
+          className="bg-white text-blue-900 font-semibold px-5 py-2 rounded-lg hover:bg-gray-100 shadow-sm flex items-center gap-2 cursor-pointer"
+          disabled={isSaving || isLoadingLabeling}
+        >
+          <Save size={18} />
+          {isSaving ? "Salvando..." : "Finalizar Criação"}
+        </button>
+      </div>
 
-        {/* Info CSV + Seções */}
-        <div className="bg-white border-x border-b border-blue-200 rounded-b-xl shadow-lg p-4">
-          {loadError && (
-            <div className="mb-4 text-sm text-red-600">{loadError}</div>
+      {/* Info CSV + Seções */}
+      <div className="bg-white border-x border-b border-blue-200 rounded-b-xl shadow-lg p-4">
+        {loadError && (
+          <div className="mb-4 text-sm text-red-600">{loadError}</div>
+        )}
+        {/* Colunas do CSV */}
+        <div className="mb-4 max-w-[860px] mx-auto">
+          <h2 className="text-sm font-semibold text-blue-900">
+            Colunas importadas do CSV
+          </h2>
+          {columns.length > 0 ? (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {columns.map((c) => (
+                <span
+                  key={c}
+                  className="rounded-md bg-blue-100 text-blue-800 text-xs px-2 py-1"
+                >
+                  {c}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-2 text-sm text-gray-500">
+              {isLoadingLabeling
+                ? "Carregando colunas..."
+                : "Nenhuma coluna detectada para esta rotulação."}
+            </p>
           )}
-          {/* Colunas do CSV */}
-          <div className="mb-4 max-w-[860px] mx-auto">
-            <h2 className="text-sm font-semibold text-blue-900">
-              Colunas importadas do CSV
-            </h2>
-            {columns.length > 0 ? (
-              <div className="mt-2 flex flex-wrap gap-2">
-                {columns.map((c) => (
-                  <span
-                    key={c}
-                    className="rounded-md bg-blue-100 text-blue-800 text-xs px-2 py-1"
-                  >
-                    {c}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <p className="mt-2 text-sm text-gray-500">
-                {isLoadingLabeling
-                  ? "Carregando colunas..."
-                  : "Nenhuma coluna detectada para esta rotulação."}
-              </p>
-            )}
-          </div>
-
-          {/* Seções (form mais estreito para acomodar os botões) */}
-          <div className="mt-2 space-y-6 max-w-[860px] mx-auto pr-10">
-            {sections.map((section, idx) => (
-              <SectionForm
-                key={section.id}
-                data={section}
-                index={idx}
-                total={sections.length}
-                columns={columns}
-                onAddContext={() => addContext(section.id)}
-                onAddQuestion={() => addQuestion(section.id)}
-                onAddSection={addSection}
-                onChangeTitle={(t) => updateSectionTitle(section.id, t)}
-                onRemoveSection={() => {
-                  setSections((prev) => prev.filter((s) => s.id !== section.id));
-                }}
-                onUpdateSection={(updated) => {
-                  setSections((prev) =>
-                    prev.map((s) => (s.id === section.id ? updated : s))
-                  );
-                }}
-              />
-            ))}
-          </div>
         </div>
-      </main>
-    </div>
+
+        {/* Seções (form mais estreito para acomodar os botões) */}
+        <div className="mt-2 space-y-6 max-w-[860px] mx-auto pr-10">
+          {sections.map((section, idx) => (
+            <SectionForm
+              key={section.id}
+              data={section}
+              index={idx}
+              total={sections.length}
+              columns={columns}
+              onAddContext={() => addContext(section.id)}
+              onAddQuestion={() => addQuestion(section.id)}
+              onAddSection={addSection}
+              onChangeTitle={(t) => updateSectionTitle(section.id, t)}
+              onRemoveSection={() => {
+                setSections((prev) => prev.filter((s) => s.id !== section.id));
+              }}
+              onUpdateSection={(updated) => {
+                setSections((prev) =>
+                  prev.map((s) => (s.id === section.id ? updated : s))
+                );
+              }}
+            />
+          ))}
+        </div>
+      </div>
+    </SidebarLayout>
   );
 }
 

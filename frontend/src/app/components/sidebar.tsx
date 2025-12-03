@@ -6,7 +6,11 @@ import { useRouter } from "next/navigation";
 import { AuthActions } from "../../../authClient";
 import useCurrent from "../hooks/current_user_hook";
 
-export default function Sidebar() {
+interface SidebarProps {
+  isOpen?: boolean;
+}
+
+export default function Sidebar({ isOpen = true }: SidebarProps) {
   const router = useRouter();
   const { removeTokens } = AuthActions();
   const currentUser = useCurrent();
@@ -21,9 +25,9 @@ export default function Sidebar() {
   return (
     <div className="flex">
       <aside
-        className="
-          fixed top-0 left-0
-          h-screen
+        aria-hidden={!isOpen}
+        className={`
+          fixed top-0 left-0 h-screen
           w-64
           bg-white
           shadow-xl
@@ -31,7 +35,9 @@ export default function Sidebar() {
           flex flex-col
           justify-between
           p-6
-        "
+          transition-transform duration-300
+          ${isOpen ? "translate-x-0" : "-translate-x-full pointer-events-none"}
+        `}
       >
         {/* LOGO (continua com next/image) */}
         <Image
