@@ -3,32 +3,48 @@
 import { useState } from "react";
 import useSWR from "swr";
 import { useRouter } from "next/navigation";
-import Sidebar from "../components/sidebar";
-import PageHeader from "../components/page_description";
+import Sidebar from "@/components/sidebar";
+import PageHeader from "@/components/page_description";
 import ProjectContainer from "./project_container";
-import FilterBar from "../components/filter_bar";
+import FilterBar from "@/components/filter_bar";
 import { Plus } from "lucide-react";
 import NewProjectModal from "./new_project_modal";
-import { createProject, fetchProjectDashboard, type ProjectPayload } from "../../lib/services/project_service";
-import useCurrent from "../hooks/current_user_hook";
+import {
+  createProject,
+  fetchProjectDashboard,
+  type ProjectPayload,
+} from "@/lib/services/project_service";
+import useCurrent from "@/hooks/current_user_hook";
 
 export default function Projects() {
   const router = useRouter();
   const currentUser = useCurrent();
   const userLoading = currentUser === undefined;
-  const canSeeProjects = Boolean(currentUser && (currentUser.is_staff || currentUser.account_type !== "standard"));
-  const isAdmin = Boolean(currentUser?.is_staff || currentUser?.account_type === "admin");
+  const canSeeProjects = Boolean(
+    currentUser &&
+      (currentUser.is_staff || currentUser.account_type !== "standard")
+  );
+  const isAdmin = Boolean(
+    currentUser?.is_staff || currentUser?.account_type === "admin"
+  );
   const [modalOpen, setModalOpen] = useState(false);
   const {
     data: projects,
     error,
     isLoading,
     mutate,
-  } = useSWR(canSeeProjects ? "projects-dashboard" : null, fetchProjectDashboard);
+  } = useSWR(
+    canSeeProjects ? "projects-dashboard" : null,
+    fetchProjectDashboard
+  );
 
   const projectList = projects ?? [];
   const loadError =
-    error && error instanceof Error ? error.message : error ? "Não foi possível carregar os projetos." : null;
+    error && error instanceof Error
+      ? error.message
+      : error
+      ? "Não foi possível carregar os projetos."
+      : null;
 
   const handleCreateProject = async (payload: ProjectPayload) => {
     if (!isAdmin) {
@@ -43,7 +59,9 @@ export default function Projects() {
       <div className="bg-gray-300 min-h-screen">
         <div className="bg-white ml-64 p-4 min-h-screen">
           <Sidebar />
-          <p className="mt-6 text-sm text-gray-500">Carregando informações do usuário...</p>
+          <p className="mt-6 text-sm text-gray-500">
+            Carregando informações do usuário...
+          </p>
         </div>
       </div>
     );
@@ -58,7 +76,9 @@ export default function Projects() {
             page_title="Projetos"
             description="Apenas editores ou administradores podem acessar esta página."
           />
-          <p className="mt-6 ml-5 text-sm text-red-600">Seu perfil não possui permissão para visualizar projetos.</p>
+          <p className="mt-6 ml-5 text-sm text-red-600">
+            Seu perfil não possui permissão para visualizar projetos.
+          </p>
         </div>
       </div>
     );
@@ -68,10 +88,13 @@ export default function Projects() {
     <div className="bg-gray-300 min-h-screen">
       <div className="bg-white ml-64  p-4 min-h-screen">
         <Sidebar></Sidebar>
-        <PageHeader page_title="Projetos" description="Nesta página você pode visualizar todos os projetos criados, assim como suas informações principais. Clique em “Gerenciar” para ver mais informações sobre o projeto."></PageHeader>
-        
+        <PageHeader
+          page_title="Projetos"
+          description="Nesta página você pode visualizar todos os projetos criados, assim como suas informações principais. Clique em “Gerenciar” para ver mais informações sobre o projeto."
+        ></PageHeader>
+
         <div className="flex flex-nowrap items-center mt-5">
-          <FilterBar/>
+          <FilterBar />
           <button
             type="button"
             onClick={() => setModalOpen(true)}
@@ -82,7 +105,8 @@ export default function Projects() {
             shadow-md text-sm transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed
           "
           >
-            <Plus size={16} strokeWidth={1.75} className="opacity-90" /> Novo Projeto
+            <Plus size={16} strokeWidth={1.75} className="opacity-90" /> Novo
+            Projeto
           </button>
         </div>
         <div className="ml-5 mr-5 mt-5">
@@ -102,7 +126,11 @@ export default function Projects() {
                   labelings_done={project.finished_labelings}
                   labelings_pending={project.pending_labelings}
                   labelings_late={project.late_labelings}
-                  onManage={isAdmin ? () => router.push(`/projects/${project.id}`) : undefined}
+                  onManage={
+                    isAdmin
+                      ? () => router.push(`/projects/${project.id}`)
+                      : undefined
+                  }
                   canManage={isAdmin}
                 />
               ))}

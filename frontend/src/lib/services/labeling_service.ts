@@ -72,17 +72,25 @@ export async function fetchLabeling(id: number): Promise<Labeling> {
   return data;
 }
 
-export async function createLabeling(payload: LabelingPayload): Promise<Labeling> {
+export async function createLabeling(
+  payload: LabelingPayload
+): Promise<Labeling> {
   const { data } = await api.post<Labeling>("/labelings/", payload);
   return data;
 }
 
-export async function updateLabeling(id: number, payload: Partial<LabelingPayload>): Promise<Labeling> {
+export async function updateLabeling(
+  id: number,
+  payload: Partial<LabelingPayload>
+): Promise<Labeling> {
   const { data } = await api.patch<Labeling>(`/labelings/${id}/`, payload);
   return data;
 }
 
-export async function importLabelingItemsCsv(labelingId: number, file: File): Promise<void> {
+export async function importLabelingItemsCsv(
+  labelingId: number,
+  file: File
+): Promise<void> {
   const formData = new FormData();
   formData.append("file", file);
 
@@ -91,8 +99,12 @@ export async function importLabelingItemsCsv(labelingId: number, file: File): Pr
   });
 }
 
-export async function fetchLabelingMemberships(labelingId: number): Promise<LabelingMembershipDashboard[]> {
-  const { data } = await api.get<LabelingMembershipDashboard[]>(`/labelings/${labelingId}/memberships/`);
+export async function fetchLabelingMemberships(
+  labelingId: number
+): Promise<LabelingMembershipDashboard[]> {
+  const { data } = await api.get<LabelingMembershipDashboard[]>(
+    `/labelings/${labelingId}/memberships/`
+  );
   return data;
 }
 
@@ -101,7 +113,10 @@ export async function createLabelingMembership(payload: {
   user: number;
   role: LabelingMembershipRole;
 }): Promise<LabelingMembership> {
-  const { data } = await api.post<LabelingMembership>("/labeling-memberships/", payload);
+  const { data } = await api.post<LabelingMembership>(
+    "/labeling-memberships/",
+    payload
+  );
   return data;
 }
 
@@ -109,7 +124,10 @@ export async function updateLabelingMembership(
   id: number,
   payload: Partial<Pick<LabelingMembership, "role">>
 ): Promise<LabelingMembership> {
-  const { data } = await api.patch<LabelingMembership>(`/labeling-memberships/${id}/`, payload);
+  const { data } = await api.patch<LabelingMembership>(
+    `/labeling-memberships/${id}/`,
+    payload
+  );
   return data;
 }
 

@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import Sidebar from "../components/sidebar";
-import PageHeader from "../components/page_description";
-import FilterBar from "../components/filter_bar";
+import Sidebar from "@/components/sidebar";
+import PageHeader from "@/components/page_description";
+import FilterBar from "@/components/filter_bar";
 import LabelingContainer from "./labeling_container";
 import { Plus } from "lucide-react";
 import UploadCsvModal from "./upload_csv_modal";
@@ -14,7 +14,7 @@ import {
   fetchLabelingDashboard,
   importLabelingItemsCsv,
 } from "@/lib/services/labeling_service";
-import useCurrent from "../hooks/current_user_hook";
+import useCurrent from "@/hooks/current_user_hook";
 
 type UploadPayload = {
   file: File;
@@ -27,7 +27,9 @@ type UploadPayload = {
 
 export default function LabelingsPage() {
   const currentUser = useCurrent();
-  const isAdmin = Boolean(currentUser?.is_staff || currentUser?.account_type === "admin");
+  const isAdmin = Boolean(
+    currentUser?.is_staff || currentUser?.account_type === "admin"
+  );
   const [open, setOpen] = useState(false);
   const {
     data: labelings,
@@ -38,7 +40,11 @@ export default function LabelingsPage() {
 
   const labelingsList = labelings ?? [];
   const loadError =
-    error && error instanceof Error ? error.message : error ? "Não foi possível carregar as rotulações." : null;
+    error && error instanceof Error
+      ? error.message
+      : error
+      ? "Não foi possível carregar as rotulações."
+      : null;
 
   async function handleConfirm({
     file,
@@ -103,7 +109,10 @@ export default function LabelingsPage() {
 
         <div className="mt-5 ml-5 w-97/100 grid gap-4 grid-cols-[repeat(auto-fill,minmax(320px,1fr))]">
           {labelingsList.map((l) => {
-            const pending = Math.max((l.total_items ?? 0) - (l.items_done ?? 0), 0);
+            const pending = Math.max(
+              (l.total_items ?? 0) - (l.items_done ?? 0),
+              0
+            );
             return (
               <LabelingContainer
                 key={l.id}
@@ -121,7 +130,8 @@ export default function LabelingsPage() {
         </div>
         {!isAdmin && (
           <div className="ml-5 mr-5 mt-4 text-sm text-gray-600">
-            Você pode visualizar e responder às rotulações em que participa, mas somente administradores podem criar novas.
+            Você pode visualizar e responder às rotulações em que participa, mas
+            somente administradores podem criar novas.
           </div>
         )}
       </div>

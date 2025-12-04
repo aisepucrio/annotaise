@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import type { ProjectPayload, ProjectStatus } from "../../lib/services/project_service";
+import type {
+  ProjectPayload,
+  ProjectStatus,
+} from "@/@/lib/services/project_service";
 
 type NewProjectModalProps = {
   open: boolean;
@@ -17,7 +20,11 @@ const STATUS_OPTIONS: { value: ProjectStatus; label: string }[] = [
   { value: "cancelled", label: "Cancelado" },
 ];
 
-export default function NewProjectModal({ open, onClose, onSubmit }: NewProjectModalProps) {
+export default function NewProjectModal({
+  open,
+  onClose,
+  onSubmit,
+}: NewProjectModalProps) {
   const {
     register,
     handleSubmit,
@@ -62,8 +69,8 @@ export default function NewProjectModal({ open, onClose, onSubmit }: NewProjectM
       onClose();
     } catch (err) {
       const message =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
-        "Não foi possível salvar o projeto.";
+        (err as { response?: { data?: { detail?: string } } })?.response?.data
+          ?.detail ?? "Não foi possível salvar o projeto.";
       setError(message);
     } finally {
       setSubmitting(false);
@@ -88,7 +95,10 @@ export default function NewProjectModal({ open, onClose, onSubmit }: NewProjectM
 
         <form onSubmit={submitForm} className="space-y-4">
           <div className="space-y-1">
-            <label htmlFor="project-name" className="text-sm font-medium text-gray-700">
+            <label
+              htmlFor="project-name"
+              className="text-sm font-medium text-gray-700"
+            >
               Nome
             </label>
             <input
@@ -98,11 +108,18 @@ export default function NewProjectModal({ open, onClose, onSubmit }: NewProjectM
               className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200"
               placeholder="Nome do projeto"
             />
-            {errors.name ? <span className="text-xs text-red-600">{errors.name.message}</span> : null}
+            {errors.name ? (
+              <span className="text-xs text-red-600">
+                {errors.name.message}
+              </span>
+            ) : null}
           </div>
 
           <div className="space-y-1">
-            <label htmlFor="project-description" className="text-sm font-medium text-gray-700">
+            <label
+              htmlFor="project-description"
+              className="text-sm font-medium text-gray-700"
+            >
               Descrição
             </label>
             <textarea
@@ -115,7 +132,10 @@ export default function NewProjectModal({ open, onClose, onSubmit }: NewProjectM
           </div>
 
           <div className="space-y-1">
-            <label htmlFor="project-status" className="text-sm font-medium text-gray-700">
+            <label
+              htmlFor="project-status"
+              className="text-sm font-medium text-gray-700"
+            >
               Status inicial
             </label>
             <select

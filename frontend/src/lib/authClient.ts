@@ -1,7 +1,7 @@
 "use client";
 
 import Cookies from "js-cookie";
-import { api } from "./src/lib/api";
+import { api } from "./api";
 
 /**
  * Stores a token in cookies.

@@ -5,8 +5,11 @@ import { useParams, useRouter } from "next/navigation";
 import useSWR from "swr";
 import axios from "axios";
 import { ArrowLeft, RefreshCw, Send } from "lucide-react";
-import Sidebar from "@/app/components/sidebar";
-import { fetchLabelingById, type LabelingStructureSection } from "@/lib/services/labeling_create_service";
+import Sidebar from "@/components/sidebar";
+import {
+  fetchLabelingById,
+  type LabelingStructureSection,
+} from "@/lib/services/labeling_create_service";
 import { fetchNextAnswer, submitAnswer } from "@/lib/services/answer_service";
 import SectionCard from "./section_card";
 import { buildInitialAnswers, validateRequired } from "./answer_utils";
@@ -30,7 +33,6 @@ export default function LabelingAnswerPage() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
-
 
   const loadItem = useCallback(async () => {
     if (Number.isNaN(labelingId)) {
@@ -61,7 +63,8 @@ export default function LabelingAnswerPage() {
 
       let message = "Não foi possível carregar um item para responder.";
       if (axios.isAxiosError(error)) {
-        const detail = (error.response?.data as { detail?: string } | undefined)?.detail;
+        const detail = (error.response?.data as { detail?: string } | undefined)
+          ?.detail;
         if (detail) {
           message = detail;
         } else if (error.message) {
@@ -115,7 +118,8 @@ export default function LabelingAnswerPage() {
     } catch (error) {
       let message = "Não foi possível enviar a resposta.";
       if (axios.isAxiosError(error)) {
-        const detail = (error.response?.data as { detail?: string } | undefined)?.detail;
+        const detail = (error.response?.data as { detail?: string } | undefined)
+          ?.detail;
         if (detail) {
           message = detail;
         } else if (error.message) {
@@ -150,9 +154,11 @@ export default function LabelingAnswerPage() {
               <ArrowLeft size={22} />
             </button>
             <div>
-              
               <h1 className="text-lg font-semibold leading-tight">
-                {labelingTitle || (isLoading ? "Carregando rotulação..." : "Responder rotulação")}
+                {labelingTitle ||
+                  (isLoading
+                    ? "Carregando rotulação..."
+                    : "Responder rotulação")}
               </h1>
             </div>
           </div>
@@ -165,7 +171,7 @@ export default function LabelingAnswerPage() {
             ) : null}
             <button
               type="button"
-              onClick={() => void loadItem()}// TODO esse botao é debug... mais pro futuro pode tirar 
+              onClick={() => void loadItem()} // TODO esse botao é debug... mais pro futuro pode tirar
               disabled={isLoading || isSubmitting}
               className="inline-flex items-center gap-2 rounded-lg border border-white/30 px-4 py-2 text-sm font-medium text-white cursor-pointer hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
             >
@@ -175,7 +181,12 @@ export default function LabelingAnswerPage() {
             <button
               type="button"
               onClick={() => void handleSubmit()}
-              disabled={isLoading || isSubmitting || !currentItemId || orderedSections.length === 0}
+              disabled={
+                isLoading ||
+                isSubmitting ||
+                !currentItemId ||
+                orderedSections.length === 0
+              }
               className="inline-flex items-center gap-2 rounded-lg bg-white px-5 py-2 text-sm font-semibold text-blue-900 shadow-sm hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
             >
               <Send size={16} />
@@ -185,11 +196,17 @@ export default function LabelingAnswerPage() {
         </header>
 
         <section className="mt-4 rounded-xl border border-blue-200 bg-white p-4 shadow-lg">
-          {loadError ? <p className="mb-3 text-sm text-red-600">{loadError}</p> : null}
-          {submitMessage ? <p className="mb-3 text-sm text-green-700">{submitMessage}</p> : null}
+          {loadError ? (
+            <p className="mb-3 text-sm text-red-600">{loadError}</p>
+          ) : null}
+          {submitMessage ? (
+            <p className="mb-3 text-sm text-green-700">{submitMessage}</p>
+          ) : null}
 
           {isLoading ? (
-            <p className="text-sm text-gray-600">Carregando item e perguntas...</p>
+            <p className="text-sm text-gray-600">
+              Carregando item e perguntas...
+            </p>
           ) : orderedSections.length === 0 ? (
             <div className="rounded-lg border border-dashed border-blue-200 bg-blue-50 px-4 py-6 text-center text-sm text-blue-900">
               Nenhum item disponível para resposta agora.

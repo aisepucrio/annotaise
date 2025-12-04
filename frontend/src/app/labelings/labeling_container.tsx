@@ -1,7 +1,7 @@
 import { Tag } from "lucide-react";
 import { Pen } from "lucide-react";
 import { useRouter } from "next/navigation";
-import useCurrent from "../hooks/current_user_hook";
+import useCurrent from "@/hooks/current_user_hook";
 import { GroupIcon } from "lucide-react";
 import { useState } from "react";
 import EditLabelingModal from "./edit_labeling_modal";
@@ -27,10 +27,11 @@ export default function LabelingContainer({
   days_total,
   onUpdated,
 }: LabelingContainerProps) {
-
   const router = useRouter();
   const currentUser = useCurrent();
-  const isAdmin = Boolean(currentUser?.is_staff || currentUser?.account_type === "admin");
+  const isAdmin = Boolean(
+    currentUser?.is_staff || currentUser?.account_type === "admin"
+  );
   const [editOpen, setEditOpen] = useState(false);
 
   function handleEditLabelingButton() {
@@ -50,7 +51,7 @@ export default function LabelingContainer({
     setEditOpen(true);
   }
 
-  if(labelings_done != 0 && labelings_pending ===0){
+  if (labelings_done != 0 && labelings_pending === 0) {
     days_total = -1;
   }
 
@@ -67,7 +68,11 @@ export default function LabelingContainer({
       "
     >
       {/* título */}
-      <h3 className={`${days_passed > days_total ? "text-red-700" : "text-black"} font-semibold leading-tight pr-10`}>
+      <h3
+        className={`${
+          days_passed > days_total ? "text-red-700" : "text-black"
+        } font-semibold leading-tight pr-10`}
+      >
         {title}
       </h3>
 
@@ -81,7 +86,6 @@ export default function LabelingContainer({
       <div className="mt-3 flex flex-col gap-3 min-w-0 w-full">
         {/* métricas */}
 
-        
         <ProgressBar
           progress_label="Dias Passados"
           late_label="Dias Atrasados"
@@ -99,7 +103,10 @@ export default function LabelingContainer({
         <div className="flex items-center justify-center gap-2">
           <LabelingButton onClick={handleAnswerLabelingButton} />
           <EditLabelingFormButton onClick={handleEditLabelingButton} />
-          <EditLabelingButton onClick={handleManageMemberships} disabled={!isAdmin} />
+          <EditLabelingButton
+            onClick={handleManageMemberships}
+            disabled={!isAdmin}
+          />
         </div>
       </div>
       <EditLabelingModal
@@ -130,7 +137,13 @@ function EditLabelingFormButton({ onClick }: { onClick?: () => void }) {
   );
 }
 
-function EditLabelingButton({ onClick, disabled }: { onClick?: () => void; disabled?: boolean }) {
+function EditLabelingButton({
+  onClick,
+  disabled,
+}: {
+  onClick?: () => void;
+  disabled?: boolean;
+}) {
   return (
     <button
       onClick={onClick}
@@ -148,7 +161,6 @@ function EditLabelingButton({ onClick, disabled }: { onClick?: () => void; disab
     </button>
   );
 }
-
 
 // TODO implementar a função onclick de rotular
 function LabelingButton({ onClick }: { onClick?: () => void }) {
@@ -176,8 +188,12 @@ type ProgressBarProps = {
   total: number;
 };
 
-function ProgressBar({ progress_label, late_label, passed, total }: ProgressBarProps) {
-
+function ProgressBar({
+  progress_label,
+  late_label,
+  passed,
+  total,
+}: ProgressBarProps) {
   let percent = total > 0 ? Math.round((passed / total) * 100) : 0;
 
   let bgColor = total >= passed ? "bg-blue-300" : "bg-red-300";
@@ -191,7 +207,7 @@ function ProgressBar({ progress_label, late_label, passed, total }: ProgressBarP
     progress_label = "Concluído";
   }
 
-  if (passed < 0){
+  if (passed < 0) {
     passed = 0;
   }
 
@@ -215,7 +231,11 @@ function ProgressBar({ progress_label, late_label, passed, total }: ProgressBarP
         <span
           className={`absolute inset-0 flex items-center justify-center text-sm font-medium pointer-events-none px-2 truncate ${textColor}`}
         >
-          {finished===false?(total >= passed ? `${passed} / ${total} ${progress_label}` : `${passed - total} ${late_label}`):`${progress_label}`}
+          {finished === false
+            ? total >= passed
+              ? `${passed} / ${total} ${progress_label}`
+              : `${passed - total} ${late_label}`
+            : `${progress_label}`}
         </span>
       </div>
     </div>

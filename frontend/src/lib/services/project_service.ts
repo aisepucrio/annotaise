@@ -61,7 +61,9 @@ export async function fetchProjects(): Promise<Project[]> {
 }
 
 export async function fetchProjectDashboard(): Promise<ProjectDashboard[]> {
-  const { data } = await api.get<ProjectDashboard[]>(`${projectsPath}/dashboard/`);
+  const { data } = await api.get<ProjectDashboard[]>(
+    `${projectsPath}/dashboard/`
+  );
   return data;
 }
 
@@ -75,7 +77,10 @@ export async function createProject(payload: ProjectPayload): Promise<Project> {
   return data;
 }
 
-export async function updateProject(id: number, payload: ProjectPayload): Promise<Project> {
+export async function updateProject(
+  id: number,
+  payload: ProjectPayload
+): Promise<Project> {
   const { data } = await api.patch<Project>(`${projectsPath}/${id}/`, payload);
   return data;
 }
@@ -84,15 +89,22 @@ export async function deleteProject(id: number): Promise<void> {
   await api.delete(`${projectsPath}/${id}/`);
 }
 
-export async function fetchProjectMemberships(projectId: number): Promise<ProjectMembership[]> {
+export async function fetchProjectMemberships(
+  projectId: number
+): Promise<ProjectMembership[]> {
   const { data } = await api.get<ProjectMembership[]>(`${membershipsPath}/`, {
     params: { project: projectId },
   });
   return data;
 }
 
-export async function createProjectMembership(payload: ProjectMembershipPayload): Promise<ProjectMembership> {
-  const { data } = await api.post<ProjectMembership>(`${membershipsPath}/`, payload);
+export async function createProjectMembership(
+  payload: ProjectMembershipPayload
+): Promise<ProjectMembership> {
+  const { data } = await api.post<ProjectMembership>(
+    `${membershipsPath}/`,
+    payload
+  );
   return data;
 }
 
@@ -100,7 +112,10 @@ export async function updateProjectMembership(
   id: number,
   payload: Partial<Pick<ProjectMembershipPayload, "role">>
 ): Promise<ProjectMembership> {
-  const { data } = await api.patch<ProjectMembership>(`${membershipsPath}/${id}/`, payload);
+  const { data } = await api.patch<ProjectMembership>(
+    `${membershipsPath}/${id}/`,
+    payload
+  );
   return data;
 }
 

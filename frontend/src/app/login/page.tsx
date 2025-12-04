@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { AuthActions } from "../../../authClient";
+import { AuthActions } from "@/lib/authClient";
 import { EyeIcon, Mail } from "lucide-react";
 type FormData = {
   email: string;
@@ -46,7 +46,8 @@ export default function LoginPage() {
 
       router.push("/");
     } catch (err) {
-      let message = "Nao foi possivel realizar o login. Verifique suas credenciais.";
+      let message =
+        "Nao foi possivel realizar o login. Verifique suas credenciais.";
 
       if (isAxiosError(err)) {
         const detail = (err.response?.data as { detail?: string })?.detail;
