@@ -14,7 +14,7 @@ import {
   type ProjectPayload,
 } from "@/lib/services/project_service";
 import useCurrent from "@/hooks/current_user_hook";
-import SidebarLayout from "@/components/sidebar_layout";
+import SidebarLayout from "@/components/side-bar/sidebar_layout";
 
 export default function Projects() {
   const router = useRouter();

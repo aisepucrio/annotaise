@@ -16,7 +16,7 @@ import {
 import NewUserModal from "./new_user_modal";
 import useCurrent from "@/hooks/current_user_hook";
 import EditUserModal from "./edit_user_modal";
-import SidebarLayout from "@/components/sidebar_layout";
+import SidebarLayout from "@/components/side-bar/sidebar_layout";
 
 export default function UsersPage() {
   const currentUser = useCurrent();
