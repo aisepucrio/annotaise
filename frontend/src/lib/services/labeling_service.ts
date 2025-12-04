@@ -105,6 +105,26 @@ export async function fetchLabelingMemberships(labelingId: number): Promise<Labe
   return data;
 }
 
+export async function exportLabelingAnswersCsv(
+  labelingId: number
+): Promise<{ blob: Blob; filename?: string }> {
+  const response = await api.get<Blob>(`/labelings/${labelingId}/answers/export/`, {
+    responseType: "blob",
+  });
+
+  const disposition = response.headers["content-disposition"];
+  let filename: string | undefined;
+
+  if (typeof disposition === "string") {
+    const match = disposition.match(/filename=\"?([^\";]+)\"?/i);
+    if (match?.[1]) {
+      filename = match[1];
+    }
+  }
+
+  return { blob: response.data, filename };
+}
+
 export async function createLabelingMembership(payload: {
   labeling: number;
   user: number;

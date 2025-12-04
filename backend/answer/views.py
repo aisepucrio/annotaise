@@ -113,13 +113,14 @@ class ExportAnswersView(APIView):
     def get(self, request, **kwargs):
         labeling_id = kwargs.get("labeling_id")
         labeling = Labeling.objects.get(id=labeling_id)
-        answers = Answer.objects.filter(labeling_id=labeling_id)
+        answers = Answer.objects.filter(labeling_id=labeling_id).select_related("item")
         questions_qs = LabelingElement.objects.filter(labeling_section__labeling_id=labeling_id).exclude(question_type="context").values('id','text')
 
         questions = {int(q["id"]): q["text"] for q in questions_qs}
         rows = []
         for answer in answers:
             payload = answer.answer_payload
+            item_payload = answer.item.payload
             row = {}
             print(payload)
             for question_number, response in payload.items():
@@ -134,8 +135,8 @@ class ExportAnswersView(APIView):
                     row[col_name] = ", ".join(str(x) for x in response)
                 else:
                     row[col_name] = response
-                
-                
+            for k, v in item_payload.items():
+                row["C : " + k] = v
 
             rows.append(row)
         df = pd.DataFrame(rows)

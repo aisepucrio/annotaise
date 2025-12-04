@@ -1,10 +1,10 @@
-import { Tag } from "lucide-react";
-import { Pen } from "lucide-react";
+import { Tag, Pen, Download } from "lucide-react";
 import { useRouter } from "next/navigation";
 import useCurrent from "../hooks/current_user_hook";
 import { GroupIcon } from "lucide-react";
 import { useState } from "react";
 import EditLabelingModal from "./edit_labeling_modal";
+import { exportLabelingAnswersCsv } from "@/lib/services/labeling_service";
 
 type LabelingContainerProps = {
   id: number;
@@ -32,6 +32,7 @@ export default function LabelingContainer({
   const currentUser = useCurrent();
   const isAdmin = Boolean(currentUser?.is_staff || currentUser?.account_type === "admin");
   const [editOpen, setEditOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   function handleEditLabelingButton() {
     if (isAdmin) {
@@ -48,6 +49,27 @@ export default function LabelingContainer({
   function handleManageMemberships() {
     if (!isAdmin) return;
     setEditOpen(true);
+  }
+
+  async function handleExportAnswers() {
+    if (!isAdmin || isExporting) return;
+    try {
+      setIsExporting(true);
+      const { blob, filename } = await exportLabelingAnswersCsv(id);
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = filename || `labeling-${id}-answers.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (err) {
+      console.error("Erro ao exportar respostas da rotulação:", err);
+      alert("Não foi possível exportar as respostas. Tente novamente.");
+    } finally {
+      setIsExporting(false);
+    }
   }
 
   if(labelings_done != 0 && labelings_pending ===0){
@@ -96,10 +118,11 @@ export default function LabelingContainer({
         />
 
         {/* aviso + botão */}
-        <div className="flex items-center justify-center gap-2">
+        <div className="flex flex-wrap items-center justify-center gap-2">
           <LabelingButton onClick={handleAnswerLabelingButton} />
           <EditLabelingFormButton onClick={handleEditLabelingButton} />
           <EditLabelingButton onClick={handleManageMemberships} disabled={!isAdmin} />
+          <ExportAnswersButton onClick={handleExportAnswers} disabled={!isAdmin || isExporting} loading={isExporting} />
         </div>
       </div>
       <EditLabelingModal
@@ -117,7 +140,7 @@ function EditLabelingFormButton({ onClick }: { onClick?: () => void }) {
     <button
       onClick={onClick}
       className="
-        inline-flex items-center gap-2 rounded-lg px-3 py-2
+        inline-flex items-center gap-2 rounded-lg px-2 py-2
         bg-blue-800 text-white hover:bg-blue-700
         transition-colors text-sm cursor-pointer justify-center
       "
@@ -136,7 +159,7 @@ function EditLabelingButton({ onClick, disabled }: { onClick?: () => void; disab
       onClick={onClick}
       disabled={disabled}
       className="
-        inline-flex items-center gap-2 rounded-lg px-3 py-2
+        inline-flex items-center gap-2 rounded-lg px-2 py-2
         bg-blue-800 text-white hover:bg-blue-700
         transition-colors text-sm cursor-pointer justify-center disabled:opacity-60 disabled:cursor-not-allowed
       "
@@ -149,6 +172,33 @@ function EditLabelingButton({ onClick, disabled }: { onClick?: () => void; disab
   );
 }
 
+function ExportAnswersButton({
+  onClick,
+  disabled,
+  loading,
+}: {
+  onClick?: () => void;
+  disabled?: boolean;
+  loading?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className="
+        inline-flex items-center gap-2 rounded-lg px-2 py-2
+        bg-blue-800 text-white hover:bg-blue-700
+        transition-colors text-sm cursor-pointer justify-center disabled:opacity-60 disabled:cursor-not-allowed
+      "
+      type="button"
+      aria-label="Exportar respostas em CSV"
+    >
+      <Download size={20} strokeWidth={1.75} className="opacity-90" />
+      {loading ? "" : ""}
+    </button>
+  );
+}
+
 
 // TODO implementar a função onclick de rotular
 function LabelingButton({ onClick }: { onClick?: () => void }) {
@@ -156,7 +206,7 @@ function LabelingButton({ onClick }: { onClick?: () => void }) {
     <button
       onClick={onClick}
       className="
-        inline-flex items-center gap-2 rounded-lg px-3 py-2
+        inline-flex items-center gap-2 rounded-lg px-2 py-2
         bg-blue-800 text-white hover:bg-blue-700
         transition-colors text-sm cursor-pointer justify-center
       "
