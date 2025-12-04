@@ -33,6 +33,7 @@ export default function MyAnswersPage() {
     labelingId ? ["labeling", labelingId] : null,
     () => fetchLabelingById(labelingId)
   );
+  const editingLocked = Boolean(labeling?.block_section_back);
 
   const { data: structure } = useSWR(
     labelingId ? ["labeling-structure", labelingId] : null,
@@ -64,6 +65,7 @@ export default function MyAnswersPage() {
   };
 
   const startEdit = (answer: AnswerResponse) => {
+    if (editingLocked) return;
     setMessage(null);
     setError(null);
     setEditingAnswer(answer);
@@ -161,10 +163,11 @@ export default function MyAnswersPage() {
                   <button
                     type="button"
                     onClick={() => startEdit(answer)}
-                    className="inline-flex items-center justify-center gap-2 rounded-md bg-blue-900 px-3 py-2 text-sm font-medium text-white hover:bg-blue-800 cursor-pointer"
+                    disabled={editingLocked}
+                    className="inline-flex items-center justify-center gap-2 rounded-md bg-blue-900 px-3 py-2 text-sm font-medium text-white hover:bg-blue-800 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     <Edit3 size={14} />
-                    Editar resposta
+                    {editingLocked ? "Edição bloqueada" : "Editar resposta"}
                   </button>
                 </div>
               );
