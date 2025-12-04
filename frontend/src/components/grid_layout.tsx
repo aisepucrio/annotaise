@@ -14,11 +14,19 @@ export default function GridLayout({
   minColumnWidth = "400px",
   className = "",
 }: GridLayoutProps) {
+  // Conta o número de filhos para determinar o comportamento
+  const childCount = React.Children.count(children);
+  
+  // Se houver apenas 1 item, usa tamanho fixo. Com 2+, permite expansão
+  const gridTemplate = childCount === 1 
+    ? `minmax(0, ${minColumnWidth})`
+    : `repeat(auto-fit, minmax(min(${minColumnWidth}, 100%), 1fr))`;
+
   return (
     <div
       className={`grid gap-4 w-full ${className}`}
       style={{
-        gridTemplateColumns: `repeat(auto-fit, minmax(min(${minColumnWidth}, 100%), 1fr))`,
+        gridTemplateColumns: gridTemplate,
       }}
     >
       {children}
