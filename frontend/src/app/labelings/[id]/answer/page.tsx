@@ -17,7 +17,7 @@ import {
   validateSectionRequired,
 } from "./answer_utils";
 import type { AnswerMap } from "./answer_types";
-import SidebarLayout from "@/app/components/sidebar_layout";
+import SidebarLayout from "@/components/sidebar_layout";
 
 export default function LabelingAnswerPage() {
   const params = useParams<{ id: string }>();

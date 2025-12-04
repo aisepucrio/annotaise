@@ -3,7 +3,7 @@
 import { useState } from "react";
 import useSWR from "swr";
 import { useRouter } from "next/navigation";
-import PageHeader from "../components/page_description";
+import PageHeader from "@/components/page_description";
 import ProjectContainer from "./project_container";
 import FilterBar from "@/components/filter_bar";
 import { Plus } from "lucide-react";
@@ -12,9 +12,9 @@ import {
   createProject,
   fetchProjectDashboard,
   type ProjectPayload,
-} from "../../lib/services/project_service";
-import useCurrent from "../hooks/current_user_hook";
-import SidebarLayout from "../components/sidebar_layout";
+} from "@/lib/services/project_service";
+import useCurrent from "@/hooks/current_user_hook";
+import SidebarLayout from "@/components/sidebar_layout";
 
 export default function Projects() {
   const router = useRouter();

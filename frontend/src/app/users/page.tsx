@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import useSWR from "swr";
-import PageHeader from "../components/page_description";
+import PageHeader from "@/components/page_description";
 import UserContainer from "./user_container";
 import FilterBar from "@/components/filter_bar";
 import { UserPlus } from "lucide-react";
@@ -14,9 +14,9 @@ import {
   type User,
 } from "@/lib/services/user_service";
 import NewUserModal from "./new_user_modal";
-import useCurrent from "../hooks/current_user_hook";
+import useCurrent from "@/hooks/current_user_hook";
 import EditUserModal from "./edit_user_modal";
-import SidebarLayout from "../components/sidebar_layout";
+import SidebarLayout from "@/components/sidebar_layout";
 
 export default function UsersPage() {
   const currentUser = useCurrent();

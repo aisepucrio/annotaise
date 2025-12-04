@@ -1,8 +1,8 @@
 "use client";
 
-import PageHeader from "./components/page_description";
-import UseCurrent from "./hooks/current_user_hook";
-import SidebarLayout from "./components/sidebar_layout";
+import PageHeader from "@/components/page_description";
+import UseCurrent from "@/hooks/current_user_hook";
+import SidebarLayout from "@/components/sidebar_layout";
 
 export default function Home() {
   const user = UseCurrent();

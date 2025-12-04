@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import useSWR from "swr";
 import { useForm } from "react-hook-form";
-import PageHeader from "@/app/components/page_description";
+import PageHeader from "@/components/page_description";
 import {
   createProjectMembership,
   deleteProject,
@@ -18,8 +18,8 @@ import {
   updateProjectMembership,
 } from "../../../lib/services/project_service";
 import { fetchUsers } from "../../../lib/services/user_service";
-import useCurrent from "@/app/hooks/current_user_hook";
-import SidebarLayout from "@/app/components/sidebar_layout";
+import useCurrent from "@/hooks/current_user_hook";
+import SidebarLayout from "@/components/sidebar_layout";
 
 type Params = {
   projectId: string;
