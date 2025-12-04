@@ -18,7 +18,7 @@ import {
   saveLabelingStructure,
   type LabelingStructureSection,
 } from "@/lib/services/labeling_create_service";
-import SidebarLayout from "@/app/components/sidebar_layout";
+import SidebarLayout from "@/components/sidebar_layout";
 
 const createContextElement = (order: number): ContextElement => ({
   id: crypto.randomUUID(),

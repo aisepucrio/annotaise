@@ -93,10 +93,6 @@ export async function deleteLabeling(id: number): Promise<void> {
   await api.delete(`/labelings/${id}/`);
 }
 
-export async function deleteLabeling(id: number): Promise<void> {
-  await api.delete(`/labelings/${id}/`);
-}
-
 export async function importLabelingItemsCsv(
   labelingId: number,
   file: File

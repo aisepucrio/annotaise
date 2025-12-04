@@ -16,7 +16,7 @@ import { buildInitialAnswers } from "../answer/answer_utils";
 import type { LabelingStructureSection } from "@/lib/services/labeling_create_service";
 import { fetchLabelingStructure } from "@/lib/services/labeling_create_service";
 import type { AnswerMap } from "../answer/answer_types";
-import SidebarLayout from "@/app/components/sidebar_layout";
+import SidebarLayout from "@/components/sidebar_layout";
 
 export default function MyAnswersPage() {
   const params = useParams<{ id: string }>();

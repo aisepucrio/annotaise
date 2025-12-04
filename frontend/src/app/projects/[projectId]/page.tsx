@@ -16,8 +16,8 @@ import {
   type ProjectPayload,
   updateProject,
   updateProjectMembership,
-} from "../../../lib/services/project_service";
-import { fetchUsers } from "../../../lib/services/user_service";
+} from "@/lib/services/project_service";
+import { fetchUsers } from "@/lib/services/user_service";
 import useCurrent from "@/hooks/current_user_hook";
 import SidebarLayout from "@/components/sidebar_layout";
 

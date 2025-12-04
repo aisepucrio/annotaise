@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import PageHeader from "../components/page_description";
-import FilterBar from "../components/filter_bar";
+import PageHeader from "@/components/page_description";
+import FilterBar from "@/components/filter_bar";
 import LabelingContainer from "./labeling_container";
 import { Plus } from "lucide-react";
 import UploadCsvModal from "./upload_csv_modal";
@@ -13,8 +13,8 @@ import {
   fetchLabelingDashboard,
   importLabelingItemsCsv,
 } from "@/lib/services/labeling_service";
-import useCurrent from "../hooks/current_user_hook";
-import SidebarLayout from "../components/sidebar_layout";
+import useCurrent from "@/hooks/current_user_hook";
+import SidebarLayout from "@/components/sidebar_layout";
 
 type UploadPayload = {
   file: File;
