@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import useSWR from "swr";
 import PageHeader from "../components/page_description";
 import UserContainer from "./user_container";
@@ -21,6 +21,7 @@ export default function UsersPage() {
   );
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const loadError =
     error && error instanceof Error ? error.message : error ? "Não foi possível carregar os usuários." : null;
@@ -42,6 +43,20 @@ export default function UsersPage() {
     await mutate();
   };
 
+  const filteredUsers = useMemo(() => {
+    if (!users) return [];
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return users;
+    return users.filter((u) => {
+      const name = `${u.first_name ?? ""} ${u.last_name ?? ""}`.toLowerCase();
+      return (
+        name.includes(term) ||
+        (u.email ?? "").toLowerCase().includes(term) ||
+        (u.username ?? "").toLowerCase().includes(term)
+      );
+    });
+  }, [users, searchTerm]);
+
   return (
     <>
       <SidebarLayout>
@@ -50,7 +65,11 @@ export default function UsersPage() {
           description='Nesta página você pode visualizar todos os usuários cadastrados aos seus projetos assim como informações relevantes sobre eles. Clique em “Gerenciar” para ver mais informações sobre o usuário.'
         />
         <div className="flex flex-nowrap items-center mt-5">
-          <FilterBar />
+          <FilterBar
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder="Pesquisar usuários..."
+          />
           <button
                 type="button"
                 aria-label="Criar novo usuário"
@@ -78,11 +97,11 @@ export default function UsersPage() {
             <p className="text-sm text-gray-500">Carregando usuários...</p>
           ) : loadError ? (
             <p className="text-sm text-red-600">{loadError}</p>
-          ) : (users?.length ?? 0) === 0 ? (
+          ) : filteredUsers.length === 0 ? (
             <p className="text-sm text-gray-500">Nenhum usuário encontrado.</p>
           ) : (
             <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(360px,1fr))]">
-              {users?.map((user) => (
+              {filteredUsers.map((user) => (
                 <UserContainer
                   key={user.id}
                   name={`${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() || user.username}

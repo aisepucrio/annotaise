@@ -29,8 +29,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="dashboard")
     def dashboard(self, request):
+        search = request.query_params.get("search")
         projects = (
-            self.get_queryset().annotate(
+            self.get_queryset()
+            .annotate(
                 labeling_users=Count("labelings__memberships__user", distinct=True),
                 finished_labelings=Count(
                     "labelings__items",
@@ -49,6 +51,11 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 ),
             )
         )
+
+        if search:
+            projects = projects.filter(
+                Q(name__icontains=search) | Q(description__icontains=search)
+            )
 
         response_data = []
         for project in projects:

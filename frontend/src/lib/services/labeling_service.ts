@@ -64,8 +64,11 @@ export type LabelingDashboard = {
   total_items: number;
 };
 
-export async function fetchLabelingDashboard(): Promise<LabelingDashboard[]> {
-  const { data } = await api.get<LabelingDashboard[]>("/labelings/dashboard/");
+export async function fetchLabelingDashboard(search?: string): Promise<LabelingDashboard[]> {
+  const params = new URLSearchParams();
+  if (search) params.set("search", search);
+  const qs = params.toString() ? `?${params.toString()}` : "";
+  const { data } = await api.get<LabelingDashboard[]>(`/labelings/dashboard/${qs}`);
   return data;
 }
 

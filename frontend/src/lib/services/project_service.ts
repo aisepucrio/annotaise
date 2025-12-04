@@ -60,8 +60,11 @@ export async function fetchProjects(): Promise<Project[]> {
   return data;
 }
 
-export async function fetchProjectDashboard(): Promise<ProjectDashboard[]> {
-  const { data } = await api.get<ProjectDashboard[]>(`${projectsPath}/dashboard/`);
+export async function fetchProjectDashboard(search?: string): Promise<ProjectDashboard[]> {
+  const params = new URLSearchParams();
+  if (search) params.set("search", search);
+  const qs = params.toString() ? `?${params.toString()}` : "";
+  const { data } = await api.get<ProjectDashboard[]>(`${projectsPath}/dashboard/${qs}`);
   return data;
 }
 
