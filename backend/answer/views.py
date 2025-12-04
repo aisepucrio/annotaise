@@ -1,11 +1,19 @@
-from rest_framework import viewsets
 from .models import Answer
-from item.models import ItemMembership
-from .serializers import AnswerSerializer
-from rest_framework.response import Response
-from item.models import Item
-from rest_framework.exceptions import PermissionDenied
+from item.models import ItemMembership, Item
+from .serializers import AnswerSerializer, AnswerDashboardSerializer
+from labeling.models import LabelingElement
+from labeling.models import Labeling
 
+from rest_framework import viewsets
+from rest_framework.response import Response
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.views import APIView
+from user.permissions import IsAdminAccount
+from django.http import HttpResponse
+
+import pandas as pd
+
+from rest_framework.generics import ListAPIView
 class AnswerViewset(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
     serializer_class = AnswerSerializer
@@ -87,4 +95,54 @@ class AnswerViewset(viewsets.ModelViewSet):
         answer = self.get_object()
         self._assert_owner_or_admin(answer)
         return super().destroy(request, *args, **kwargs)
-    
+
+
+class AnswersDashboardView(ListAPIView):
+    serializer_class = AnswerSerializer
+
+    def get_queryset(self):
+        labeling_id = self.kwargs.get("labeling_id")
+        return Answer.objects.filter(labeling_id=labeling_id)
+
+
+class ExportAnswersView(APIView):
+    permission_classes = [IsAdminAccount]
+
+    def get(self, request, **kwargs):
+        labeling_id = kwargs.get("labeling_id")
+        labeling = Labeling.objects.get(id=labeling_id)
+        answers = Answer.objects.filter(labeling_id=labeling_id)
+        questions_qs = LabelingElement.objects.filter(labeling_section__labeling_id=labeling_id).exclude(question_type="context").values('id','text')
+
+        questions = {int(q["id"]): q["text"] for q in questions_qs}
+        rows = []
+        for answer in answers:
+            payload = answer.answer_payload
+            row = {}
+            print(payload)
+            for question_number, response in payload.items():
+                
+                q_id = int(question_number)
+                col_name = "Q : " + questions.get(q_id)
+
+                if col_name is None:
+                    continue
+
+                if isinstance(response, list):
+                    row[col_name] = ", ".join(str(x) for x in response)
+                else:
+                    row[col_name] = response
+                
+                
+
+            rows.append(row)
+        df = pd.DataFrame(rows)
+
+        # Gera o conteúdo do CSV como *string*, sem salvar em arquivo
+        csv_data = df.to_csv(index=False)
+
+        response = HttpResponse(csv_data, content_type="text/csv")
+        response["Content-Disposition"] = (
+            f'attachment; filename="exported_answers_{labeling.title}.csv"'
+        )
+        return response

@@ -66,7 +66,8 @@ class ImportItemsCsvView(APIView):
             return Response({"detail": "O arquivo deve ser .csv"}, status=400)
         
         df = pd.read_csv(uploaded_file)
-        
+        df.fillna("Valor Nulo", inplace=True)
+
         cols = df.columns
 
         labeling.column_names = list(cols)

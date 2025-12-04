@@ -98,7 +98,7 @@ function StatPill({
     amber: "bg-amber-100 text-amber-800",
   };
   return (
-    <div className={`flex items-left rounded-lg px-2 py-2 text-sm ${tones[tone]}`}>
+    <div className={`flex items-left rounded-lg px-2 py-2 text-[13px] ${tones[tone]}`}>
       <span className="font-medium">{value}</span>
       <span className="ml-2">{label}</span>
     </div>

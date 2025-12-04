@@ -20,7 +20,7 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState<boolean>(() => {
     if (typeof window === "undefined") return true;
     const stored = window.localStorage.getItem("sidebar-open");
-    return stored === null ? true : stored === "true";
+    return stored === null ? true : stored === "true";// tem que guardar no localstorage pra nao perder entre paginas
   });
 
   const toggle = useCallback(() => {

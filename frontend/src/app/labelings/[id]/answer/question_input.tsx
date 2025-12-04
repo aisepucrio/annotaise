@@ -37,21 +37,20 @@ export default function QuestionInput({ element, value, onChange }: QuestionInpu
       const min = element.question_range?.start ?? 0;
       const max = element.question_range?.end ?? 10;
       const step = element.question_range?.step ?? 1;
-      const rangeValue = typeof value === "number" ? value : min;
+      const displayValue = value ?? "";
 
       return (
-        <div className="flex items-center gap-3">
-          <input
-            type="range"
-            min={min}
-            max={max}
-            step={step}
-            value={rangeValue}
-            onChange={(event) => onChange(Number(event.target.value))}
-            className="flex-1 accent-blue-900"
-          />
-          <span className="w-14 text-right text-sm text-gray-700">{rangeValue}</span>
-        </div>
+        <input
+          type="number"
+          min={min}
+          max={max}
+          step={step}
+          className="w-48 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:border-blue-600 focus:outline-none"
+          value={displayValue as number | string}
+          onChange={(event) =>
+            onChange(event.target.value === "" ? "" : Number(event.target.value))
+          }
+        />
       );
     }
 

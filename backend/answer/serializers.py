@@ -41,3 +41,17 @@ class AnswerSerializer(serializers.ModelSerializer):
         if not labeling:
             raise serializers.ValidationError({"labeling": "Rotulação é obrigatória."})
         return super().validate(attrs)
+
+class LabelingAnswerDashboardSerializer(serializers.Serializer):
+    pass
+
+
+
+class AnswerDashboardSerializer(serializers.Serializer):
+    user_first_name = serializers.CharField()
+    user_last_name = serializers.CharField()
+    user_email = serializers.EmailField()
+
+    answered_at = serializers.DateTimeField()
+    answer_count = serializers.IntegerField()
+    answers = serializers.JSONField()
