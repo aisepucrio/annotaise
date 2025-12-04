@@ -6,6 +6,7 @@ type UserContainerProps = {
   projects: number;
   labelings_done: number;
   labelings_pending: number;
+  onManage?: () => void;
 };
 
 export default function UserContainer({
@@ -14,6 +15,7 @@ export default function UserContainer({
   projects,
   labelings_done,
   labelings_pending,
+  onManage,
 }: UserContainerProps) {
   return (
     <div
@@ -39,7 +41,7 @@ export default function UserContainer({
               {email}
             </span>
           </div>
-          <ManageButton />
+          <ManageButton onClick={onManage} />
         </div>
 
         {/* métricas */}
@@ -79,7 +81,6 @@ function StatPill({
   );
 }
 
-// TODO implementar a função onclick do gerenciar usuários
 function ManageButton({ onClick }: { onClick?: () => void }) {
   return (
     <button

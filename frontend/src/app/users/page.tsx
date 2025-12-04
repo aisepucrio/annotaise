@@ -2,14 +2,21 @@
 
 import { useState } from "react";
 import useSWR from "swr";
-import Sidebar from "@/components/sidebar";
-import PageHeader from "@/components/page_description";
+import PageHeader from "../components/page_description";
 import UserContainer from "./user_container";
 import FilterBar from "@/components/filter_bar";
 import { UserPlus } from "lucide-react";
-import { createUser, fetchUsers, type User } from "@/lib/services/user_service";
+import {
+  createUser,
+  fetchUsers,
+  updateUser,
+  type UpdateUserPayload,
+  type User,
+} from "@/lib/services/user_service";
 import NewUserModal from "./new_user_modal";
-import useCurrent from "@/hooks/current_user_hook";
+import useCurrent from "../hooks/current_user_hook";
+import EditUserModal from "./edit_user_modal";
+import SidebarLayout from "../components/sidebar_layout";
 
 export default function UsersPage() {
   const currentUser = useCurrent();
@@ -23,6 +30,7 @@ export default function UsersPage() {
     mutate,
   } = useSWR<User[]>(isAdmin ? "users" : null, fetchUsers);
   const [modalOpen, setModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
 
   const loadError =
     error && error instanceof Error
@@ -42,10 +50,15 @@ export default function UsersPage() {
     await mutate();
   };
 
+  const handleUpdateUser = async (payload: UpdateUserPayload) => {
+    if (!editingUser) return;
+    await updateUser(editingUser.id, payload);
+    await mutate();
+  };
+
   return (
-    <div className="bg-gray-300 min-h-screen">
-      <div className="bg-white ml-64 p-4 min-h-screen">
-        <Sidebar />
+    <>
+      <SidebarLayout>
         <PageHeader
           page_title="Usuários"
           description="Nesta página você pode visualizar todos os usuários cadastrados aos seus projetos assim como informações relevantes sobre eles. Clique em “Gerenciar” para ver mais informações sobre o usuário."
@@ -96,17 +109,24 @@ export default function UsersPage() {
                   projects={user.projects_count ?? 0}
                   labelings_done={user.answers_count ?? 0}
                   labelings_pending={user.pending_items_count ?? 0}
+                  onManage={() => setEditingUser(user)}
                 />
               ))}
             </div>
           )}
         </div>
-      </div>
+      </SidebarLayout>
       <NewUserModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         onSubmit={handleCreateUser}
       />
-    </div>
+      <EditUserModal
+        open={Boolean(editingUser)}
+        user={editingUser}
+        onClose={() => setEditingUser(null)}
+        onSubmit={handleUpdateUser}
+      />
+    </>
   );
 }

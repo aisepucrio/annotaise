@@ -14,6 +14,7 @@ export type Labeling = {
   column_names: string[];
   created_at: string;
   created_by: number;
+  block_section_back?: boolean;
 };
 
 export type LabelingPayload = {
@@ -23,6 +24,7 @@ export type LabelingPayload = {
   start_date?: string;
   final_date?: string;
   status?: LabelingStatus;
+  block_section_back?: boolean;
 };
 
 export type LabelingMembershipRole = "owner" | "admin" | "annotator" | "viewer";
@@ -85,6 +87,14 @@ export async function updateLabeling(
 ): Promise<Labeling> {
   const { data } = await api.patch<Labeling>(`/labelings/${id}/`, payload);
   return data;
+}
+
+export async function deleteLabeling(id: number): Promise<void> {
+  await api.delete(`/labelings/${id}/`);
+}
+
+export async function deleteLabeling(id: number): Promise<void> {
+  await api.delete(`/labelings/${id}/`);
 }
 
 export async function importLabelingItemsCsv(

@@ -9,6 +9,7 @@ import {
   type Labeling,
   type LabelingMembershipDashboard,
   type LabelingMembershipRole,
+  deleteLabeling,
   updateLabeling,
   updateLabelingMembership,
 } from "@/lib/services/labeling_service";
@@ -31,6 +32,7 @@ export default function EditLabelingModal({ open, labelingId, onClose, onUpdated
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [membershipSaving, setMembershipSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -39,6 +41,7 @@ export default function EditLabelingModal({ open, labelingId, onClose, onUpdated
   const [startDate, setStartDate] = useState<string>("");
   const [finalDate, setFinalDate] = useState<string>("");
   const [usersPerItem, setUsersPerItem] = useState<number>(1);
+  const [blockSectionBack, setBlockSectionBack] = useState<boolean>(false);
 
   const [newMemberId, setNewMemberId] = useState<string>("");
   const [newMemberRole, setNewMemberRole] = useState<LabelingMembershipRole>("annotator");
@@ -52,6 +55,7 @@ export default function EditLabelingModal({ open, labelingId, onClose, onUpdated
       setLoading(false);
       setSaving(false);
       setMembershipSaving(false);
+      setDeleting(false);
       setNewMemberId("");
       setNewMemberRole("annotator");
       return;
@@ -76,6 +80,7 @@ export default function EditLabelingModal({ open, labelingId, onClose, onUpdated
         setStartDate(labelingRes.start_date ? labelingRes.start_date : "");
         setFinalDate(labelingRes.final_date ? labelingRes.final_date : "");
         setUsersPerItem(labelingRes.users_per_item ?? 1);
+        setBlockSectionBack(Boolean(labelingRes.block_section_back));
       } catch (err) {
         if (!isMounted) return;
         const detail =
@@ -110,6 +115,7 @@ export default function EditLabelingModal({ open, labelingId, onClose, onUpdated
         users_per_item: usersPerItem,
         start_date: startDate || undefined,
         final_date: finalDate || undefined,
+        block_section_back: blockSectionBack,
       });
       setSuccess("Rotulação atualizada com sucesso.");
       await onUpdated?.();
@@ -189,6 +195,27 @@ export default function EditLabelingModal({ open, labelingId, onClose, onUpdated
     }
   };
 
+  const handleDeleteLabeling = async () => {
+    if (!labeling) return;
+    const confirmed = window.confirm("Deseja excluir esta rotulação? Esta ação não pode ser desfeita.");
+    if (!confirmed) return;
+    setDeleting(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      await deleteLabeling(labeling.id);
+      await onUpdated?.();
+      onClose();
+    } catch (err) {
+      const detail =
+        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
+        (err instanceof Error ? err.message : "Não foi possível excluir a rotulação.");
+      setError(detail);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (!open) return null;
 
   return (
@@ -255,8 +282,9 @@ export default function EditLabelingModal({ open, labelingId, onClose, onUpdated
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-700">Usuários por item</label>
+                  <label className="text-sm font-medium text-gray-700">Usuários por item (não pode ser alterado)</label>
                   <input
+                    disabled
                     type="number"
                     min={1}
                     value={usersPerItem}
@@ -264,6 +292,23 @@ export default function EditLabelingModal({ open, labelingId, onClose, onUpdated
                     className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200"
                   />
                 </div>
+                <label
+                  htmlFor="block-section-back-edit"
+                  className="flex items-center gap-3 text-base text-gray-800 mt-2 cursor-pointer select-none"
+                >
+                  <span className="relative inline-flex items-center">
+                    <input
+                      id="block-section-back-edit"
+                      type="checkbox"
+                      checked={blockSectionBack}
+                      onChange={(e) => setBlockSectionBack(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <span className="w-14 h-7 rounded-full bg-gray-200 transition-colors duration-200 peer-checked:bg-blue-900" />
+                    <span className="pointer-events-none absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 peer-checked:translate-x-7" />
+                  </span>
+                  <span className="font-medium">Bloquear voltar entre seções para usuários</span>
+                </label>
               </div>
               <div className="flex justify-end">
                 <button
@@ -365,6 +410,14 @@ export default function EditLabelingModal({ open, labelingId, onClose, onUpdated
         )}
 
         <footer className="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={handleDeleteLabeling}
+            disabled={saving || membershipSaving || deleting}
+            className="mr-auto rounded-lg border border-red-200 px-4 py-2 text-sm text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {deleting ? "Excluindo..." : "Excluir rotulação"}
+          </button>
           <button
             type="button"
             onClick={onClose}

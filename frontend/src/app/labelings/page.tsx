@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Sidebar from "@/components/sidebar";
-import PageHeader from "@/components/page_description";
-import FilterBar from "@/components/filter_bar";
+import PageHeader from "../components/page_description";
+import FilterBar from "../components/filter_bar";
 import LabelingContainer from "./labeling_container";
 import { Plus } from "lucide-react";
 import UploadCsvModal from "./upload_csv_modal";
@@ -14,7 +13,8 @@ import {
   fetchLabelingDashboard,
   importLabelingItemsCsv,
 } from "@/lib/services/labeling_service";
-import useCurrent from "@/hooks/current_user_hook";
+import useCurrent from "../hooks/current_user_hook";
+import SidebarLayout from "../components/sidebar_layout";
 
 type UploadPayload = {
   file: File;
@@ -23,6 +23,7 @@ type UploadPayload = {
   usersPerItem: number;
   startDate?: string;
   finalDate?: string;
+  blockSectionBack?: boolean;
 };
 
 export default function LabelingsPage() {
@@ -53,6 +54,7 @@ export default function LabelingsPage() {
     usersPerItem,
     startDate,
     finalDate,
+    blockSectionBack,
   }: UploadPayload) {
     if (!isAdmin) {
       throw new Error("Apenas administradores podem criar rotulações.");
@@ -64,6 +66,7 @@ export default function LabelingsPage() {
         users_per_item: usersPerItem,
         start_date: startDate || undefined,
         final_date: finalDate || undefined,
+        block_section_back: blockSectionBack,
       });
       await importLabelingItemsCsv(labeling.id, file);
       setOpen(false);
@@ -81,9 +84,8 @@ export default function LabelingsPage() {
   }
 
   return (
-    <div className="bg-gray-300 min-h-screen">
-      <div className="bg-white ml-64 p-4 min-h-screen">
-        <Sidebar />
+    <>
+      <SidebarLayout>
         <PageHeader
           page_title="Rotulações"
           description="Visualize e gerencie rotulações. Clique em 'Nova Rotulação' para importar um CSV e iniciar a configuração."
@@ -134,7 +136,7 @@ export default function LabelingsPage() {
             somente administradores podem criar novas.
           </div>
         )}
-      </div>
+      </SidebarLayout>
 
       {/* Modal */}
       <UploadCsvModal
@@ -142,6 +144,6 @@ export default function LabelingsPage() {
         onClose={() => setOpen(false)}
         onConfirm={handleConfirm}
       />
-    </div>
+    </>
   );
 }
