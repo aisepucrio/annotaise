@@ -1,6 +1,6 @@
 "use client";
 
-import PageHeader from "@/components/page_description";
+import PageHeader from "@/components/page_header";
 import UseCurrent from "@/hooks/current_user_hook";
 import SidebarLayout from "@/components/side-bar/sidebar_layout";
 

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import useSWR from "swr";
 import { useForm } from "react-hook-form";
-import PageHeader from "@/components/page_description";
+import PageHeader from "@/components/page_header";
 import {
   createProjectMembership,
   deleteProject,

@@ -2,10 +2,13 @@
 
 import { useState } from "react";
 import useSWR from "swr";
-import PageHeader from "@/components/page_description";
+import PageHeader from "@/components/page_header";
 import UserContainer from "./user_container";
 import FilterBar from "@/components/filter_bar";
 import { UserPlus } from "lucide-react";
+import GridLayout from "@/components/grid_layout";
+import GridItemCard from "@/components/grid_item_card";
+import Button from "@/components/button";
 import {
   createUser,
   fetchUsers,
@@ -65,24 +68,19 @@ export default function UsersPage() {
         />
         <div className="flex flex-nowrap items-center mt-5">
           <FilterBar />
-          <button
-            type="button"
-            aria-label="Criar novo usuário"
-            onClick={() => setModalOpen(true)}
-            disabled={!isAdmin}
-            className="
-                  ml-auto mr-6
-                  inline-flex items-center justify-center gap-2
-                  rounded-lg bg-blue-900 hover:bg-blue-800 text-white
-                  px-5 py-2 h-10
-                  min-w-[190px] whitespace-nowrap
-                  shadow-md text-sm transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed
-                "
-          >
-            {/* ícone + texto */}
-            <UserPlus size={16} strokeWidth={1.75} className="opacity-90" />
-            Novo Usuário
-          </button>
+          <div className="ml-auto mr-6 w-auto">
+            <Button
+              icon={<UserPlus size={16} strokeWidth={1.75} />}
+              onClick={() => setModalOpen(true)}
+              disabled={!isAdmin}
+              variant="normal"
+              fill={false}
+              className="min-w-[190px] h-10 whitespace-nowrap shadow-md text-sm"
+              ariaLabel="Criar novo usuário"
+            >
+              Novo Usuário
+            </Button>
+          </div>
         </div>
 
         <div className="ml-5 mr-5 mt-5">
@@ -97,22 +95,24 @@ export default function UsersPage() {
           ) : (users?.length ?? 0) === 0 ? (
             <p className="text-sm text-gray-500">Nenhum usuário encontrado.</p>
           ) : (
-            <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(360px,1fr))]">
-              {users?.map((user) => (
-                <UserContainer
-                  key={user.id}
-                  name={
-                    `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() ||
-                    user.username
-                  }
-                  email={user.email}
-                  projects={user.projects_count ?? 0}
-                  labelings_done={user.answers_count ?? 0}
-                  labelings_pending={user.pending_items_count ?? 0}
-                  onManage={() => setEditingUser(user)}
-                />
+            <GridLayout minColumnWidth="420px">
+              {users?.map((user, index) => (
+                <GridItemCard key={user.id} index={index}>
+                  <UserContainer
+                    name={
+                      `${user.first_name ?? ""} ${
+                        user.last_name ?? ""
+                      }`.trim() || user.username
+                    }
+                    email={user.email}
+                    projects={user.projects_count ?? 0}
+                    labelings_done={user.answers_count ?? 0}
+                    labelings_pending={user.pending_items_count ?? 0}
+                    onManage={() => setEditingUser(user)}
+                  />
+                </GridItemCard>
               ))}
-            </div>
+            </GridLayout>
           )}
         </div>
       </SidebarLayout>

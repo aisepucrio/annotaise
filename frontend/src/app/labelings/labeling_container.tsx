@@ -5,6 +5,7 @@ import useCurrent from "@/hooks/current_user_hook";
 import { GroupIcon } from "lucide-react";
 import { useState } from "react";
 import EditLabelingModal from "./edit_labeling_modal";
+import Button from "@/components/button";
 
 type LabelingContainerProps = {
   id: number;
@@ -56,17 +57,7 @@ export default function LabelingContainer({
   }
 
   return (
-    <div
-      className="
-        relative rounded-br-xl rounded-ss-3xl bg-white shadow-md p-3
-        border-t-6
-        border-l-6
-        border-blue-800
-        hover:shadow-xl
-        transition-all duration-300 ease-in-out
-        max-w-100
-      "
-    >
+    <>
       {/* título */}
       <h3
         className={`${
@@ -101,12 +92,31 @@ export default function LabelingContainer({
 
         {/* aviso + botão */}
         <div className="flex items-center justify-center gap-2">
-          <LabelingButton onClick={handleAnswerLabelingButton} />
-          <EditLabelingFormButton onClick={handleEditLabelingButton} />
-          <EditLabelingButton
+          <Button
+            icon={<Tag size={20} strokeWidth={1.75} />}
+            onClick={handleAnswerLabelingButton}
+            variant="normal"
+            ariaLabel="Abrir tarefa de rotulação"
+          >
+            Rotular
+          </Button>
+          <Button
+            icon={<Pen size={20} strokeWidth={1.75} />}
+            onClick={handleEditLabelingButton}
+            variant="normal"
+            ariaLabel="Abrir formulário de rotulação"
+          >
+            Formulário
+          </Button>
+          <Button
+            icon={<GroupIcon size={20} strokeWidth={1.75} />}
             onClick={handleManageMemberships}
+            variant="normal"
             disabled={!isAdmin}
-          />
+            ariaLabel="Atribuir rotulação"
+          >
+            Atribuir
+          </Button>
         </div>
       </div>
       <EditLabelingModal
@@ -115,69 +125,7 @@ export default function LabelingContainer({
         onClose={() => setEditOpen(false)}
         onUpdated={onUpdated}
       />
-    </div>
-  );
-}
-
-function EditLabelingFormButton({ onClick }: { onClick?: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="
-        inline-flex items-center gap-2 rounded-lg px-3 py-2
-        bg-blue-800 text-white hover:bg-blue-700
-        transition-colors text-sm cursor-pointer justify-center
-      "
-      type="button"
-      aria-label="Abrir tarefa de rotulação"
-    >
-      <Pen size={20} strokeWidth={1.75} className="opacity-90" />
-      Formulário
-    </button>
-  );
-}
-
-function EditLabelingButton({
-  onClick,
-  disabled,
-}: {
-  onClick?: () => void;
-  disabled?: boolean;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className="
-        inline-flex items-center gap-2 rounded-lg px-3 py-2
-        bg-blue-800 text-white hover:bg-blue-700
-        transition-colors text-sm cursor-pointer justify-center disabled:opacity-60 disabled:cursor-not-allowed
-      "
-      type="button"
-      aria-label="Abrir tarefa de rotulação"
-    >
-      <GroupIcon size={20} strokeWidth={1.75} className="opacity-90" />
-      Atribuir
-    </button>
-  );
-}
-
-// TODO implementar a função onclick de rotular
-function LabelingButton({ onClick }: { onClick?: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="
-        inline-flex items-center gap-2 rounded-lg px-3 py-2
-        bg-blue-800 text-white hover:bg-blue-700
-        transition-colors text-sm cursor-pointer justify-center
-      "
-      type="button"
-      aria-label="Abrir tarefa de rotulação"
-    >
-      <Tag size={20} strokeWidth={1.75} className="opacity-90" />
-      Rotular
-    </button>
+    </>
   );
 }
 

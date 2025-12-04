@@ -1,11 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import PageHeader from "@/components/page_description";
+import PageHeader from "@/components/page_header";
 import FilterBar from "@/components/filter_bar";
 import LabelingContainer from "./labeling_container";
 import { Plus } from "lucide-react";
 import UploadCsvModal from "./upload_csv_modal";
+import GridLayout from "@/components/grid_layout";
+import GridItemCard from "@/components/grid_item_card";
+import Button from "@/components/button";
 import useSWR from "swr";
 import axios from "axios";
 import {
@@ -93,42 +96,50 @@ export default function LabelingsPage() {
 
         <div className="flex flex-nowrap items-center mt-5">
           <FilterBar />
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            aria-label="Abrir nova rotulação"
-            disabled={!isAdmin}
-            className="ml-auto mr-6 flex items-center gap-2 rounded-lg bg-blue-900 hover:bg-blue-800 text-white px-4 py-2 shadow-md text-sm transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            <Plus size={16} strokeWidth={1.75} className="opacity-90" />
-            Nova Rotulação
-          </button>
+          <div className="ml-auto mr-6 w-auto">
+            <Button
+              icon={<Plus size={16} strokeWidth={1.75} />}
+              onClick={() => setOpen(true)}
+              disabled={!isAdmin}
+              variant="normal"
+              fill={false}
+              className="px-4 py-2 shadow-md text-sm"
+              ariaLabel="Abrir nova rotulação"
+            >
+              Nova Rotulação
+            </Button>
+          </div>
         </div>
 
         {loadError && (
           <div className="ml-5 mr-5 mt-4 text-sm text-red-600">{loadError}</div>
         )}
 
-        <div className="mt-5 ml-5 w-97/100 grid gap-4 grid-cols-[repeat(auto-fill,minmax(320px,1fr))]">
-          {labelingsList.map((l) => {
-            const pending = Math.max(
-              (l.total_items ?? 0) - (l.items_done ?? 0),
-              0
-            );
-            return (
-              <LabelingContainer
-                key={l.id}
-                id={l.id}
-                title={l.labeling_name}
-                project={l.project_name}
-                days_passed={l.days_passed}
-                days_total={l.total_days}
-                labelings_done={l.items_done}
-                labelings_pending={pending}
-                onUpdated={mutate}
-              />
-            );
-          })}
+        <div className="mt-5 ml-5 w-97/100">
+          <GridLayout minColumnWidth="420px">
+            {labelingsList.map((l, index) => {
+              const pending = Math.max(
+                (l.total_items ?? 0) - (l.items_done ?? 0),
+                0
+              );
+              return (
+                <GridItemCard key={l.id} index={index}>
+                  <LabelingContainer
+                    id={l.id}
+                    title={l.labeling_name}
+                    project={l.project_name}
+                    days_passed={l.days_passed}
+                    days_total={l.total_days}
+                    labelings_done={l.items_done}
+                    labelings_pending={pending}
+                    onUpdated={async () => {
+                      await mutate();
+                    }}
+                  />
+                </GridItemCard>
+              );
+            })}
+          </GridLayout>
         </div>
         {!isAdmin && (
           <div className="ml-5 mr-5 mt-4 text-sm text-gray-600">

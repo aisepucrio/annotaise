@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import type {
   ProjectPayload,
   ProjectStatus,
-} from "@/@/lib/services/project_service";
+} from "@/lib/services/project_service";
 
 type NewProjectModalProps = {
   open: boolean;
