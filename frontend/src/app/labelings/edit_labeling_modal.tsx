@@ -294,7 +294,7 @@ export default function EditLabelingModal({ open, labelingId, onClose, onUpdated
                 </div>
                 <label
                   htmlFor="block-section-back-edit"
-                  className="flex items-center gap-3 text-base text-gray-800 mt-2 cursor-pointer select-none"
+                  className="flex items-center gap-3 text-sm text-gray-800 mt-2 cursor-pointer select-none"
                 >
                   <span className="relative inline-flex items-center">
                     <input
@@ -304,10 +304,10 @@ export default function EditLabelingModal({ open, labelingId, onClose, onUpdated
                       onChange={(e) => setBlockSectionBack(e.target.checked)}
                       className="sr-only peer"
                     />
-                    <span className="w-14 h-7 rounded-full bg-gray-200 transition-colors duration-200 peer-checked:bg-blue-900" />
-                    <span className="pointer-events-none absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 peer-checked:translate-x-7" />
+                    <span className="w-12 h-6 rounded-full bg-gray-200 transition-colors duration-200 peer-checked:bg-blue-900" />
+                    <span className="pointer-events-none absolute left-1 top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200 peer-checked:translate-x-6" />
                   </span>
-                  <span className="font-medium">Bloquear voltar entre seções para usuários</span>
+                  <span className="font-medium">Bloquear volta entre seções</span>
                 </label>
               </div>
               <div className="flex justify-end">

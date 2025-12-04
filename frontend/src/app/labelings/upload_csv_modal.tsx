@@ -278,11 +278,11 @@ export default function UploadCsvModal({ open, onClose, onConfirm }: UploadCsvMo
                   onChange={(e) => setBlockSectionBack(e.target.checked)}
                   className="sr-only peer"
                 />
-                <span className="w-14 h-7 rounded-full bg-gray-200 transition-colors duration-200 peer-checked:bg-blue-900" />
-                <span className="pointer-events-none absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 peer-checked:translate-x-7" />
+                <span className="w-12 h-6 rounded-full bg-gray-200 transition-colors duration-200 peer-checked:bg-blue-900" />
+                <span className="pointer-events-none absolute left-1 top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200 peer-checked:translate-x-6" />
               </span>
-              <span className="text-base text-gray-800 font-medium">
-                Bloquear voltar em seções já respondidas
+              <span className="text-sm text-gray-800 font-medium">
+                Bloquear volta em seções já respondidas
               </span>
             </label>
           </div>

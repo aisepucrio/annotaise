@@ -61,6 +61,7 @@ class LabelingViewSet(viewsets.ModelViewSet):
     @action(methods=['get'], detail=False, url_path='dashboard')
     def dashboard(self, request):
         today = datetime.now().date()
+        search = request.query_params.get("search")
         output = []
         qs = (
             self.get_queryset()
@@ -73,6 +74,10 @@ class LabelingViewSet(viewsets.ModelViewSet):
                     distinct=True),
             )
         )
+        if search:
+            qs = qs.filter(
+                Q(title__icontains=search) | Q(project__name__icontains=search)
+            )
         for element in qs:
             output.append({
                 "id" : element.id,

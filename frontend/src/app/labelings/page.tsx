@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PageHeader from "../components/page_description";
 import FilterBar from "../components/filter_bar";
 import LabelingContainer from "./labeling_container";
@@ -30,12 +30,21 @@ export default function LabelingsPage() {
   const currentUser = useCurrent();
   const isAdmin = Boolean(currentUser?.is_staff || currentUser?.account_type === "admin");
   const [open, setOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  useEffect(() => {
+    const handle = setTimeout(() => setDebouncedSearch(searchTerm), 300);
+    return () => clearTimeout(handle);
+  }, [searchTerm]);
   const {
     data: labelings,
     error,
     isLoading,
     mutate,
-  } = useSWR("labelings-dashboard", fetchLabelingDashboard);
+  } = useSWR(
+    ["labelings-dashboard", debouncedSearch],
+    () => fetchLabelingDashboard(debouncedSearch)
+  );
 
   const labelingsList = labelings ?? [];
   const loadError =
@@ -86,7 +95,7 @@ export default function LabelingsPage() {
         />
 
         <div className="flex flex-nowrap items-center mt-5">
-          <FilterBar />
+          <FilterBar value={searchTerm} onChange={setSearchTerm} placeholder="Pesquisar rotulações..." />
           <button
             type="button"
             onClick={() => setOpen(true)}

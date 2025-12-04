@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { useRouter } from "next/navigation";
 import PageHeader from "../components/page_description";
@@ -19,12 +19,21 @@ export default function Projects() {
   const canSeeProjects = Boolean(currentUser && (currentUser.is_staff || currentUser.account_type !== "standard"));
   const isAdmin = Boolean(currentUser?.is_staff || currentUser?.account_type === "admin");
   const [modalOpen, setModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  useEffect(() => {
+    const handle = setTimeout(() => setDebouncedSearch(searchTerm), 300);
+    return () => clearTimeout(handle);
+  }, [searchTerm]);
   const {
     data: projects,
     error,
     isLoading,
     mutate,
-  } = useSWR(canSeeProjects ? "projects-dashboard" : null, fetchProjectDashboard);
+  } = useSWR(
+    canSeeProjects ? ["projects-dashboard", debouncedSearch] : null,
+    () => fetchProjectDashboard(debouncedSearch)
+  );
 
   const projectList = projects ?? [];
   const loadError =
@@ -64,7 +73,7 @@ export default function Projects() {
         <PageHeader page_title="Projetos" description="Nesta página você pode visualizar todos os projetos criados, assim como suas informações principais. Clique em “Gerenciar” para ver mais informações sobre o projeto."></PageHeader>
         
         <div className="flex flex-nowrap items-center mt-5">
-          <FilterBar/>
+          <FilterBar value={searchTerm} onChange={setSearchTerm} placeholder="Pesquisar projetos..." />
           <button
             type="button"
             onClick={() => setModalOpen(true)}

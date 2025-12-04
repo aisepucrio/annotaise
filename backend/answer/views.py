@@ -22,7 +22,7 @@ class AnswerViewset(viewsets.ModelViewSet):
         user = self.request.user
         qs = (
             Answer.objects
-            .select_related("item")
+            .select_related("item", "labeling")
             .filter(labeling__memberships__user=user)
             .distinct()
         )
@@ -78,6 +78,8 @@ class AnswerViewset(viewsets.ModelViewSet):
         user = self.request.user
         if getattr(user, "is_staff", False):
             return
+        if getattr(answer.labeling, "block_section_back", False):
+            raise PermissionDenied("Edições estão bloqueadas para esta rotulação.")
         if answer.answered_by_id != user.id:
             raise PermissionDenied("Você não pode editar esta resposta.")
 
