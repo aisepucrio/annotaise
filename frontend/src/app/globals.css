@@ -3,6 +3,35 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  --full-white: #ffffff;
+  --metal-50: #f4f5f7;
+
+  --blue-50: #e3f0fe;
+
+  --blueberry-500: #4561db;
+  --blueberry-700: #1e2f93;
+  --blueberry-900: #0e1862;
+
+  --metal-900: #1f2129;
+  --metal-700: #4b4f5c;
+  --metal-500: #7c8292;
+  --metal-400: #969cac;
+  --metal-200: #caced9;
+  --metal-100: #e2e4eb;
+
+  --red-400: #f87171;
+  --orange-blueberry: #8f5e49;
+  --green-blueberry: #285c5e;
+  --red-blueberry: #73233e;
+
+  /* versões com opacity (os % da tabela) */
+  --green-blueberry-10: rgba(30, 102, 85, 0.1);
+  --orange-blueberry-10: rgba(143, 94, 73, 0.15);
+  --red-blueberry-10: rgba(115, 35, 62, 0.15);
+  --blueberry-700-10: rgba(30, 47, 147, 0.15);
+  --metal-500-15: rgba(124, 130, 146, 0.15);
+  --blueberry-700-25: rgba(30, 47, 147, 0.25);
 }
 
 @theme inline {
