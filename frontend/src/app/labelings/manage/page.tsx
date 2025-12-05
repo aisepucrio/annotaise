@@ -12,7 +12,7 @@ import useSWR from "swr";
 import axios from "axios";
 import {
   createLabeling,
-  fetchLabelingDashboard,
+  fetchLabelingDashboardEdit,
   importLabelingItemsCsv,
 } from "@/lib/services/labeling_service";
 import useCurrent from "@/hooks/current_user_hook";
@@ -47,8 +47,8 @@ export default function LabelingsPage() {
     isLoading,
     mutate,
   } = useSWR(
-    ["labelings-dashboard", debouncedSearch],
-    () => fetchLabelingDashboard(debouncedSearch)
+    ["labelings-dashboard-edit", debouncedSearch],
+    () => fetchLabelingDashboardEdit(debouncedSearch)
   );
 
   const labelingsList = labelings ?? [];
@@ -104,7 +104,11 @@ export default function LabelingsPage() {
         />
 
         <div className="flex flex-nowrap items-center mt-5">
-          <FilterBar />
+          <FilterBar
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder="Pesquisar rotulações..."
+          />
           <div className="ml-auto mr-6 w-auto">
             <Button
               icon={<Plus size={16} strokeWidth={1.75} />}

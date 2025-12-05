@@ -69,17 +69,7 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
               className="shrink-0"
             />
           ) : null}
-          <button
-            type="button"
-            onClick={onToggle}
-            aria-label={isOpen ? "Minimizar menu lateral" : "Expandir menu lateral"}
-            className="
-              flex items-center justify-center rounded-lg border border-gray-200 bg-gray-50
-              p-2 text-gray-600 hover:bg-gray-100 transition shadow-sm
-            "
-          >
-            {isOpen ? <PanelLeftClose size={18} /> : <PanelLeftOpen size={18} />}
-          </button>
+          
         </div>
 
         {/* separador */}
@@ -115,14 +105,16 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
               collapsed={!isOpen}
             />
           ) : null}
-          <SidebarItem
-            icon={<BookmarkPlus size={18} />}
-            label="Gerenciar Rotulações"
-            href="/labelings/manage"
-            alias="/labelings/manage"
-            hover_color="blue"
-            collapsed={!isOpen}
-          />
+          {isAdmin ? (
+            <SidebarItem
+              icon={<BookmarkPlus size={18} />}
+              label="Gerenciar Rotulações"
+              href="/labelings/manage"
+              alias="/labelings/manage"
+              hover_color="blue"
+              collapsed={!isOpen}
+            />
+          ) : null}
           <SidebarItem
             icon={<Tags size={18} />}
             label="Rotular"
@@ -131,6 +123,7 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
             hover_color="blue"
             collapsed={!isOpen}
           />
+          
         </ul>
 
         {/* Rodape */}
@@ -143,7 +136,7 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
             hover_color="gray"
             collapsed={!isOpen}
           />
-          <button type="button" className="w-55" onClick={handleLogout}>
+          <button type="button" className="text-sm text-gray-500 mt-auto w-full space-y-1" onClick={handleLogout}>
             <SidebarItem
               icon={<LogOut size={18} />}
               label="Logout"
@@ -152,6 +145,17 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
               hover_color="red"
               collapsed={!isOpen}
             />
+          </button>
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-label={isOpen ? "Minimizar menu lateral" : "Expandir menu lateral"}
+            className=" ml-auto
+              flex items-center justify-center rounded-lg border border-gray-200 bg-gray-50
+              p-2 text-gray-600 hover:bg-gray-100 transition shadow-sm
+            "
+          >
+            {isOpen ? <PanelLeftClose size={18} /> : <PanelLeftOpen size={18} />}
           </button>
         </div>
       </aside>

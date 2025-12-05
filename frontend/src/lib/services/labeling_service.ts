@@ -72,6 +72,14 @@ export async function fetchLabelingDashboard(search?: string): Promise<LabelingD
   return data;
 }
 
+export async function fetchLabelingDashboardEdit(search?: string): Promise<LabelingDashboard[]> {
+  const params = new URLSearchParams();
+  if (search) params.set("search", search);
+  const qs = params.toString() ? `?${params.toString()}` : "";
+  const { data } = await api.get<LabelingDashboard[]>(`/labelings/dashboard/edit/${qs}`);
+  return data;
+}
+
 export async function fetchLabeling(id: number): Promise<Labeling> {
   const { data } = await api.get<Labeling>(`/labelings/${id}/`);
   return data;

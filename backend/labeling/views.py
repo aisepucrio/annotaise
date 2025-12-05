@@ -23,7 +23,7 @@ class LabelingViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_serializer_class(self):
-        if self.action == 'dashboard':
+        if self.action in ['dashboard','editdashboard']:
             return LabelingDashboardSerializer
         else: return LabelingSerializer
     
@@ -47,12 +47,12 @@ class LabelingViewSet(viewsets.ModelViewSet):
     
     @action(methods=['get'], detail=False, url_path='dashboard/edit')
     def editdashboard(self, request):
-        '''a ideia é que esse dashboard serve pra mostrar o dashboard pro admin, entao tem todos os labelings de todos os projetos ]
+        '''a ideia é que esse dashboard serve pra mostrar o dashboard pro admin, entao tem todos os labelings de todos os projetos
         que o usuario é admin ou owner.'''
         today = datetime.now().date()
         search = request.query_params.get("search")
         output = []
-        qs = (Labeling.objects.filter(project__memberships=request.user)
+        qs = (Labeling.objects.filter(project__memberships__user=request.user)
             .select_related('project')
             .annotate(
                 total_labelings=Count('items', distinct=True),
@@ -62,6 +62,9 @@ class LabelingViewSet(viewsets.ModelViewSet):
                     distinct=True),
             )
         )
+        if not qs.exists():
+            return Response([], status=200)
+        print(qs)
         if search:
             qs = qs.filter(
                 Q(title__icontains=search) | Q(project__name__icontains=search)
@@ -81,7 +84,7 @@ class LabelingViewSet(viewsets.ModelViewSet):
         if ser.is_valid():
             return Response(ser.data, status=200)
         else:
-            return Response('Erro ao carregar labelings dashboard', status=400)
+            return Response('Erro ao carregar labelings dashboard' + str(ser.error_messages), status=400)
     
     @action(methods=['get'], detail=True, url_path='memberships')
     def list_labeling_memberships(self,request, pk=None):
