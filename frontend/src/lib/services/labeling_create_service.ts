@@ -1,6 +1,9 @@
 import { api } from "../api";
 import type { Labeling } from "./labeling_service";
-import type { ElementDTO, SectionDTO } from "@/app/labelings/create/[id]/labeling_api_types";
+import type {
+  ElementDTO,
+  SectionDTO,
+} from "@/app/labelings/create/[id]/labeling_api_types";
 
 export type LabelingStructureElement = ElementDTO & {
   id?: number;
@@ -34,8 +37,12 @@ export async function fetchLabelingById(id: number): Promise<Labeling> {
   return data;
 }
 
-export async function fetchLabelingStructure(id: number): Promise<LabelingStructureSection[]> {
-  const { data } = await api.get<LabelingStructureSection[]>(`/labelings/${id}/structure`);
+export async function fetchLabelingStructure(
+  id: number
+): Promise<LabelingStructureSection[]> {
+  const { data } = await api.get<LabelingStructureSection[]>(
+    `/labelings/${id}/structure`
+  );
   return data;
 }
 

@@ -1,5 +1,5 @@
 import type { ChangeEvent } from "react";
-import { NumberQuestionConfig } from "../labeling_types";
+import { NumberQuestionConfig } from "@/labeling_types";
 
 type Props = {
   config: NumberQuestionConfig;
@@ -37,7 +37,6 @@ export default function QuestionNumberEditor({ config, onChange }: Props) {
           onChange={handleNumericChange("max")}
         />
       </label>  acho que não precisamos desse campo...*/}
-      
     </div>
   );
 }

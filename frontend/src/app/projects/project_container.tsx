@@ -1,4 +1,6 @@
 import { NotebookPen } from "lucide-react";
+import StatPill from "@/components/stat_pill";
+import Button from "@/components/button";
 
 type ProjectContainerProps = {
   title: string;
@@ -20,17 +22,7 @@ export default function ProjectContainer({
   canManage = true,
 }: ProjectContainerProps) {
   return (
-    <div
-      className="
-        relative rounded-br-xl rounded-ss-3xl bg-white shadow-md p-3
-        border-t-6
-        border-l-6
-        border-blue-800
-        hover:shadow-xl
-        transition-all duration-300 ease-in-out
-        max-w-100
-      "
-    >
+    <>
       {/* título */}
       <h3
         className={`${
@@ -43,24 +35,31 @@ export default function ProjectContainer({
       {/* linha divisória */}
       <div className="mt-2 h-1 rounded-full bg-blue-200/60" />
 
-      <div className="mt-3 flex justify-between items-start gap-3">
-        {/* métricas */}
-        <div className="grid grid-cols-1 gap-2 flex-1">
-          <StatPill label="Usuários rotulando" value={user_count} tone="blue" />
+      <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
+        {/* métricas (coluna esquerda) */}
+        <div className="flex flex-col gap-2">
+          <StatPill
+            label="Usuários rotulando"
+            value={user_count}
+            textColor="var(--blueberry-700)"
+            backgroundColor="var(--blueberry-700-10)"
+          />
           <StatPill
             label="Rotulações finalizadas"
             value={labelings_done}
-            tone="green"
+            textColor="var(--green-blueberry)"
+            backgroundColor="var(--green-blueberry-10)"
           />
           <StatPill
             label="Rotulações pendentes"
             value={labelings_pending}
-            tone="amber"
+            textColor="var(--orange-blueberry)"
+            backgroundColor="var(--orange-blueberry-10)"
           />
         </div>
 
-        {/* aviso + botão */}
-        <div className="flex flex-col items-end gap-2 w-[170px]">
+        {/* aviso + botão (coluna direita) */}
+        <div className="flex flex-col items-end gap-2">
           {labelings_late > 0 ? (
             <StatusBadge
               type="warning"
@@ -74,44 +73,25 @@ export default function ProjectContainer({
             <StatusBadge type="ok" text="Todas as rotulações estão em dia" />
           )}
 
-          {canManage ? <ManageButton onClick={onManage} /> : null}
+          {canManage ? (
+            <Button
+              icon={<NotebookPen size={20} strokeWidth={1.75} />}
+              onClick={onManage}
+              variant="normal"
+              ariaLabel="Gerenciar projeto"
+            >
+              Gerenciar
+            </Button>
+          ) : null}
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
 /* ---------- Subcomponentes ---------- */
 
-function StatPill({
-  label,
-  value,
-  tone = "blue",
-}: {
-  label: string;
-  value: number;
-  tone?: "blue" | "green" | "amber";
-}) {
-  const tones: Record<string, string> = {
-    blue: "bg-blue-100 text-blue-800",
-    green: "bg-green-100 text-green-800",
-    amber: "bg-amber-100 text-amber-800",
-  };
-  return (
-    <div className={`flex items-left rounded-lg px-2 py-2 text-[13px] ${tones[tone]}`}>
-      <span className="font-medium">{value}</span>
-      <span className="ml-2">{label}</span>
-    </div>
-  );
-}
-
-function StatusBadge({
-  type,
-  text,
-}: {
-  type: "ok" | "warning";
-  text: string;
-}) {
+function StatusBadge({ type, text }: { type: "ok" | "warning"; text: string }) {
   const styles =
     type === "ok" ? "bg-blue-100 text-blue-900" : "bg-rose-100 text-rose-800";
   return (
@@ -123,21 +103,4 @@ function StatusBadge({
   );
 }
 
-// TODO implementar a função onclick do gerenciar projeto
-function ManageButton({ onClick }: { onClick?: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="
-        inline-flex items-center gap-2 rounded-lg px-10.5 py-2
-        bg-blue-800 text-white hover:bg-blue-700
-        transition-colors text-sm cursor-pointer
-      "
-      type="button"
-      aria-label="Gerenciar projeto"
-    >
-      <NotebookPen size={20} strokeWidth={1.75} className="opacity-90" />
-      Gerenciar
-    </button>
-  );
-}
+

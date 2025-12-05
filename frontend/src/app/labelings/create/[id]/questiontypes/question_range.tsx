@@ -1,5 +1,5 @@
 import type { ChangeEvent } from "react";
-import { RangeQuestionConfig } from "../labeling_types";
+import { RangeQuestionConfig } from "@/labeling_types";
 
 type Props = {
   config: RangeQuestionConfig;
@@ -9,14 +9,15 @@ type Props = {
 export default function QuestionRangeEditor({ config, onChange }: Props) {
   const { min, max, step } = config;
 
-  const handleNumericChange = (field: "min" | "max" | "step") => (e: ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    const parsed = value === "" ? undefined : Number(value);
-    onChange({
-      ...config,
-      [field]: parsed,
-    });
-  };
+  const handleNumericChange =
+    (field: "min" | "max" | "step") => (e: ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      const parsed = value === "" ? undefined : Number(value);
+      onChange({
+        ...config,
+        [field]: parsed,
+      });
+    };
 
   return (
     <div className="flex flex-col gap-3">

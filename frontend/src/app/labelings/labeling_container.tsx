@@ -1,10 +1,10 @@
 import { Tag, Pen, Download } from "lucide-react";
 import { useRouter } from "next/navigation";
-import useCurrent from "../hooks/current_user_hook";
+import useCurrent from "@/hooks/current_user_hook";
 import { GroupIcon } from "lucide-react";
 import { useState } from "react";
 import EditLabelingModal from "./edit_labeling_modal";
-import { exportLabelingAnswersCsv } from "@/lib/services/labeling_service";
+import Button from "@/components/button";
 
 type LabelingContainerProps = {
   id: number;
@@ -27,10 +27,11 @@ export default function LabelingContainer({
   days_total,
   onUpdated,
 }: LabelingContainerProps) {
-
   const router = useRouter();
   const currentUser = useCurrent();
-  const isAdmin = Boolean(currentUser?.is_staff || currentUser?.account_type === "admin");
+  const isAdmin = Boolean(
+    currentUser?.is_staff || currentUser?.account_type === "admin"
+  );
   const [editOpen, setEditOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -51,45 +52,18 @@ export default function LabelingContainer({
     setEditOpen(true);
   }
 
-  async function handleExportAnswers() {
-    if (!isAdmin || isExporting) return;
-    try {
-      setIsExporting(true);
-      const { blob, filename } = await exportLabelingAnswersCsv(id);
-      const downloadUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = downloadUrl;
-      link.download = filename || `labeling-${id}-answers.csv`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(downloadUrl);
-    } catch (err) {
-      console.error("Erro ao exportar respostas da rotulação:", err);
-      alert("Não foi possível exportar as respostas. Tente novamente.");
-    } finally {
-      setIsExporting(false);
-    }
-  }
-
-  if(labelings_done != 0 && labelings_pending ===0){
+  if (labelings_done != 0 && labelings_pending === 0) {
     days_total = -1;
   }
 
   return (
-    <div
-      className="
-        relative rounded-br-xl rounded-ss-3xl bg-white shadow-md p-3
-        border-t-6
-        border-l-6
-        border-blue-800
-        hover:shadow-xl
-        transition-all duration-300 ease-in-out
-        max-w-100
-      "
-    >
+    <>
       {/* título */}
-      <h3 className={`${days_passed > days_total ? "text-red-700" : "text-black"} font-semibold leading-tight pr-10`}>
+      <h3
+        className={`${
+          days_passed > days_total ? "text-red-700" : "text-black"
+        } font-semibold leading-tight pr-10`}
+      >
         {title}
       </h3>
 
@@ -103,7 +77,6 @@ export default function LabelingContainer({
       <div className="mt-3 flex flex-col gap-3 min-w-0 w-full">
         {/* métricas */}
 
-        
         <ProgressBar
           progress_label="Dias Passados"
           late_label="Dias Atrasados"
@@ -118,11 +91,32 @@ export default function LabelingContainer({
         />
 
         {/* aviso + botão */}
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          <LabelingButton onClick={handleAnswerLabelingButton} />
-          <EditLabelingFormButton onClick={handleEditLabelingButton} />
-          <EditLabelingButton onClick={handleManageMemberships} disabled={!isAdmin} />
-          <ExportAnswersButton onClick={handleExportAnswers} disabled={!isAdmin || isExporting} loading={isExporting} />
+        <div className="flex items-center justify-center gap-2">
+          <Button
+            icon={<Tag size={20} strokeWidth={1.75} />}
+            onClick={handleAnswerLabelingButton}
+            variant="normal"
+            ariaLabel="Abrir tarefa de rotulação"
+          >
+            Rotular
+          </Button>
+          <Button
+            icon={<Pen size={20} strokeWidth={1.75} />}
+            onClick={handleEditLabelingButton}
+            variant="normal"
+            ariaLabel="Abrir formulário de rotulação"
+          >
+            Formulário
+          </Button>
+          <Button
+            icon={<GroupIcon size={20} strokeWidth={1.75} />}
+            onClick={handleManageMemberships}
+            variant="normal"
+            disabled={!isAdmin}
+            ariaLabel="Atribuir rotulação"
+          >
+            Atribuir
+          </Button>
         </div>
       </div>
       <EditLabelingModal
@@ -131,91 +125,7 @@ export default function LabelingContainer({
         onClose={() => setEditOpen(false)}
         onUpdated={onUpdated}
       />
-    </div>
-  );
-}
-
-function EditLabelingFormButton({ onClick }: { onClick?: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="
-        inline-flex items-center gap-2 rounded-lg px-2 py-2
-        bg-blue-800 text-white hover:bg-blue-700
-        transition-colors text-sm cursor-pointer justify-center
-      "
-      type="button"
-      aria-label="Abrir tarefa de rotulação"
-    >
-      <Pen size={20} strokeWidth={1.75} className="opacity-90" />
-      Formulário
-    </button>
-  );
-}
-
-function EditLabelingButton({ onClick, disabled }: { onClick?: () => void; disabled?: boolean }) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className="
-        inline-flex items-center gap-2 rounded-lg px-2 py-2
-        bg-blue-800 text-white hover:bg-blue-700
-        transition-colors text-sm cursor-pointer justify-center disabled:opacity-60 disabled:cursor-not-allowed
-      "
-      type="button"
-      aria-label="Abrir tarefa de rotulação"
-    >
-      <GroupIcon size={20} strokeWidth={1.75} className="opacity-90" />
-      Atribuir
-    </button>
-  );
-}
-
-function ExportAnswersButton({
-  onClick,
-  disabled,
-  loading,
-}: {
-  onClick?: () => void;
-  disabled?: boolean;
-  loading?: boolean;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className="
-        inline-flex items-center gap-2 rounded-lg px-2 py-2
-        bg-blue-800 text-white hover:bg-blue-700
-        transition-colors text-sm cursor-pointer justify-center disabled:opacity-60 disabled:cursor-not-allowed
-      "
-      type="button"
-      aria-label="Exportar respostas em CSV"
-    >
-      <Download size={20} strokeWidth={1.75} className="opacity-90" />
-      {loading ? "" : ""}
-    </button>
-  );
-}
-
-
-// TODO implementar a função onclick de rotular
-function LabelingButton({ onClick }: { onClick?: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="
-        inline-flex items-center gap-2 rounded-lg px-2 py-2
-        bg-blue-800 text-white hover:bg-blue-700
-        transition-colors text-sm cursor-pointer justify-center
-      "
-      type="button"
-      aria-label="Abrir tarefa de rotulação"
-    >
-      <Tag size={20} strokeWidth={1.75} className="opacity-90" />
-      Rotular
-    </button>
+    </>
   );
 }
 
@@ -226,8 +136,12 @@ type ProgressBarProps = {
   total: number;
 };
 
-function ProgressBar({ progress_label, late_label, passed, total }: ProgressBarProps) {
-
+function ProgressBar({
+  progress_label,
+  late_label,
+  passed,
+  total,
+}: ProgressBarProps) {
   let percent = total > 0 ? Math.round((passed / total) * 100) : 0;
 
   let bgColor = total >= passed ? "bg-blue-300" : "bg-red-300";
@@ -241,7 +155,7 @@ function ProgressBar({ progress_label, late_label, passed, total }: ProgressBarP
     progress_label = "Concluído";
   }
 
-  if (passed < 0){
+  if (passed < 0) {
     passed = 0;
   }
 
@@ -265,7 +179,11 @@ function ProgressBar({ progress_label, late_label, passed, total }: ProgressBarP
         <span
           className={`absolute inset-0 flex items-center justify-center text-sm font-medium pointer-events-none px-2 truncate ${textColor}`}
         >
-          {finished===false?(total >= passed ? `${passed} / ${total} ${progress_label}` : `${passed - total} ${late_label}`):`${progress_label}`}
+          {finished === false
+            ? total >= passed
+              ? `${passed} / ${total} ${progress_label}`
+              : `${passed - total} ${late_label}`
+            : `${progress_label}`}
         </span>
       </div>
     </div>

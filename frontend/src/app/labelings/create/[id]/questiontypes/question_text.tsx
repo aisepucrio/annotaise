@@ -1,5 +1,5 @@
 import type { ChangeEvent } from "react";
-import { TextQuestionConfig } from "../labeling_types";
+import { TextQuestionConfig } from "@/labeling_types";
 
 type Props = {
   config: TextQuestionConfig;

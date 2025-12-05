@@ -5,12 +5,19 @@ import { useParams, useRouter } from "next/navigation";
 import useSWR from "swr";
 import axios from "axios";
 import { ArrowLeft, RefreshCw, Send } from "lucide-react";
-import { fetchLabelingById, type LabelingStructureSection } from "@/lib/services/labeling_create_service";
+import {
+  fetchLabelingById,
+  type LabelingStructureSection,
+} from "@/lib/services/labeling_create_service";
 import { fetchNextAnswer, submitAnswer } from "@/lib/services/answer_service";
 import SectionCard from "./section_card";
-import { buildInitialAnswers, validateRequired, validateSectionRequired } from "./answer_utils";
+import {
+  buildInitialAnswers,
+  validateRequired,
+  validateSectionRequired,
+} from "./answer_utils";
 import type { AnswerMap } from "./answer_types";
-import SidebarLayout from "@/app/components/sidebar_layout";
+import SidebarLayout from "@/components/side-bar/sidebar_layout";
 
 export default function LabelingAnswerPage() {
   const params = useParams<{ id: string }>();
@@ -32,7 +39,6 @@ export default function LabelingAnswerPage() {
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
   const [currentSectionIdx, setCurrentSectionIdx] = useState<number>(0);
   const [blockSectionBack, setBlockSectionBack] = useState<boolean>(false);
-
 
   const loadItem = useCallback(async () => {
     if (Number.isNaN(labelingId)) {
@@ -65,7 +71,8 @@ export default function LabelingAnswerPage() {
 
       let message = "Não foi possível carregar um item para responder.";
       if (axios.isAxiosError(error)) {
-        const detail = (error.response?.data as { detail?: string } | undefined)?.detail;
+        const detail = (error.response?.data as { detail?: string } | undefined)
+          ?.detail;
         if (detail) {
           message = detail;
         } else if (error.message) {
@@ -90,7 +97,9 @@ export default function LabelingAnswerPage() {
   );
   const totalSections = orderedSections.length;
   const currentSection =
-    currentSectionIdx >= 0 && currentSectionIdx < totalSections ? orderedSections[currentSectionIdx] : null;
+    currentSectionIdx >= 0 && currentSectionIdx < totalSections
+      ? orderedSections[currentSectionIdx]
+      : null;
   const isLastSection = currentSectionIdx === totalSections - 1;
 
   const handleAnswerChange = (questionId: number | string, value: unknown) => {
@@ -136,7 +145,8 @@ export default function LabelingAnswerPage() {
     } catch (error) {
       let message = "Não foi possível enviar a resposta.";
       if (axios.isAxiosError(error)) {
-        const detail = (error.response?.data as { detail?: string } | undefined)?.detail;
+        const detail = (error.response?.data as { detail?: string } | undefined)
+          ?.detail;
         if (detail) {
           message = detail;
         } else if (error.message) {
@@ -183,9 +193,9 @@ export default function LabelingAnswerPage() {
             <ArrowLeft size={22} />
           </button>
           <div>
-            
             <h1 className="text-lg font-semibold leading-tight">
-              {labelingTitle || (isLoading ? "Carregando rotulação..." : "Responder rotulação")}
+              {labelingTitle ||
+                (isLoading ? "Carregando rotulação..." : "Responder rotulação")}
             </h1>
           </div>
         </div>
@@ -203,7 +213,7 @@ export default function LabelingAnswerPage() {
           ) : null}
           <button
             type="button"
-            onClick={() => void loadItem()}// TODO esse botao é debug... mais pro futuro pode tirar 
+            onClick={() => void loadItem()} // TODO esse botao é debug... mais pro futuro pode tirar
             disabled={isLoading || isSubmitting}
             className="inline-flex items-center gap-2 rounded-lg border border-white/30 px-4 py-2 text-sm font-medium text-white cursor-pointer hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
           >
@@ -214,11 +224,17 @@ export default function LabelingAnswerPage() {
       </header>
 
       <section className="mt-4 rounded-xl border border-blue-200 bg-white p-4 shadow-lg">
-        {loadError ? <p className="mb-3 text-sm text-red-600">{loadError}</p> : null}
-        {submitMessage ? <p className="mb-3 text-sm text-green-700">{submitMessage}</p> : null}
+        {loadError ? (
+          <p className="mb-3 text-sm text-red-600">{loadError}</p>
+        ) : null}
+        {submitMessage ? (
+          <p className="mb-3 text-sm text-green-700">{submitMessage}</p>
+        ) : null}
 
         {isLoading ? (
-          <p className="text-sm text-gray-600">Carregando item e perguntas...</p>
+          <p className="text-sm text-gray-600">
+            Carregando item e perguntas...
+          </p>
         ) : orderedSections.length === 0 ? (
           <div className="rounded-lg border border-dashed border-blue-200 bg-blue-50 px-4 py-6 text-center text-sm text-blue-900">
             Nenhum item disponível para resposta agora.
@@ -233,11 +249,15 @@ export default function LabelingAnswerPage() {
               onChange={handleAnswerChange}
             />
             <div className="flex justify-between items-center pt-2">
-              {blockSectionBack ? <div /> : (
+              {blockSectionBack ? (
+                <div />
+              ) : (
                 <button
                   type="button"
                   onClick={goToPreviousSection}
-                  disabled={currentSectionIdx === 0 || isLoading || isSubmitting}
+                  disabled={
+                    currentSectionIdx === 0 || isLoading || isSubmitting
+                  }
                   className="inline-flex items-center gap-2 rounded-lg border border-blue-200 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Voltar
@@ -257,7 +277,12 @@ export default function LabelingAnswerPage() {
                   <button
                     type="button"
                     onClick={() => void handleSubmit()}
-                    disabled={isLoading || isSubmitting || !currentItemId || orderedSections.length === 0}
+                    disabled={
+                      isLoading ||
+                      isSubmitting ||
+                      !currentItemId ||
+                      orderedSections.length === 0
+                    }
                     className="inline-flex items-center gap-2 rounded-lg bg-blue-900 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
                   >
                     <Send size={16} />

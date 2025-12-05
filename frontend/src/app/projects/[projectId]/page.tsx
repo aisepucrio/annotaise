@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import useSWR from "swr";
 import { useForm } from "react-hook-form";
-import PageHeader from "@/app/components/page_description";
+import PageHeader from "@/components/page_header";
 import {
   createProjectMembership,
   deleteProject,
@@ -16,10 +16,10 @@ import {
   type ProjectPayload,
   updateProject,
   updateProjectMembership,
-} from "../../../lib/services/project_service";
-import { fetchUsers } from "../../../lib/services/user_service";
-import useCurrent from "@/app/hooks/current_user_hook";
-import SidebarLayout from "@/app/components/sidebar_layout";
+} from "@/lib/services/project_service";
+import { fetchUsers } from "@/lib/services/user_service";
+import useCurrent from "@/hooks/current_user_hook";
+import SidebarLayout from "@/components/side-bar/sidebar_layout";
 
 type Params = {
   projectId: string;
@@ -30,8 +30,13 @@ export default function ProjectDetailsPage() {
   const params = useParams<Params>();
   const currentUser = useCurrent();
   const userLoading = currentUser === undefined;
-  const canSeeProjects = Boolean(currentUser && (currentUser.is_staff || currentUser.account_type !== "standard"));
-  const isAdmin = Boolean(currentUser?.is_staff || currentUser?.account_type === "admin");
+  const canSeeProjects = Boolean(
+    currentUser &&
+      (currentUser.is_staff || currentUser.account_type !== "standard")
+  );
+  const isAdmin = Boolean(
+    currentUser?.is_staff || currentUser?.account_type === "admin"
+  );
   const projectId = Number(params?.projectId);
 
   const {
@@ -39,20 +44,25 @@ export default function ProjectDetailsPage() {
     isLoading: loadingProject,
     error: projectError,
     mutate: mutateProject,
-  } = useSWR(projectId && canSeeProjects ? ["project", projectId] : null, () => fetchProject(projectId));
+  } = useSWR(projectId && canSeeProjects ? ["project", projectId] : null, () =>
+    fetchProject(projectId)
+  );
 
   const {
     data: memberships,
     isLoading: loadingMemberships,
     mutate: mutateMemberships,
     error: membershipsError,
-  } = useSWR(projectId && canSeeProjects ? ["project-memberships", projectId] : null, () => fetchProjectMemberships(projectId));
+  } = useSWR(
+    projectId && canSeeProjects ? ["project-memberships", projectId] : null,
+    () => fetchProjectMemberships(projectId)
+  );
 
   const {
     data: users,
     isLoading: loadingUsers,
     error: usersError,
-  } = useSWR(canSeeProjects ? "project-users" : null, fetchUsers);
+  } = useSWR(canSeeProjects ? "project-users" : null, () => fetchUsers());
 
   const {
     register,
@@ -68,11 +78,16 @@ export default function ProjectDetailsPage() {
   });
 
   const [projectMessage, setProjectMessage] = useState<string | null>(null);
-  const [projectErrorMessage, setProjectErrorMessage] = useState<string | null>(null);
-  const [membershipErrorMessage, setMembershipErrorMessage] = useState<string | null>(null);
+  const [projectErrorMessage, setProjectErrorMessage] = useState<string | null>(
+    null
+  );
+  const [membershipErrorMessage, setMembershipErrorMessage] = useState<
+    string | null
+  >(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [newMemberId, setNewMemberId] = useState<string>("");
-  const [newMemberRole, setNewMemberRole] = useState<ProjectMembershipPayload["role"]>("viewer");
+  const [newMemberRole, setNewMemberRole] =
+    useState<ProjectMembershipPayload["role"]>("viewer");
 
   useEffect(() => {
     if (project) {
@@ -88,7 +103,9 @@ export default function ProjectDetailsPage() {
     if (!users || !memberships) {
       return [];
     }
-    const assignedIds = new Set(memberships.map((membership) => membership.user));
+    const assignedIds = new Set(
+      memberships.map((membership) => membership.user)
+    );
     return users.filter((user) => !assignedIds.has(user.id));
   }, [users, memberships]);
 
@@ -106,8 +123,8 @@ export default function ProjectDetailsPage() {
       setProjectMessage("Projeto atualizado com sucesso.");
     } catch (error) {
       const message =
-        (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
-        "Não foi possível salvar as alterações.";
+        (error as { response?: { data?: { detail?: string } } })?.response?.data
+          ?.detail ?? "Não foi possível salvar as alterações.";
       setProjectErrorMessage(message);
     }
   });
@@ -118,7 +135,9 @@ export default function ProjectDetailsPage() {
       return;
     }
     if (!projectId) return;
-    const confirmed = window.confirm("Tem certeza que deseja excluir este projeto?");
+    const confirmed = window.confirm(
+      "Tem certeza que deseja excluir este projeto?"
+    );
     if (!confirmed) return;
 
     try {
@@ -127,8 +146,8 @@ export default function ProjectDetailsPage() {
       router.push("/projects");
     } catch (error) {
       const message =
-        (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
-        "Não foi possível deletar o projeto.";
+        (error as { response?: { data?: { detail?: string } } })?.response?.data
+          ?.detail ?? "Não foi possível deletar o projeto.";
       setProjectErrorMessage(message);
     } finally {
       setDeleteLoading(false);
@@ -138,7 +157,9 @@ export default function ProjectDetailsPage() {
   const handleAddMember = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!isAdmin) {
-      setMembershipErrorMessage("Apenas administradores podem adicionar membros.");
+      setMembershipErrorMessage(
+        "Apenas administradores podem adicionar membros."
+      );
       return;
     }
     if (!projectId || !newMemberId) {
@@ -156,15 +177,20 @@ export default function ProjectDetailsPage() {
       await mutateMemberships();
     } catch (error) {
       const message =
-        (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
-        "Não foi possível adicionar o membro.";
+        (error as { response?: { data?: { detail?: string } } })?.response?.data
+          ?.detail ?? "Não foi possível adicionar o membro.";
       setMembershipErrorMessage(message);
     }
   };
 
-  const handleRoleChange = async (membership: ProjectMembership, nextRole: ProjectMembershipPayload["role"]) => {
+  const handleRoleChange = async (
+    membership: ProjectMembership,
+    nextRole: ProjectMembershipPayload["role"]
+  ) => {
     if (!isAdmin) {
-      setMembershipErrorMessage("Apenas administradores podem alterar permissões.");
+      setMembershipErrorMessage(
+        "Apenas administradores podem alterar permissões."
+      );
       return;
     }
     if (membership.role === nextRole) return;
@@ -174,15 +200,17 @@ export default function ProjectDetailsPage() {
       await mutateMemberships();
     } catch (error) {
       const message =
-        (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
-        "Não foi possível atualizar o membro.";
+        (error as { response?: { data?: { detail?: string } } })?.response?.data
+          ?.detail ?? "Não foi possível atualizar o membro.";
       setMembershipErrorMessage(message);
     }
   };
 
   const handleRemoveMember = async (membership: ProjectMembership) => {
     if (!isAdmin) {
-      setMembershipErrorMessage("Apenas administradores podem remover membros.");
+      setMembershipErrorMessage(
+        "Apenas administradores podem remover membros."
+      );
       return;
     }
     const confirmed = window.confirm("Remover este membro do projeto?");
@@ -193,8 +221,8 @@ export default function ProjectDetailsPage() {
       await mutateMemberships();
     } catch (error) {
       const message =
-        (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
-        "Não foi possível remover o membro.";
+        (error as { response?: { data?: { detail?: string } } })?.response?.data
+          ?.detail ?? "Não foi possível remover o membro.";
       setMembershipErrorMessage(message);
     }
   };
@@ -206,7 +234,9 @@ export default function ProjectDetailsPage() {
   if (userLoading) {
     return (
       <SidebarLayout>
-        <p className="mt-6 text-sm text-gray-500">Carregando informações do usuário...</p>
+        <p className="mt-6 text-sm text-gray-500">
+          Carregando informações do usuário...
+        </p>
       </SidebarLayout>
     );
   }
@@ -218,7 +248,9 @@ export default function ProjectDetailsPage() {
           page_title="Projeto"
           description="Apenas editores ou administradores podem acessar detalhes de projetos."
         />
-        <p className="mt-6 ml-5 text-sm text-red-600">Seu perfil não possui permissão para visualizar este projeto.</p>
+        <p className="mt-6 ml-5 text-sm text-red-600">
+          Seu perfil não possui permissão para visualizar este projeto.
+        </p>
       </SidebarLayout>
     );
   }
@@ -232,24 +264,35 @@ export default function ProjectDetailsPage() {
 
       <section className="mx-5 mt-6 rounded-xl bg-white p-6 shadow-sm">
         <header className="mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Informações do projeto</h2>
-          <p className="text-sm text-gray-500">Atualize o nome, descrição ou status do projeto.</p>
+          <h2 className="text-lg font-semibold text-gray-900">
+            Informações do projeto
+          </h2>
+          <p className="text-sm text-gray-500">
+            Atualize o nome, descrição ou status do projeto.
+          </p>
         </header>
 
         {projectError || projectErrorMessage ? (
           <p className="mb-4 text-sm text-red-600">
             {projectErrorMessage ??
-              (projectError instanceof Error ? projectError.message : "Erro ao carregar o projeto.")}
+              (projectError instanceof Error
+                ? projectError.message
+                : "Erro ao carregar o projeto.")}
           </p>
         ) : null}
-        {projectMessage ? <p className="mb-4 text-sm text-green-600">{projectMessage}</p> : null}
+        {projectMessage ? (
+          <p className="mb-4 text-sm text-green-600">{projectMessage}</p>
+        ) : null}
 
         {loadingProject ? (
           <p className="text-sm text-gray-500">Carregando projeto...</p>
         ) : project ? (
           <form onSubmit={handleSaveProject} className="space-y-4">
             <div className="space-y-1">
-              <label htmlFor="project-name" className="text-sm font-medium text-gray-700">
+              <label
+                htmlFor="project-name"
+                className="text-sm font-medium text-gray-700"
+              >
                 Nome
               </label>
               <input
@@ -262,7 +305,10 @@ export default function ProjectDetailsPage() {
             </div>
 
             <div className="space-y-1">
-              <label htmlFor="project-description" className="text-sm font-medium text-gray-700">
+              <label
+                htmlFor="project-description"
+                className="text-sm font-medium text-gray-700"
+              >
                 Descrição
               </label>
               <textarea
@@ -275,7 +321,10 @@ export default function ProjectDetailsPage() {
             </div>
 
             <div className="space-y-1">
-              <label htmlFor="project-status" className="text-sm font-medium text-gray-700">
+              <label
+                htmlFor="project-status"
+                className="text-sm font-medium text-gray-700"
+              >
                 Status
               </label>
               <select
@@ -329,8 +378,8 @@ export default function ProjectDetailsPage() {
               (membershipsError instanceof Error
                 ? membershipsError.message
                 : usersError instanceof Error
-                  ? usersError.message
-                  : "Erro ao carregar os dados de membros.")}
+                ? usersError.message
+                : "Erro ao carregar os dados de membros.")}
           </p>
         ) : null}
 
@@ -354,14 +403,19 @@ export default function ProjectDetailsPage() {
                           : `Usuário #${membership.user}`}
                       </p>
                       <p className="text-xs text-gray-500">
-                        {membership.user_detail?.email ?? "Email não disponível"}
+                        {membership.user_detail?.email ??
+                          "Email não disponível"}
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
                       <select
                         value={membership.role}
                         onChange={(event) =>
-                          handleRoleChange(membership, event.target.value as ProjectMembershipPayload["role"])
+                          handleRoleChange(
+                            membership,
+                            event.target
+                              .value as ProjectMembershipPayload["role"]
+                          )
                         }
                         disabled={isCurrentUser || !isAdmin}
                         className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 disabled:cursor-not-allowed disabled:opacity-60"

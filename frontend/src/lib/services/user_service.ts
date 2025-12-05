@@ -33,8 +33,10 @@ export type UpdateUserPayload = Partial<{
   is_active: boolean;
 }>;
 
-export async function fetchUsers(): Promise<User[]> {
-  const { data } = await api.get<User[]>("/users/");
+export async function fetchUsers(search?: string): Promise<User[]> {
+  const { data } = await api.get<User[]>("/users/", {
+    params: search ? { search } : undefined,
+  });
   return data;
 }
 

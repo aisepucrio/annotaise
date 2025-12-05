@@ -3,8 +3,8 @@ import {
   InternalAxiosRequestConfig,
   AxiosRequestHeaders,
 } from "axios";
-import { api } from "../lib/api";
-import { AuthActions } from "../../authClient";
+import { api } from "@/lib/api";
+import { AuthActions } from "@/lib/authClient";
 
 // Extrai utilitários
 const { handleJWTRefresh, storeToken, getToken } = AuthActions();
@@ -46,7 +46,7 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const status = error.response?.status;
     const original =
-      (error.config as (InternalAxiosRequestConfig & { _retry?: boolean })) ||
+      (error.config as InternalAxiosRequestConfig & { _retry?: boolean }) ||
       undefined;
 
     // Se não for 401, ou a request já foi re-tentada, propaga o erro

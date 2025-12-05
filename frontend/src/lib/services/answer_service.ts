@@ -27,17 +27,23 @@ export type AnswerResponse = AnswerPayload & {
   item_detail?: ItemStructure;
 };
 
-export async function fetchNextAnswer(labelingId: number): Promise<AnswerStructure> {
+export async function fetchNextAnswer(
+  labelingId: number
+): Promise<AnswerStructure> {
   const { data } = await api.get<AnswerStructure>(`/items/${labelingId}/`);
   return data;
 }
 
-export async function submitAnswer(payload: AnswerPayload): Promise<AnswerResponse> {
+export async function submitAnswer(
+  payload: AnswerPayload
+): Promise<AnswerResponse> {
   const { data } = await api.post<AnswerResponse>(`/answers/`, payload);
   return data;
 }
 
-export async function fetchMyAnswers(labelingId: number): Promise<AnswerResponse[]> {
+export async function fetchMyAnswers(
+  labelingId: number
+): Promise<AnswerResponse[]> {
   const { data } = await api.get<AnswerResponse[]>(`/answers/`, {
     params: { labeling: labelingId },
   });

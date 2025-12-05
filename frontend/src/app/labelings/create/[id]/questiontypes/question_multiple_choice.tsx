@@ -1,20 +1,23 @@
 import type { ChangeEvent } from "react";
 import { Plus, Trash2 } from "lucide-react";
-import { MultipleChoiceQuestionConfig } from "../labeling_types";
+import { MultipleChoiceQuestionConfig } from "@/labeling_types";
 
 type Props = {
   config: MultipleChoiceQuestionConfig;
   onChange: (config: MultipleChoiceQuestionConfig) => void;
 };
 
-export default function QuestionMultipleChoiceEditor({ config, onChange }: Props) {
-
-  const handleChoiceTextChange = (choiceId: string) => (e: ChangeEvent<HTMLInputElement>) => {
-    const updated = config.choices.map((choice) =>
-      choice.id === choiceId ? { ...choice, text: e.target.value } : choice
-    );
-    onChange({ ...config, choices: updated });
-  };
+export default function QuestionMultipleChoiceEditor({
+  config,
+  onChange,
+}: Props) {
+  const handleChoiceTextChange =
+    (choiceId: string) => (e: ChangeEvent<HTMLInputElement>) => {
+      const updated = config.choices.map((choice) =>
+        choice.id === choiceId ? { ...choice, text: e.target.value } : choice
+      );
+      onChange({ ...config, choices: updated });
+    };
 
   const handleRemoveChoice = (choiceId: string) => {
     const updated = config.choices.filter((choice) => choice.id !== choiceId);

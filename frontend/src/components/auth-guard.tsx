@@ -4,8 +4,8 @@ import { PropsWithChildren, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import type { AxiosError, InternalAxiosRequestConfig } from "axios";
 import type { AxiosRequestHeaders } from "axios";
-import { api } from "../../lib/api";
-import { AuthActions } from "../../../authClient";
+import { api } from "@/lib/api";
+import { AuthActions } from "@/lib/authClient";
 
 const LOGIN_PATH = "/login";
 const PUBLIC_PATHS = [LOGIN_PATH];
@@ -71,14 +71,17 @@ export default function AuthGuard({ children }: PropsWithChildren) {
       async (error: AxiosError) => {
         const status = error.response?.status;
         const originalRequest =
-          (error.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined) ??
-          undefined;
+          (error.config as
+            | (InternalAxiosRequestConfig & { _retry?: boolean })
+            | undefined) ?? undefined;
 
         if (status !== 401 || !originalRequest) {
           return Promise.reject(error);
         }
 
-        const isRefreshCall = originalRequest.url?.includes("/api/auth/token/refresh/");
+        const isRefreshCall = originalRequest.url?.includes(
+          "/api/auth/token/refresh/"
+        );
 
         if (isRefreshCall || originalRequest._retry) {
           removeTokens();

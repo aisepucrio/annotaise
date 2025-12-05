@@ -10,7 +10,7 @@ import type {
   QuestionType,
   RangeQuestionConfig,
   TextQuestionConfig,
-} from "../labeling_types";
+} from "@/labeling_types";
 
 export type QuestionTypeComponentProps<TConfig extends QuestionConfig> = {
   config: TConfig;
@@ -32,5 +32,3 @@ export const QUESTION_TYPE_COMPONENTS: QuestionComponentRegistry = {
   range: QuestionRangeEditor,
   multiple_choice: QuestionMultipleChoiceEditor,
 };
-
-

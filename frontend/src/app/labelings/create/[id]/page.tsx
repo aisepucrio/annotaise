@@ -18,7 +18,7 @@ import {
   saveLabelingStructure,
   type LabelingStructureSection,
 } from "@/lib/services/labeling_create_service";
-import SidebarLayout from "@/app/components/sidebar_layout";
+import SidebarLayout from "@/components/side-bar/sidebar_layout";
 
 const createContextElement = (order: number): ContextElement => ({
   id: crypto.randomUUID(),
@@ -79,17 +79,24 @@ export default function LabelingFormPage() {
     let active = true;
     setIsLoadingLabeling(true);
     setLoadError(null);
-    Promise.all([fetchLabelingById(labelingId), fetchLabelingStructure(labelingId)])
+    Promise.all([
+      fetchLabelingById(labelingId),
+      fetchLabelingStructure(labelingId),
+    ])
       .then(([labeling, structure]) => {
         if (!active) {
           return;
         }
         setLabelingTitle(labeling.title);
-        const csvColumns = Array.isArray(labeling.column_names) ? labeling.column_names : [];
+        const csvColumns = Array.isArray(labeling.column_names)
+          ? labeling.column_names
+          : [];
         const structureColumns = deriveColumnsFromStructure(structure);
         setColumns(csvColumns.length > 0 ? csvColumns : structureColumns);
         const mappedSections = mapSectionsFromDTO(structure);
-        setSections(mappedSections.length > 0 ? mappedSections : [createDefaultSection()]);
+        setSections(
+          mappedSections.length > 0 ? mappedSections : [createDefaultSection()]
+        );
       })
       .catch(() => {
         if (!active) {
@@ -122,7 +129,10 @@ export default function LabelingFormPage() {
     setSections((prev) =>
       prev.map((s) =>
         s.id === sectionId
-          ? { ...s, elements: [...s.elements, createContextElement(nextOrder(s))] }
+          ? {
+              ...s,
+              elements: [...s.elements, createContextElement(nextOrder(s))],
+            }
           : s
       )
     );
@@ -166,7 +176,10 @@ export default function LabelingFormPage() {
         const data = error.response?.data as { detail?: string } | undefined;
         if (typeof data?.detail === "string") {
           message = data.detail;
-        } else if (typeof error.message === "string" && error.message.length > 0) {
+        } else if (
+          typeof error.message === "string" &&
+          error.message.length > 0
+        ) {
           message = error.message;
         }
       } else if (error instanceof Error) {
@@ -192,7 +205,8 @@ export default function LabelingFormPage() {
             <ArrowLeft size={22} className="cursor-pointer" />
           </button>
           <span className="text-lg font-semibold">
-            {labelingTitle || (isLoadingLabeling ? "Carregando..." : "Rotulação")}
+            {labelingTitle ||
+              (isLoadingLabeling ? "Carregando..." : "Rotulação")}
           </span>
         </div>
         <button
@@ -265,7 +279,9 @@ export default function LabelingFormPage() {
   );
 }
 
-function deriveColumnsFromStructure(sections: LabelingStructureSection[]): string[] {
+function deriveColumnsFromStructure(
+  sections: LabelingStructureSection[]
+): string[] {
   const unique = new Set<string>();
   sections.forEach((section) => {
     section.elements.forEach((element) => {

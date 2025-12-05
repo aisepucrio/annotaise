@@ -6,13 +6,17 @@ import useSWR from "swr";
 import axios from "axios";
 import { ArrowLeft, Edit3 } from "lucide-react";
 import { fetchLabelingById } from "@/lib/services/labeling_create_service";
-import { fetchMyAnswers, updateAnswer, type AnswerResponse } from "@/lib/services/answer_service";
+import {
+  fetchMyAnswers,
+  updateAnswer,
+  type AnswerResponse,
+} from "@/lib/services/answer_service";
 import SectionCard from "../answer/section_card";
 import { buildInitialAnswers } from "../answer/answer_utils";
 import type { LabelingStructureSection } from "@/lib/services/labeling_create_service";
 import { fetchLabelingStructure } from "@/lib/services/labeling_create_service";
 import type { AnswerMap } from "../answer/answer_types";
-import SidebarLayout from "@/app/components/sidebar_layout";
+import SidebarLayout from "@/components/side-bar/sidebar_layout";
 
 export default function MyAnswersPage() {
   const params = useParams<{ id: string }>();
@@ -22,7 +26,9 @@ export default function MyAnswersPage() {
     return Number.isFinite(parsed) ? parsed : NaN;
   }, [params]);
 
-  const [editingAnswer, setEditingAnswer] = useState<AnswerResponse | null>(null);
+  const [editingAnswer, setEditingAnswer] = useState<AnswerResponse | null>(
+    null
+  );
   const [answers, setAnswers] = useState<AnswerMap>({});
   const [sections, setSections] = useState<LabelingStructureSection[]>([]);
   const [isSaving, setIsSaving] = useState(false);
@@ -48,14 +54,18 @@ export default function MyAnswersPage() {
     mutate: mutateMyAnswers,
     isLoading: isLoadingMyAnswers,
     error: myAnswersError,
-  } = useSWR(labelingId ? ["my-answers", labelingId] : null, () => fetchMyAnswers(labelingId));
+  } = useSWR(labelingId ? ["my-answers", labelingId] : null, () =>
+    fetchMyAnswers(labelingId)
+  );
 
   const orderedSections = useMemo(
     () => [...sections].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
     [sections]
   );
 
-  const normalizePayload = (payloadMap?: Record<string, unknown>): AnswerMap => {
+  const normalizePayload = (
+    payloadMap?: Record<string, unknown>
+  ): AnswerMap => {
     const normalized: AnswerMap = {};
     if (!payloadMap) return normalized;
     Object.entries(payloadMap).forEach(([key, value]) => {
@@ -90,7 +100,10 @@ export default function MyAnswersPage() {
     } catch (err) {
       let msg = "Não foi possível salvar a edição.";
       if (axios.isAxiosError(err)) {
-        msg = (err.response?.data as { detail?: string })?.detail ?? err.message ?? msg;
+        msg =
+          (err.response?.data as { detail?: string })?.detail ??
+          err.message ??
+          msg;
       } else if (err instanceof Error) {
         msg = err.message;
       }
@@ -126,7 +139,9 @@ export default function MyAnswersPage() {
       <section className="mt-4 rounded-xl border border-blue-200 bg-white p-4 shadow-md">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h2 className="text-base font-semibold text-gray-900">Minhas respostas enviadas</h2>
+            <h2 className="text-base font-semibold text-gray-900">
+              Minhas respostas enviadas
+            </h2>
             <p className="text-sm text-gray-500">
               Reabra uma resposta que você já enviou para ajustar os valores.
             </p>
@@ -136,9 +151,13 @@ export default function MyAnswersPage() {
           ) : null}
         </div>
         {myAnswersError ? (
-          <p className="mt-2 text-sm text-red-600">Não foi possível carregar suas respostas.</p>
+          <p className="mt-2 text-sm text-red-600">
+            Não foi possível carregar suas respostas.
+          </p>
         ) : (myAnswers?.length ?? 0) === 0 ? (
-          <p className="mt-2 text-sm text-gray-600">Você ainda não enviou respostas nesta rotulação.</p>
+          <p className="mt-2 text-sm text-gray-600">
+            Você ainda não enviou respostas nesta rotulação.
+          </p>
         ) : (
           <div className="mt-3 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {myAnswers?.map((answer) => {
@@ -151,7 +170,9 @@ export default function MyAnswersPage() {
                 >
                   <div className="flex items-center justify-between">
                     <div className="text-sm font-semibold text-blue-900">
-                      {row !== undefined && row !== null ? `Item #${row + 1}` : "Item"}
+                      {row !== undefined && row !== null
+                        ? `Item #${row + 1}`
+                        : "Item"}
                     </div>
                     <span className="text-[11px] text-gray-500">
                       {createdAt.toLocaleString()}
@@ -183,7 +204,9 @@ export default function MyAnswersPage() {
               <h3 className="text-base font-semibold text-gray-900">
                 Editando Item #{(editingAnswer.item_detail?.row_index ?? 0) + 1}
               </h3>
-              <p className="text-sm text-gray-500">Ajuste as respostas e salve.</p>
+              <p className="text-sm text-gray-500">
+                Ajuste as respostas e salve.
+              </p>
             </div>
             <button
               type="button"
@@ -194,7 +217,9 @@ export default function MyAnswersPage() {
             </button>
           </div>
 
-          {message ? <p className="mb-2 text-sm text-green-700">{message}</p> : null}
+          {message ? (
+            <p className="mb-2 text-sm text-green-700">{message}</p>
+          ) : null}
           {error ? <p className="mb-2 text-sm text-red-600">{error}</p> : null}
 
           <div className="space-y-6">

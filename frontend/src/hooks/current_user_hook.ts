@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import api from "../fetcher";
+import api from "@/lib/fetcher";
 
 type User = {
   id: number;
@@ -14,13 +14,15 @@ type User = {
   created_at: string;
 };
 
-
 export default function useCurrent() {
   const [user, setUser] = useState<User | null | undefined>(undefined);
   useEffect(() => {
-    api.get<User>("/users/current/")
+    api
+      .get<User>("/users/current/")
       .then((res) => setUser(res.data))
-      .catch(() => {setUser(null)}); // se falhar, considera não logado
+      .catch(() => {
+        setUser(null);
+      }); // se falhar, considera não logado
   }, []);
 
   return user;
