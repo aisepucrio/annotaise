@@ -1,6 +1,20 @@
 from rest_framework.permissions import BasePermission
 
 
+class IsMasterAdminAccount(BasePermission):
+    """
+    Permite acesso apenas a usuários staff ou com account_type = 'master_admin'.
+    """
+
+    def has_permission(self, request, view):
+        user = request.user
+
+        if not user or not user.is_authenticated:
+            return False
+
+        account_type = getattr(user, "account_type", None)
+        return user.is_superuser
+
 class IsAdminAccount(BasePermission):
     """
     Permite acesso apenas a usuários staff ou com account_type = 'admin'.

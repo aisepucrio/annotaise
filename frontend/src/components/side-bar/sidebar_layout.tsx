@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import Sidebar from "./sidebar";
 import { useSidebarState } from "./sidebar_provider";
 
@@ -18,35 +17,13 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
 
   return (
     <div className="bg-gray-300 min-h-screen">
-      <Sidebar isOpen={isOpen} />
+      <Sidebar isOpen={isOpen} onToggle={toggle} />
       <div
         className={`
           bg-white min-h-screen p-4 transition-all duration-300
-          ${isOpen ? "ml-64" : ""}
+          ${isOpen ? "ml-64" : "ml-16"}
         `}
       >
-        <button
-          type="button"
-          onClick={toggle}
-          aria-label={isOpen ? "Ocultar menu lateral" : "Mostrar menu lateral"}
-          aria-expanded={isOpen}
-          className="
-          ml-3
-            bottom-3
-            flex
-            fixed items-center gap-2
-            rounded-lg border border-gray-200 bg-gray-50
-            px-3 py-2 text-sm font-medium text-gray-700
-            shadow-sm transition hover:bg-gray-100
-            cursor-pointer
-          "
-        >
-          {isOpen ? <PanelLeftClose size={18} /> : <PanelLeftOpen size={18} />}
-          <span className="hidden sm:inline">
-            {isOpen ? "Ocultar menu" : "Mostrar menu"}
-          </span>
-        </button>
-
         {children}
       </div>
     </div>

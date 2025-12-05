@@ -19,7 +19,7 @@ import json
 from user.permissions import IsAdminAccount
 
 class LabelingViewSet(viewsets.ModelViewSet):
-    queryset = Labeling.objects.all()
+    
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_serializer_class(self):
@@ -33,6 +33,55 @@ class LabelingViewSet(viewsets.ModelViewSet):
         else:
             self.permission_classes = [IsAuthenticated] 
         return super().get_permissions()
+    
+    def get_queryset(self):
+        user = self.request.user
+        self.queryset = Labeling.objects.all()
+
+        # Filtra rotulações onde o usuário participa
+        qs = (self.queryset
+              .filter(memberships__user=user)
+              .prefetch_related('memberships__user')
+              .distinct())
+        return qs
+    
+    @action(methods=['get'], detail=False, url_path='dashboard/edit')
+    def editdashboard(self, request):
+        '''a ideia é que esse dashboard serve pra mostrar o dashboard pro admin, entao tem todos os labelings de todos os projetos ]
+        que o usuario é admin ou owner.'''
+        today = datetime.now().date()
+        search = request.query_params.get("search")
+        output = []
+        qs = (Labeling.objects.filter(project__memberships=request.user)
+            .select_related('project')
+            .annotate(
+                total_labelings=Count('items', distinct=True),
+                done_labelings=Count(
+                    'items',
+                    filter=Q(items__status='finished'),
+                    distinct=True),
+            )
+        )
+        if search:
+            qs = qs.filter(
+                Q(title__icontains=search) | Q(project__name__icontains=search)
+            )
+        for element in qs:
+            output.append({
+                "id" : element.id,
+                "labeling_name" : element.title,
+                "project_name" : element.project.name,
+                "total_days" : (element.final_date - element.start_date).days,
+                "days_passed" : (today - element.start_date).days,
+                "items_done" : element.done_labelings,
+                "total_items" : element.total_labelings,
+            })
+        ser = self.get_serializer_class() 
+        ser = ser(data=output,many=True)   
+        if ser.is_valid():
+            return Response(ser.data, status=200)
+        else:
+            return Response('Erro ao carregar labelings dashboard', status=400)
     
     @action(methods=['get'], detail=True, url_path='memberships')
     def list_labeling_memberships(self,request, pk=None):
@@ -94,22 +143,6 @@ class LabelingViewSet(viewsets.ModelViewSet):
             return Response(ser.data, status=200)
         else:
             return Response('Erro ao carregar labelings dashboard', status=400)
-
-    def get_queryset(self):
-        user = getattr(self.request, "user", None)
-
-        if not user or not getattr(user, "is_authenticated", False):
-            return self.queryset.none()
-        
-        if user.can_edit():
-            return self.queryset
-
-        # Filtra rotulações onde o usuário participa
-        qs = (self.queryset
-              .filter(memberships__user=user)
-              .prefetch_related('memberships__user')
-              .distinct())
-        return qs
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -194,7 +227,6 @@ class LabelingViewSet(viewsets.ModelViewSet):
     
 
 class LabelingMembershipViewSet(viewsets.ModelViewSet):
-    '''Alguns métodos foram alterados por conta do sistema de admin simplificado, mas estao comentados caso seja usado no futuro'''
     serializer_class = LabelingMembershipSerializer
     permission_classes = [IsAdminAccount]
     queryset = LabelingMembership.objects.select_related('labeling', 'user')

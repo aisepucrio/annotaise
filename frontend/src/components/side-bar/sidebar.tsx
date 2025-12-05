@@ -9,16 +9,21 @@ import {
   Tags,
   Settings,
   LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { AuthActions } from "@/lib/authClient";
 import useCurrent from "@/hooks/current_user_hook";
+import { BookmarkPlus } from "lucide-react";
+
 
 interface SidebarProps {
   isOpen?: boolean;
+  onToggle?: () => void;
 }
 
-export default function Sidebar({ isOpen = true }: SidebarProps) {
+export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
   const router = useRouter();
   const { removeTokens } = AuthActions();
   const currentUser = useCurrent();
@@ -38,40 +43,57 @@ export default function Sidebar({ isOpen = true }: SidebarProps) {
   return (
     <div className="flex">
       <aside
-        aria-hidden={!isOpen}
         className={`
           fixed top-0 left-0 h-screen
-          w-64
           bg-white
           shadow-xl
           rounded-r-l
           flex flex-col
           justify-between
-          p-6
-          transition-transform duration-300
-          ${isOpen ? "translate-x-0" : "-translate-x-full pointer-events-none"}
+          transition-all duration-300
+          ${isOpen ? "w-64 p-6" : "w-16 p-4 items-center"}
         `}
       >
-        {/* LOGO (continua com next/image) */}
-        <Image
-          src="/light_theme_logo.png"
-          alt="Logo"
-          width={220}
-          height={40}
-          className="mx-auto mb-6"
-        />
+        <div
+          className={`
+            flex items-center w-full mb-6
+            ${isOpen ? "justify-between" : "justify-center"}
+          `}
+        >
+          {isOpen ? (
+            <Image
+              src="/light_theme_logo.png"
+              alt="Logo"
+              width={180}
+              height={32}
+              className="shrink-0"
+            />
+          ) : null}
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-label={isOpen ? "Minimizar menu lateral" : "Expandir menu lateral"}
+            className="
+              flex items-center justify-center rounded-lg border border-gray-200 bg-gray-50
+              p-2 text-gray-600 hover:bg-gray-100 transition shadow-sm
+            "
+          >
+            {isOpen ? <PanelLeftClose size={18} /> : <PanelLeftOpen size={18} />}
+          </button>
+        </div>
 
         {/* separador */}
-        <div className="w-3/ bg-gray-300 h-0.5 rounded-2xl" />
+        <div className="w-full bg-gray-300 h-0.5 rounded-2xl" />
 
         {/* Topo */}
-        <ul className="space-y-1 mt-3 -ml-3">
+        <ul className="space-y-1 mt-3 w-full">
           <SidebarItem
             icon={<Home size={18} />}
             label="Dashboard"
             href="/"
             alias="/"
             hover_color="blue"
+            collapsed={!isOpen}
           />
           {isAdmin ? (
             <SidebarItem
@@ -80,6 +102,7 @@ export default function Sidebar({ isOpen = true }: SidebarProps) {
               href="/users"
               alias="/users"
               hover_color="blue"
+              collapsed={!isOpen}
             />
           ) : null}
           {canSeeProjects ? (
@@ -89,25 +112,36 @@ export default function Sidebar({ isOpen = true }: SidebarProps) {
               href="/projects"
               alias="/projects"
               hover_color="blue"
+              collapsed={!isOpen}
             />
           ) : null}
           <SidebarItem
+            icon={<BookmarkPlus size={18} />}
+            label="Gerenciar Rotulações"
+            href="/labelings/manage"
+            alias="/labelings/manage"
+            hover_color="blue"
+            collapsed={!isOpen}
+          />
+          <SidebarItem
             icon={<Tags size={18} />}
-            label="Rotulações"
+            label="Rotular"
             href="/labelings"
             alias="/labelings"
             hover_color="blue"
+            collapsed={!isOpen}
           />
         </ul>
 
         {/* Rodape */}
-        <div className="text-sm text-gray-500 mt-auto -ml-3 space-y-1">
+        <div className="text-sm text-gray-500 mt-auto w-full space-y-1">
           <SidebarItem
             icon={<Settings size={18} />}
             label="Configurações"
             href="/options"
             alias="/options"
             hover_color="gray"
+            collapsed={!isOpen}
           />
           <button type="button" className="w-55" onClick={handleLogout}>
             <SidebarItem
@@ -116,6 +150,7 @@ export default function Sidebar({ isOpen = true }: SidebarProps) {
               href="/login"
               alias="/logout"
               hover_color="red"
+              collapsed={!isOpen}
             />
           </button>
         </div>

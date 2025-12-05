@@ -70,15 +70,12 @@ class AdminUserWriteSerializer(serializers.ModelSerializer):
             "first_name",
             "last_name",
             "is_active",
-            "is_staff",
             "account_type",
             "password",
         ]
 
     def create(self, validated_data):
         account_type = validated_data.get("account_type")
-        if account_type == getattr(User.AccountType, "ADMIN", "admin"):
-            validated_data["is_staff"] = True
 
         pwd = validated_data.pop("password", None)
         user = User.objects.create_user(**validated_data)
@@ -88,8 +85,6 @@ class AdminUserWriteSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         account_type = validated_data.get("account_type")
-        if account_type == getattr(User.AccountType, "ADMIN", "admin"):
-            validated_data.setdefault("is_staff", True)
 
         pwd = validated_data.pop("password", None)
         for k, v in validated_data.items():

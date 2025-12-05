@@ -1,11 +1,10 @@
 "use client";
-
 import { useState } from "react";
 import PageHeader from "@/components/page_header";
 import FilterBar from "@/components/filter_bar";
-import LabelingContainer from "./labeling_container";
+import LabelingContainer from "./manage_labeling_container";
 import { Plus } from "lucide-react";
-import UploadCsvModal from "./upload_csv_modal";
+import UploadCsvModal from "../upload_csv_modal";
 import GridLayout from "@/components/grid_layout";
 import GridItemCard from "@/components/grid_item_card";
 import Button from "@/components/button";
@@ -60,18 +59,65 @@ export default function LabelingsPage() {
       ? "Não foi possível carregar as rotulações."
       : null;
 
+  async function handleConfirm({
+    file,
+    title,
+    projectId,
+    usersPerItem,
+    startDate,
+    finalDate,
+    blockSectionBack,
+  }: UploadPayload) {
+    if (!isAdmin) {
+      throw new Error("Apenas administradores podem criar rotulações.");
+    }
+    try {
+      const labeling = await createLabeling({
+        title,
+        project: projectId,
+        users_per_item: usersPerItem,
+        start_date: startDate || undefined,
+        final_date: finalDate || undefined,
+        block_section_back: blockSectionBack,
+      });
+      await importLabelingItemsCsv(labeling.id, file);
+      setOpen(false);
+      await mutate();
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        const detail =
+          (err.response?.data as { detail?: string })?.detail ||
+          err.message ||
+          "Não foi possível criar a rotulação.";
+        throw new Error(detail);
+      }
+      throw err;
+    }
+  }
 
   return (
     <>
       <SidebarLayout>
         <PageHeader
-          page_title="Rotulações"
-          description="Nessa página você pode ver estatísticas e responder as rotulações das quais faz parte."
+          page_title="Gerenciar Rotulações"
+          description="Gerencie e visualize rotulações. Clique em 'Nova Rotulação' para importar um CSV e iniciar a configuração."
         />
 
         <div className="flex flex-nowrap items-center mt-5">
           <FilterBar />
-          
+          <div className="ml-auto mr-6 w-auto">
+            <Button
+              icon={<Plus size={16} strokeWidth={1.75} />}
+              onClick={() => setOpen(true)}
+              disabled={!isAdmin}
+              variant="normal"
+              fill={false}
+              className="px-4 py-2 shadow-md text-sm"
+              ariaLabel="Abrir nova rotulação"
+            >
+              Nova Rotulação
+            </Button>
+          </div>
         </div>
 
         {loadError && (
@@ -112,6 +158,12 @@ export default function LabelingsPage() {
         )}
       </SidebarLayout>
 
+      {/* Modal */}
+      <UploadCsvModal
+        open={open}
+        onClose={() => setOpen(false)}
+        onConfirm={handleConfirm}
+      />
     </>
   );
 }

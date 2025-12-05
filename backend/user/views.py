@@ -7,6 +7,7 @@ from answer.models import Answer
 
 from rest_framework.generics import RetrieveUpdateDestroyAPIView, UpdateAPIView, GenericAPIView
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import PermissionDenied
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework import viewsets, permissions, filters
@@ -16,8 +17,9 @@ from django.contrib.auth import get_user_model
 from .serializers import AdminUserReadSerializer, AdminUserWriteSerializer
 from rest_framework.response import Response
 from rest_framework import status
-from .permissions import IsAdminAccount
+from .permissions import IsAdminAccount, IsMasterAdminAccount
 from django.db.models import Count, Q, F
+from django.shortcuts import get_object_or_404
 
 #TODO falta um endpoint de alterar a senha... caso não tenha questoes de segurança, tem como fazer por aqui, mas nao é o ideal
 class CurrentAPIView(RetrieveUpdateDestroyAPIView):
@@ -38,6 +40,26 @@ class AdminUserViewSet(viewsets.ModelViewSet):
     search_fields = ["username", "email", "first_name", "last_name"]
     ordering_fields = ["date_joined", "username", "email"]
     http_method_names = ['get', 'post', 'patch', 'delete']
+
+    def partial_update(self, request, *args, **kwargs):
+        target_user = self.get_object()
+
+        if target_user.account_type == "admin" and target_user != request.user:
+            # verifica se QUEM ESTÁ FAZENDO A REQUISIÇÃO é master admin
+            if not IsMasterAdminAccount().has_permission(request, self):
+                raise PermissionDenied("Apenas um master admin pode alterar dados de outro admin.")
+
+        return super().partial_update(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        target_user = self.get_object()
+
+        if target_user.account_type == "admin" and target_user != request.user:
+            # verifica se QUEM ESTÁ FAZENDO A REQUISIÇÃO é master admin
+            if not IsMasterAdminAccount().has_permission(request, self):
+                raise PermissionDenied("Apenas um master admin pode deletar outro admin.")
+
+        return super().delete(request, *args, **kwargs)
 
 
     def get_serializer_class(self):

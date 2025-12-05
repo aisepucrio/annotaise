@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import useCurrent from "@/hooks/current_user_hook";
 import { GroupIcon } from "lucide-react";
 import { useState } from "react";
-import EditLabelingModal from "./edit_labeling_modal";
+import EditLabelingModal from "../edit_labeling_modal";
 import Button from "@/components/button";
 
 type LabelingContainerProps = {
@@ -91,16 +91,24 @@ export default function LabelingContainer({
         />
 
         {/* aviso + botão */}
-        <div className="flex items-center justify-center">
+        <div className="flex items-center justify-center gap-2">
           <Button
-            icon={<Tag size={20} strokeWidth={1.75} />}
-            onClick={handleAnswerLabelingButton}
+            icon={<Pen size={20} strokeWidth={1.75} />}
+            onClick={handleEditLabelingButton}
             variant="normal"
-            ariaLabel="Abrir tarefa de rotulação"
+            ariaLabel="Abrir formulário de rotulação"
           >
-            Rotular
+            Formulário
           </Button>
-          
+          <Button
+            icon={<GroupIcon size={20} strokeWidth={1.75} />}
+            onClick={handleManageMemberships}
+            variant="normal"
+            disabled={!isAdmin}
+            ariaLabel="Atribuir rotulação"
+          >
+            Atribuir
+          </Button>
         </div>
       </div>
       <EditLabelingModal

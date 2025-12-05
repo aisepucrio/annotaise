@@ -1,31 +1,35 @@
 from rest_framework.permissions import BasePermission
+from .models import Project, ProjectMembership
 
-class CanEditProjectPermission(BasePermission):
-    """
-    Permission to check if a user can edit a project.
-    Only admin users or project members with edit rights can edit.
-    """
-    message="Você não tem permissão para editar este projeto."
-    def has_object_permission(self, request, view, obj):
-        user = request.user
-
-        membership = obj.memberships.filter(user=user,role__in=['contributor','owner'] ).first()
-        if membership:
-            return True
-
-        return False
     
 class IsProjectOwnerPermission(BasePermission):
     """
-    Permission to check if a user is the owner of a project.
-    Only admin users or project owners can perform certain actions.
+    Permission: apenas usuários que são 'owner' do projeto
+    (via ProjectMembership) podem acessar o objeto.
+    Funciona tanto para Project quanto para ProjectMembership.
     """
-    message="Somente proprietários do projeto podem realizar esta ação."
+    message = "Somente proprietários do projeto podem realizar esta ação."
+
     def has_object_permission(self, request, view, obj):
         user = request.user
+        
+        project = self._get_project_from_obj(obj)
+        if project is None:
+            return False
 
-        membership = obj.memberships.filter(user=user,role='owner' ).first()
-        if membership:
-            return True
+        return project.memberships.filter(user=user, role="owner").exists()
 
-        return False
+    def _get_project_from_obj(self, obj):
+        """
+        Normaliza o objeto para sempre obter um Project.
+        - Se obj já for Project, retorna ele.
+        - Se obj for ProjectMembership, retorna obj.project.
+        - Se não der pra resolver, retorna None.
+        """
+        if isinstance(obj, Project):
+            return obj
+
+        if isinstance(obj, ProjectMembership):
+            return obj.project
+
+        return None

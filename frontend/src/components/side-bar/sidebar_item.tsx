@@ -17,9 +17,10 @@ interface SidebarItemProps {
   href: string;
   alias: string;
   hover_color?: string;          // mantém validação em runtime
+  collapsed?: boolean;
 }
 
-export default function SidebarItem({ icon, label, href, alias, hover_color }: SidebarItemProps) {
+export default function SidebarItem({ icon, label, href, alias, hover_color, collapsed = false }: SidebarItemProps) {
   const pathname = usePathname();
   const isActive = pathname === alias;
 
@@ -33,14 +34,23 @@ export default function SidebarItem({ icon, label, href, alias, hover_color }: S
     <Link
       href={href}
       className={`
-        flex items-center gap-3 p-2 rounded-xl transition-colors duration-200 cursor-pointer
+        flex items-center ${collapsed ? "justify-center gap-0" : "gap-3"} p-2 rounded-xl transition-colors duration-200 cursor-pointer
         ${isActive ? activeClasses : `bg-white text-black ${hoverClasses}`}
       `}
+      title={label}
+      aria-label={label}
     >
       <div className="w-6 h-6 flex items-center justify-center">
         {icon}
       </div>
-      <span className="text-sm font-medium">{label}</span>
+      <span
+        className={`
+          text-sm font-medium transition-opacity duration-200
+          ${collapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100"}
+        `}
+      >
+        {label}
+      </span>
     </Link>
   );
 }

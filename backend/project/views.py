@@ -8,20 +8,21 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from user.permissions import IsAdminAccount, CanEditAccount
 from django.db.models import Count, Q
-from .permissions import IsProjectOwnerPermission, CanEditProjectPermission
-
+from .permissions import IsProjectOwnerPermission
 class ProjectViewSet(viewsets.ModelViewSet):
     serializer_class = ProjectSerializer
     http_method_names = ['get', 'post', 'patch', 'delete']
-    permission_classes = [IsAdminAccount]
+    
 
-    def get_permission_classes(self):
+    def get_permissions(self):
         if self.action in ["dashboard","create"]:
-            return [IsAdminAccount]
-        elif self.action in ["update", "partial_update", "destroy"]:
-            return [IsAdminAccount, IsProjectOwnerPermission]
-        return [IsAdminAccount]
-
+            self.permission_classes =  [IsAdminAccount]
+        elif self.action in ["update", "partial_update", "destroy", "patch"]:
+            self.permission_classes =  [IsAdminAccount, IsProjectOwnerPermission]
+        else:
+            self.permission_classes = [IsAdminAccount]
+        return super().get_permissions()
+    
     def get_serializer_class(self):
         if self.action == "dashboard":
             return ProjectDashboardSerializer
