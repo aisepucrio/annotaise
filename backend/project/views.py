@@ -8,19 +8,19 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from user.permissions import IsAdminAccount, CanEditAccount
 from django.db.models import Count, Q
+from .permissions import IsProjectOwnerPermission, CanEditProjectPermission
 
-'''
-IMPORTANTE
-    a classe ProjectMembership 
-    por enquanto esta obsoleta, pois o sistema de usuarios foi simplificado e apenas admins podem criar/ver TODOS os projetos.
-'''
-
-# TODO esse viewset ta mal estruturado, não precisa checar permissão em cada método, já tem permission class
 class ProjectViewSet(viewsets.ModelViewSet):
     serializer_class = ProjectSerializer
-    queryset = Project.objects.all()
     http_method_names = ['get', 'post', 'patch', 'delete']
     permission_classes = [IsAdminAccount]
+
+    def get_permission_classes(self):
+        if self.action in ["dashboard","create"]:
+            return [IsAdminAccount]
+        elif self.action in ["update", "partial_update", "destroy"]:
+            return [IsAdminAccount, IsProjectOwnerPermission]
+        return [IsAdminAccount]
 
     def get_serializer_class(self):
         if self.action == "dashboard":
@@ -75,73 +75,35 @@ class ProjectViewSet(viewsets.ModelViewSet):
         if serializer.is_valid():
             return Response(serializer.data)
         else:
-            return Response("Erro ao retornar dados",status= status.HTTP_403_FORBIDDEN)
+            return Response("Erro ao retornar dados",status=403)
 
     def get_queryset(self):
-        user = getattr(self.request, "user", None)
+        user = self.request.user
 
-        if not user or not getattr(user, "is_authenticated", False):
-            return self.queryset.none()
-
-        return Project.objects.all()
-        '''Filtra projetos onde o usuário é membro
-        qs = (self.queryset
+        qs = (Project.objects
               .filter(memberships__user=user)
               .prefetch_related('memberships__user')
               .distinct())
-        return qs'''
-
+        
+        return qs
+        
+        
     def perform_create(self, serializer):
-        if not IsAdminAccount().has_permission(self.request, self):
-            raise PermissionDenied("Somente administradores podem criar projetos.")
         project = serializer.save(created_by=self.request.user)
     
-        #ProjectMembership.objects.get_or_create(
-        #    project=project, user=self.request.user, defaults={"role": "owner"}
-        #)
-
-    def destroy(self, request, *args, **kwargs):
-        project = self.get_object()
-        user = request.user
-        is_admin = IsAdminAccount().has_permission(request, self)
-        #is_owner = ProjectMembership.objects.filter(project=project, user=user, role="owner").exists()
-
-        if not is_admin:
-            return Response({'detail': 'Você não tem permissão para deletar este projeto.'}, status=status.HTTP_403_FORBIDDEN)
-
-        return super().destroy(request, *args, **kwargs)
+        ProjectMembership.objects.get_or_create(
+            project=project, user=self.request.user, defaults={"role": "owner"}
+        )
+        return project
     
-    def update(self, request, *args, **kwargs):
-        project = self.get_object()
-        if not IsAdminAccount().has_permission(request, self):
-            raise PermissionDenied("Somente administradores podem editar projetos.")
-        return super().update(request, *args, **kwargs)
-
-    def partial_update(self, request, *args, **kwargs):
-        project = self.get_object()
-        if not IsAdminAccount().has_permission(request, self):
-            raise PermissionDenied("Somente administradores podem editar projetos.")
-        return super().partial_update(request, *args, **kwargs)
     
 
 class ProjectMembershipViewSet(viewsets.ModelViewSet):
-    '''
-    Essa classe por enquanto esta obsoleta, pois o sistema de usuarios foi simplificado e apenas admins podem criar/ver TODOS os projetos.
-    '''
     serializer_class = ProjectMembershipSerializer
     queryset = ProjectMembership.objects.select_related('project', 'user')
     http_method_names = ['get', 'post','put', 'patch', 'delete']
+    permission_classes = [IsAdminAccount,IsProjectOwnerPermission]
 
-    def create(self, request):
-        is_owner = ProjectMembership.objects.filter(
-            project_id=request.data.get('project'),
-            user=request.user,
-            role='owner'
-        ).exists()
-
-        if not is_owner:
-            return Response({'detail': 'Você não tem permissão para adicionar membros a este projeto.'}, status=status.HTTP_403_FORBIDDEN)
-        return super().create(request)
     
     def get_queryset(self):
         user = getattr(self.request, "user", None)

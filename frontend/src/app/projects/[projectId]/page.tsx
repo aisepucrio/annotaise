@@ -314,14 +314,14 @@ export default function ProjectDetailsPage() {
       </section>
 
       <section className="mx-5 mt-8 rounded-xl bg-white p-6 shadow-sm">
-        {/* <header className="mb-4 flex flex-col gap-1">
+        <header className="mb-4 flex flex-col gap-1">
           <div>
             <h2 className="text-lg font-semibold text-gray-900">Membros do projeto</h2>
             <p className="text-sm text-gray-500">
               Controle quem tem acesso ao projeto e quais permissões cada pessoa possui.
             </p>
           </div>
-        </header> */}
+        </header>
 
         {membershipsError || usersError || membershipErrorMessage ? (
           <p className="mb-4 text-sm text-red-600">
@@ -384,7 +384,7 @@ export default function ProjectDetailsPage() {
               })}
             </ul>
 
-            {/* <form onSubmit={handleAddMember} className="mt-6 grid gap-3 rounded-lg border border-dashed border-gray-300 p-4">
+            <form onSubmit={handleAddMember} className="mt-6 grid gap-3 rounded-lg border border-dashed border-gray-300 p-4">
               <p className="text-sm font-medium text-gray-900">Adicionar novo membro</p>
               <div className="grid gap-3 md:grid-cols-2">
                 <select
@@ -424,7 +424,7 @@ export default function ProjectDetailsPage() {
                   Adicionar membro
                 </button>
               </div>
-            </form> */}
+            </form>
           </>
         )}
       </section>
