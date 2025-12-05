@@ -1,22 +1,25 @@
-from django.shortcuts import render, get_object_or_404
-from rest_framework import viewsets, status
 from .models import Labeling, LabelingMembership, LabelingSection
-from project.models import ProjectMembership
 from .serializers import (LabelingSerializer, LabelingMembershipSerializer,
 LabelingSectionsBulkCreateSerializer, LabelingSectionSerializer, LabelingDashboardSerializer, LabelingMembershipDashboardSerializer)
+from project.models import ProjectMembership
+from user.permissions import IsAdminAccount
+from .permissions import CanEditLabelingsInProjectPermission
+
+from django.shortcuts import render, get_object_or_404
+from django.db import transaction
+
+from rest_framework import viewsets, status
+
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from project.models import Project
-from django.shortcuts import get_object_or_404
 from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from django.db import transaction
 from django.db.models import Count, Q
 from drf_spectacular.utils import extend_schema
 from datetime import datetime, timedelta
 import json
-from user.permissions import IsAdminAccount
 
 class LabelingViewSet(viewsets.ModelViewSet):
     
@@ -28,19 +31,20 @@ class LabelingViewSet(viewsets.ModelViewSet):
         else: return LabelingSerializer
     
     def get_permissions(self):
-        if self.action in ['create', 'update', 'partial_update', 'destroy','list_labeling_memberships']:
+        if self.action in ['create' ,'list_labeling_memberships']:
             self.permission_classes = [IsAdminAccount]
+        elif self.action in ['update','partial_update', 'destroy']:
+            self.permission_classes = [IsAdminAccount, CanEditLabelingsInProjectPermission]
         else:
-            self.permission_classes = [IsAuthenticated] 
+            self.permission_classes = [IsAuthenticated]
         return super().get_permissions()
     
     def get_queryset(self):
         user = self.request.user
-        self.queryset = Labeling.objects.all()
-
+        
         # Filtra rotulações onde o usuário participa
-        qs = (self.queryset
-              .filter(memberships__user=user)
+        qs = (Labeling.objects
+              .filter(project__memberships__user=user)
               .prefetch_related('memberships__user')
               .distinct())
         return qs
@@ -64,7 +68,7 @@ class LabelingViewSet(viewsets.ModelViewSet):
         )
         if not qs.exists():
             return Response([], status=200)
-        print(qs)
+
         if search:
             qs = qs.filter(
                 Q(title__icontains=search) | Q(project__name__icontains=search)
@@ -116,7 +120,7 @@ class LabelingViewSet(viewsets.ModelViewSet):
         search = request.query_params.get("search")
         output = []
         qs = (
-            self.get_queryset()
+            Labeling.objects.filter(memberships__user=request.user)
             .select_related('project')
             .annotate(
                 total_labelings=Count('items', distinct=True),
@@ -146,139 +150,21 @@ class LabelingViewSet(viewsets.ModelViewSet):
             return Response(ser.data, status=200)
         else:
             return Response('Erro ao carregar labelings dashboard', status=400)
-
+    
     def perform_create(self, serializer):
         user = self.request.user
-        project = serializer.validated_data.get("project")
-
-        is_staff = getattr(user, "is_staff", False)
-        is_project_owner = ProjectMembership.objects.filter(
-            project=project, user=user, role=ProjectMembership.RoleChoices.OWNER
-        ).exists()
-
-        if not (is_staff or is_project_owner):
-            raise PermissionDenied("Somente donos do projeto (ou administradores) podem criar rotulações.")
 
         labeling = serializer.save(created_by=user)
 
-        LabelingMembership.objects.get_or_create(
-            labeling=labeling,
-            user=user,
-            defaults={"role": LabelingMembership.Role.OWNER},
-        )
+        return super().perform_create(serializer)
 
-        # Distribui a rotulação para todos os membros do projeto (não-admin),
-        # garantindo que usuários comuns já possam responder itens.
-        project_memberships = ProjectMembership.objects.filter(project=project).select_related("user")
-
-        # Evita IntegrityError de duplicidade buscando existentes em uma vez
-        existing_user_ids = set(
-            LabelingMembership.objects.filter(labeling=labeling).values_list("user_id", flat=True)
-        )
-        to_create = []
-        for pm in project_memberships:
-            if pm.user_id in existing_user_ids:
-                continue
-            role = LabelingMembership.Role.ANNOTATOR
-            if pm.role == ProjectMembership.RoleChoices.OWNER:
-                role = LabelingMembership.Role.OWNER
-            to_create.append(
-                LabelingMembership(labeling=labeling, user=pm.user, role=role)
-            )
-
-        if to_create:
-            LabelingMembership.objects.bulk_create(to_create, ignore_conflicts=True)
-
-    def destroy(self, request, *args, **kwargs):
-        labeling = self.get_object()
-        user = request.user
-
-        is_owner = LabelingMembership.objects.filter(
-            labeling=labeling,
-            user=user,
-            role=LabelingMembership.Role.OWNER,
-        ).exists()
-
-        if not (getattr(user, "is_staff", False) or is_owner):
-            return Response({'detail': 'Você não tem permissão para deletar esta rotulação.'}, status=status.HTTP_403_FORBIDDEN)
-
-        return super().destroy(request, *args, **kwargs)
-
-    def update(self, request, *args, **kwargs):
-        labeling = self.get_object()
-        user = request.user
-        is_owner = LabelingMembership.objects.filter(
-            labeling=labeling,
-            user=user,
-            role=LabelingMembership.Role.OWNER,
-        ).exists()
-        if not (getattr(user, "is_staff", False) or is_owner):
-            raise PermissionDenied("Somente donos da rotulação (ou administradores) podem editar.")
-        return super().update(request, *args, **kwargs)
-
-    def partial_update(self, request, *args, **kwargs):
-        labeling = self.get_object()
-        user = request.user
-        is_owner = LabelingMembership.objects.filter(
-            labeling=labeling,
-            user=user,
-            role=LabelingMembership.Role.OWNER,
-        ).exists()
-        if not (getattr(user, "is_staff", False) or is_owner):
-            raise PermissionDenied("Somente donos da rotulação (ou administradores) podem editar.")
-        return super().partial_update(request, *args, **kwargs)
-    
 
 class LabelingMembershipViewSet(viewsets.ModelViewSet):
     serializer_class = LabelingMembershipSerializer
-    permission_classes = [IsAdminAccount]
+    permission_classes = [IsAdminAccount, CanEditLabelingsInProjectPermission]
     queryset = LabelingMembership.objects.select_related('labeling', 'user')
     http_method_names = ['get', 'post', 'patch', 'delete']
 
-    def update(self, request, *args, **kwargs):
-        labeling_membership = self.get_object()
-        user = request.user
-
-        is_owner = LabelingMembership.objects.filter(
-            labeling=labeling_membership.labeling,
-            user=user,
-            role='owner'
-        ).exists()
-
-        if not is_owner:
-            return Response({'detail': 'Você não tem permissão para alterar este membro da rotulação.'}, status=status.HTTP_403_FORBIDDEN)
-
-        return super().update(request, *args, **kwargs)
-
-    def create(self, request):
-        '''
-        labeling_id = request.data.get('labeling')
-
-        m = get_object_or_404(
-            Labeling.objects.select_related("project"),
-            pk=labeling_id
-        )
-
-        project_id = m.project_id        # mais leve (sem hit extra)
-
-        is_owner = LabelingMembership.objects.filter(
-            labeling_id=request.data.get('labeling'),
-            user=request.user,
-            role='owner'
-        ).exists()
-
-
-        is_in_project = ProjectMembership.objects.filter(
-            project_id=project_id,
-            user=request.data.get('user')).exists()
-
-        if not is_owner:
-            return Response({'detail': 'Você não tem permissão para adicionar membros a este projeto.'}, status=status.HTTP_403_FORBIDDEN)
-
-        elif not is_in_project:
-            return Response({'detail': 'O usuário adicionado não faz parte do projeto associado a esta rotulação.'}, status=status.HTTP_400_BAD_REQUEST)
-        '''
-        return super().create(request)
     
     def get_queryset(self):
         user = getattr(self.request, "user", None)
@@ -301,7 +187,7 @@ class LabelingMembershipViewSet(viewsets.ModelViewSet):
 class CreateReadLabelingStructureView(APIView):
 
     def get_permissions(self):
-        if self.request.method in ['GET']:
+        if self.request.method in ['GET']:# TODO isso aqui tem que ser retirado mas acho que vai quebrar o frontend
             return [IsAuthenticated()]
         return [IsAdminAccount()]
 
@@ -321,6 +207,11 @@ class CreateReadLabelingStructureView(APIView):
     @transaction.atomic # importante pra se der problema nao deletar o que ja existe
     def put(self, request, labeling_id):
         labeling = get_object_or_404(Labeling, id=labeling_id)
+
+        perm = CanEditLabelingsInProjectPermission()
+        if not perm.can_edit_labeling(request.user, labeling_id):
+            raise PermissionDenied(detail=perm.message)
+        
 
         # Remove toda a estrutura atual
         LabelingSection.objects.filter(labeling=labeling).delete()
