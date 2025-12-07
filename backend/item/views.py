@@ -2,6 +2,8 @@ from .models import Item, ItemMembership
 from .serializers import UploadItemCSVSerializer, ItemSerializer, NextItemResponseSerializer
 from labeling.models import Labeling, LabelingMembership, LabelingSection
 from answer.models import Answer
+from user.permissions import IsAdminAccount
+from .permissions import CanEditProjectPermission
 
 from datetime import timedelta
 import pandas as pd
@@ -41,7 +43,7 @@ class ListItemsView(ListAPIView):
 
 
 class ImportItemsCsvView(APIView):
-
+    permission_classes = [IsAdminAccount, CanEditProjectPermission]
     parser_classes = (MultiPartParser,)
     @extend_schema(
         request=UploadItemCSVSerializer,
@@ -50,8 +52,14 @@ class ImportItemsCsvView(APIView):
             400: OpenApiResponse(description="Erro na validação ou no arquivo enviado"),
         },
     )
-    def post(self, request, labeling_id):
-        
+    def put(self, request, labeling_id):
+        #não sei se vai funcionar sem deletar todas as sections junto
+
+        items = Item.objects.filter(labeling_id=labeling_id)
+
+        if items.exists():
+            items.delete()
+
         serializer = UploadItemCSVSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 

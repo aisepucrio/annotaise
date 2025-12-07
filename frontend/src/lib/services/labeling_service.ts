@@ -111,7 +111,7 @@ export async function importLabelingItemsCsv(
   const formData = new FormData();
   formData.append("file", file);
 
-  await api.post(`/labelings/${labelingId}/import-items-csv/`, formData, {
+  await api.put(`/labelings/${labelingId}/import-items-csv/`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
 }
