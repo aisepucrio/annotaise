@@ -16,12 +16,6 @@ class LabelingSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
     def update (self, instance, validated_data):
-        # bloqueia a troca de projeto
-        if "project" in validated_data and validated_data["project"].id != instance.project_id:
-            raise serializers.ValidationError({
-                "project": "Você não pode alterar o projeto de uma rotulação existente, crie outra."
-            })
-        
         return super().update(instance, validated_data)
       
 class MultipleChoiceItemSerializer(serializers.ModelSerializer):

@@ -23,6 +23,8 @@ type ButtonProps = {
   className?: string;
   /** Aria label para acessibilidade */
   ariaLabel?: string;
+  /** Tamanho do padding básico */
+  size?: "normal" | "compact" | "icon";
 };
 
 export default function Button({
@@ -35,6 +37,7 @@ export default function Button({
   className = "",
   fill = true,
   ariaLabel,
+  size = "normal",
 }: ButtonProps) {
   // Define as cores baseadas na variante ou no estado disabled
   const getColors = () => {
@@ -77,6 +80,8 @@ export default function Button({
 
   const colors = getColors();
   const fontWeight = bold ? "font-bold" : "font-normal";
+  const paddingClasses =
+    size === "icon" ? "p-2" : size === "compact" ? "px-2 py-2" : "px-4 py-2";
 
   return (
     <button
@@ -84,7 +89,7 @@ export default function Button({
       disabled={disabled}
       className={`
         inline-flex items-center justify-center gap-2 
-        rounded-lg px-4 py-2
+        rounded-lg ${paddingClasses}
         transition-colors text-sm cursor-pointer
         ${fill ? "w-full" : "w-auto"}
         disabled:cursor-not-allowed

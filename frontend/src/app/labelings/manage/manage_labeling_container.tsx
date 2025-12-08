@@ -1,10 +1,9 @@
-import { Tag, Pen, Download } from "lucide-react";
+import { Pen, Download } from "lucide-react";
 import { useRouter } from "next/navigation";
 import useCurrent from "@/hooks/current_user_hook";
-import { GroupIcon } from "lucide-react";
 import { useState } from "react";
-import EditLabelingModal from "../edit_labeling_modal";
 import Button from "@/components/button";
+import { exportLabelingAnswersCsv } from "@/lib/services/labeling_service";
 
 type LabelingContainerProps = {
   id: number;
@@ -32,24 +31,27 @@ export default function LabelingContainer({
   const isAdmin = Boolean(
     currentUser?.is_staff || currentUser?.account_type === "admin"
   );
-  const [editOpen, setEditOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
-  function handleEditLabelingButton() {
-    if (isAdmin) {
-      router.push(`/labelings/create/${id}`);
-    } else {
-      router.push(`/labelings/${id}/my-answers`);
+  function handleManageLabelingButton() {
+    router.push(`/labelings/create/${id}`);
+  }
+
+  async function handleExportCsv() {
+    try {
+      setIsExporting(true);
+      const { blob, filename } = await exportLabelingAnswersCsv(id);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename || `labeling-${id}-answers.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } finally {
+      setIsExporting(false);
     }
-  }
-
-  function handleAnswerLabelingButton() {
-    router.push(`/labelings/${id}/answer`);
-  }
-
-  function handleManageMemberships() {
-    if (!isAdmin) return;
-    setEditOpen(true);
   }
 
   if (labelings_done != 0 && labelings_pending === 0) {
@@ -90,33 +92,32 @@ export default function LabelingContainer({
           total={labelings_done + labelings_pending}
         />
 
-        {/* aviso + botão */}
-        <div className="flex items-center justify-center gap-2">
+        {/* ações */}
+        <div className="flex items-center justify-center gap-3 mt-2">
           <Button
-            icon={<Pen size={20} strokeWidth={1.75} />}
-            onClick={handleEditLabelingButton}
+            icon={<Pen size={18} strokeWidth={1.75} />}
+            onClick={handleManageLabelingButton}
             variant="normal"
-            ariaLabel="Abrir formulário de rotulação"
+            fill={false}
+            className="px-4"
+            ariaLabel="Gerenciar rotulação"
           >
-            Formulário
+            Gerenciar
           </Button>
           <Button
-            icon={<GroupIcon size={20} strokeWidth={1.75} />}
-            onClick={handleManageMemberships}
+            icon={<Download size={18} strokeWidth={1.75} />}
+            onClick={handleExportCsv}
             variant="normal"
-            disabled={!isAdmin}
-            ariaLabel="Atribuir rotulação"
+            fill={false}
+            size="icon"
+            className="h-8 w-8 flex items-center justify-center"
+            ariaLabel="Exportar respostas em CSV"
+            disabled={!isAdmin || isExporting}
           >
-            Atribuir
+            {""}
           </Button>
         </div>
       </div>
-      <EditLabelingModal
-        open={editOpen}
-        labelingId={id}
-        onClose={() => setEditOpen(false)}
-        onUpdated={onUpdated}
-      />
     </>
   );
 }
