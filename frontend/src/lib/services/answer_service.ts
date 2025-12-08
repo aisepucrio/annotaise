@@ -27,6 +27,15 @@ export type AnswerResponse = AnswerPayload & {
   item_detail?: ItemStructure;
 };
 
+export async function fetchLabelingAnswers(
+  labelingId: number
+): Promise<AnswerResponse[]> {
+  const { data } = await api.get<AnswerResponse[]>("/answers/", {
+    params: { labeling: labelingId },
+  });
+  return data;
+}
+
 export async function fetchNextAnswer(
   labelingId: number
 ): Promise<AnswerStructure> {
