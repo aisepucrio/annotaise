@@ -44,9 +44,11 @@ class LabelingViewSet(viewsets.ModelViewSet):
         
         # Filtra rotulações onde o usuário participa
         qs = (Labeling.objects
-              .filter(project__memberships__user=user)
+              .filter(memberships__user=user)
               .prefetch_related('memberships__user')
               .distinct())
+        
+
         return qs
     
     @action(methods=['get'], detail=False, url_path='dashboard/edit')

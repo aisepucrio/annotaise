@@ -124,7 +124,9 @@ class ExportAnswersView(APIView):
             row = {}
             print(payload)
             for question_number, response in payload.items():
-                
+                row["context_id"] = answer.item.id
+                row["user_id"] = answer.answered_by
+
                 q_id = int(question_number)
                 col_name = "Q : " + questions.get(q_id)
 
