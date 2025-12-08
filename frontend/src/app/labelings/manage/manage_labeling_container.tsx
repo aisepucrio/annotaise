@@ -1,9 +1,7 @@
-import { Pen, Download } from "lucide-react";
+import { Pen } from "lucide-react";
 import { useRouter } from "next/navigation";
 import useCurrent from "@/hooks/current_user_hook";
-import { useState } from "react";
 import Button from "@/components/button";
-import { exportLabelingAnswersCsv } from "@/lib/services/labeling_service";
 
 type LabelingContainerProps = {
   id: number;
@@ -31,27 +29,9 @@ export default function LabelingContainer({
   const isAdmin = Boolean(
     currentUser?.is_staff || currentUser?.account_type === "admin"
   );
-  const [isExporting, setIsExporting] = useState(false);
 
   function handleManageLabelingButton() {
     router.push(`/labelings/create/${id}`);
-  }
-
-  async function handleExportCsv() {
-    try {
-      setIsExporting(true);
-      const { blob, filename } = await exportLabelingAnswersCsv(id);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename || `labeling-${id}-answers.csv`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-    } finally {
-      setIsExporting(false);
-    }
   }
 
   if (labelings_done != 0 && labelings_pending === 0) {
@@ -93,7 +73,7 @@ export default function LabelingContainer({
         />
 
         {/* ações */}
-        <div className="flex items-center justify-center gap-3 mt-2">
+        <div className="flex items-center justify-center mt-2">
           <Button
             icon={<Pen size={18} strokeWidth={1.75} />}
             onClick={handleManageLabelingButton}
@@ -103,18 +83,6 @@ export default function LabelingContainer({
             ariaLabel="Gerenciar rotulação"
           >
             Gerenciar
-          </Button>
-          <Button
-            icon={<Download size={18} strokeWidth={1.75} />}
-            onClick={handleExportCsv}
-            variant="normal"
-            fill={false}
-            size="icon"
-            className="h-8 w-8 flex items-center justify-center"
-            ariaLabel="Exportar respostas em CSV"
-            disabled={!isAdmin || isExporting}
-          >
-            {""}
           </Button>
         </div>
       </div>
