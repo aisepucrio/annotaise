@@ -109,147 +109,239 @@ class ProjectMembershipSerializerTest(TestCase):
 class ProjectViewSetTest(TestCase):
     def setUp(self):
         User = get_user_model()
-        self.owner = User.objects.create_user(username="proj_owner", password="pass123", email="owner@example.com")
-        self.owner.account_type = "admin"; self.owner.save()
-        self.contributor = User.objects.create_user(
-            username="proj_contrib", password="pass123", email="contrib@example.com"
+        self.owner_admin = User.objects.create_user(username="proj_owner_admin", password="pass123", email="owner@example.com")
+        self.owner_admin.account_type = "admin"; self.owner_admin.save()
+
+        self.contributor_admin = User.objects.create_user(
+            username="proj_contrib_admin", password="pass123", email="contrib@example.com"
         )
-        self.staff = User.objects.create_user(
-            username="proj_staff", password="pass123", email="staff@example.com", is_staff=True, account_type="admin"
+        self.contributor_admin.account_type = "admin"; self.contributor_admin.save()
+
+        self.viewer_admin = User.objects.create_user(
+            username="proj_viewer_admin", password="pass123", email="viewer@example.com"
         )
-        self.other_owner = User.objects.create_user(
-            username="other_owner", password="pass123", email="other@example.com"
+        self.viewer_admin.account_type = "admin"; self.viewer_admin.save()
+
+        self.outsider_admin = User.objects.create_user(
+            username="proj_outsider_admin", password="pass123", email="outsider@example.com"
+        )
+        self.outsider_admin.account_type = "admin"; self.outsider_admin.save()
+
+        self.owner_standard = User.objects.create_user(
+            username="proj_owner_standard", password="pass123", email="owner-standard@example.com"
+        )
+        self.contributor_standard = User.objects.create_user(
+            username="proj_contrib_standard", password="pass123", email="contrib-standard@example.com"
         )
 
         self.project_owned = Project.objects.create(
             name="Owned",
             description="Owned desc",
-            created_by=self.owner,
+            created_by=self.owner_admin,
         )
         ProjectMembership.objects.create(
             project=self.project_owned,
-            user=self.owner,
+            user=self.owner_admin,
             role=ProjectMembership.RoleChoices.OWNER,
         )
         ProjectMembership.objects.create(
             project=self.project_owned,
-            user=self.contributor,
+            user=self.contributor_admin,
             role=ProjectMembership.RoleChoices.CONTRIBUTOR,
         )
-
-        self.project_other = Project.objects.create(
-            name="Foreign",
-            description="Foreign desc",
-            created_by=self.other_owner,
+        ProjectMembership.objects.create(
+            project=self.project_owned,
+            user=self.viewer_admin,
+            role=ProjectMembership.RoleChoices.VIEWER,
         )
         ProjectMembership.objects.create(
-            project=self.project_other,
-            user=self.other_owner,
+            project=self.project_owned,
+            user=self.owner_standard,
             role=ProjectMembership.RoleChoices.OWNER,
+        )
+        ProjectMembership.objects.create(
+            project=self.project_owned,
+            user=self.contributor_standard,
+            role=ProjectMembership.RoleChoices.CONTRIBUTOR,
         )
 
         self.client = APIClient()
         self.projects_url = reverse("projects-list")
+        self.project_detail_url = reverse("projects-detail", args=[self.project_owned.id])
 
-    def test_admin_lists_all_projects(self):
-        self.client.force_authenticate(self.owner)
+    def test_admin_member_lists_projects(self):
+        self.client.force_authenticate(self.owner_admin)
         response = self.client.get(self.projects_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), Project.objects.count())
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["id"], self.project_owned.id)
 
-    def test_non_admin_cannot_access_projects(self):
-        self.client.force_authenticate(self.contributor)
+    def test_admin_non_member_gets_empty_list(self):
+        self.client.force_authenticate(self.outsider_admin)
+        response = self.client.get(self.projects_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, [])
+
+    def test_non_admin_member_cannot_list_projects(self):
+        self.client.force_authenticate(self.owner_standard)
         response = self.client.get(self.projects_url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_admin_can_create_project(self):
-        self.client.force_authenticate(self.owner)
+    def test_admin_can_create_project_and_becomes_owner(self):
+        self.client.force_authenticate(self.contributor_admin)
         payload = {"name": "API Created", "description": "via test"}
         response = self.client.post(self.projects_url, payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         project = Project.objects.get(id=response.data["id"])
-        self.assertEqual(project.created_by, self.owner)
+        self.assertEqual(project.created_by, self.contributor_admin)
+        self.assertTrue(
+            ProjectMembership.objects.filter(
+                project=project, user=self.contributor_admin, role=ProjectMembership.RoleChoices.OWNER
+            ).exists()
+        )
 
-    def test_non_admin_cannot_delete_project(self):
-        self.client.force_authenticate(self.contributor)
-        url = reverse("projects-detail", args=[self.project_owned.id])
-        response = self.client.delete(url)
+    def test_non_admin_cannot_create_project(self):
+        self.client.force_authenticate(self.owner_standard)
+        payload = {"name": "Standard Attempt", "description": "should fail"}
+        response = self.client.post(self.projects_url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(Project.objects.filter(name="Standard Attempt").exists())
+
+    def test_admin_owner_can_update_project(self):
+        self.client.force_authenticate(self.owner_admin)
+        response = self.client.patch(self.project_detail_url, {"name": "Updated"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.project_owned.refresh_from_db()
+        self.assertEqual(self.project_owned.name, "Updated")
+
+    def test_admin_contributor_cannot_update_project(self):
+        self.client.force_authenticate(self.contributor_admin)
+        response = self.client.patch(self.project_detail_url, {"name": "Blocked"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.project_owned.refresh_from_db()
+        self.assertNotEqual(self.project_owned.name, "Blocked")
+
+    def test_admin_viewer_cannot_update_project(self):
+        self.client.force_authenticate(self.viewer_admin)
+        response = self.client.patch(self.project_detail_url, {"name": "Viewer Blocked"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.project_owned.refresh_from_db()
+        self.assertNotEqual(self.project_owned.name, "Viewer Blocked")
+
+    def test_admin_non_member_cannot_update_project(self):
+        self.client.force_authenticate(self.outsider_admin)
+        response = self.client.patch(self.project_detail_url, {"name": "Outsider Blocked"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.project_owned.refresh_from_db()
+        self.assertNotEqual(self.project_owned.name, "Outsider Blocked")
+
+    def test_non_admin_owner_cannot_update_project(self):
+        self.client.force_authenticate(self.owner_standard)
+        response = self.client.patch(self.project_detail_url, {"name": "Standard Blocked"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.project_owned.refresh_from_db()
+        self.assertNotEqual(self.project_owned.name, "Standard Blocked")
+
+    def test_admin_owner_can_delete_project(self):
+        self.client.force_authenticate(self.owner_admin)
+        response = self.client.delete(self.project_detail_url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Project.objects.filter(id=self.project_owned.id).exists())
+
+    def test_admin_non_member_cannot_delete_project(self):
+        self.client.force_authenticate(self.outsider_admin)
+        response = self.client.delete(self.project_detail_url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertTrue(Project.objects.filter(id=self.project_owned.id).exists())
 
-    def test_admin_can_delete_project(self):
-        self.client.force_authenticate(self.owner)
-        url = reverse("projects-detail", args=[self.project_other.id])
-        response = self.client.delete(url)
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertFalse(Project.objects.filter(id=self.project_other.id).exists())
+    def test_admin_contributor_cannot_delete_project(self):
+        self.client.force_authenticate(self.contributor_admin)
+        response = self.client.delete(self.project_detail_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertTrue(Project.objects.filter(id=self.project_owned.id).exists())
+
+    def test_non_admin_owner_cannot_delete_project(self):
+        self.client.force_authenticate(self.owner_standard)
+        response = self.client.delete(self.project_detail_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertTrue(Project.objects.filter(id=self.project_owned.id).exists())
 
 
 class ProjectMembershipViewSetTest(TestCase):
     def setUp(self):
         User = get_user_model()
-        self.owner = User.objects.create_user(username="membership_owner", password="pass123", email="owner@example.com")
-        self.member = User.objects.create_user(
-            username="membership_member", password="pass123", email="member@example.com"
+        self.owner_admin = User.objects.create_user(username="membership_owner_admin", password="pass123", email="owner@example.com")
+        self.owner_admin.account_type = "admin"; self.owner_admin.save()
+
+        self.contributor_admin = User.objects.create_user(
+            username="membership_contrib_admin", password="pass123", email="contrib@example.com"
         )
-        self.viewer = User.objects.create_user(
-            username="membership_viewer", password="pass123", email="viewer@example.com"
+        self.contributor_admin.account_type = "admin"; self.contributor_admin.save()
+
+        self.viewer_admin = User.objects.create_user(
+            username="membership_viewer_admin", password="pass123", email="viewer@example.com"
         )
-        self.new_user = User.objects.create_user(
-            username="membership_new", password="pass123", email="new@example.com"
+        self.viewer_admin.account_type = "admin"; self.viewer_admin.save()
+
+        self.owner_standard = User.objects.create_user(
+            username="membership_owner_standard", password="pass123", email="owner-standard@example.com"
         )
-        self.staff = User.objects.create_user(
-            username="membership_staff", password="pass123", email="staff@example.com", is_staff=True
+        self.outsider_admin = User.objects.create_user(
+            username="membership_outsider_admin", password="pass123", email="outsider@example.com"
         )
+        self.outsider_admin.account_type = "admin"; self.outsider_admin.save()
 
         self.project_one = Project.objects.create(
             name="Project One",
             description="First",
-            created_by=self.owner,
+            created_by=self.owner_admin,
         )
         self.project_two = Project.objects.create(
             name="Project Two",
             description="Second",
-            created_by=self.owner,
+            created_by=self.owner_admin,
         )
 
-        # memberships for owner-controlled projects
         self.owner_membership_one = ProjectMembership.objects.create(
             project=self.project_one,
-            user=self.owner,
+            user=self.owner_admin,
             role=ProjectMembership.RoleChoices.OWNER,
         )
         self.owner_membership_two = ProjectMembership.objects.create(
             project=self.project_two,
-            user=self.owner,
+            user=self.owner_admin,
             role=ProjectMembership.RoleChoices.OWNER,
         )
         self.contributor_membership = ProjectMembership.objects.create(
             project=self.project_one,
-            user=self.member,
+            user=self.contributor_admin,
             role=ProjectMembership.RoleChoices.CONTRIBUTOR,
         )
         self.viewer_membership = ProjectMembership.objects.create(
-            project=self.project_two,
-            user=self.viewer,
+            project=self.project_one,
+            user=self.viewer_admin,
             role=ProjectMembership.RoleChoices.VIEWER,
         )
-
-        # membership where user is NOT owner anywhere
-        self.non_owner = User.objects.create_user(
-            username="membership_non_owner", password="pass123", email="nonowner@example.com"
-        )
-        ProjectMembership.objects.create(
+        self.owner_standard_membership = ProjectMembership.objects.create(
             project=self.project_one,
-            user=self.non_owner,
+            user=self.owner_standard,
+            role=ProjectMembership.RoleChoices.OWNER,
+        )
+        self.outsider_admin_membership = ProjectMembership.objects.create(
+            project=self.project_two,
+            user=self.outsider_admin,
             role=ProjectMembership.RoleChoices.CONTRIBUTOR,
+        )
+
+        self.new_user = User.objects.create_user(
+            username="membership_new", password="pass123", email="new@example.com"
         )
 
         self.client = APIClient()
         self.memberships_url = reverse("project-memberships-list")
 
-    def test_owner_lists_every_membership_in_their_projects(self):
-        self.client.force_authenticate(self.owner)
+    def test_admin_owner_lists_every_membership_in_owned_projects(self):
+        self.client.force_authenticate(self.owner_admin)
         response = self.client.get(self.memberships_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         project_ids = {item["project"] for item in response.data}
@@ -259,20 +351,23 @@ class ProjectMembershipViewSetTest(TestCase):
         ).count()
         self.assertEqual(len(response.data), expected_count)
 
-    def test_non_owner_gets_empty_list(self):
-        self.client.force_authenticate(self.non_owner)
+    def test_admin_non_owner_cannot_list_memberships(self):
+        self.client.force_authenticate(self.outsider_admin)
         response = self.client.get(self.memberships_url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, [])
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_staff_can_see_every_membership(self):
-        self.client.force_authenticate(self.staff)
+    def test_admin_contributor_cannot_list_memberships(self):
+        self.client.force_authenticate(self.contributor_admin)
         response = self.client.get(self.memberships_url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), ProjectMembership.objects.count())
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_owner_can_create_membership(self):
-        self.client.force_authenticate(self.owner)
+    def test_non_admin_owner_cannot_list_memberships(self):
+        self.client.force_authenticate(self.owner_standard)
+        response = self.client.get(self.memberships_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_admin_owner_can_create_membership(self):
+        self.client.force_authenticate(self.owner_admin)
         payload = {
             "project": self.project_one.id,
             "user": self.new_user.id,
@@ -286,8 +381,38 @@ class ProjectMembershipViewSetTest(TestCase):
             ).exists()
         )
 
-    def test_non_owner_cannot_create_membership(self):
-        self.client.force_authenticate(self.member)
+    def test_admin_contributor_cannot_create_membership(self):
+        self.client.force_authenticate(self.contributor_admin)
+        payload = {
+            "project": self.project_one.id,
+            "user": self.new_user.id,
+            "role": ProjectMembership.RoleChoices.VIEWER,
+        }
+        response = self.client.post(self.memberships_url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(
+            ProjectMembership.objects.filter(
+                project=self.project_one, user=self.new_user
+            ).exists()
+        )
+
+    def test_admin_outsider_cannot_create_membership(self):
+        self.client.force_authenticate(self.outsider_admin)
+        payload = {
+            "project": self.project_one.id,
+            "user": self.new_user.id,
+            "role": ProjectMembership.RoleChoices.VIEWER,
+        }
+        response = self.client.post(self.memberships_url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(
+            ProjectMembership.objects.filter(
+                project=self.project_one, user=self.new_user
+            ).exists()
+        )
+
+    def test_non_admin_owner_cannot_create_membership(self):
+        self.client.force_authenticate(self.owner_standard)
         payload = {
             "project": self.project_one.id,
             "user": self.new_user.id,
