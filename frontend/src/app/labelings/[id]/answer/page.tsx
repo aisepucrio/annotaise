@@ -38,7 +38,6 @@ export default function LabelingAnswerPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
   const [currentSectionIdx, setCurrentSectionIdx] = useState<number>(0);
-  const [blockSectionBack, setBlockSectionBack] = useState<boolean>(false);
 
   const loadItem = useCallback(async () => {
     if (Number.isNaN(labelingId)) {
@@ -54,7 +53,6 @@ export default function LabelingAnswerPage() {
     try {
       const labeling = await fetchLabelingById(labelingId);
       setLabelingTitle(labeling.title);
-      setBlockSectionBack(Boolean(labeling.block_section_back));
 
       const nextAnswer = await fetchNextAnswer(labelingId);
       const sectionsResponse = nextAnswer.sections ?? [];
@@ -173,13 +171,6 @@ export default function LabelingAnswerPage() {
     setCurrentSectionIdx((idx) => Math.min(idx + 1, totalSections - 1));
   };
 
-  const goToPreviousSection = () => {
-    if (blockSectionBack) return;
-    setLoadError(null);
-    setSubmitMessage(null);
-    setCurrentSectionIdx((idx) => Math.max(idx - 1, 0));
-  };
-
   return (
     <SidebarLayout>
       <header className="flex flex-col gap-3 rounded-xl bg-blue-900 px-6 py-4 text-white shadow-md lg:flex-row lg:items-center lg:justify-between">
@@ -249,20 +240,7 @@ export default function LabelingAnswerPage() {
               onChange={handleAnswerChange}
             />
             <div className="flex justify-between items-center pt-2">
-              {blockSectionBack ? (
-                <div />
-              ) : (
-                <button
-                  type="button"
-                  onClick={goToPreviousSection}
-                  disabled={
-                    currentSectionIdx === 0 || isLoading || isSubmitting
-                  }
-                  className="inline-flex items-center gap-2 rounded-lg border border-blue-200 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  Voltar
-                </button>
-              )}
+              <div />
               <div className="flex gap-3">
                 {!isLastSection ? (
                   <button
