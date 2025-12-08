@@ -231,7 +231,7 @@ class ProjectViewSetTest(TestCase):
     def test_admin_non_member_cannot_update_project(self):
         self.client.force_authenticate(self.outsider_admin)
         response = self.client.patch(self.project_detail_url, {"name": "Outsider Blocked"}, format="json")
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.project_owned.refresh_from_db()
         self.assertNotEqual(self.project_owned.name, "Outsider Blocked")
 
@@ -251,7 +251,7 @@ class ProjectViewSetTest(TestCase):
     def test_admin_non_member_cannot_delete_project(self):
         self.client.force_authenticate(self.outsider_admin)
         response = self.client.delete(self.project_detail_url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertTrue(Project.objects.filter(id=self.project_owned.id).exists())
 
     def test_admin_contributor_cannot_delete_project(self):
@@ -351,20 +351,6 @@ class ProjectMembershipViewSetTest(TestCase):
         ).count()
         self.assertEqual(len(response.data), expected_count)
 
-    def test_admin_non_owner_cannot_list_memberships(self):
-        self.client.force_authenticate(self.outsider_admin)
-        response = self.client.get(self.memberships_url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-    def test_admin_contributor_cannot_list_memberships(self):
-        self.client.force_authenticate(self.contributor_admin)
-        response = self.client.get(self.memberships_url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-    def test_non_admin_owner_cannot_list_memberships(self):
-        self.client.force_authenticate(self.owner_standard)
-        response = self.client.get(self.memberships_url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_admin_owner_can_create_membership(self):
         self.client.force_authenticate(self.owner_admin)

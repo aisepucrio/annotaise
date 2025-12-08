@@ -154,6 +154,10 @@ class LabelingViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         user = self.request.user
 
+        perm = CanEditLabelingsInProjectPermission()
+        
+        if perm.can_edit_labeling_by_project(user,self.request.data.get('project')) == False:
+            raise PermissionDenied(detail=perm.message)
         labeling = serializer.save(created_by=user)
 
         return super().perform_create(serializer)

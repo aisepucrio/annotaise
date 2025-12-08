@@ -3,21 +3,25 @@ from .models import Project, ProjectMembership
 
     
 class IsProjectOwnerPermission(BasePermission):
-    """
-    Permission: apenas usuários que são 'owner' do projeto
-    (via ProjectMembership) podem acessar o objeto.
-    Funciona tanto para Project quanto para ProjectMembership.
-    """
     message = "Somente proprietários do projeto podem realizar esta ação."
 
+    def has_permission(self, request, view):
+
+        if view.action in ["create","list"]:
+            project_id = request.data.get("project")
+            
+            return ProjectMembership.objects.filter(
+                project_id=project_id,
+                user=request.user,
+                role=ProjectMembership.RoleChoices.OWNER,
+            ).exists()
+        return True 
+
     def has_object_permission(self, request, view, obj):
-        user = request.user
-        
         project = self._get_project_from_obj(obj)
         if project is None:
             return False
-
-        return project.memberships.filter(user=user, role="owner").exists()
+        return project.memberships.filter(user=request.user, role="owner").exists()
 
     def _get_project_from_obj(self, obj):
         """

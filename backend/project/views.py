@@ -105,6 +105,12 @@ class ProjectMembershipViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post','put', 'patch', 'delete']
     permission_classes = [IsAdminAccount,IsProjectOwnerPermission]
 
+    def get_permissions(self):
+        if self.action in ["update", "partial_update", "destroy", "patch","create"]:
+            self.permission_classes = [IsAdminAccount, IsProjectOwnerPermission]
+        else:
+            self.permission_classes = [IsAdminAccount]
+        return super().get_permissions()
     
     def get_queryset(self):
         user = getattr(self.request, "user", None)

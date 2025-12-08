@@ -8,7 +8,7 @@ class CanEditLabelingsInProjectPermission(BasePermission):
     Only admin users or project members with edit rights can edit.
     """
     message="Você não tem permissão para editar rotulações desse projeto."
-
+    
     def has_object_permission(self, request, view, obj):
         user = request.user
         #TODO
@@ -27,6 +27,16 @@ class CanEditLabelingsInProjectPermission(BasePermission):
         Checa permissão recebendo o ID ou objeto de labeling.
         """
         membership = ProjectMembership.objects.filter(user=user,role__in=['contributor','owner'],project__labelings__id=labeling_id).first()
+        if membership:
+            return True
+        else :
+            return False
+    
+    def can_edit_labeling_by_project(self, user, project_id):
+        """
+        Checa permissão recebendo o ID do projeto
+        """
+        membership = ProjectMembership.objects.filter(user=user,role__in=['contributor','owner'],project__id=project_id).first()
         if membership:
             return True
         else :

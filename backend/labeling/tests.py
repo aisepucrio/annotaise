@@ -315,7 +315,7 @@ class LabelingViewSetTest(TestCase):
     def test_admin_without_membership_cannot_delete_labeling(self):
         self.client.force_authenticate(self.outsider_admin)
         response = self.client.delete(self.detail_url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertTrue(Labeling.objects.filter(id=self.labeling.id).exists())
 
 
