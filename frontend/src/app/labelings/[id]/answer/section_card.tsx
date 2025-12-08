@@ -3,6 +3,8 @@ import type { LabelingStructureSection } from "@/lib/services/labeling_create_se
 import type { AnswerMap } from "./answer_types";
 import ContextRow from "./context_row";
 import QuestionBlock from "./question_block";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 type SectionCardProps = {
   section: LabelingStructureSection;
@@ -16,6 +18,7 @@ export default function SectionCard({ section, payload, answers, onChange }: Sec
     () => [...section.elements].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
     [section.elements]
   );
+  const sectionTitle = section.title?.trim() ? section.title : "Seção";
 
   const contexts = orderedElements.filter((element) => element.question_type === "context");
   const questions = orderedElements.filter((element) => element.question_type !== "context");
@@ -25,7 +28,9 @@ export default function SectionCard({ section, payload, answers, onChange }: Sec
       <header className="flex items-center justify-between bg-blue-900 px-4 py-3 text-white">
         <div>
           <p className="text-[11px] uppercase tracking-wide text-blue-100">Seção {section.order ?? ""}</p>
-          <h3 className="text-lg font-semibold leading-tight">{section.title || "Seção"}</h3>
+          <div className="prose prose-sm max-w-none">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{sectionTitle}</ReactMarkdown>
+          </div>
         </div>
         <span className="text-xs text-blue-100">{questions.length} perguntas</span>
       </header>

@@ -172,106 +172,149 @@ class LabelingMembershipSerializerTest(BaseSerializerTest):
 class LabelingViewSetTest(TestCase):
     def setUp(self):
         User = get_user_model()
-        self.owner = User.objects.create_user(username="label_owner", password="pass123", email="owner@example.com")
-        self.owner.account_type = "admin"; self.owner.save()
-        self.viewer = User.objects.create_user(username="label_viewer", password="pass123", email="viewer@example.com")
-        self.staff = User.objects.create_user(
-            username="label_staff", password="pass123", email="staff@example.com", is_staff=True, account_type="admin"
+        self.owner_admin = User.objects.create_user(
+            username="label_owner_admin", password="pass123", email="owner@example.com"
         )
-        self.other_owner = User.objects.create_user(
-            username="label_other_owner", password="pass123", email="other-owner@example.com"
+        self.owner_admin.account_type = "admin"; self.owner_admin.save()
+
+        self.contributor_admin = User.objects.create_user(
+            username="label_contrib_admin", password="pass123", email="contrib-admin@example.com"
+        )
+        self.contributor_admin.account_type = "admin"; self.contributor_admin.save()
+
+        self.viewer_admin = User.objects.create_user(
+            username="label_viewer_admin", password="pass123", email="viewer-admin@example.com"
+        )
+        self.viewer_admin.account_type = "admin"; self.viewer_admin.save()
+
+        self.outsider_admin = User.objects.create_user(
+            username="label_outsider_admin", password="pass123", email="outsider-admin@example.com"
+        )
+        self.outsider_admin.account_type = "admin"; self.outsider_admin.save()
+
+        self.owner_standard = User.objects.create_user(
+            username="label_owner_standard", password="pass123", email="owner-standard@example.com"
+        )
+        self.contributor_standard = User.objects.create_user(
+            username="label_contrib_standard", password="pass123", email="contrib-standard@example.com"
         )
 
         self.project = Project.objects.create(
             name="Main Project",
             description="Primary",
-            created_by=self.owner,
+            created_by=self.owner_admin,
         )
-        self.other_project = Project.objects.create(
-            name="Other Project",
-            description="Second",
-            created_by=self.other_owner,
-        )
-
         ProjectMembership.objects.create(
             project=self.project,
-            user=self.owner,
+            user=self.owner_admin,
             role=ProjectMembership.RoleChoices.OWNER,
         )
         ProjectMembership.objects.create(
             project=self.project,
-            user=self.viewer,
+            user=self.contributor_admin,
+            role=ProjectMembership.RoleChoices.CONTRIBUTOR,
+        )
+        ProjectMembership.objects.create(
+            project=self.project,
+            user=self.viewer_admin,
             role=ProjectMembership.RoleChoices.VIEWER,
         )
         ProjectMembership.objects.create(
-            project=self.other_project,
-            user=self.other_owner,
+            project=self.project,
+            user=self.owner_standard,
             role=ProjectMembership.RoleChoices.OWNER,
         )
+        ProjectMembership.objects.create(
+            project=self.project,
+            user=self.contributor_standard,
+            role=ProjectMembership.RoleChoices.CONTRIBUTOR,
+        )
 
+        self.final_date = timezone.now().date()
         self.labeling = Labeling.objects.create(
             project=self.project,
             title="Owned Labeling",
-            created_by=self.owner,
-            start_date=timezone.now().date(),
-            final_date=timezone.now().date(),
-        )
-        LabelingMembership.objects.create(
-            labeling=self.labeling,
-            user=self.owner,
-            role="owner",
-        )
-        LabelingMembership.objects.create(
-            labeling=self.labeling,
-            user=self.viewer,
-            role="annotator",
-        )
-
-        self.foreign_labeling = Labeling.objects.create(
-            project=self.other_project,
-            title="Foreign Labeling",
-            created_by=self.other_owner,
-            start_date=timezone.now().date(),
-            final_date=timezone.now().date(),
-        )
-        LabelingMembership.objects.create(
-            labeling=self.foreign_labeling,
-            user=self.other_owner,
-            role="owner",
+            created_by=self.owner_admin,
+            start_date=self.final_date,
+            final_date=self.final_date,
         )
 
         self.client = APIClient()
         self.list_url = reverse("labelings-list")
+        self.detail_url = reverse("labelings-detail", args=[self.labeling.id])
 
-    def test_list_returns_only_labelings_where_user_is_member(self):
-        self.client.force_authenticate(self.viewer)
-        response = self.client.get(self.list_url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["title"], "Owned Labeling")
-
-    def test_create_requires_project_owner(self):
-        self.client.force_authenticate(self.viewer)
-        payload = {"title": "Blocked Labeling", "project": self.project.id, "final_date":timezone.now().date()}
-        response = self.client.post(self.list_url, payload, format="json")
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-    def test_owner_can_create_labeling_and_becomes_owner_membership(self):
-        self.client.force_authenticate(self.owner)
-        payload = {"title": "API Labeling", "project": self.project.id, "final_date":timezone.now().date()}
+    def test_admin_owner_can_create_labeling(self):
+        self.client.force_authenticate(self.owner_admin)
+        payload = {"title": "API Labeling", "project": self.project.id, "final_date": self.final_date}
         response = self.client.post(self.list_url, payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        labeling_id = response.data["id"]
-        self.assertTrue(
-            LabelingMembership.objects.filter(
-                labeling_id=labeling_id, user=self.owner, role="owner"
-            ).exists()
-        )
+        self.assertEqual(response.data["project"], self.project.id)
 
-    def test_destroy_requires_labeling_owner(self):
-        self.client.force_authenticate(self.viewer)
-        url = reverse("labelings-detail", args=[self.labeling.id])
-        response = self.client.delete(url)
+    def test_admin_contributor_can_create_labeling(self):
+        '''se futuramente o colaborador nao puder mais editar tem que mudar isso aqui'''
+        self.client.force_authenticate(self.contributor_admin)
+        payload = {"title": "Contributor Labeling", "project": self.project.id, "final_date": self.final_date}
+        response = self.client.post(self.list_url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_admin_viewer_cannot_create_labeling(self):
+        self.client.force_authenticate(self.viewer_admin)
+        payload = {"title": "Viewer Attempt", "project": self.project.id, "final_date": self.final_date}
+        response = self.client.post(self.list_url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(Labeling.objects.filter(title="Viewer Attempt").exists())
+
+    def test_admin_without_membership_cannot_create_labeling(self):
+        self.client.force_authenticate(self.outsider_admin)
+        payload = {"title": "Outsider Attempt", "project": self.project.id, "final_date": self.final_date}
+        response = self.client.post(self.list_url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(Labeling.objects.filter(title="Outsider Attempt").exists())
+
+    def test_non_admin_owner_cannot_create_labeling(self):
+        self.client.force_authenticate(self.owner_standard)
+        payload = {"title": "Standard Owner Attempt", "project": self.project.id, "final_date": self.final_date}
+        response = self.client.post(self.list_url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(Labeling.objects.filter(title="Standard Owner Attempt").exists())
+
+    def test_admin_owner_can_update_labeling(self):
+        self.client.force_authenticate(self.owner_admin)
+        response = self.client.patch(self.detail_url, {"title": "Updated Title"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.labeling.refresh_from_db()
+        self.assertEqual(self.labeling.title, "Updated Title")
+
+    def test_admin_contributor_can_update_labeling(self):
+        self.client.force_authenticate(self.contributor_admin)
+        response = self.client.patch(self.detail_url, {"title": "Contributor Updated"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.labeling.refresh_from_db()
+        self.assertEqual(self.labeling.title, "Contributor Updated")
+
+    def test_admin_viewer_cannot_update_labeling(self):
+        self.client.force_authenticate(self.viewer_admin)
+        response = self.client.patch(self.detail_url, {"title": "Viewer Updated"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.labeling.refresh_from_db()
+        self.assertEqual(self.labeling.title, "Owned Labeling")
+
+    def test_non_admin_contributor_cannot_update_labeling(self):
+        self.client.force_authenticate(self.contributor_standard)
+        response = self.client.patch(self.detail_url, {"title": "Standard Contributor Update"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.labeling.refresh_from_db()
+        self.assertEqual(self.labeling.title, "Owned Labeling")
+
+    def test_admin_owner_can_delete_labeling(self):
+        self.client.force_authenticate(self.owner_admin)
+        response = self.client.delete(self.detail_url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Labeling.objects.filter(id=self.labeling.id).exists())
+
+    def test_admin_without_membership_cannot_delete_labeling(self):
+        self.client.force_authenticate(self.outsider_admin)
+        response = self.client.delete(self.detail_url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertTrue(Labeling.objects.filter(id=self.labeling.id).exists())
 
@@ -419,35 +462,60 @@ class LabelingMembershipViewSetTest(TestCase):
 class LabelingStructureViewTest(TestCase):
     def setUp(self):
         User = get_user_model()
-        self.user = User.objects.create_user(
-            username="structure_owner", password="pass123", email="owner@example.com"
+        self.owner_admin = User.objects.create_user(
+            username="structure_owner_admin", password="pass123", email="owner@example.com"
         )
-        self.user.account_type = "admin"; self.user.save()
+        self.owner_admin.account_type = "admin"; self.owner_admin.save()
+        self.contributor_admin = User.objects.create_user(
+            username="structure_contrib_admin", password="pass123", email="contrib@example.com"
+        )
+        self.contributor_admin.account_type = "admin"; self.contributor_admin.save()
+        self.viewer_admin = User.objects.create_user(
+            username="structure_viewer_admin", password="pass123", email="viewer@example.com"
+        )
+        self.viewer_admin.account_type = "admin"; self.viewer_admin.save()
+        self.owner_standard = User.objects.create_user(
+            username="structure_owner_standard", password="pass123", email="owner-standard@example.com"
+        )
+        self.outsider_admin = User.objects.create_user(
+            username="structure_outsider_admin", password="pass123", email="outsider@example.com"
+        )
+        self.outsider_admin.account_type = "admin"; self.outsider_admin.save()
+
         self.project = Project.objects.create(
             name="Structure Project",
             description="For structure tests",
-            created_by=self.user,
+            created_by=self.owner_admin,
         )
         ProjectMembership.objects.create(
             project=self.project,
-            user=self.user,
+            user=self.owner_admin,
+            role=ProjectMembership.RoleChoices.OWNER,
+        )
+        ProjectMembership.objects.create(
+            project=self.project,
+            user=self.contributor_admin,
+            role=ProjectMembership.RoleChoices.CONTRIBUTOR,
+        )
+        ProjectMembership.objects.create(
+            project=self.project,
+            user=self.viewer_admin,
+            role=ProjectMembership.RoleChoices.VIEWER,
+        )
+        ProjectMembership.objects.create(
+            project=self.project,
+            user=self.owner_standard,
             role=ProjectMembership.RoleChoices.OWNER,
         )
         self.labeling = Labeling.objects.create(
             project=self.project,
             title="Structured Labeling",
-            created_by=self.user,
+            created_by=self.owner_admin,
             start_date=timezone.now().date(),
             final_date=timezone.now().date(),
         )
-        LabelingMembership.objects.create(
-            labeling=self.labeling,
-            user=self.user,
-            role=LabelingMembership.Role.OWNER,
-        )
 
         self.client = APIClient()
-        self.client.force_authenticate(self.user)
         self.structure_url = reverse("labeling-structure", args=[self.labeling.id])
 
         self.valid_payload = {
@@ -603,6 +671,7 @@ class LabelingStructureViewTest(TestCase):
     def test_get_returns_labeling_structure(self):
         self._persist_structure(self.valid_payload)
 
+        self.client.force_authenticate(self.owner_admin)
         response = self.client.get(self.structure_url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -610,6 +679,7 @@ class LabelingStructureViewTest(TestCase):
         self.assertEqual(self._simplify_structure(response.data), expected_structure)
 
     def test_put_replaces_structure_with_payload(self):
+        self.client.force_authenticate(self.contributor_admin)
         old_section = LabelingSection.objects.create(
             labeling=self.labeling, title="Old Section", order=10
         )
@@ -658,3 +728,27 @@ class LabelingStructureViewTest(TestCase):
         self.assertEqual(
             self._simplify_structure(persisted_structure), expected_structure
         )
+
+    def test_put_denies_admin_without_edit_membership(self):
+        self.client.force_authenticate(self.viewer_admin)
+
+        response = self.client.put(self.structure_url, self.valid_payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(LabelingSection.objects.filter(labeling=self.labeling).count(), 0)
+
+    def test_put_denies_non_admin_owner(self):
+        self.client.force_authenticate(self.owner_standard)
+
+        response = self.client.put(self.structure_url, self.valid_payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(LabelingSection.objects.filter(labeling=self.labeling).count(), 0)
+
+    def test_put_denies_admin_outside_project(self):
+        self.client.force_authenticate(self.outsider_admin)
+
+        response = self.client.put(self.structure_url, self.valid_payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(LabelingSection.objects.filter(labeling=self.labeling).count(), 0)

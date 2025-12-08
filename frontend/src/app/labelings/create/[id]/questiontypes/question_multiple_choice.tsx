@@ -12,7 +12,7 @@ export default function QuestionMultipleChoiceEditor({
   onChange,
 }: Props) {
   const handleChoiceTextChange =
-    (choiceId: string) => (e: ChangeEvent<HTMLInputElement>) => {
+    (choiceId: string) => (e: ChangeEvent<HTMLTextAreaElement>) => {
       const updated = config.choices.map((choice) =>
         choice.id === choiceId ? { ...choice, text: e.target.value } : choice
       );
@@ -54,11 +54,11 @@ export default function QuestionMultipleChoiceEditor({
       <div className="flex flex-col gap-2">
         {config.choices.map((choice) => (
           <div key={choice.id} className="flex items-center gap-2">
-            <input
-              type="text"
-              className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none text-gray-700"
+            <textarea
+              className="flex-1 rounded-md border border-gray-300 px-2 py-2 text-sm focus:border-blue-500 focus:outline-none text-gray-700"
               value={choice.text}
               onChange={handleChoiceTextChange(choice.id)}
+              rows={2}
             />
             <button
               type="button"

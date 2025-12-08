@@ -1,4 +1,6 @@
 import type { LabelingStructureElement } from "@/lib/services/labeling_create_service";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 type QuestionInputProps = {
   element: LabelingStructureElement;
@@ -91,7 +93,9 @@ export default function QuestionInput({ element, value, onChange }: QuestionInpu
                     }}
                     className="h-4 w-4 accent-blue-900"
                   />
-                  <span>{optionValue}</span>
+                  <span className="prose prose-sm max-w-none">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{optionValue}</ReactMarkdown>
+                  </span>
                 </label>
               );
             }
@@ -109,7 +113,9 @@ export default function QuestionInput({ element, value, onChange }: QuestionInpu
                   onChange={() => onChange(optionValue)}
                   className="h-4 w-4 text-blue-900"
                 />
-                <span>{optionValue}</span>
+                <span className="prose prose-sm max-w-none">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{optionValue}</ReactMarkdown>
+                </span>
               </label>
             );
           })}
