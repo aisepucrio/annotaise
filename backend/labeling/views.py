@@ -40,16 +40,25 @@ class LabelingViewSet(viewsets.ModelViewSet):
         return super().get_permissions()
     
     def get_queryset(self):
-        user = self.request.user
-        
-        # Filtra rotulações onde o usuário participa
-        qs = (Labeling.objects
-              .filter(memberships__user=user)
-              .prefetch_related('memberships__user')
-              .distinct())
-        
+        user = getattr(self.request, "user", None)
+        if not user or not getattr(user, "is_authenticated", False):
+            return Labeling.objects.none()
 
-        return qs
+        qs = (
+            Labeling.objects
+            .select_related("project")
+            .prefetch_related("memberships__user")
+            .distinct()
+        )
+        #rotulações pra todos os casos de usuário
+        if (
+            getattr(user, "is_staff", False)
+            or getattr(user, "is_superuser", False)
+            or getattr(user, "account_type", "") == "admin"
+        ):
+            return qs
+
+        return qs.filter(memberships__user=user)
     
     @action(methods=['get'], detail=False, url_path='dashboard/edit')
     def editdashboard(self, request):
@@ -58,7 +67,8 @@ class LabelingViewSet(viewsets.ModelViewSet):
         today = datetime.now().date()
         search = request.query_params.get("search")
         output = []
-        qs = (Labeling.objects.filter(project__memberships__user=request.user)
+        qs_base = (
+            Labeling.objects
             .select_related('project')
             .annotate(
                 total_labelings=Count('items', distinct=True),
@@ -68,6 +78,16 @@ class LabelingViewSet(viewsets.ModelViewSet):
                     distinct=True),
             )
         )
+
+        if (
+            getattr(request.user, "is_staff", False)
+            or getattr(request.user, "is_superuser", False)
+            or getattr(request.user, "account_type", "") == "admin"
+        ):
+            qs = qs_base
+        else:
+            qs = qs_base.filter(memberships__user=request.user)
+
         if not qs.exists():
             return Response([], status=200)
 

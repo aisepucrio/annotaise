@@ -14,16 +14,21 @@ from django.http import HttpResponse
 import pandas as pd
 
 from rest_framework.generics import ListAPIView
+from django.db.models import Q
+
 class AnswerViewset(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
     serializer_class = AnswerSerializer
 
     def get_queryset(self):
-        user = self.request.user
+        user = getattr(self.request, "user", None)
+
+        if not user or not getattr(user, "is_authenticated", False):
+            return Answer.objects.none()
+
         qs = (
             Answer.objects
             .select_related("item", "labeling")
-            .filter(labeling__memberships__user=user)
             .distinct()
         )
 
@@ -31,11 +36,18 @@ class AnswerViewset(viewsets.ModelViewSet):
         if labeling_id and labeling_id.isdigit():
             qs = qs.filter(labeling_id=int(labeling_id))
 
-        if getattr(user, "is_staff", False):
+        if (
+            getattr(user, "is_staff", False)
+            or getattr(user, "is_superuser", False)
+            or getattr(user, "account_type", "") == "admin"
+        ):
             return qs
 
         # usuários comuns só veem (e editam) as próprias respostas
-        return qs.filter(answered_by=user)
+        return qs.filter(
+            Q(labeling__memberships__user=user) |
+            Q(answered_by=user)
+        )
 
     def create(self, request, *args, **kwargs):
         user = request.user
