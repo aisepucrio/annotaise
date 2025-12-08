@@ -25,7 +25,6 @@ import {
   deleteLabelingMembership,
   type LabelingMembershipDashboard,
   type LabelingMembershipRole,
-  type LabelingStatus,
   deleteLabeling,
 } from "@/lib/services/labeling_service";
 import { fetchLabelingAnswers, type AnswerResponse } from "@/lib/services/answer_service";
@@ -89,8 +88,8 @@ export default function LabelingFormPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingLabeling, setIsLoadingLabeling] = useState(true);
   const [projectName, setProjectName] = useState<string>("");
+  const [projectStatus, setProjectStatus] = useState<string | null>(null);
   const [projectId, setProjectId] = useState<number | null>(null);
-  const [status, setStatus] = useState<LabelingStatus | undefined>(undefined);
   const [startDateInfo, setStartDateInfo] = useState<string | null>(null);
   const [finalDateInfo, setFinalDateInfo] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"form" | "assign" | "answers">("form");
@@ -132,7 +131,6 @@ export default function LabelingFormPage() {
 
       setLabelingTitle(labeling.title);
       setProjectId(labeling.project ?? null);
-      setStatus(labeling.status);
       setStartDateInfo(labeling.start_date ?? null);
       setFinalDateInfo(labeling.final_date ?? null);
 
@@ -147,8 +145,10 @@ export default function LabelingFormPage() {
         try {
           const project = await fetchProject(labeling.project);
           setProjectName(project.name);
+          setProjectStatus(project.status ?? null);
         } catch {
           setProjectName("");
+          setProjectStatus(null);
         }
       }
     } catch {
@@ -280,6 +280,17 @@ export default function LabelingFormPage() {
     if (!dateStr) return "--/--/----";
     return new Date(dateStr).toLocaleDateString("pt-BR");
   }
+
+  const projectStatusLabel = useMemo(() => {
+    if (!projectStatus) return null;
+    const map: Record<string, string> = {
+      planning: "PLANEJAMENTO",
+      active: "ATIVO",
+      completed: "CONCLUIDO",
+      cancelled: "CANCELADO",
+    };
+    return map[projectStatus] ?? projectStatus.toUpperCase();
+  }, [projectStatus]);
 
   const availableUsers = useMemo(() => {
     const currentEmails = new Set(memberships.map((m) => m.email));
@@ -436,7 +447,7 @@ export default function LabelingFormPage() {
   return (
     <SidebarLayout>
       {/* Cabeçalho */}
-      <div className="bg-blue-900 text-white px-6 py-4 rounded-t-xl shadow-md">
+      <div className="bg-blue-900 text-white px-6 py-3 rounded-t-xl shadow-md">
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-3">
             <button
@@ -471,9 +482,9 @@ export default function LabelingFormPage() {
                   <Calendar size={14} />
                   {`${formatDate(startDateInfo)} → ${formatDate(finalDateInfo)}`}
                 </span>
-                {status ? (
+                {projectStatusLabel ? (
                   <span className="px-2 py-1 rounded-md bg-white/20 text-white text-[11px] font-semibold uppercase tracking-wide">
-                    {status}
+                    {projectStatusLabel}
                   </span>
                 ) : null}
               </div>
@@ -505,7 +516,7 @@ export default function LabelingFormPage() {
         <div className="mt-4 h-0.5 bg-white/80 rounded-full" />
 
         {/* Tabs */}
-        <div className="flex gap-6 mt-3 text-sm">
+        <div className="flex gap-6 mt-3 text-sm justify-center">
           {[
             { key: "form", label: "Formulário" },
             { key: "assign", label: "Atribuir Usuários" },
