@@ -1,6 +1,10 @@
+"use client";
+
 import { NotebookPen } from "lucide-react";
+import { useRouter } from "next/navigation";
 import StatPill from "@/components/stat_pill";
 import Button from "@/components/button";
+import { ArrowUpRight } from "lucide-react";
 
 type ProjectContainerProps = {
   title: string;
@@ -20,7 +24,15 @@ export default function ProjectContainer({
   labelings_late,
   onManage,
   canManage = true,
+
 }: ProjectContainerProps) {
+  const router = useRouter();
+
+  const handle = () => {
+    const params = new URLSearchParams({ project: title });
+    router.push(`/labelings/manage?${params.toString()}`);
+  };
+
   return (
     <>
       {/* título */}
@@ -30,6 +42,12 @@ export default function ProjectContainer({
         } font-semibold leading-tight pr-10`}
       >
         {title}
+        <ArrowUpRight
+          size={22}
+          color="black"
+          className="inline ml-1 mb-1 text-gray-400 cursor-pointer"
+          onClick={handle}
+        />
       </h3>
 
       {/* linha divisória */}
@@ -102,5 +120,3 @@ function StatusBadge({ type, text }: { type: "ok" | "warning"; text: string }) {
     </span>
   );
 }
-
-

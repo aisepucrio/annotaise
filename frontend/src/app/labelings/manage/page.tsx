@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PageHeader from "@/components/page_header";
 import FilterBar from "@/components/filter_bar";
 import LabelingContainer from "./manage_labeling_container";
@@ -17,7 +17,7 @@ import {
 } from "@/lib/services/labeling_service";
 import useCurrent from "@/hooks/current_user_hook";
 import SidebarLayout from "@/components/side-bar/sidebar_layout";
-import { useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 
 type UploadPayload = {
   file: File;
@@ -34,9 +34,19 @@ export default function LabelingsPage() {
   const isAdmin = Boolean(
     currentUser?.is_staff || currentUser?.account_type === "admin"
   );
+  const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    const projectQuery = searchParams.get("project");
+    if (projectQuery) {
+      setSearchTerm(projectQuery);
+      setDebouncedSearch(projectQuery);
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     const handle = setTimeout(() => setDebouncedSearch(searchTerm), 300);
     return () => clearTimeout(handle);

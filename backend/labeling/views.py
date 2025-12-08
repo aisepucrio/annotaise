@@ -116,6 +116,8 @@ class LabelingViewSet(viewsets.ModelViewSet):
 
     @action(methods=['get'], detail=False, url_path='dashboard')
     def dashboard(self, request):
+        '''esse é o dashboard normal, que mostra os labelings dos projetos que o usuario participa em respostas. tirei os labelings que ja terminaram
+        '''
         today = datetime.now().date()
         search = request.query_params.get("search")
         output = []
@@ -128,7 +130,7 @@ class LabelingViewSet(viewsets.ModelViewSet):
                     'items',
                     filter=Q(items__status='finished'),
                     distinct=True),
-            )
+            ).filter(items__status__in=['pending','in_progress'])
         )
         if search:
             qs = qs.filter(

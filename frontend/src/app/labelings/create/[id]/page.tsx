@@ -298,7 +298,7 @@ export default function LabelingFormPage() {
       const payload = { sections: mapSectionsToDTO(sections) };
       console.log(payload);
       await saveLabelingStructure(labelingId, payload);
-      router.push("/labelings");
+      router.push("/labelings/manage/");
     } catch (error) {
       let message = "Não foi possível salvar a estrutura da rotulação.";
       if (axios.isAxiosError(error)) {

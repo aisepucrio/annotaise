@@ -28,7 +28,7 @@ export default function SectionCard({ section, payload, answers, onChange }: Sec
       <header className="flex items-center justify-between bg-blue-900 px-4 py-3 text-white">
         <div>
           <p className="text-[11px] uppercase tracking-wide text-blue-100">Seção {section.order ?? ""}</p>
-          <div className="prose prose-sm max-w-none">
+          <div className="prose prose-sm max-w-none text-white">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{sectionTitle}</ReactMarkdown>
           </div>
         </div>
