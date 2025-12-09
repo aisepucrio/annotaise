@@ -38,6 +38,7 @@ import Button from "@/components/button";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { exportLabelingAnswersCsv } from "@/lib/services/labeling_service";
+import { useRef } from "react";
 import {
   DndContext,
   PointerSensor,
@@ -53,6 +54,7 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import ActionsSidebar from "./actions_sidebar";
 
 const createContextElement = (order: number): ContextElement => ({
   id: crypto.randomUUID(),
@@ -128,6 +130,100 @@ export default function LabelingFormPage() {
   const [selectedResponder, setSelectedResponder] = useState<"all" | number>("all");
   const [inspectAnswer, setInspectAnswer] = useState<AnswerResponse | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [actionsAnchor, setActionsAnchor] = useState<{
+    sectionId: string;
+    element: HTMLElement;
+    x: number;
+    y: number;
+  } | null>(null);
+  const [actionsClosing, setActionsClosing] = useState(false);
+  const toolbarRef = useRef<HTMLDivElement | null>(null);
+
+  const computeAnchorPosition = useCallback((element: HTMLElement) => {
+    const rect = element.getBoundingClientRect();
+    const offset = 12;
+    return {
+      x: rect.right + offset + window.scrollX,
+      y: rect.top + rect.height / 2 + window.scrollY,
+    };
+  }, []);
+
+  const focusActionsAt = useCallback(
+    (sectionId: string, element: HTMLElement) => {
+      if (typeof window === "undefined") return;
+      const { x, y } = computeAnchorPosition(element);
+      setActionsClosing(false);
+      setActionsAnchor({
+        sectionId,
+        element,
+        x,
+        y,
+      });
+    },
+    [computeAnchorPosition]
+  );
+
+  const hideActionsToolbar = useCallback(() => {
+    if (!actionsAnchor) return;
+    setActionsClosing(true);
+    setTimeout(() => {
+      setActionsAnchor(null);
+      setActionsClosing(false);
+    }, 150);
+  }, [actionsAnchor]);
+
+  useEffect(() => {
+    if (activeTab !== "form") {
+      hideActionsToolbar();
+    }
+  }, [activeTab, hideActionsToolbar]);
+
+  useEffect(() => {
+    if (!actionsAnchor) return;
+
+    const handleReposition = () => {
+      setActionsAnchor((prev) => {
+        if (!prev) return null;
+        if (!document.body.contains(prev.element)) {
+          return null;
+        }
+        const { x, y } = computeAnchorPosition(prev.element);
+        if (prev.x === x && prev.y === y) return prev;
+        return { ...prev, x, y };
+      });
+    };
+
+    window.addEventListener("scroll", handleReposition, true);
+    window.addEventListener("resize", handleReposition);
+    return () => {
+      window.removeEventListener("scroll", handleReposition, true);
+      window.removeEventListener("resize", handleReposition);
+    };
+  }, [actionsAnchor, computeAnchorPosition]);
+
+  useEffect(() => {
+    if (!actionsAnchor) return;
+    const handleOutside = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node | null;
+      if (!target) return;
+      if (
+        target instanceof Element &&
+        target.closest('[data-actions-anchor="true"]')
+      ) {
+        return;
+      }
+      if (toolbarRef.current && toolbarRef.current.contains(target)) return;
+      if (actionsAnchor.element.contains(target)) return;
+      hideActionsToolbar();
+    };
+
+    document.addEventListener("mousedown", handleOutside);
+    document.addEventListener("touchstart", handleOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleOutside);
+      document.removeEventListener("touchstart", handleOutside);
+    };
+  }, [actionsAnchor, hideActionsToolbar]);
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 6 },
@@ -631,18 +727,43 @@ export default function LabelingFormPage() {
                         onChangeTitle={(t) => updateSectionTitle(section.id, t)}
                         onRemoveSection={() => {
                           setSections((prev) => prev.filter((s) => s.id !== section.id));
+                          setActionsAnchor((prev) =>
+                            prev?.sectionId === section.id ? null : prev
+                          );
                         }}
                         onUpdateSection={(updated) => {
                           setSections((prev) =>
                             prev.map((s) => (s.id === section.id ? updated : s))
                           );
                         }}
+                        onFocusElement={(sectionId, el) => focusActionsAt(sectionId, el)}
                       />
                     </SortableSection>
                   ))}
                 </div>
               </SortableContext>
             </DndContext>
+            <ActionsSidebar
+              anchor={
+                actionsAnchor
+                  ? {
+                      x: actionsAnchor.x,
+                      y: actionsAnchor.y,
+                    }
+                  : null
+              }
+              toolbarRef={toolbarRef}
+              closing={actionsClosing}
+              onAddContext={() => {
+                if (!actionsAnchor) return;
+                addContext(actionsAnchor.sectionId);
+              }}
+              onAddQuestion={() => {
+                if (!actionsAnchor) return;
+                addQuestion(actionsAnchor.sectionId);
+              }}
+              onAddSection={addSection}
+            />
           </>
         ) : activeTab === "assign" ? (
           <div className="max-w-4xl mx-auto mt-2 space-y-4">

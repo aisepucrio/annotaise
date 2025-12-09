@@ -15,9 +15,10 @@ type QuestionBlockProps = {
   data: QuestionElement;
   onUpdate: (patch: Partial<QuestionElement>) => void;
   onRemove: () => void;
+  onActivate?: (el: HTMLElement) => void;
 };
 
-export default function QuestionBlock({ data, onUpdate, onRemove }: QuestionBlockProps) {
+export default function QuestionBlock({ data, onUpdate, onRemove, onActivate }: QuestionBlockProps) {
   const handleTypeChange = (e: ChangeEvent<HTMLSelectElement>) => {
     const newType = e.target.value as QuestionType;
     onUpdate({
@@ -52,7 +53,11 @@ export default function QuestionBlock({ data, onUpdate, onRemove }: QuestionBloc
       : undefined;
 
   return (
-    <div className="relative mb-4 rounded-tl-xl rounded-br-xl border-l-4 border-t-4 border-blue-800 p-4 shadow-xl">
+    <div
+      className="relative mb-4 rounded-tl-xl rounded-br-xl border-l-4 border-t-4 border-blue-800 p-4 shadow-xl"
+      data-actions-anchor="true"
+      onClick={(e) => onActivate?.(e.currentTarget)}
+    >
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-blue-900">Pergunta</h3>
         <button

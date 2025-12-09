@@ -7,9 +7,16 @@ type ContextBlockProps = {
   columns?: string[];
   onUpdate: (patch: Partial<ContextElement>) => void;
   onRemove: () => void;
+  onActivate?: (el: HTMLElement) => void;
 };
 
-export default function ContextBlock({ data, columns = [], onUpdate, onRemove }: ContextBlockProps) {
+export default function ContextBlock({
+  data,
+  columns = [],
+  onUpdate,
+  onRemove,
+  onActivate,
+}: ContextBlockProps) {
   const handleColumnChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     onUpdate({ column: e.target.value });
   };
@@ -28,7 +35,11 @@ export default function ContextBlock({ data, columns = [], onUpdate, onRemove }:
   */
 
   return (
-    <div className="border-blue-800 border-l-4 border-t-4 rounded-tl-xl rounded-br-xl p-4 mb-4 relative shadow-xl">
+    <div
+      className="border-blue-800 border-l-4 border-t-4 rounded-tl-xl rounded-br-xl p-4 mb-4 relative shadow-xl"
+      data-actions-anchor="true"
+      onClick={(e) => onActivate?.(e.currentTarget)}
+    >
       <div className="flex justify-between items-center mb-3">
         <h3 className="text-blue-900 font-semibold text-sm">Contexto</h3>
         <button

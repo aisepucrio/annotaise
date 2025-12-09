@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useMemo } from "react";
-import { PlusCircle, PlusSquare, CircleQuestionMark, Trash2 } from "lucide-react";
+import { useMemo } from "react";
+import { Trash2 } from "lucide-react";
 import QuestionBlock from "./question_block";
 import ContextBlock from "./context_block";
 import { SectionData, SectionElement } from "./labeling_types";
@@ -17,6 +17,7 @@ type Props = {
   onChangeTitle: (title: string) => void;
   onRemoveSection?: () => void;
   onUpdateSection: (updated: SectionData) => void;
+  onFocusElement?: (sectionId: string, element: HTMLElement) => void;
 };
 
 export default function SectionForm({
@@ -30,6 +31,7 @@ export default function SectionForm({
   onChangeTitle,
   onRemoveSection,
   onUpdateSection,
+  onFocusElement,
 }: Props) {
   const humanIndex = index + 1;
 
@@ -60,12 +62,29 @@ export default function SectionForm({
     onUpdateSection({ ...current, elements: filteredElements });
   };
 
+  const handleElementFocus = (element: HTMLElement) => {
+    if (!onFocusElement) return;
+    onFocusElement(safeSection().id, element);
+  };
+
   return (
     <div className="relative border border-blue-800 rounded-xl p-5 ">
-      <div className="inline-flex -mt-9 mb-3 ml-2">
-        <span className="px-3 py-1 bg-blue-900 text-white text-xs rounded-t-md rounded-br-md shadow">
-          Seção {humanIndex} de {total}
-        </span>
+      <div className="flex items-start justify-between">
+        <div className="inline-flex -mt-9 mb-3 ml-2">
+          <span className="mt-8 px-3 py-1 bg-blue-900 text-white text-xs rounded-t-md rounded-br-md shadow">
+            Seção {humanIndex} de {total}
+          </span>
+        </div>
+        {onRemoveSection ? (
+          <button
+            type="button"
+            onClick={onRemoveSection}
+            title="Apagar Seção"
+            className="p-2 text-red-700 hover:text-red-800 hover:bg-red-50 rounded-md cursor-pointer"
+          >
+            <Trash2 size={18} />
+          </button>
+        ) : null}
       </div>
 
       <div className="flex gap-5 pb-5">
@@ -90,6 +109,7 @@ export default function SectionForm({
               columns={columns}
               onUpdate={(patch) => handleUpdateElement(element.id, patch)}
               onRemove={() => handleRemoveElement(element.id)}
+              onActivate={handleElementFocus}
             />
           ) : (
             <QuestionBlock
@@ -97,6 +117,7 @@ export default function SectionForm({
               data={element}
               onUpdate={(patch) => handleUpdateElement(element.id, patch)}
               onRemove={() => handleRemoveElement(element.id)}
+              onActivate={handleElementFocus}
             />
           )
         )}

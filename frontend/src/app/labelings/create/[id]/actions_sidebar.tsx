@@ -1,47 +1,81 @@
-import { PlusCircle, PlusSquare, Trash2, CircleQuestionMark } from "lucide-react";
+"use client";
 
-export default function ActionsSidebar(){
-    return( 
-      <div className="absolute top-0 right-0 p-6 items-start z-10">
-        <div className="flex gap-2 ">
+import { createPortal } from "react-dom";
+import { PlusCircle, PlusSquare, CircleQuestionMark } from "lucide-react";
+import { useEffect, useState } from "react";
 
-          <button
-            type="button"
-            onClick={onRemoveSection}
-            title="Apagar Seção"
-            className="w-10 h-10 bg-red-700 hover:bg-red-800 text-white rounded-md shadow flex items-center justify-center cursor-pointer"
-          >
-            <Trash2 size={20} />
-          </button>
-          
-          <button
-            type="button"
-            onClick={onAddQuestion}
-            title="Adicionar pergunta"
-            className="w-10 h-10 bg-blue-900 hover:bg-blue-800 text-white rounded-md shadow flex items-center justify-center cursor-pointer"
-          >
-            <PlusCircle size={20} />
-          </button>
-          <button
-            type="button"
-            onClick={onAddContext}
-            title="Adicionar contexto"
-            className="w-10 h-10 bg-blue-900 hover:bg-blue-800 text-white rounded-md shadow flex items-center justify-center cursor-pointer"
-          >
-            <CircleQuestionMark size={20} />
-          </button>
-          <button
-            type="button"
-            onClick={onAddSection}
-            title="Adicionar seção"
-            className="w-10 h-10 bg-blue-900 hover:bg-blue-800 text-white rounded-md shadow flex items-center justify-center cursor-pointer"
-          >
-            <PlusSquare size={20} />
-          </button>
-        </div>
+type ActionsSidebarProps = {
+  anchor:
+    | {
+        x: number;
+        y: number;
+      }
+    | null;
+  toolbarRef: React.RefObject<HTMLDivElement>;
+  closing?: boolean;
+  onAddQuestion: () => void;
+  onAddContext: () => void;
+  onAddSection: () => void;
+};
+
+export default function ActionsSidebar({
+  anchor,
+  toolbarRef,
+  closing = false,
+  onAddContext,
+  onAddQuestion,
+  onAddSection,
+}: ActionsSidebarProps) {
+  if (!anchor || typeof document === "undefined") return null;
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const animatedState =
+    mounted && !closing ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2";
+
+  return createPortal(
+    <div
+      className="absolute z-50"
+      style={{
+        left: anchor.x,
+        top: anchor.y,
+        transform: "translateY(-50%)",
+        pointerEvents: "auto",
+      }}
+    >
+      <div
+        ref={toolbarRef}
+        className={`flex flex-col gap-2 rounded-lg bg-white p-3 shadow-2xl border border-gray-200 transition-all duration-150 ${animatedState}`}
+      >
+        <button
+          type="button"
+          onClick={onAddQuestion}
+          title="Adicionar pergunta"
+          className="w-10 h-10 bg-blue-900 hover:bg-blue-800 text-white rounded-md shadow flex items-center justify-center cursor-pointer"
+        >
+          <PlusCircle size={20} />
+        </button>
+        <button
+          type="button"
+          onClick={onAddContext}
+          title="Adicionar contexto"
+          className="w-10 h-10 bg-blue-900 hover:bg-blue-800 text-white rounded-md shadow flex items-center justify-center cursor-pointer"
+        >
+          <CircleQuestionMark size={20} />
+        </button>
+        <button
+          type="button"
+          onClick={onAddSection}
+          title="Adicionar seção"
+          className="w-10 h-10 bg-blue-900 hover:bg-blue-800 text-white rounded-md shadow flex items-center justify-center cursor-pointer"
+        >
+          <PlusSquare size={20} />
+        </button>
       </div>
-
-    
-    );
-
+    </div>,
+    document.body
+  );
 }
