@@ -20,6 +20,7 @@ import {
 import { fetchUsers } from "@/lib/services/user_service";
 import useCurrent from "@/hooks/current_user_hook";
 import SidebarLayout from "@/components/side-bar/sidebar_layout";
+import { toast } from "sonner";
 
 type Params = {
   projectId: string;
@@ -77,17 +78,38 @@ export default function ProjectDetailsPage() {
     },
   });
 
-  const [projectMessage, setProjectMessage] = useState<string | null>(null);
-  const [projectErrorMessage, setProjectErrorMessage] = useState<string | null>(
-    null
-  );
-  const [membershipErrorMessage, setMembershipErrorMessage] = useState<
-    string | null
-  >(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [newMemberId, setNewMemberId] = useState<string>("");
   const [newMemberRole, setNewMemberRole] =
     useState<ProjectMembershipPayload["role"]>("viewer");
+
+  useEffect(() => {
+    if (projectError) {
+      const message =
+        projectError instanceof Error
+          ? projectError.message
+          : "Erro ao carregar o projeto.";
+      toast.error(message);
+    }
+  }, [projectError]);
+
+  useEffect(() => {
+    if (membershipsError || usersError) {
+      const message =
+        membershipsError instanceof Error
+          ? membershipsError.message
+          : usersError instanceof Error
+          ? usersError.message
+          : "Erro ao carregar os dados de membros.";
+      toast.error(message);
+    }
+  }, [membershipsError, usersError]);
+
+  useEffect(() => {
+    if (!userLoading && !canSeeProjects) {
+      toast.error("Seu perfil não possui permissão para visualizar este projeto.");
+    }
+  }, [canSeeProjects, userLoading]);
 
   useEffect(() => {
     if (project) {
@@ -111,27 +133,25 @@ export default function ProjectDetailsPage() {
 
   const handleSaveProject = handleSubmit(async (values) => {
     if (!isAdmin) {
-      setProjectErrorMessage("Apenas administradores podem editar projetos.");
+      toast.error("Apenas administradores podem editar projetos.");
       return;
     }
     if (!projectId) return;
     try {
-      setProjectMessage(null);
-      setProjectErrorMessage(null);
       await updateProject(projectId, values);
       await mutateProject();
-      setProjectMessage("Projeto atualizado com sucesso.");
+      toast.success("Projeto atualizado com sucesso.");
     } catch (error) {
       const message =
         (error as { response?: { data?: { detail?: string } } })?.response?.data
           ?.detail ?? "Não foi possível salvar as alterações.";
-      setProjectErrorMessage(message);
+      toast.error(message);
     }
   });
 
   const handleDeleteProject = async () => {
     if (!isAdmin) {
-      setProjectErrorMessage("Apenas administradores podem deletar projetos.");
+      toast.error("Apenas administradores podem deletar projetos.");
       return;
     }
     if (!projectId) return;
@@ -148,7 +168,7 @@ export default function ProjectDetailsPage() {
       const message =
         (error as { response?: { data?: { detail?: string } } })?.response?.data
           ?.detail ?? "Não foi possível deletar o projeto.";
-      setProjectErrorMessage(message);
+      toast.error(message);
     } finally {
       setDeleteLoading(false);
     }
@@ -157,16 +177,13 @@ export default function ProjectDetailsPage() {
   const handleAddMember = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!isAdmin) {
-      setMembershipErrorMessage(
-        "Apenas administradores podem adicionar membros."
-      );
+      toast.error("Apenas administradores podem adicionar membros.");
       return;
     }
     if (!projectId || !newMemberId) {
       return;
     }
     try {
-      setMembershipErrorMessage(null);
       await createProjectMembership({
         project: projectId,
         user: Number(newMemberId),
@@ -179,7 +196,7 @@ export default function ProjectDetailsPage() {
       const message =
         (error as { response?: { data?: { detail?: string } } })?.response?.data
           ?.detail ?? "Não foi possível adicionar o membro.";
-      setMembershipErrorMessage(message);
+      toast.error(message);
     }
   };
 
@@ -188,42 +205,36 @@ export default function ProjectDetailsPage() {
     nextRole: ProjectMembershipPayload["role"]
   ) => {
     if (!isAdmin) {
-      setMembershipErrorMessage(
-        "Apenas administradores podem alterar permissões."
-      );
+      toast.error("Apenas administradores podem alterar permissões.");
       return;
     }
     if (membership.role === nextRole) return;
     try {
-      setMembershipErrorMessage(null);
       await updateProjectMembership(membership.id, { role: nextRole });
       await mutateMemberships();
     } catch (error) {
       const message =
         (error as { response?: { data?: { detail?: string } } })?.response?.data
           ?.detail ?? "Não foi possível atualizar o membro.";
-      setMembershipErrorMessage(message);
+      toast.error(message);
     }
   };
 
   const handleRemoveMember = async (membership: ProjectMembership) => {
     if (!isAdmin) {
-      setMembershipErrorMessage(
-        "Apenas administradores podem remover membros."
-      );
+      toast.error("Apenas administradores podem remover membros.");
       return;
     }
     const confirmed = window.confirm("Remover este membro do projeto?");
     if (!confirmed) return;
     try {
-      setMembershipErrorMessage(null);
       await deleteProjectMembership(membership.id);
       await mutateMemberships();
     } catch (error) {
       const message =
         (error as { response?: { data?: { detail?: string } } })?.response?.data
           ?.detail ?? "Não foi possível remover o membro.";
-      setMembershipErrorMessage(message);
+      toast.error(message);
     }
   };
 
@@ -248,7 +259,7 @@ export default function ProjectDetailsPage() {
           page_title="Projeto"
           description="Apenas editores ou administradores podem acessar detalhes de projetos."
         />
-        <p className="mt-6 ml-5 text-sm text-red-600">
+        <p className="mt-6 ml-5 text-sm text-gray-600">
           Seu perfil não possui permissão para visualizar este projeto.
         </p>
       </SidebarLayout>
@@ -271,18 +282,6 @@ export default function ProjectDetailsPage() {
             Atualize o nome, descrição ou status do projeto.
           </p>
         </header>
-
-        {projectError || projectErrorMessage ? (
-          <p className="mb-4 text-sm text-red-600">
-            {projectErrorMessage ??
-              (projectError instanceof Error
-                ? projectError.message
-                : "Erro ao carregar o projeto.")}
-          </p>
-        ) : null}
-        {projectMessage ? (
-          <p className="mb-4 text-sm text-green-600">{projectMessage}</p>
-        ) : null}
 
         {loadingProject ? (
           <p className="text-sm text-gray-500">Carregando projeto...</p>
@@ -371,17 +370,6 @@ export default function ProjectDetailsPage() {
             </p>
           </div>
         </header>
-
-        {membershipsError || usersError || membershipErrorMessage ? (
-          <p className="mb-4 text-sm text-red-600">
-            {membershipErrorMessage ??
-              (membershipsError instanceof Error
-                ? membershipsError.message
-                : usersError instanceof Error
-                ? usersError.message
-                : "Erro ao carregar os dados de membros.")}
-          </p>
-        ) : null}
 
         {loadingMemberships || loadingUsers ? (
           <p className="text-sm text-gray-500">Carregando membros...</p>

@@ -55,6 +55,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import ActionsSidebar from "./actions_sidebar";
+import { toast } from "sonner";
 
 const createContextElement = (order: number): ContextElement => ({
   id: crypto.randomUUID(),
@@ -224,6 +225,30 @@ export default function LabelingFormPage() {
       document.removeEventListener("touchstart", handleOutside);
     };
   }, [actionsAnchor, hideActionsToolbar]);
+
+  useEffect(() => {
+    if (loadError) {
+      toast.error(loadError);
+    }
+  }, [loadError]);
+
+  useEffect(() => {
+    if (deleteError) {
+      toast.error(deleteError);
+    }
+  }, [deleteError]);
+
+  useEffect(() => {
+    if (membershipError) {
+      toast.error(membershipError);
+    }
+  }, [membershipError]);
+
+  useEffect(() => {
+    if (answersError) {
+      toast.error(answersError);
+    }
+  }, [answersError]);
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 6 },
@@ -277,11 +302,6 @@ export default function LabelingFormPage() {
   useEffect(() => {
     void loadLabelingAndStructure();
   }, [loadLabelingAndStructure]);
-
-  // inicia com 1 seção padrão (1 contexto + 1 pergunta)
-  useEffect(() => {
-    setSections([createDefaultSection()]);
-  }, []);
 
   useEffect(() => {
     if (Number.isNaN(labelingId)) return;
@@ -511,7 +531,6 @@ export default function LabelingFormPage() {
     setLoadError(null);
     try {
       const payload = { sections: mapSectionsToDTO(sections) };
-      console.log(payload);
       await saveLabelingStructure(labelingId, payload);
       router.push("/labelings/manage/");
     } catch (error) {
@@ -675,9 +694,6 @@ export default function LabelingFormPage() {
 
       {/* Conteúdo */}
       <div className="bg-white border-x border-b border-blue-200 rounded-b-xl shadow-lg p-4">
-        {loadError && <div className="mb-4 text-sm text-red-600">{loadError}</div>}
-        {deleteError && <div className="mb-4 text-sm text-red-600">{deleteError}</div>}
-
         {activeTab === "form" ? (
           <>
             {/* Colunas do CSV */}
@@ -767,9 +783,6 @@ export default function LabelingFormPage() {
           </>
         ) : activeTab === "assign" ? (
           <div className="max-w-4xl mx-auto mt-2 space-y-4">
-            {membershipError ? (
-              <div className="text-sm text-red-600">{membershipError}</div>
-            ) : null}
             {membershipLoading ? (
               <p className="text-sm text-gray-500">Carregando membros...</p>
             ) : memberships.length === 0 ? (
@@ -863,7 +876,6 @@ export default function LabelingFormPage() {
           </div>
         ) : (
           <div className="max-w-6xl mx-auto mt-2 space-y-4">
-            {answersError ? <div className="text-sm text-red-600">{answersError}</div> : null}
             <div className="flex flex-wrap items-end gap-3">
               <div className="flex flex-col">
                 <label className="text-sm font-semibold text-gray-800">Usuário que rotulou</label>

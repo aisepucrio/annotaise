@@ -18,6 +18,7 @@ import {
 } from "@/lib/services/project_service";
 import useCurrent from "@/hooks/current_user_hook";
 import SidebarLayout from "@/components/side-bar/sidebar_layout";
+import { toast } from "sonner";
 
 export default function Projects() {
   const router = useRouter();
@@ -57,11 +58,26 @@ export default function Projects() {
 
   const handleCreateProject = async (payload: ProjectPayload) => {
     if (!isAdmin) {
-      throw new Error("Apenas administradores podem criar projetos.");
+      toast.error("Apenas administradores podem criar projetos.");
+      return;
     }
     await createProject(payload);
     await mutate();
   };
+
+  useEffect(() => {
+    if (loadError) {
+      toast.error(loadError);
+    }
+  }, [loadError]);
+
+  useEffect(() => {
+    if (!userLoading && !canSeeProjects) {
+      toast.error(
+        "Seu perfil não possui permissão para visualizar projetos."
+      );
+    }
+  }, [canSeeProjects, userLoading]);
 
   if (userLoading) {
     return (
@@ -80,7 +96,7 @@ export default function Projects() {
           page_title="Projetos"
           description="Apenas editores ou administradores podem acessar esta página."
         />
-        <p className="mt-6 ml-5 text-sm text-red-600">
+        <p className="mt-6 ml-5 text-sm text-gray-600">
           Seu perfil não possui permissão para visualizar projetos.
         </p>
       </SidebarLayout>
@@ -114,8 +130,6 @@ export default function Projects() {
         <div className="ml-5 mr-5 mt-5">
           {isLoading ? (
             <p className="text-sm text-gray-500">Carregando projetos...</p>
-          ) : loadError ? (
-            <p className="text-sm text-red-600">{loadError}</p>
           ) : projectList.length === 0 ? (
             <p className="text-sm text-gray-500">Nenhum projeto encontrado.</p>
           ) : (

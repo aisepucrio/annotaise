@@ -6,6 +6,7 @@ import type {
   ProjectPayload,
   ProjectStatus,
 } from "@/lib/services/project_service";
+import { toast } from "sonner";
 
 type NewProjectModalProps = {
   open: boolean;
@@ -29,7 +30,6 @@ export default function NewProjectModal({
     register,
     handleSubmit,
     reset,
-    formState: { errors },
   } = useForm<ProjectPayload>({
     defaultValues: {
       name: "",
@@ -38,7 +38,6 @@ export default function NewProjectModal({
     },
   });
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) {
@@ -47,7 +46,6 @@ export default function NewProjectModal({
         description: "",
         status: "planning",
       });
-      setError(null);
       setSubmitting(false);
     }
   }, [open, reset]);
@@ -59,7 +57,6 @@ export default function NewProjectModal({
   const submitForm = handleSubmit(async (values) => {
     try {
       setSubmitting(true);
-      setError(null);
       await onSubmit(values);
       reset({
         name: "",
@@ -67,14 +64,21 @@ export default function NewProjectModal({
         status: "planning",
       });
       onClose();
+      toast.success("Projeto criado com sucesso.");
     } catch (err) {
       const message =
         (err as { response?: { data?: { detail?: string } } })?.response?.data
           ?.detail ?? "Não foi possível salvar o projeto.";
-      setError(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
+  }, (formErrors) => {
+    const firstError = Object.values(formErrors)[0];
+    const message =
+      (firstError as { message?: string } | undefined)?.message ??
+      "Preencha os campos obrigatórios.";
+    toast.error(message);
   });
 
   return (
@@ -91,8 +95,6 @@ export default function NewProjectModal({
           </p>
         </header>
 
-        {error ? <p className="mb-4 text-sm text-red-600">{error}</p> : null}
-
         <form onSubmit={submitForm} className="space-y-4">
           <div className="space-y-1">
             <label
@@ -101,19 +103,14 @@ export default function NewProjectModal({
             >
               Nome
             </label>
-            <input
-              id="project-name"
-              type="text"
-              {...register("name", { required: "O nome é obrigatório." })}
-              className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200"
-              placeholder="Nome do projeto"
-            />
-            {errors.name ? (
-              <span className="text-xs text-red-600">
-                {errors.name.message}
-              </span>
-            ) : null}
-          </div>
+          <input
+            id="project-name"
+            type="text"
+            {...register("name", { required: "O nome é obrigatório." })}
+            className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200"
+            placeholder="Nome do projeto"
+          />
+        </div>
 
           <div className="space-y-1">
             <label

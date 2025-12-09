@@ -18,6 +18,7 @@ import {
 } from "./answer_utils";
 import type { AnswerMap } from "./answer_types";
 import SidebarLayout from "@/components/side-bar/sidebar_layout";
+import { toast } from "sonner";
 
 export default function LabelingAnswerPage() {
   const params = useParams<{ id: string }>();
@@ -38,6 +39,18 @@ export default function LabelingAnswerPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
   const [currentSectionIdx, setCurrentSectionIdx] = useState<number>(0);
+
+  useEffect(() => {
+    if (loadError) {
+      toast.error(loadError);
+    }
+  }, [loadError]);
+
+  useEffect(() => {
+    if (submitMessage) {
+      toast.success(submitMessage);
+    }
+  }, [submitMessage]);
 
   const loadItem = useCallback(async () => {
     if (Number.isNaN(labelingId)) {
@@ -215,13 +228,6 @@ export default function LabelingAnswerPage() {
       </header>
 
       <section className="mt-4 rounded-xl border border-blue-200 bg-white p-4 shadow-lg">
-        {loadError ? (
-          <p className="mb-3 text-sm text-red-600">{loadError}</p>
-        ) : null}
-        {submitMessage ? (
-          <p className="mb-3 text-sm text-green-700">{submitMessage}</p>
-        ) : null}
-
         {isLoading ? (
           <p className="text-sm text-gray-600">
             Carregando item e perguntas...

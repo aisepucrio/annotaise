@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { AuthActions } from "@/lib/authClient";
 import { EyeIcon, Mail } from "lucide-react";
+import { toast } from "sonner";
 type FormData = {
   email: string;
   password: string;
@@ -18,18 +19,10 @@ export default function LoginPage() {
     register,
     handleSubmit,
     formState: { errors },
-    setError,
-    clearErrors,
   } = useForm<FormData>();
 
   const router = useRouter();
   const { login, storeToken } = AuthActions();
-
-  const handleFieldFocus = () => {
-    if (errors.root) {
-      clearErrors("root");
-    }
-  };
 
   const onSubmit = async (data: FormData) => {
     setIsLoading(true);
@@ -58,7 +51,7 @@ export default function LoginPage() {
         message = err.message;
       }
 
-      setError("root", { type: "manual", message });
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -75,7 +68,13 @@ export default function LoginPage() {
       />
 
       <form
-        onSubmit={handleSubmit(onSubmit)}
+        onSubmit={handleSubmit(onSubmit, (formErrors) => {
+          const first = Object.values(formErrors)[0];
+          const msg =
+            (first as { message?: string } | undefined)?.message ??
+            "Preencha os campos obrigatórios.";
+          toast.error(msg);
+        })}
         className="mt-15 max-w-sm mx-auto bg-white p-8 rounded-lg shadow-2xl"
       >
         <div className="flex flex-col gap-0 items-center font-montserrat">
@@ -86,12 +85,6 @@ export default function LoginPage() {
             Faca o login para acessar e rotular seus dados
           </span>
         </div>
-
-        {errors.root && (
-          <p className="mt-4 text-sm text-red-600 text-center">
-            {errors.root.message}
-          </p>
-        )}
 
         <div className="mt-4 relative w-80">
           <label className="absolute -top-2 left-3 bg-white px-1 text-xs text-gray-600">
@@ -109,15 +102,10 @@ export default function LoginPage() {
                 message: "Email invalido.",
               },
             })}
-            onFocus={handleFieldFocus}
           />
 
           <Mail className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
         </div>
-        {errors.email && (
-          <p className="text-xs text-red-600 mt-1">{errors.email.message}</p>
-        )}
-
         <div className="mt-4 relative w-80">
           <label className="absolute -top-2 left-3 bg-white px-1 text-xs text-gray-600">
             Senha
@@ -130,15 +118,10 @@ export default function LoginPage() {
             {...register("password", {
               required: "Informe sua senha.",
             })}
-            onFocus={handleFieldFocus}
           />
 
           <EyeIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
         </div>
-        {errors.password && (
-          <p className="text-xs text-red-600 mt-1">{errors.password.message}</p>
-        )}
-
         <div className="flex w-80 justify-end mt-3">
           <a className="text-xs text-blue-600 underline cursor-pointer">
             Esqueceu a senha?

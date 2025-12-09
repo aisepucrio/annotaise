@@ -26,12 +26,21 @@ export const mapSectionsFromDTO = (sections: LabelingStructureSection[]): Sectio
 const mapSectionToDTO = (section: SectionData, sectionIndex: number): SectionDTO => {
   const parsedId = Number(section.id);
   const maybeId = Number.isFinite(parsedId) ? parsedId : undefined;
+
+  const safeElements = Array.isArray(section.elements) ? section.elements : [];
+
   return {
     id: maybeId,
     title: section.title,
     order: section.order ?? sectionIndex,
-    elements: section.elements.map((element, elementIndex) =>
-      mapElementToDTO(element, elementIndex)
+    elements: safeElements.map((element, elementIndex) =>
+      mapElementToDTO(
+        {
+          ...element,
+          order: element.order ?? elementIndex,
+        },
+        elementIndex
+      )
     ),
   };
 };
@@ -46,12 +55,13 @@ const mapElementToDTO = (el: SectionElement, elementIndex: number): ElementDTO =
 const mapQuestionElementToDTO = (q: QuestionElement, fallbackOrder: number): ElementDTO => {
   const parsedId = Number(q.id);
   const maybeId = Number.isFinite(parsedId) ? parsedId : undefined;
+  const questionType = q.question_type ?? "text";
   const base: ElementDTO = {
     id: maybeId,
     order: q.order ?? fallbackOrder,
-    text: q.text,
-    required: q.required,
-    question_type: q.question_type ?? "text",
+    text: q.text ?? "",
+    required: q.required ?? false,
+    question_type: questionType,
   };
 
   if (!q.config) return base;
@@ -63,9 +73,9 @@ const mapQuestionElementToDTO = (q: QuestionElement, fallbackOrder: number): Ele
         question_type: "multiple_choice",
         allow_multiple: q.config.allowMultiple ?? false,
         multiple_choice_items: q.config.choices.map((c, index) => ({
-          text: c.text,
+          text: c.text ?? "",
           value: c.value,
-          order: index,
+          order: index + 1,
         })),
       };
     case "range":
@@ -88,7 +98,7 @@ const mapQuestionElementToDTO = (q: QuestionElement, fallbackOrder: number): Ele
     default:
       return {
         ...base,
-        question_type: "text",
+        question_type: questionType || "text",
       };
   }
 };

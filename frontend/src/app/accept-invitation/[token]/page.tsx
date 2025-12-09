@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import api from "@/lib/fetcher";
 import { isAxiosError } from "axios";
 import { Clock3, EyeIcon, ShieldCheck } from "lucide-react";
+import { toast } from "sonner";
 
 type Invitation = {
   token: string;
@@ -40,8 +41,6 @@ export default function AcceptInvitationPage() {
   const [invitation, setInvitation] = useState<Invitation | null>(null);
   const [loadingInvite, setLoadingInvite] = useState(true);
   const [inviteError, setInviteError] = useState<string | null>(null);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -74,6 +73,7 @@ export default function AcceptInvitationPage() {
   useEffect(() => {
     if (!token) {
       setInviteError("Token do convite ausente ou inválido.");
+      toast.error("Token do convite ausente ou inválido.");
       setLoadingInvite(false);
       return;
     }
@@ -90,22 +90,21 @@ export default function AcceptInvitationPage() {
         }
         setInvitation(null);
         setInviteError(message);
+        toast.error(message);
       })
       .finally(() => setLoadingInvite(false));
   }, [token]);
 
   const onSubmit = async (data: FormData) => {
     if (!token) {
-      setSubmitError("Convite inválido.");
+      toast.error("Convite inválido.");
       return;
     }
 
     setIsSubmitting(true);
-    setSubmitError(null);
-    setSubmitSuccess(null);
     try {
       await api.post(`/invitations/accept/${token}/`, data);
-      setSubmitSuccess(
+      toast.success(
         "Conta criada com sucesso! Use seu email e a senha definida para fazer login."
       );
       setTimeout(() => router.push("/login"), 800);
@@ -119,7 +118,7 @@ export default function AcceptInvitationPage() {
       } else if (err instanceof Error && err.message) {
         message = err.message;
       }
-      setSubmitError(message);
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -144,10 +143,6 @@ export default function AcceptInvitationPage() {
             Revise o convite e cadastre sua nova senha para acessar o sistema.
           </span>
         </div>
-
-        {inviteError && (
-          <p className="mt-4 text-sm text-red-600 text-center">{inviteError}</p>
-        )}
 
         {loadingInvite && !inviteError && (
           <p className="mt-4 text-sm text-gray-600 text-center">
@@ -196,19 +191,15 @@ export default function AcceptInvitationPage() {
         )}
 
         <form
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={handleSubmit(onSubmit, (formErrors) => {
+            const first = Object.values(formErrors)[0];
+            const msg =
+              (first as { message?: string } | undefined)?.message ??
+              "Preencha os campos obrigatórios.";
+            toast.error(msg);
+          })}
           className="mt-6 flex flex-col items-center"
         >
-          {submitError && (
-            <p className="mb-3 text-sm text-red-600 text-center w-80">
-              {submitError}
-            </p>
-          )}
-          {submitSuccess && (
-            <p className="mb-3 text-sm text-green-700 text-center w-80">
-              {submitSuccess}
-            </p>
-          )}
 
           <div className="mt-2 relative w-80">
             <label className="absolute -top-2 left-3 bg-white px-1 text-xs text-gray-600">
@@ -225,12 +216,6 @@ export default function AcceptInvitationPage() {
               })}
             />
           </div>
-          {errors.first_name && (
-            <p className="text-xs text-red-600 mt-1 w-80">
-              {errors.first_name.message}
-            </p>
-          )}
-
           <div className="mt-4 relative w-80">
             <label className="absolute -top-2 left-3 bg-white px-1 text-xs text-gray-600">
               Sobrenome
@@ -246,12 +231,6 @@ export default function AcceptInvitationPage() {
               })}
             />
           </div>
-          {errors.last_name && (
-            <p className="text-xs text-red-600 mt-1 w-80">
-              {errors.last_name.message}
-            </p>
-          )}
-
           <div className="mt-4 relative w-80">
             <label className="absolute -top-2 left-3 bg-white px-1 text-xs text-gray-600">
               Senha
@@ -273,12 +252,6 @@ export default function AcceptInvitationPage() {
 
             <EyeIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
           </div>
-          {errors.password && (
-            <p className="text-xs text-red-600 mt-1 w-80">
-              {errors.password.message}
-            </p>
-          )}
-
           <button
             type="submit"
             disabled={formDisabled}

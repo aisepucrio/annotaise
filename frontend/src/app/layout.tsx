@@ -3,6 +3,7 @@ import "./globals.css";
 import AuthGuard from "@/components/auth-guard";
 import { SidebarProvider } from "@/components/side-bar/sidebar_provider";
 import { Montserrat } from "next/font/google";
+import { Toaster } from "@/components/ui/sonner";
 const montserrat = Montserrat({
   variable: "--font-montserrat",
   subsets: ["latin"],
@@ -26,7 +27,10 @@ export default function RootLayout({
         style={{ fontFamily: "var(--font-montserrat)" }}
       >
         <SidebarProvider>
-          <AuthGuard>{children}</AuthGuard>
+          <AuthGuard>
+            {children}
+            <Toaster />
+          </AuthGuard>
         </SidebarProvider>
       </body>
     </html>

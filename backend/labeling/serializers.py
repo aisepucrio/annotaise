@@ -151,7 +151,8 @@ class LabelingSectionWriteSerializer(serializers.ModelSerializer):
         model = LabelingSection
         fields = ['id', 'title', 'order', 'elements']
         read_only_fields = []
-
+    def validate(self, attrs):
+        return super().validate(attrs)
 
 # ---------- LABELING FORM COMPLETO ----------
 

@@ -19,6 +19,7 @@ import {
 import useCurrent from "@/hooks/current_user_hook";
 import SidebarLayout from "@/components/side-bar/sidebar_layout";
 import { useEffect } from "react";
+import { toast } from "sonner";
 
 type UploadPayload = {
   file: File;
@@ -60,6 +61,11 @@ export default function LabelingsPage() {
       ? "Não foi possível carregar as rotulações."
       : null;
 
+  useEffect(() => {
+    if (loadError) {
+      toast.error(loadError);
+    }
+  }, [loadError]);
 
   return (
     <>
@@ -73,10 +79,6 @@ export default function LabelingsPage() {
           <FilterBar />
           
         </div>
-
-        {loadError && (
-          <div className="ml-5 mr-5 mt-4 text-sm text-red-600">{loadError}</div>
-        )}
 
         <div className="mt-5 ml-5 w-97/100">
           <GridLayout minColumnWidth="420px">

@@ -4,6 +4,7 @@ import { Loader2, Upload, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import useSWR from "swr";
 import { fetchProjects, Project } from "@/lib/services/project_service";
+import { toast } from "sonner";
 
 type UploadCsvModalProps = {
   open: boolean;
@@ -29,7 +30,6 @@ export default function UploadCsvModal({ open, onClose, onConfirm }: UploadCsvMo
   const [startDate, setStartDate] = useState("");
   const [finalDate, setFinalDate] = useState("");
   const [usersPerItem, setUsersPerItem] = useState<string>("1");
-  const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState<Step>("upload");
   const [hasEmptyFields, setHasEmptyFields] = useState(false);
@@ -55,7 +55,6 @@ export default function UploadCsvModal({ open, onClose, onConfirm }: UploadCsvMo
       setStartDate("");
       setFinalDate("");
       setUsersPerItem("1");
-      setError(null);
       setIsSubmitting(false);
       setHasEmptyFields(false);
       setIsAnalyzingFile(false);
@@ -98,7 +97,6 @@ export default function UploadCsvModal({ open, onClose, onConfirm }: UploadCsvMo
   }
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
-    setError(null);
     const file = e.target.files?.[0];
     if (!file) {
       setSelectedFile(null);
@@ -114,38 +112,37 @@ export default function UploadCsvModal({ open, onClose, onConfirm }: UploadCsvMo
       setSelectedFile(null);
       setHasEmptyFields(false);
       const message = err instanceof Error ? err.message : "Arquivo inválido.";
-      setError(message);
+      toast.error(message);
     }
   }
 
   async function handleConfirm() {
     if (!title.trim()) {
-      setError("Informe um título para a rotulação.");
+      toast.error("Informe um título para a rotulação.");
       return;
     }
 
     if (!projectId) {
-      setError("Selecione um projeto.");
+      toast.error("Selecione um projeto.");
       return;
     }
 
     if (!selectedFile) {
-      setError("Selecione um arquivo .csv para importar.");
+      toast.error("Selecione um arquivo .csv para importar.");
       return;
     }
 
     const parsedUsersPerItem = Number(usersPerItem);
     if (!Number.isInteger(parsedUsersPerItem) || parsedUsersPerItem <= 0) {
-      setError("Defina a quantidade de usuários por item com um número inteiro a partir de 1.");
+      toast.error("Defina a quantidade de usuários por item com um número inteiro a partir de 1.");
       return;
     }
 
     if (startDate && finalDate && startDate > finalDate) {
-      setError("A data final deve ser maior ou igual à data inicial.");
+      toast.error("A data final deve ser maior ou igual à data inicial.");
       return;
     }
 
-    setError(null);
     setIsSubmitting(true);
 
     try {
@@ -161,7 +158,7 @@ export default function UploadCsvModal({ open, onClose, onConfirm }: UploadCsvMo
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Não foi possível criar a rotulação.";
-      setError(message);
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -174,10 +171,9 @@ export default function UploadCsvModal({ open, onClose, onConfirm }: UploadCsvMo
 
   function handleContinueFromUpload() {
     if (!selectedFile) {
-      setError("Selecione um arquivo .csv para continuar.");
+      toast.error("Selecione um arquivo .csv para continuar.");
       return;
     }
-    setError(null);
     setStep("details");
   }
 
@@ -193,11 +189,10 @@ export default function UploadCsvModal({ open, onClose, onConfirm }: UploadCsvMo
     try {
       validateFile(file);
       setSelectedFile(file);
-      setError(null);
       void parseHasEmptyFields(file);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Arquivo inválido.";
-      setError(message);
+      toast.error(message);
     }
   }
 
@@ -308,8 +303,6 @@ export default function UploadCsvModal({ open, onClose, onConfirm }: UploadCsvMo
                 </div>
               )}
 
-              {error && <div className="mt-3 text-sm text-red-600 text-center">{error}</div>}
-
               <div className="mt-6 flex justify-between gap-3">
                 <button
                   onClick={onClose}
@@ -407,8 +400,6 @@ export default function UploadCsvModal({ open, onClose, onConfirm }: UploadCsvMo
                   </p>
                 </div>
               </div>
-
-              {error && <div className="mt-3 text-sm text-red-600">{error}</div>}
 
               <div className="mt-6 flex justify-between gap-3">
                 <button

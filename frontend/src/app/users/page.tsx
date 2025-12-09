@@ -20,7 +20,7 @@ import NewUserModal from "./new_user_modal";
 import useCurrent from "@/hooks/current_user_hook";
 import EditUserModal from "./edit_user_modal";
 import SidebarLayout from "@/components/side-bar/sidebar_layout";
-import { Toaster } from "@/components/ui/sonner";
+import { toast } from "sonner";
 
 export default function UsersPage() {
   const currentUser = useCurrent();
@@ -54,6 +54,7 @@ export default function UsersPage() {
     account_type: User["account_type"];
   }) => {
     const { link } = await createInvitation(payload);
+    toast.success("Convite gerado com sucesso.", { description: link });
     return link;
   };
 
@@ -76,6 +77,18 @@ export default function UsersPage() {
       );
     });
   }, [users, searchTerm]);
+
+  useEffect(() => {
+    if (loadError) {
+      toast.error(loadError);
+    }
+  }, [loadError]);
+
+  useEffect(() => {
+    if (!isAdmin && currentUser) {
+      toast.error("Apenas administradores podem acessar a gestão de usuários.");
+    }
+  }, [isAdmin, currentUser]);
 
   return (
     <>
@@ -103,13 +116,11 @@ export default function UsersPage() {
 
         <div className="ml-5 mr-5 mt-5">
           {!isAdmin ? (
-            <p className="text-sm text-red-600">
+            <p className="text-sm text-gray-600">
               Apenas administradores podem acessar a gestão de usuários.
             </p>
           ) : isLoading ? (
             <p className="text-sm text-gray-500">Carregando usuários...</p>
-          ) : loadError ? (
-            <p className="text-sm text-red-600">{loadError}</p>
           ) : filteredUsers.length === 0 ? (
             <p className="text-sm text-gray-500">Nenhum usuário encontrado.</p>
           ) : (
@@ -145,7 +156,6 @@ export default function UsersPage() {
         onClose={() => setEditingUser(null)}
         onSubmit={handleUpdateUser}
       />
-      <Toaster />
     </>
   );
 }

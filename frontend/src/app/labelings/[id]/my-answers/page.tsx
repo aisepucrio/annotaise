@@ -17,6 +17,7 @@ import type { LabelingStructureSection } from "@/lib/services/labeling_create_se
 import { fetchLabelingStructure } from "@/lib/services/labeling_create_service";
 import type { AnswerMap } from "../answer/answer_types";
 import SidebarLayout from "@/components/side-bar/sidebar_layout";
+import { toast } from "sonner";
 
 export default function MyAnswersPage() {
   const params = useParams<{ id: string }>();
@@ -113,6 +114,24 @@ export default function MyAnswersPage() {
     }
   };
 
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
+
+  useEffect(() => {
+    if (message) {
+      toast.success(message);
+    }
+  }, [message]);
+
+  useEffect(() => {
+    if (myAnswersError) {
+      toast.error("Não foi possível carregar suas respostas.");
+    }
+  }, [myAnswersError]);
+
   return (
     <SidebarLayout>
       <header className="flex flex-col gap-3 rounded-xl bg-blue-900 px-6 py-4 text-white shadow-md lg:flex-row lg:items-center lg:justify-between">
@@ -150,11 +169,7 @@ export default function MyAnswersPage() {
             <span className="text-sm text-gray-500">Carregando...</span>
           ) : null}
         </div>
-        {myAnswersError ? (
-          <p className="mt-2 text-sm text-red-600">
-            Não foi possível carregar suas respostas.
-          </p>
-        ) : (myAnswers?.length ?? 0) === 0 ? (
+        {(myAnswers?.length ?? 0) === 0 ? (
           <p className="mt-2 text-sm text-gray-600">
             Você ainda não enviou respostas nesta rotulação.
           </p>
@@ -216,11 +231,6 @@ export default function MyAnswersPage() {
               Cancelar edição
             </button>
           </div>
-
-          {message ? (
-            <p className="mb-2 text-sm text-green-700">{message}</p>
-          ) : null}
-          {error ? <p className="mb-2 text-sm text-red-600">{error}</p> : null}
 
           <div className="space-y-6">
             {orderedSections.map((section, sectionIndex) => (

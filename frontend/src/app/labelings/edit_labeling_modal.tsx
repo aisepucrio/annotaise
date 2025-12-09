@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { fetchLabeling, type Labeling, updateLabeling } from "@/lib/services/labeling_service";
 import { fetchProjects, type Project } from "@/lib/services/project_service";
+import { toast } from "sonner";
 
 type EditLabelingModalProps = {
   open: boolean;
@@ -16,7 +17,6 @@ export default function EditLabelingModal({ open, labelingId, onClose, onUpdated
   const [labeling, setLabeling] = useState<Labeling | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const [title, setTitle] = useState("");
   const [status, setStatus] = useState<Labeling["status"]>("draft");
@@ -30,7 +30,6 @@ export default function EditLabelingModal({ open, labelingId, onClose, onUpdated
   useEffect(() => {
     if (!open) {
       setLabeling(null);
-      setError(null);
       setLoading(false);
       setSaving(false);
       setProjectId(null);
@@ -42,7 +41,6 @@ export default function EditLabelingModal({ open, labelingId, onClose, onUpdated
     const loadData = async () => {
       setLoading(true);
       setProjectsLoading(true);
-      setError(null);
       try {
         const [labelingRes, projectsRes] = await Promise.all([
           fetchLabeling(labelingId),
@@ -62,7 +60,7 @@ export default function EditLabelingModal({ open, labelingId, onClose, onUpdated
         const detail =
           (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
           (err instanceof Error ? err.message : "Não foi possível carregar a rotulação.");
-        setError(detail);
+        toast.error(detail);
       } finally {
         if (isMounted) {
           setLoading(false);
@@ -80,7 +78,6 @@ export default function EditLabelingModal({ open, labelingId, onClose, onUpdated
   const handleSaveLabeling = async () => {
     if (!labeling) return;
     setSaving(true);
-    setError(null);
     try {
       await updateLabeling(labeling.id, {
         title: title.trim() || labeling.title,
@@ -92,11 +89,12 @@ export default function EditLabelingModal({ open, labelingId, onClose, onUpdated
         project: projectId ?? undefined,
       });
       await onUpdated?.();
+      toast.success("Rotulação atualizada com sucesso.");
     } catch (err) {
       const detail =
         (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
         (err instanceof Error ? err.message : "Não foi possível atualizar a rotulação.");
-      setError(detail);
+      toast.error(detail);
     } finally {
       setSaving(false);
     }
@@ -124,12 +122,10 @@ export default function EditLabelingModal({ open, labelingId, onClose, onUpdated
           </button>
         </div>
 
-        {error ? <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div> : null}
-
         {loading ? (
           <p className="text-sm text-gray-500 mt-4">Carregando rotulação...</p>
         ) : !labeling ? (
-          <p className="text-sm text-red-600 mt-4">Não foi possível carregar esta rotulação.</p>
+          <p className="text-sm text-gray-600 mt-4">Não foi possível carregar esta rotulação.</p>
         ) : (
           <div className="mt-4 space-y-4">
             <div className="space-y-2">

@@ -15,14 +15,12 @@ type NewUserModalProps = {
 export default function NewUserModal({ open, onClose, onSubmit }: NewUserModalProps) {
   const [email, setEmail] = useState("");
   const [accountType, setAccountType] = useState<"standard" | "editor" | "admin">("standard");
-  const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) {
       setEmail("");
       setAccountType("standard");
-      setError(null);
       setSubmitting(false);
     }
   }, [open]);
@@ -34,10 +32,9 @@ export default function NewUserModal({ open, onClose, onSubmit }: NewUserModalPr
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!email.trim()) {
-      setError("Informe o e-mail do usuário.");
+      toast.error("Informe o e-mail do usuário.");
       return;
     }
-    setError(null);
     setSubmitting(true);
     try {
       const link = await onSubmit({
@@ -60,7 +57,7 @@ export default function NewUserModal({ open, onClose, onSubmit }: NewUserModalPr
       const message =
         (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
         (err instanceof Error ? err.message : "Não foi possível criar o convite.");
-      setError(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
@@ -77,8 +74,6 @@ export default function NewUserModal({ open, onClose, onSubmit }: NewUserModalPr
           <h2 className="text-lg font-semibold text-gray-900">Novo convite</h2>
           <p className="text-sm text-gray-500">Envie um convite para criar uma nova conta.</p>
         </header>
-
-        {error ? <p className="mb-4 text-sm text-red-600">{error}</p> : null}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1">

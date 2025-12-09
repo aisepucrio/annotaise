@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { UpdateUserPayload, User } from "@/lib/services/user_service";
+import { toast } from "sonner";
 
 type EditUserModalProps = {
   open: boolean;
@@ -16,7 +17,6 @@ export default function EditUserModal({ open, user, onClose, onSubmit }: EditUse
   const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
   const [accountType, setAccountType] = useState<"standard" | "editor" | "admin">("standard");
-  const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -26,7 +26,6 @@ export default function EditUserModal({ open, user, onClose, onSubmit }: EditUse
       setLastName("");
       setPassword("");
       setAccountType("standard");
-      setError(null);
       setSubmitting(false);
       return;
     }
@@ -35,7 +34,6 @@ export default function EditUserModal({ open, user, onClose, onSubmit }: EditUse
     setLastName(user.last_name ?? "");
     setPassword("");
     setAccountType(user.account_type ?? "standard");
-    setError(null);
     setSubmitting(false);
   }, [open, user]);
 
@@ -46,10 +44,9 @@ export default function EditUserModal({ open, user, onClose, onSubmit }: EditUse
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!email.trim()) {
-      setError("Informe o e-mail do usuário.");
+      toast.error("Informe o e-mail do usuário.");
       return;
     }
-    setError(null);
     setSubmitting(true);
     try {
       const payload: UpdateUserPayload = {
@@ -62,12 +59,13 @@ export default function EditUserModal({ open, user, onClose, onSubmit }: EditUse
         payload.password = password;
       }
       await onSubmit(payload);
+      toast.success("Usuário atualizado com sucesso.");
       onClose();
     } catch (err) {
       const message =
         (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
         (err instanceof Error ? err.message : "Não foi possível atualizar o usuário.");
-      setError(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
@@ -84,8 +82,6 @@ export default function EditUserModal({ open, user, onClose, onSubmit }: EditUse
           <h2 className="text-lg font-semibold text-gray-900">Editar usuário</h2>
           <p className="text-sm text-gray-500">Atualize as informações deste usuário.</p>
         </header>
-
-        {error ? <p className="mb-4 text-sm text-red-600">{error}</p> : null}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1">

@@ -44,8 +44,7 @@ class LabelingViewSet(viewsets.ModelViewSet):
         
         # Filtra rotulações onde o usuário participa
         qs = (Labeling.objects
-              .filter(memberships__user=user)
-              .prefetch_related('memberships__user')
+              .filter(project__memberships__user=user)
               .distinct())
         
 
@@ -244,12 +243,14 @@ class CreateReadLabelingStructureView(APIView):
         created_sections = []
 
         # Libera as ordens atuais para evitar colisão de constraint
+        # usa um deslocamento pequeno para liberar ordens sem estourar smallint
+        temp_offset = 1000
         for idx, sec in enumerate(existing_sections_qs):
-            sec.order = 100000 + idx
+            sec.order = temp_offset + idx
             sec.save(update_fields=["order"])
             # idem para elementos da seção
             for el_idx, el in enumerate(sec.elements.all()):
-                el.order = 100000 + el_idx
+                el.order = temp_offset + el_idx
                 el.save(update_fields=["order"])
 
         for idx, section_data in enumerate(sections_data):

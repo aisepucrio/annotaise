@@ -18,6 +18,7 @@ import {
 import useCurrent from "@/hooks/current_user_hook";
 import SidebarLayout from "@/components/side-bar/sidebar_layout";
 import { useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 
 type UploadPayload = {
   file: File;
@@ -69,6 +70,12 @@ export default function LabelingsPage() {
       ? "Não foi possível carregar as rotulações."
       : null;
 
+  useEffect(() => {
+    if (loadError) {
+      toast.error(loadError);
+    }
+  }, [loadError]);
+
   async function handleConfirm({
     file,
     title,
@@ -79,7 +86,8 @@ export default function LabelingsPage() {
     blockSectionBack,
   }: UploadPayload) {
     if (!isAdmin) {
-      throw new Error("Apenas administradores podem criar rotulações.");
+      toast.error("Apenas administradores podem criar rotulações.");
+      return;
     }
     try {
       const labeling = await createLabeling({
@@ -99,9 +107,11 @@ export default function LabelingsPage() {
           (err.response?.data as { detail?: string })?.detail ||
           err.message ||
           "Não foi possível criar a rotulação.";
-        throw new Error(detail);
+        toast.error(detail);
+        return;
       }
-      throw err;
+      toast.error(err instanceof Error ? err.message : "Erro ao criar rotulação.");
+      return;
     }
   }
 
@@ -133,10 +143,6 @@ export default function LabelingsPage() {
             </Button>
           </div>
         </div>
-
-        {loadError && (
-          <div className="ml-5 mr-5 mt-4 text-sm text-red-600">{loadError}</div>
-        )}
 
         <div className="mt-5 ml-5 w-97/100">
           <GridLayout minColumnWidth="420px">
