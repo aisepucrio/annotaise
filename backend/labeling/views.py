@@ -41,14 +41,16 @@ class LabelingViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         user = self.request.user
-        
-        # Filtra rotulações onde o usuário participa
-        qs = (Labeling.objects
-              .filter(project__memberships__user=user)
-              .distinct())
-        
 
-        return qs
+        return (
+            Labeling.objects
+            .filter(
+                Q(project__memberships__user=user) |
+                Q(memberships__user=user)
+            )
+            .distinct()
+        )
+
     
     @action(methods=['get'], detail=False, url_path='dashboard/edit')
     def editdashboard(self, request):
