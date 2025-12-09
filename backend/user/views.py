@@ -1,25 +1,26 @@
-from .serializers import CustomUserSerializer
-from .serializers import AdminUserReadSerializer, AdminUserWriteSerializer
-from .permissions import IsAdminAccount
-from project.models import Project
-from item.models import ItemMembership
-from answer.models import Answer
-
-from rest_framework.generics import RetrieveUpdateDestroyAPIView, UpdateAPIView, GenericAPIView
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.exceptions import PermissionDenied
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework import viewsets, permissions, filters
+from annotaise.settings import FRONTEND_URL
+from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.generics import RetrieveUpdateDestroyAPIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 from django.contrib.auth import get_user_model
-from .serializers import AdminUserReadSerializer, AdminUserWriteSerializer
-from rest_framework.response import Response
-from rest_framework import status
-from .permissions import IsAdminAccount, IsMasterAdminAccount
-from django.db.models import Count, Q, F
+from django.db.models import Count, F, Q
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
+
+from .models import Invitation
+from .permissions import IsAdminAccount, IsMasterAdminAccount
+from .serializers import (
+    AdminUserReadSerializer,
+    AdminUserWriteSerializer,
+    CustomUserSerializer,
+    InvitationSerializer,
+)
+
+import uuid
 
 #TODO falta um endpoint de alterar a senha... caso não tenha questoes de segurança, tem como fazer por aqui, mas nao é o ideal
 class CurrentAPIView(RetrieveUpdateDestroyAPIView):
@@ -88,3 +89,76 @@ class AdminUserViewSet(viewsets.ModelViewSet):
             ),
         )
         return qs
+    
+
+class InvitationViewSet(viewsets.ModelViewSet):
+    queryset = Invitation.objects.all().order_by("-created_at")
+    permission_classes = [IsAdminAccount]
+    serializer_class = InvitationSerializer
+    http_method_names = ['get', 'post', 'delete']
+    lookup_field = "token"
+
+    def get_permissions(self):
+        if self.action in ["create", "destroy", "list"]:
+            permission_classes = [IsAdminAccount]
+        elif self.action in ["retrieve", "accept_invitation"]:
+            permission_classes = [permissions.AllowAny]
+        else:
+            permission_classes = self.permission_classes
+        return [permission() for permission in permission_classes]
+    
+
+    def create(self, request, *args, **kwargs):
+        '''apos a criação do convite é enviado um email com o token para o email convidado'''
+        
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        invitation = serializer.save(invited_by=request.user)
+        link = FRONTEND_URL + f"/accept-invitation/{invitation.token}"
+        '''
+        subject = "Convite para registro Annotaise"
+        message = (
+            f"Você foi convidado para acessar a Annotaise como {invitation.role}.\n\n"
+            f"Clique no link para completar seu cadastro:\n{link}\n\n"
+            f"Se você não reconhece este convite, ignore este e-mail."
+        )
+
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [invitation.email],
+            fail_silently=False,
+        )
+        '''
+
+        #TODO isso deve mandar o email com o link de convite
+
+        headers = self.get_success_headers(serializer.data)
+        return Response({"link": link, "invitation": serializer.data}, status=status.HTTP_201_CREATED, headers=headers)
+
+    @action(detail=False, methods=["post"], url_path="accept/(?P<token>[^/.]+)")
+    def accept_invitation(self, request, token=None):
+        invitation = get_object_or_404(Invitation, token=token, is_used=False)
+
+        if invitation.expires_at < timezone.now():
+            return Response({"detail": "Convite expirado."}, status=status.HTTP_400_BAD_REQUEST)
+
+        user_id = uuid.uuid4()          
+        user_id_str = user_id.hex
+
+        user = User.objects.create_user(
+            username=user_id_str,
+            email=invitation.email,
+            first_name=request.data.get("first_name", ""),
+            last_name=request.data.get("last_name", ""),
+            account_type=invitation.role,
+            password=request.data.get("password"),
+        )
+
+        invitation.is_used = True
+        invitation.save()
+
+        serializer = CustomUserSerializer(user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)

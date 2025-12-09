@@ -9,6 +9,7 @@ import { AuthActions } from "@/lib/authClient";
 
 const LOGIN_PATH = "/login";
 const PUBLIC_PATHS = [LOGIN_PATH];
+const PUBLIC_PREFIXES = ["/accept-invitation"];
 
 export default function AuthGuard({ children }: PropsWithChildren) {
   const router = useRouter();
@@ -28,7 +29,9 @@ export default function AuthGuard({ children }: PropsWithChildren) {
 
     const enforceAuth = () => {
       const hasToken = Boolean(getToken("refresh") ?? getToken("access"));
-      const isPublic = PUBLIC_PATHS.includes(pathname);
+      const isPublic =
+        PUBLIC_PATHS.includes(pathname) ||
+        PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 
       if (!hasToken) {
         removeTokens();
@@ -50,7 +53,10 @@ export default function AuthGuard({ children }: PropsWithChildren) {
 
     setIsAllowed(false);
 
-    if (PUBLIC_PATHS.includes(pathname)) {
+    if (
+      PUBLIC_PATHS.includes(pathname) ||
+      PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+    ) {
       const hasToken = Boolean(getToken("refresh") ?? getToken("access"));
       if (!hasToken) {
         allow();

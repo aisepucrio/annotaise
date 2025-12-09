@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import CustomUser
 from django.contrib.auth import get_user_model
 import uuid
+from .models import Invitation
 
 
 '''o username a princípio será o email do usuário, mas o campo username é obrigatório no modelo padrão do django, 
@@ -18,6 +19,8 @@ class CustomUserCreateSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = ['email', 'first_name', 'last_name', 'password']
         write_only_fields = ['password']
+
+
 
     def create(self, validated_data):
 
@@ -93,3 +96,41 @@ class AdminUserWriteSerializer(serializers.ModelSerializer):
             instance.set_password(pwd)
         instance.save()
         return instance
+
+class InvitationSerializer(serializers.ModelSerializer):
+    invited_by_email = serializers.EmailField(
+        source="invited_by.email", read_only=True
+    )
+    is_expired = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Invitation
+        fields = [
+            "token",
+            "email",
+            "role",
+            "created_at",
+            "expires_at",
+            "is_used",
+            "is_expired",
+            "invited_by",
+            "invited_by_email",
+        ]
+        read_only_fields = [
+            "token",
+            "created_at",
+            "is_used",
+            "invited_by",
+            "invited_by_email",
+            "expires_at",
+            "is_expired",
+        ]
+
+    def get_is_expired(self, obj: Invitation) -> bool:
+        return obj.is_expired
+
+    def create(self, validated_data):
+        invited_by = validated_data.pop(
+            "invited_by", getattr(self.context.get("request"), "user", None)
+        )
+        return Invitation.objects.create(**validated_data, invited_by=invited_by)

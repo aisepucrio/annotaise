@@ -10,7 +10,7 @@ import GridLayout from "@/components/grid_layout";
 import GridItemCard from "@/components/grid_item_card";
 import Button from "@/components/button";
 import {
-  createUser,
+  createInvitation,
   fetchUsers,
   updateUser,
   type UpdateUserPayload,
@@ -20,6 +20,7 @@ import NewUserModal from "./new_user_modal";
 import useCurrent from "@/hooks/current_user_hook";
 import EditUserModal from "./edit_user_modal";
 import SidebarLayout from "@/components/side-bar/sidebar_layout";
+import { Toaster } from "@/components/ui/sonner";
 
 export default function UsersPage() {
   const currentUser = useCurrent();
@@ -48,15 +49,12 @@ export default function UsersPage() {
       ? "Não foi possível carregar os usuários."
       : null;
 
-  const handleCreateUser = async (payload: {
+  const handleCreateInvitation = async (payload: {
     email: string;
-    first_name?: string;
-    last_name?: string;
-    password: string;
     account_type: User["account_type"];
   }) => {
-    await createUser(payload);
-    await mutate();
+    const { link } = await createInvitation(payload);
+    return link;
   };
 
   const handleUpdateUser = async (payload: UpdateUserPayload) => {
@@ -139,7 +137,7 @@ export default function UsersPage() {
       <NewUserModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        onSubmit={handleCreateUser}
+        onSubmit={handleCreateInvitation}
       />
       <EditUserModal
         open={Boolean(editingUser)}
@@ -147,6 +145,7 @@ export default function UsersPage() {
         onClose={() => setEditingUser(null)}
         onSubmit={handleUpdateUser}
       />
+      <Toaster />
     </>
   );
 }

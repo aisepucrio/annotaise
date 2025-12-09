@@ -1,5 +1,10 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+import uuid
+from django.conf import settings
+from django.utils import timezone
+from datetime import timedelta
+
 
 
 class CustomUser(AbstractUser):
@@ -25,6 +30,7 @@ class CustomUser(AbstractUser):
             self.account_type = self.AccountType.ADMIN
         return super().save(*args, **kwargs)
 
+    @property
     def can_edit(self):
         return self.account_type in {
             self.AccountType.EDITOR,
@@ -33,3 +39,31 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
+
+
+class Invitation(models.Model):
+    email = models.EmailField()
+    role = models.CharField(max_length=50,choices=CustomUser.AccountType.choices)
+
+    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False, primary_key=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    is_used = models.BooleanField(default=False)
+
+    invited_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="sent_invitations",
+    )
+
+    def save(self, *args, **kwargs):
+        if not self.expires_at:
+            #convite válido por 7 dias
+            self.expires_at = timezone.now() + timedelta(days=7)
+        super().save(*args, **kwargs)
+
+    @property
+    def is_expired(self) -> bool:
+        return timezone.now() > self.expires_at

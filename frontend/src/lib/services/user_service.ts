@@ -24,6 +24,11 @@ export type CreateUserPayload = {
   account_type: User["account_type"];
 };
 
+export type CreateInvitationPayload = {
+  email: string;
+  account_type: User["account_type"];
+};
+
 export type UpdateUserPayload = Partial<{
   email: string;
   first_name: string;
@@ -45,6 +50,28 @@ export async function createUser(payload: CreateUserPayload): Promise<User> {
     ...payload,
     username: payload.email,
   });
+  return data;
+}
+
+type Invitation = {
+  token: string;
+  email: string;
+  role: User["account_type"];
+  created_at: string;
+  expires_at: string;
+  is_used: boolean;
+  is_expired?: boolean;
+  invited_by?: number | null;
+  invited_by_email?: string | null;
+};
+
+export async function createInvitation(
+  payload: CreateInvitationPayload
+): Promise<{ link: string; invitation: Invitation }> {
+  const { data } = await api.post<{ link: string; invitation: Invitation }>(
+    "/invitations/",
+    { email: payload.email, role: payload.account_type }
+  );
   return data;
 }
 

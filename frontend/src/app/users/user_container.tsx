@@ -24,11 +24,11 @@ export default function UserContainer({
       {/* nome e email */}
       <div className="flex flex-col">
         <div className="flex-col flex mb-12">
-          <span className="text-black font-semibold leading-tight max-w-40 wrap-break-word whitespace-normal">
+          <span className="text-black font-semibold leading-tight max-w-40 wrap-break-word whitespace-norma truncate">
             {name}
           </span>
 
-          <span className="text-gray-500 font-semibold wrap-break-word leading-tight">
+          <span className="text-gray-500 font-semibold wrap-break-word leading-tight truncate min-w-40 max-w-40">
             {email}
           </span>
         </div>
