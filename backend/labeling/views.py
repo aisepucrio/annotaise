@@ -276,7 +276,7 @@ class CreateReadLabelingStructureView(APIView):
             elements_data = section_data.pop("elements", [])
             section_id = section_data.pop("id", None)
             section_data.pop("order", None)  # evitar passagem duplicada de order
-            section_order = idx  # força ordem sequencial para evitar duplicata mesmo se payload vier sujo
+            section_order = idx + 1  # 1-based sequencial para manter compatibilidade com expectativas
 
             if section_id and section_id in existing_sections:
                 section = existing_sections[section_id]
@@ -301,7 +301,7 @@ class CreateReadLabelingStructureView(APIView):
                 range_data = element_data.pop("question_range", None)
                 element_id = element_data.pop("id", None)
                 element_data.pop("order", None)  # evitar duplicação
-                element_order = element_idx  # idem: sequencial para evitar duplicata
+                element_order = element_idx + 1  # idem: 1-based sequencial
 
                 if element_id and element_id in existing_elements:
                     element = existing_elements[element_id]
