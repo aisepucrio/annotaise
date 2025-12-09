@@ -1,4 +1,4 @@
-from .models import Labeling, LabelingMembership, LabelingSection
+from .models import Labeling, LabelingMembership, LabelingSection, LabelingElement, MultipleChoiceItem, QuestionRange
 from .serializers import (LabelingSerializer, LabelingMembershipSerializer,
 LabelingSectionsBulkCreateSerializer, LabelingSectionSerializer, LabelingDashboardSerializer, LabelingMembershipDashboardSerializer)
 from project.models import ProjectMembership
@@ -239,12 +239,7 @@ class CreateReadLabelingStructureView(APIView):
         perm = CanEditLabelingsInProjectPermission()
         if not perm.can_edit_labeling(request.user, labeling_id):
             raise PermissionDenied(detail=perm.message)
-        
 
-        # Remove toda a estrutura atual
-        LabelingSection.objects.filter(labeling=labeling).delete()
-
-        # Serializa e valida as novas sections
         serializer = LabelingSectionsBulkCreateSerializer(
             data=request.data,
             context={
@@ -259,10 +254,95 @@ class CreateReadLabelingStructureView(APIView):
             print(json.dumps(serializer.errors, ensure_ascii=False))
             raise exc
 
-        result = serializer.save()
-        sections = result['sections']
+        sections_data = serializer.validated_data.get("sections", [])
 
-        out = LabelingSectionSerializer(sections, many=True).data
+        existing_sections_qs = LabelingSection.objects.filter(labeling=labeling).prefetch_related(
+            "elements__multiple_choice_items", "elements__question_range"
+        )
+        existing_sections = {sec.id: sec for sec in existing_sections_qs}
+        sections_to_keep = set()
+        created_sections = []
+
+        # Libera as ordens atuais para evitar colisão de constraint
+        for idx, sec in enumerate(existing_sections_qs):
+            sec.order = 100000 + idx
+            sec.save(update_fields=["order"])
+            # idem para elementos da seção
+            for el_idx, el in enumerate(sec.elements.all()):
+                el.order = 100000 + el_idx
+                el.save(update_fields=["order"])
+
+        for idx, section_data in enumerate(sections_data):
+            elements_data = section_data.pop("elements", [])
+            section_id = section_data.pop("id", None)
+            section_order = idx  # força ordem sequencial para evitar duplicata mesmo se payload vier sujo
+
+            if section_id and section_id in existing_sections:
+                section = existing_sections[section_id]
+                for attr, value in section_data.items():
+                    setattr(section, attr, value)
+                section.order = section_order
+                section.save()
+            else:
+                section = LabelingSection.objects.create(
+                    labeling=labeling,
+                    order=section_order,
+                    **section_data
+                )
+            sections_to_keep.add(section.id)
+            created_sections.append(section)
+
+            existing_elements = {el.id: el for el in section.elements.all()}
+            elements_to_keep = set()
+
+            for element_idx, element_data in enumerate(elements_data):
+                mc_items_data = element_data.pop("multiple_choice_items", [])
+                range_data = element_data.pop("question_range", None)
+                element_id = element_data.pop("id", None)
+                element_order = element_idx  # idem: sequencial para evitar duplicata
+
+                if element_id and element_id in existing_elements:
+                    element = existing_elements[element_id]
+                    for attr, value in element_data.items():
+                        setattr(element, attr, value)
+                    element.order = element_order
+                    element.save()
+                else:
+                    element = LabelingElement.objects.create(
+                        labeling_section=section,
+                        order=element_order,
+                        **element_data
+                    )
+                elements_to_keep.add(element.id)
+
+                # atualiza range
+                if range_data is not None:
+                    if hasattr(element, "question_range"):
+                        for attr, value in range_data.items():
+                            setattr(element.question_range, attr, value)
+                        element.question_range.save()
+                    else:
+                        QuestionRange.objects.create(labeling_element=element, **range_data)
+                else:
+                    if hasattr(element, "question_range"):
+                        element.question_range.delete()
+
+                # ressincroniza múltipla escolha recriando (simplifica)
+                element.multiple_choice_items.all().delete()
+                for item_data in mc_items_data:
+                    MultipleChoiceItem.objects.create(labeling_element=element, **item_data)
+
+            # remove elementos não enviados
+            to_delete_elements = [el_id for el_id in existing_elements.keys() if el_id not in elements_to_keep]
+            if to_delete_elements:
+                LabelingElement.objects.filter(id__in=to_delete_elements).delete()
+
+        # remove seções não enviadas
+        to_delete_sections = [sec_id for sec_id in existing_sections.keys() if sec_id not in sections_to_keep]
+        if to_delete_sections:
+            LabelingSection.objects.filter(id__in=to_delete_sections).delete()
+
+        out = LabelingSectionSerializer(created_sections, many=True).data
 
         return Response(out, status=status.HTTP_200_OK)
         

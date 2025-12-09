@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import axios from "axios";
-import { ArrowLeft, Save, Edit, Calendar, Users, Trash2, Download } from "lucide-react";
+import { ArrowLeft, Save, Edit, Calendar, Users, Trash2, Download, GripVertical } from "lucide-react";
 import {
   SectionData,
   ContextElement,
@@ -38,6 +38,21 @@ import Button from "@/components/button";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { exportLabelingAnswersCsv } from "@/lib/services/labeling_service";
+import {
+  DndContext,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 const createContextElement = (order: number): ContextElement => ({
   id: crypto.randomUUID(),
@@ -113,6 +128,11 @@ export default function LabelingFormPage() {
   const [selectedResponder, setSelectedResponder] = useState<"all" | number>("all");
   const [inspectAnswer, setInspectAnswer] = useState<AnswerResponse | null>(null);
   const [exporting, setExporting] = useState(false);
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 6 },
+    })
+  );
 
   const loadLabelingAndStructure = useCallback(async () => {
     if (Number.isNaN(labelingId)) {
@@ -444,6 +464,25 @@ export default function LabelingFormPage() {
     }
   };
 
+  const handleSectionDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    setSections((prev) => {
+      const oldIndex = prev.findIndex((section) => section.id === active.id);
+      const newIndex = prev.findIndex((section) => section.id === over.id);
+      if (oldIndex === -1 || newIndex === -1) return prev;
+
+      const reordered = arrayMove(prev, oldIndex, newIndex);
+      return reordered.map((section, index) => ({
+        ...section,
+        order: index,
+      }));
+    });
+  };
+
   return (
     <SidebarLayout>
       {/* Cabeçalho */}
@@ -569,27 +608,41 @@ export default function LabelingFormPage() {
             </div>
 
             {/* Seções (form mais estreito para acomodar os botões) */}
-            <div className="mt-2 space-y-6 max-w-[860px] mx-auto pr-10">
-              {sections.map((section, idx) => (
-                <SectionForm
-                  key={section.id}
-                  data={section}
-                  index={idx}
-                  total={sections.length}
-                  columns={columns}
-                  onAddContext={() => addContext(section.id)}
-                  onAddQuestion={() => addQuestion(section.id)}
-                  onAddSection={addSection}
-                  onChangeTitle={(t) => updateSectionTitle(section.id, t)}
-                  onRemoveSection={() => {
-                    setSections((prev) => prev.filter((s) => s.id !== section.id));
-                  }}
-                  onUpdateSection={(updated) => {
-                    setSections((prev) => prev.map((s) => (s.id === section.id ? updated : s)));
-                  }}
-                />
-              ))}
-            </div>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleSectionDragEnd}
+            >
+              <SortableContext
+                items={sections.map((section) => section.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="mt-2 space-y-6 max-w-[860px] mx-auto pr-10">
+                  {sections.map((section, idx) => (
+                    <SortableSection key={section.id} id={section.id}>
+                      <SectionForm
+                        data={section}
+                        index={idx}
+                        total={sections.length}
+                        columns={columns}
+                        onAddContext={() => addContext(section.id)}
+                        onAddQuestion={() => addQuestion(section.id)}
+                        onAddSection={addSection}
+                        onChangeTitle={(t) => updateSectionTitle(section.id, t)}
+                        onRemoveSection={() => {
+                          setSections((prev) => prev.filter((s) => s.id !== section.id));
+                        }}
+                        onUpdateSection={(updated) => {
+                          setSections((prev) =>
+                            prev.map((s) => (s.id === section.id ? updated : s))
+                          );
+                        }}
+                      />
+                    </SortableSection>
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
           </>
         ) : activeTab === "assign" ? (
           <div className="max-w-4xl mx-auto mt-2 space-y-4">
@@ -840,6 +893,36 @@ type InspectAnswerModalProps = {
   userLabel: string;
   sections: LabelingStructureSection[];
 };
+
+type SortableSectionProps = {
+  id: string;
+  children: React.ReactNode;
+};
+
+function SortableSection({ id, children }: SortableSectionProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id,
+  });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className={`relative ${isDragging ? "z-10" : ""}`}>
+      <button
+        type="button"
+        aria-label="Arrastar seção"
+        className="absolute -left-7 top-5 flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 shadow-sm hover:bg-gray-100"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical size={16} />
+      </button>
+      <div className={isDragging ? "rounded-xl ring-2 ring-blue-300 shadow-lg" : ""}>{children}</div>
+    </div>
+  );
+}
 
 function formatAnswerValue(value: unknown): string {
   if (value === null || value === undefined) return "—";

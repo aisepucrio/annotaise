@@ -125,7 +125,11 @@ class ExportAnswersView(APIView):
     def get(self, request, **kwargs):
         labeling_id = kwargs.get("labeling_id")
         labeling = Labeling.objects.get(id=labeling_id)
-        answers = Answer.objects.filter(labeling_id=labeling_id).select_related("item")
+        answers = (
+            Answer.objects.filter(labeling_id=labeling_id)
+            .select_related("item")
+            .order_by("item__row_index", "id")
+        )
         questions_qs = LabelingElement.objects.filter(labeling_section__labeling_id=labeling_id).exclude(question_type="context").values('id','text')
 
         questions = {int(q["id"]): q["text"] for q in questions_qs}
@@ -136,14 +140,15 @@ class ExportAnswersView(APIView):
             row = {}
             print(payload)
             for question_number, response in payload.items():
-                row["context_id"] = answer.item.id
+                row["context_id"] = (answer.item.row_index or 0) + 1
                 row["user_id"] = answer.answered_by
 
                 q_id = int(question_number)
-                col_name = "Q : " + questions.get(q_id)
-
-                if col_name is None:
+                question_text = questions.get(q_id)
+                if not question_text:
+                    # pula perguntas que não estão mais na estrutura ou não tem label
                     continue
+                col_name = "Q : " + question_text
 
                 if isinstance(response, list):
                     row[col_name] = ", ".join(str(x) for x in response)

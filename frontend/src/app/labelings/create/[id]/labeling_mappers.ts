@@ -23,13 +23,18 @@ export const mapSectionsFromDTO = (sections: LabelingStructureSection[]): Sectio
     elements: section.elements.map((element) => mapElementFromDTO(element)),
   }));
 
-const mapSectionToDTO = (section: SectionData, sectionIndex: number): SectionDTO => ({
-  title: section.title,
-  order: section.order ?? sectionIndex,
-  elements: section.elements.map((element, elementIndex) =>
-    mapElementToDTO(element, elementIndex)
-  ),
-});
+const mapSectionToDTO = (section: SectionData, sectionIndex: number): SectionDTO => {
+  const parsedId = Number(section.id);
+  const maybeId = Number.isFinite(parsedId) ? parsedId : undefined;
+  return {
+    id: maybeId,
+    title: section.title,
+    order: section.order ?? sectionIndex,
+    elements: section.elements.map((element, elementIndex) =>
+      mapElementToDTO(element, elementIndex)
+    ),
+  };
+};
 
 const mapElementToDTO = (el: SectionElement, elementIndex: number): ElementDTO => {
   if (el.kind === "question") {
@@ -39,7 +44,10 @@ const mapElementToDTO = (el: SectionElement, elementIndex: number): ElementDTO =
 };
 
 const mapQuestionElementToDTO = (q: QuestionElement, fallbackOrder: number): ElementDTO => {
+  const parsedId = Number(q.id);
+  const maybeId = Number.isFinite(parsedId) ? parsedId : undefined;
   const base: ElementDTO = {
+    id: maybeId,
     order: q.order ?? fallbackOrder,
     text: q.text,
     required: q.required,
@@ -92,6 +100,7 @@ const mapRangeConfig = (config?: RangeQuestionConfig): QuestionRangeDTO => ({
 });
 
 const mapContextElementToDTO = (c: ContextElement, fallbackOrder: number): ElementDTO => ({
+  id: Number.isFinite(Number(c.id)) ? Number(c.id) : undefined,
   order: c.order ?? fallbackOrder,
   text: c.title ?? "",
   required: false,

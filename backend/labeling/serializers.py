@@ -84,20 +84,22 @@ class MultipleChoiceItemWriteSerializer(serializers.ModelSerializer):
     """
     Usado dentro do elemento. Não expõe labeling_element, pois vem do pai.
     """
+    id = serializers.IntegerField(required=False)
     class Meta:
         model = MultipleChoiceItem
         fields = ['id', 'text', 'value', 'order']
-        read_only_fields = ['id']
+        read_only_fields = []
 
 
 class QuestionRangeWriteSerializer(serializers.ModelSerializer):
     """
     Usado dentro do elemento. Não expõe labeling_element, pois vem do pai.
     """
+    id = serializers.IntegerField(required=False)
     class Meta:
         model = QuestionRange
         fields = ['id', 'start', 'end', 'step']
-        read_only_fields = ['id']
+        read_only_fields = []
     def validate(self, attrs):
         if(attrs['start'] >= attrs['end']):
             raise serializers.ValidationError({'detail':'o campo start deve ser menor que end'})
@@ -110,6 +112,7 @@ class LabelingElementWriteSerializer(serializers.ModelSerializer):
     """
     Elemento com os filhos (multiple_choice_items e question_range).
     """
+    id = serializers.IntegerField(required=False)
     multiple_choice_items = MultipleChoiceItemWriteSerializer(
         many=True, required=False
     )
@@ -132,7 +135,7 @@ class LabelingElementWriteSerializer(serializers.ModelSerializer):
             'multiple_choice_items',
             'question_range',
         ]
-        read_only_fields = ['id']
+        read_only_fields = []
 
 
 # ---------- SEÇÃO ----------
@@ -141,12 +144,13 @@ class LabelingSectionWriteSerializer(serializers.ModelSerializer):
     """
     Seção como lista de elementos.
     """
+    id = serializers.IntegerField(required=False)
     elements = LabelingElementWriteSerializer(many=True)
 
     class Meta:
         model = LabelingSection
         fields = ['id', 'title', 'order', 'elements']
-        read_only_fields = ['id']
+        read_only_fields = []
 
 
 # ---------- LABELING FORM COMPLETO ----------
