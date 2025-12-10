@@ -108,6 +108,10 @@ export default function Projects() {
       <SidebarLayout>
         <PageHeader
           page_title="Projetos"
+          tooltip={`Crie e gerencie projetos para criar rotulações vinculadas a eles:
+• Cadastre novos projetos e mantenha as informações principais em dia.
+• Adicione membros e gerencie permissões como membros para cada projeto.
+• Esses projetos devem ser criados para iniciar rotulações vinculadas a eles.`}
           description="Nesta página você pode visualizar todos os projetos criados, assim como suas informações principais. Clique em “Gerenciar” para ver mais informações sobre o projeto."
         ></PageHeader>
 

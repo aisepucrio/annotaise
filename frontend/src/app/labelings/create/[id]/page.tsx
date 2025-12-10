@@ -276,7 +276,7 @@ export default function LabelingFormPage() {
       setProjectId(labeling.project ?? null);
       setStartDateInfo(labeling.start_date ?? null);
       setFinalDateInfo(labeling.final_date ?? null);
-      setGuideText(labeling.description ?? "");
+      setGuideText(labeling.guide ?? "");
 
       const csvColumns = Array.isArray(labeling.column_names) ? labeling.column_names : [];
       const structureColumns = deriveColumnsFromStructure(structure);
@@ -585,7 +585,7 @@ export default function LabelingFormPage() {
   const handleSaveGuide = async () => {
     if (Number.isNaN(labelingId)) return;
     try {
-      await updateLabeling(labelingId, { description: guideText });
+      await updateLabeling(labelingId, { guide: guideText });
       toast.success("Guia atualizado com sucesso.");
     } catch (error) {
       let message = "Não foi possível salvar o guia.";

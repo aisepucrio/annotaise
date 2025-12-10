@@ -7,7 +7,7 @@ export type Labeling = {
   title: string;
   project: number;
   status: LabelingStatus;
-  description?: string;
+  guide?: string;
   start_date?: string | null;
   final_date?: string | null;
   users_per_item: number;
@@ -25,7 +25,7 @@ export type LabelingPayload = {
   final_date?: string;
   status?: LabelingStatus;
   block_section_back?: boolean;
-  description?: string;
+  guide?: string;
 };
 
 export type LabelingMembershipRole = "owner" | "admin" | "annotator" | "viewer";

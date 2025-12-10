@@ -72,6 +72,10 @@ export default function LabelingsPage() {
       <SidebarLayout>
         <PageHeader
           page_title="Rotulações"
+          tooltip={`Acompanhe todas as rotulações que você pode responder:
+- Veja progresso geral e pendências.
+- Use filtros para localizar rapidamente o que precisa ser feito.
+- Entre nos itens para registrar respostas com segurança e padronização.`}
           description="Nessa página você pode ver estatísticas e responder as rotulações das quais faz parte."
         />
 

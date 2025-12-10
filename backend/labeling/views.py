@@ -259,8 +259,9 @@ class CreateReadLabelingStructureView(APIView):
         for idx, section_data in enumerate(sections_data):
             elements_data = section_data.pop("elements", [])
             section_id = section_data.pop("id", None)
-            section_data.pop("order", None)  # evitar passagem duplicada de order
-            section_order = idx + 1  # 1-based sequencial para manter compatibilidade com expectativas
+            section_order = section_data.pop("order", None)
+            if section_order is None:
+                section_order = idx + 1  # fallback: mantém 1-based sequencial
 
             if section_id and section_id in existing_sections:
                 section = existing_sections[section_id]

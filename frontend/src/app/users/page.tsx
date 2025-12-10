@@ -95,6 +95,10 @@ export default function UsersPage() {
       <SidebarLayout>
         <PageHeader
           page_title="Usuários"
+          tooltip={`Administre a criação de novos usuários e gerencie o perfil deles:
+   • Crie convites rapidamente e acompanhe quem já ingressou.
+   • Ajuste permissões de acordo com o papel de cada pessoa.
+   • Mantenha perfis atualizados para garantir acesso correto às rotulações e projetos.`}
           description="Nesta página você pode visualizar todos os usuários cadastrados aos seus projetos assim como informações relevantes sobre eles. Clique em “Gerenciar” para ver mais informações sobre o usuário."
         />
         <div className="flex flex-nowrap items-center mt-5">

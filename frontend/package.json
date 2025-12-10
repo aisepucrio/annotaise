@@ -13,6 +13,7 @@
     "@dnd-kit/sortable": "^7.0.0",
     "@dnd-kit/utilities": "^3.2.0",
     "@fontsource/montserrat": "^5.2.8",
+
     "@radix-ui/react-dialog": "^1.1.15",
     "axios": "^1.13.2",
     "class-variance-authority": "^0.7.1",
@@ -26,6 +27,7 @@
     "react-dom": "19.1.0",
     "react-hook-form": "^7.66.0",
     "react-markdown": "^10.1.0",
+    "react-tooltip": "^5.30.0",
     "remark-gfm": "^4.0.1",
     "sonner": "^2.0.7",
     "swr": "^2.3.6",

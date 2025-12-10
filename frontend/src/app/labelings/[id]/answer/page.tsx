@@ -78,7 +78,7 @@ export default function LabelingAnswerPage() {
     try {
       const labeling = await fetchLabelingById(labelingId);
       setLabelingTitle(labeling.title);
-      setGuideText(labeling.description ?? "");
+      setGuideText(labeling.guide ?? "");
 
       const nextAnswer = await fetchNextAnswer(labelingId);
       const sectionsResponse = nextAnswer.sections ?? [];
@@ -240,11 +240,11 @@ export default function LabelingAnswerPage() {
             </SheetTrigger>
             <SheetContent
               side="right"
-              className="sm:max-w-xl overflow-y-auto"
+              className="sm:max-w-xl overflow-y-auto p-4 "
             >
-              <SheetHeader>
-                <SheetTitle>Guia</SheetTitle>
-                <SheetDescription>
+              <SheetHeader className="p-3 bg-[var(--blueberry-700)] text-white w-5/6 rounded-xl">
+                <SheetTitle className="text-white">Guia</SheetTitle>
+                <SheetDescription className="text-white">
                   Informações adicionais para responder os itens.
                 </SheetDescription>
               </SheetHeader>
