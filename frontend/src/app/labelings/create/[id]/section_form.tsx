@@ -205,7 +205,7 @@ function SortableQuestion({ id, children }: SortableQuestionProps) {
       <button
         type="button"
         aria-label="Arrastar pergunta"
-        className="absolute -left-5 top-3 flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 shadow-sm hover:bg-gray-100"
+        className="absolute -left-5 top-3 flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 shadow-sm hover:bg-gray-100 cursor-pointer"
         {...attributes}
         {...listeners}
       >

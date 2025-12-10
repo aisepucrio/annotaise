@@ -1,4 +1,7 @@
 from annotaise.settings import FRONTEND_URL
+from.utils import send_invitation_email
+
+
 from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
@@ -116,24 +119,8 @@ class InvitationViewSet(viewsets.ModelViewSet):
 
         invitation = serializer.save(invited_by=request.user)
         link = FRONTEND_URL + f"/accept-invitation/{invitation.token}"
-        '''
-        subject = "Convite para registro Annotaise"
-        message = (
-            f"Você foi convidado para acessar a Annotaise como {invitation.role}.\n\n"
-            f"Clique no link para completar seu cadastro:\n{link}\n\n"
-            f"Se você não reconhece este convite, ignore este e-mail."
-        )
-
-        send_mail(
-            subject,
-            message,
-            settings.DEFAULT_FROM_EMAIL,
-            [invitation.email],
-            fail_silently=False,
-        )
-        '''
-
-        #TODO isso deve mandar o email com o link de convite
+        
+        send_invitation_email(invitation,link)
 
         headers = self.get_success_headers(serializer.data)
         return Response({"link": link, "invitation": serializer.data}, status=status.HTTP_201_CREATED, headers=headers)
@@ -143,7 +130,7 @@ class InvitationViewSet(viewsets.ModelViewSet):
         invitation = get_object_or_404(Invitation, token=token, is_used=False)
 
         if invitation.expires_at < timezone.now():
-            return Response({"detail": "Convite expirado."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "Convite expirado.","code":"EXPIRED_INVITE"}, status=status.HTTP_400_BAD_REQUEST)
 
         user_id = uuid.uuid4()          
         user_id_str = user_id.hex

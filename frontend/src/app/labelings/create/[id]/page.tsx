@@ -539,13 +539,14 @@ export default function LabelingFormPage() {
     } catch (error) {
       let message = "Não foi possível salvar a estrutura da rotulação.";
       if (axios.isAxiosError(error)) {
-        const data = error.response?.data as { detail?: string } | undefined;
-        if (typeof data?.detail === "string") {
-          message = data.detail;
-        } else if (
-          typeof error.message === "string" &&
-          error.message.length > 0
-        ) {
+        const data = error.response?.data as { code?: string } | undefined;
+        const codeMessageMap: Record<string, string> = {
+          INVALID_FORM_STRUCTURE:
+            "Estrutura do formulário inválida. Verifique campos vazios ou erros.",
+        };
+        if (data?.code && codeMessageMap[data.code]) {
+          message = codeMessageMap[data.code];
+        } else if (typeof error.message === "string" && error.message.length > 0) {
           message = error.message;
         }
       } else if (error instanceof Error) {
@@ -627,7 +628,7 @@ export default function LabelingFormPage() {
             <button
               type="button"
               onClick={() => router.push("/labelings/manage")}
-              className="p-1 rounded-md hover:bg-white/10"
+              className="p-1 rounded-md hover:bg-white/10 cursor-pointer"
               aria-label="Voltar"
             >
               <ArrowLeft size={22} className="cursor-pointer" />
@@ -645,7 +646,7 @@ export default function LabelingFormPage() {
                 <button
                   type="button"
                   onClick={() => setIsEditInfoOpen(true)}
-                  className="p-1 rounded-md hover:bg-white/10"
+                  className="p-1 rounded-md hover:bg-white/10 cursor-pointer"
                   aria-label="Editar informações da rotulação"
                 >
                   <Edit size={20} />
@@ -677,7 +678,7 @@ export default function LabelingFormPage() {
           <button
             type="button"
             onClick={() => setIsDeleteOpen(true)}
-            className="p-2 rounded-md hover:bg-white/10 border border-white/30 text-white flex items-center justify-center"
+            className="p-2 rounded-md hover:bg-white/10 border border-white/30 text-white flex items-center justify-center cursor-pointer"
             aria-label="Excluir rotulação"
               disabled={isDeleting || isLoadingLabeling}
             >
@@ -703,7 +704,7 @@ export default function LabelingFormPage() {
                 onClick={() =>
                   setActiveTab(tab.key as "form" | "assign" | "answers" | "guide")
                 }
-              className={`pb-2 border-b-2 transition-colors ${
+              className={`pb-2 border-b-2 transition-colors cursor-pointer ${
                 activeTab === tab.key
                   ? "border-white font-semibold text-white"
                   : "border-transparent text-blue-100 hover:text-white"
@@ -847,7 +848,7 @@ export default function LabelingFormPage() {
                           type="button"
                           onClick={() => handleRemoveMember(membership)}
                           disabled={membershipSaving}
-                          className="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                          className="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
                         >
                           Remover
                         </button>
@@ -890,7 +891,7 @@ export default function LabelingFormPage() {
                   type="button"
                   onClick={handleAddMember}
                   disabled={!newMemberId || membershipSaving}
-                  className="rounded-lg bg-blue-900 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="rounded-lg bg-blue-900 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
                 >
                   {membershipSaving ? "Adicionando..." : "Adicionar"}
                 </button>
@@ -1031,7 +1032,7 @@ export default function LabelingFormPage() {
               <button
                 type="button"
                 onClick={() => setIsDeleteOpen(false)}
-                className="text-gray-400 hover:text-gray-600 p-1"
+                className="text-gray-400 hover:text-gray-600 p-1 cursor-pointer"
                 aria-label="Fechar"
               >
                 ×
@@ -1046,7 +1047,7 @@ export default function LabelingFormPage() {
               <button
                 type="button"
                 onClick={() => setIsDeleteOpen(false)}
-                className="flex-1 rounded-lg bg-blue-900 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800"
+                className="flex-1 rounded-lg bg-blue-900 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 cursor-pointer"
               >
                 Voltar
               </button>
@@ -1054,7 +1055,7 @@ export default function LabelingFormPage() {
                 type="button"
                 onClick={() => void handleDeleteLabeling()}
                 disabled={isDeleting}
-                className="flex-1 rounded-lg bg-red-800 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="flex-1 rounded-lg bg-red-800 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
               >
                 {isDeleting ? "Excluindo..." : "Excluir Rotulação"}
               </button>
@@ -1092,7 +1093,7 @@ function SortableSection({ id, children }: SortableSectionProps) {
       <button
         type="button"
         aria-label="Arrastar seção"
-        className="absolute -left-7 top-5 flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 shadow-sm hover:bg-gray-100"
+        className="absolute -left-7 top-5 flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 shadow-sm hover:bg-gray-100 cursor-pointer"
         {...attributes}
         {...listeners}
       >
@@ -1143,7 +1144,7 @@ function InspectAnswerModal({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/50 z-40 cursor-pointer" onClick={onClose} />
       <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
         <div className="w-full max-w-3xl rounded-2xl bg-white shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
           <div className="flex items-start justify-between gap-3">

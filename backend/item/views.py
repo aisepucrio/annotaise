@@ -197,13 +197,14 @@ class NextItemView(RetrieveAPIView):
         user = request.user
 
         if not LabelingSection.objects.filter(labeling=labeling).exists():
-            return Response('o formulário dessa rotulação está vazio',status=403)
+            return Response({'detail':'o formulário dessa rotulação está vazio','code':'EMPTY_FORM'},status=403)
 
         if not LabelingMembership.objects.filter(labeling=labeling,user=user).exists():
             return Response('Você não faz parte dessa rotulação',status=403)
 
         item = self.get_next_item_for_user(labeling, user)
         if not item:
-            return Response({'detail': 'Você não tem rotulações para responder.'}, status=404)
+            return Response({'detail': 'Você não tem rotulações para responder.','code':'NO_LABELINGS_TO_ANSWER'}, status=400)
 
         return self.serialize_and_return(item)
+    

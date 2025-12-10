@@ -55,7 +55,7 @@ export default function QuestionMultipleChoiceEditor({
         {config.choices.map((choice) => (
           <div key={choice.id} className="flex items-center gap-2">
             <textarea
-              className="flex-1 rounded-md border border-gray-300 px-2 py-2 text-sm focus:border-blue-500 focus:outline-none text-gray-700"
+              className="flex-1 rounded-md border border-gray-300 px-2 py-2 text-sm focus:border-blue-500 focus:outline-none text-gray-700 cursor-text"
               value={choice.text}
               onChange={handleChoiceTextChange(choice.id)}
               rows={2}
@@ -71,10 +71,10 @@ export default function QuestionMultipleChoiceEditor({
         ))}
       </div>
 
-      <label className="flex items-center gap-2 text-sm text-blue-900">
+      <label className="flex items-center gap-2 text-sm text-blue-900 cursor-pointer">
         <input
           type="checkbox"
-          className="h-4 w-4 accent-blue-700"
+          className="h-4 w-4 accent-blue-700 cursor-pointer"
           checked={config.allowMultiple ?? false}
           onChange={handleAllowMultipleChange}
         />

@@ -36,7 +36,7 @@ export default function ContextBlock({
 
   return (
     <div
-      className="border-blue-800 border-l-4 border-t-4 rounded-tl-xl rounded-br-xl p-4 mb-4 relative shadow-xl"
+      className="border-blue-800 border-l-4 border-t-4 rounded-tl-xl rounded-br-xl p-4 mb-4 relative shadow-xl cursor-pointer"
       data-actions-anchor="true"
       onClick={(e) => onActivate?.(e.currentTarget)}
     >
@@ -59,7 +59,7 @@ export default function ContextBlock({
         value={data.title ?? ""}
         onChange={handleTitleChange}
         placeholder="Descrição do contexto"
-        className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:border-blue-500 w-full"
+        className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:border-blue-500 w-full cursor-text"
       ></textarea>
       
 

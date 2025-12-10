@@ -54,7 +54,7 @@ export default function QuestionBlock({ data, onUpdate, onRemove, onActivate }: 
 
   return (
     <div
-      className="relative mb-4 rounded-tl-xl rounded-br-xl border-l-4 border-t-4 border-blue-800 p-4 shadow-xl"
+      className="relative mb-4 rounded-tl-xl rounded-br-xl border-l-4 border-t-4 border-blue-800 p-4 shadow-xl cursor-pointer"
       data-actions-anchor="true"
       onClick={(e) => onActivate?.(e.currentTarget)}
     >
@@ -76,7 +76,7 @@ export default function QuestionBlock({ data, onUpdate, onRemove, onActivate }: 
           placeholder="Texto da pergunta"
           value={data.text || ""}
           onChange={handleTextChange}
-          className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none"
+          className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none cursor-text"
           rows={1}
         />
         <select
@@ -95,7 +95,7 @@ export default function QuestionBlock({ data, onUpdate, onRemove, onActivate }: 
       </div>
 
       <div className="flex items-center gap-2 text-sm">
-        <label htmlFor={`required-${data.id}`} className="text-gray-600">
+        <label htmlFor={`required-${data.id}`} className="text-gray-600 cursor-pointer">
           Obrigatória
         </label>
         <input
@@ -103,7 +103,7 @@ export default function QuestionBlock({ data, onUpdate, onRemove, onActivate }: 
           type="checkbox"
           checked={data.required || false}
           onChange={handleRequiredChange}
-          className="h-4 w-4 accent-blue-700"
+          className="h-4 w-4 accent-blue-700 cursor-pointer"
         />
       </div>
 

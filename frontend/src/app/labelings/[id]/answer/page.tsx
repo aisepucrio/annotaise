@@ -48,6 +48,7 @@ export default function LabelingAnswerPage() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadErrorCode, setLoadErrorCode] = useState<string | null>(null);
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
   const [currentSectionIdx, setCurrentSectionIdx] = useState<number>(0);
   const [guideText, setGuideText] = useState<string>("");
@@ -73,6 +74,7 @@ export default function LabelingAnswerPage() {
 
     setIsLoading(true);
     setLoadError(null);
+    setLoadErrorCode(null);
     setSubmitMessage(null);
 
     try {
@@ -92,18 +94,22 @@ export default function LabelingAnswerPage() {
       setPayload({});
       setCurrentItemId(null);
       setRowIndex(null);
+      setLoadErrorCode(null);
 
       let message = "Não foi possível carregar um item para responder.";
       if (axios.isAxiosError(error)) {
-        const detail = (error.response?.data as { detail?: string } | undefined)
-          ?.detail;
-        if (detail) {
-          message = detail;
+        const data = error.response?.data as { detail?: string; code?: string } | undefined;
+        if (data?.code === "NO_LABELINGS_TO_ANSWER") {
+          message = data.detail ?? "Você não tem rotulações para responder.";
+        } else if (data?.detail) {
+          message = data.detail;
         } else if (error.message) {
           message = error.message;
         }
+        setLoadErrorCode(data?.code ?? null);
       } else if (error instanceof Error) {
         message = error.message;
+        setLoadErrorCode(null);
       }
       setLoadError(message);
     } finally {
@@ -274,6 +280,16 @@ export default function LabelingAnswerPage() {
       </header>
 
       <section className="mt-4 rounded-xl border border-blue-200 bg-white p-4 shadow-lg">
+        {loadError ? (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+            {loadError}
+            {loadErrorCode ? (
+              <span className="ml-2 text-[11px] uppercase tracking-wide text-red-600">
+                ({loadErrorCode})
+              </span>
+            ) : null}
+          </div>
+        ) : null}
         {isLoading ? (
           <p className="text-sm text-gray-600">
             Carregando item e perguntas...
@@ -299,7 +315,7 @@ export default function LabelingAnswerPage() {
                     type="button"
                     onClick={goToNextSection}
                     disabled={isLoading || isSubmitting}
-                    className="inline-flex items-center gap-2 rounded-lg bg-blue-900 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="cursor-pointer inline-flex items-center gap-2 rounded-lg bg-blue-900 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     Avançar
                   </button>

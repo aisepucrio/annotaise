@@ -26,7 +26,7 @@ export default function QuestionRangeEditor({ config, onChange }: Props) {
           Valor mínimo
           <input
             type="number"
-            className="mt-1 rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none"
+            className="mt-1 rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none cursor-text"
             value={min ?? ""}
             onChange={handleNumericChange("min")}
           />
@@ -35,7 +35,7 @@ export default function QuestionRangeEditor({ config, onChange }: Props) {
           Valor máximo
           <input
             type="number"
-            className="mt-1 rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none"
+            className="mt-1 rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none cursor-text"
             value={max ?? ""}
             onChange={handleNumericChange("max")}
           />
@@ -44,7 +44,7 @@ export default function QuestionRangeEditor({ config, onChange }: Props) {
           Passo
           <input
             type="number"
-            className="mt-1 rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none"
+            className="mt-1 rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none cursor-text"
             value={step ?? ""}
             min={0}
             step="any"

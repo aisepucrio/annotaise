@@ -229,12 +229,10 @@ class CreateReadLabelingStructureView(APIView):
                 'labeling': labeling,
             }
         )
-        try:
-            serializer.is_valid(raise_exception=True)
-        except ValidationError as exc:
-            print("Labeling structure validation errors:")
-            print(json.dumps(serializer.errors, ensure_ascii=False))
-            raise exc
+        
+        if not serializer.is_valid():
+            return Response({"detail":"estrutura do form inválida. cheque possiveis erros ou campos vazios","code":"INVALID_FORM_STRUCTURE"},status=400)
+    
 
         sections_data = serializer.validated_data.get("sections", [])
 
