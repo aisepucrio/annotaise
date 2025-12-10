@@ -1,10 +1,25 @@
 "use client";
 
 import { useMemo } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, GripVertical } from "lucide-react";
+import {
+  DndContext,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  arrayMove,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import QuestionBlock from "./question_block";
 import ContextBlock from "./context_block";
-import { SectionData, SectionElement } from "./labeling_types";
+import { SectionData, SectionElement, QuestionElement } from "./labeling_types";
 
 type Props = {
   data: SectionData;
@@ -42,10 +57,20 @@ export default function SectionForm({
     elements: data?.elements ?? [],
   });
 
-  // sort elements by order so we render in true order
   const orderedElements = useMemo(
     () => [...(data?.elements ?? [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
     [data?.elements]
+  );
+
+  const questionIds = useMemo(
+    () => orderedElements.filter((el) => el.kind === "question").map((el) => el.id),
+    [orderedElements]
+  );
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 6 },
+    })
   );
 
   const handleUpdateElement = (elementId: string, patch: Partial<SectionElement>) => {
@@ -54,6 +79,31 @@ export default function SectionForm({
       el.id === elementId ? { ...el, ...patch } : el
     );
     onUpdateSection({ ...current, elements: updatedElements });
+  };
+
+  const handleQuestionDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const questions = orderedElements.filter(
+      (el): el is QuestionElement => el.kind === "question"
+    );
+    const oldIndex = questions.findIndex((q) => q.id === active.id);
+    const newIndex = questions.findIndex((q) => q.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const reorderedQuestions = arrayMove(questions, oldIndex, newIndex);
+    const questionQueue = [...reorderedQuestions];
+
+    // Recompose the section elements preserving contexts and reindexing orders to avoid constraint issues.
+    const merged = orderedElements.map((el) => {
+      if (el.kind !== "question") return el;
+      const next = questionQueue.shift();
+      return next ?? el;
+    });
+
+    const reindexed = merged.map((el, idx) => ({ ...el, order: idx }));
+    onUpdateSection({ ...safeSection(), elements: reindexed });
   };
 
   const handleRemoveElement = (elementId: string) => {
@@ -100,30 +150,68 @@ export default function SectionForm({
       </div>
 
       {/* render elements by order */}
-      <div>
-        {orderedElements.map((element) =>
-          element.kind === "context" ? (
-            <ContextBlock
-              key={element.id}
-              data={element}
-              columns={columns}
-              onUpdate={(patch) => handleUpdateElement(element.id, patch)}
-              onRemove={() => handleRemoveElement(element.id)}
-              onActivate={handleElementFocus}
-            />
-          ) : (
-            <QuestionBlock
-              key={element.id}
-              data={element}
-              onUpdate={(patch) => handleUpdateElement(element.id, patch)}
-              onRemove={() => handleRemoveElement(element.id)}
-              onActivate={handleElementFocus}
-            />
-          )
-        )}
-      </div>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleQuestionDragEnd}
+      >
+        <SortableContext items={questionIds} strategy={verticalListSortingStrategy}>
+          <div>
+            {orderedElements.map((element) =>
+              element.kind === "context" ? (
+                <ContextBlock
+                  key={element.id}
+                  data={element}
+                  columns={columns}
+                  onUpdate={(patch) => handleUpdateElement(element.id, patch)}
+                  onRemove={() => handleRemoveElement(element.id)}
+                  onActivate={handleElementFocus}
+                />
+              ) : (
+                <SortableQuestion key={element.id} id={element.id}>
+                  <QuestionBlock
+                    data={element}
+                    onUpdate={(patch) => handleUpdateElement(element.id, patch)}
+                    onRemove={() => handleRemoveElement(element.id)}
+                    onActivate={handleElementFocus}
+                  />
+                </SortableQuestion>
+              )
+            )}
+          </div>
+        </SortableContext>
+      </DndContext>
+    </div>
+  );
+}
 
-      
+type SortableQuestionProps = {
+  id: string;
+  children: React.ReactNode;
+};
+
+function SortableQuestion({ id, children }: SortableQuestionProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id,
+  });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.55 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className={`relative ${isDragging ? "z-10" : ""}`}>
+      <button
+        type="button"
+        aria-label="Arrastar pergunta"
+        className="absolute -left-5 top-3 flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 shadow-sm hover:bg-gray-100"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical size={14} />
+      </button>
+      <div className={isDragging ? "opacity-70" : ""}>{children}</div>
     </div>
   );
 }
