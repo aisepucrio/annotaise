@@ -40,14 +40,14 @@ jobs:
           DJANGO_SUPERUSER_PASSWORD=${{ secrets.DJANGO_SUPERUSER_PASSWORD }}
           DJANGO_SUPERUSER_EMAIL=${{ secrets.DJANGO_SUPERUSER_EMAIL }}
 
-          EMAIL_HOST=${{ secrets.EMAIL_HOST }}
-          EMAIL_HOST_USER=${{ secrets.EMAIL_HOST_USER }}
-          EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_HOST_PASSWORD }}
-          EMAIL_PORT=${{ secrets.EMAIL_PORT }}
-          DEFAULT_FROM_EMAIL=${{ secrets.DEFAULT_FROM_EMAIL }}
+          EMAIL_HOST=smtp.fake.com
+          EMAIL_HOST_USER=fake@example.com
+          EMAIL_HOST_PASSWORD=fake
+          EMAIL_PORT=587
+          DEFAULT_FROM_EMAIL="Annotaise <fake@example.com>"
 
-          FRONTEND_URL=${{ secrets.FRONTEND_URL }}
-          NEXT_PUBLIC_API_BASE_URL=${{ secrets.NEXT_PUBLIC_API_BASE_URL }}
+          FRONTEND_URL=http://localhost:3000
+          NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
           EOF
 
       - name: Set up Docker
