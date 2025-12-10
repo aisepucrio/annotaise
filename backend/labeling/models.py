@@ -21,6 +21,8 @@ class Labeling(models.Model):
     start_date = models.DateField(default=timezone.now)
     final_date = models.DateField(null=False, blank=False)
 
+    guide = models.TextField(default="",blank=True)
+
     users_per_item = models.PositiveIntegerField(null=False, blank=False,default=1)
     block_section_back = models.BooleanField(default=False)
 

@@ -221,6 +221,7 @@ class CreateReadLabelingStructureView(APIView):
         if not perm.can_edit_labeling(request.user, labeling_id):
             raise PermissionDenied(detail=perm.message)
 
+
         serializer = LabelingSectionsBulkCreateSerializer(
             data=request.data,
             context={

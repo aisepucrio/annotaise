@@ -18,6 +18,7 @@ import {
   saveLabelingStructure,
   type LabelingStructureSection,
 } from "@/lib/services/labeling_create_service";
+import { updateLabeling } from "@/lib/services/labeling_service";
 import {
   fetchLabelingMemberships,
   createLabelingMembership,
@@ -110,7 +111,7 @@ export default function LabelingFormPage() {
   const [projectId, setProjectId] = useState<number | null>(null);
   const [startDateInfo, setStartDateInfo] = useState<string | null>(null);
   const [finalDateInfo, setFinalDateInfo] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"form" | "assign" | "answers">("form");
+  const [activeTab, setActiveTab] = useState<"form" | "assign" | "answers" | "guide">("form");
   const [isEditInfoOpen, setIsEditInfoOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -125,6 +126,7 @@ export default function LabelingFormPage() {
   const [newMemberRole, setNewMemberRole] = useState<LabelingMembershipRole>("annotator");
 
   const [structureSections, setStructureSections] = useState<LabelingStructureSection[]>([]);
+  const [guideText, setGuideText] = useState<string>("");
   const [answers, setAnswers] = useState<AnswerResponse[]>([]);
   const [answersLoading, setAnswersLoading] = useState(false);
   const [answersError, setAnswersError] = useState<string | null>(null);
@@ -274,6 +276,7 @@ export default function LabelingFormPage() {
       setProjectId(labeling.project ?? null);
       setStartDateInfo(labeling.start_date ?? null);
       setFinalDateInfo(labeling.final_date ?? null);
+      setGuideText(labeling.description ?? "");
 
       const csvColumns = Array.isArray(labeling.column_names) ? labeling.column_names : [];
       const structureColumns = deriveColumnsFromStructure(structure);
@@ -579,6 +582,23 @@ export default function LabelingFormPage() {
     }
   };
 
+  const handleSaveGuide = async () => {
+    if (Number.isNaN(labelingId)) return;
+    try {
+      await updateLabeling(labelingId, { description: guideText });
+      toast.success("Guia atualizado com sucesso.");
+    } catch (error) {
+      let message = "Não foi possível salvar o guia.";
+      if (axios.isAxiosError(error)) {
+        const detail = (error.response?.data as { detail?: string } | undefined)?.detail;
+        if (detail) message = detail;
+      } else if (error instanceof Error) {
+        message = error.message;
+      }
+      toast.error(message);
+    }
+  };
+
   const handleSectionDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) {
@@ -644,21 +664,21 @@ export default function LabelingFormPage() {
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={handleSaveStructure}
-              className="bg-white text-blue-900 font-semibold px-5 py-2 rounded-lg hover:bg-gray-100 shadow-sm flex items-center gap-2 cursor-pointer"
-              disabled={isSaving || isLoadingLabeling}
-            >
-              <Save size={18} />
-              {isSaving ? "Salvando..." : "Salvar alterações"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsDeleteOpen(true)}
-              className="p-2 rounded-md hover:bg-white/10 border border-white/30 text-white flex items-center justify-center"
-              aria-label="Excluir rotulação"
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={handleSaveStructure}
+            className="bg-white text-blue-900 font-semibold px-5 py-2 rounded-lg hover:bg-gray-100 shadow-sm flex items-center gap-2 cursor-pointer"
+            disabled={isSaving || isLoadingLabeling}
+          >
+            <Save size={18} />
+            {isSaving ? "Salvando..." : "Salvar alterações"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsDeleteOpen(true)}
+            className="p-2 rounded-md hover:bg-white/10 border border-white/30 text-white flex items-center justify-center"
+            aria-label="Excluir rotulação"
               disabled={isDeleting || isLoadingLabeling}
             >
               <Trash2 size={18} />
@@ -671,15 +691,18 @@ export default function LabelingFormPage() {
 
         {/* Tabs */}
         <div className="flex gap-6 mt-3 text-sm justify-center">
-          {[
-            { key: "form", label: "Formulário" },
-            { key: "assign", label: "Atribuir Usuários" },
-            { key: "answers", label: "Respostas" },
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setActiveTab(tab.key as "form" | "assign" | "answers")}
+            {[
+              { key: "form", label: "Formulário" },
+              { key: "assign", label: "Atribuir Usuários" },
+              { key: "answers", label: "Respostas" },
+              { key: "guide", label: "Guia" },
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() =>
+                  setActiveTab(tab.key as "form" | "assign" | "answers" | "guide")
+                }
               className={`pb-2 border-b-2 transition-colors ${
                 activeTab === tab.key
                   ? "border-white font-semibold text-white"
@@ -872,6 +895,29 @@ export default function LabelingFormPage() {
                   {membershipSaving ? "Adicionando..." : "Adicionar"}
                 </button>
               </div>
+            </div>
+          </div>
+        ) : activeTab === "guide" ? (
+          <div className="max-w-4xl mx-auto mt-4 space-y-3">
+            <p className="text-sm text-gray-600">
+              Escreva orientações gerais para quem vai responder esta rotulação.
+            </p>
+            <textarea
+              value={guideText}
+              onChange={(e) => setGuideText(e.target.value)}
+              rows={12}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-blue-600 shadow-sm"
+              placeholder="Instruções, contexto ou exemplos para guiar os respondentes..."
+            />
+            <div className="flex justify-end">
+              <Button
+                variant="normal"
+                onClick={() => void handleSaveGuide()}
+                disabled={isSaving || isLoadingLabeling || Number.isNaN(labelingId)}
+                className="px-4 py-2 shadow-md text-sm"
+              >
+                Salvar guia
+              </Button>
             </div>
           </div>
         ) : (

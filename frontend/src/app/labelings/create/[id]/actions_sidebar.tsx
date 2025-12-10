@@ -26,12 +26,12 @@ export default function ActionsSidebar({
   onAddQuestion,
   onAddSection,
 }: ActionsSidebarProps) {
-  if (!anchor || typeof document === "undefined") return null;
-
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  if (!anchor || !mounted || typeof document === "undefined") return null;
 
   const animatedState =
     mounted && !closing ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2";

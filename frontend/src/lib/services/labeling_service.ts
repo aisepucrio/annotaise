@@ -25,6 +25,7 @@ export type LabelingPayload = {
   final_date?: string;
   status?: LabelingStatus;
   block_section_back?: boolean;
+  description?: string;
 };
 
 export type LabelingMembershipRole = "owner" | "admin" | "annotator" | "viewer";

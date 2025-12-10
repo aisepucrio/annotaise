@@ -19,6 +19,17 @@ import {
 import type { AnswerMap } from "./answer_types";
 import SidebarLayout from "@/components/side-bar/sidebar_layout";
 import { toast } from "sonner";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import Button from "@/components/button";
 
 export default function LabelingAnswerPage() {
   const params = useParams<{ id: string }>();
@@ -39,6 +50,7 @@ export default function LabelingAnswerPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
   const [currentSectionIdx, setCurrentSectionIdx] = useState<number>(0);
+  const [guideText, setGuideText] = useState<string>("");
 
   useEffect(() => {
     if (loadError) {
@@ -66,6 +78,7 @@ export default function LabelingAnswerPage() {
     try {
       const labeling = await fetchLabelingById(labelingId);
       setLabelingTitle(labeling.title);
+      setGuideText(labeling.description ?? "");
 
       const nextAnswer = await fetchNextAnswer(labelingId);
       const sectionsResponse = nextAnswer.sections ?? [];
@@ -215,6 +228,39 @@ export default function LabelingAnswerPage() {
               Seção {currentSectionIdx + 1} de {totalSections}
             </span>
           ) : null}
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button
+                fill={false}
+                variant="light"
+                className="border border-white/30"
+              >
+                Guia
+              </Button>
+            </SheetTrigger>
+            <SheetContent
+              side="right"
+              className="sm:max-w-xl overflow-y-auto"
+            >
+              <SheetHeader>
+                <SheetTitle>Guia</SheetTitle>
+                <SheetDescription>
+                  Informações adicionais para responder os itens.
+                </SheetDescription>
+              </SheetHeader>
+              <div className="mt-4 space-y-4">
+                {guideText ? (
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {guideText}
+                  </ReactMarkdown>
+                ) : (
+                  <p className="text-sm text-gray-600">
+                    Nenhum guia foi fornecido para esta rotulação.
+                  </p>
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
           <button
             type="button"
             onClick={() => void loadItem()} // TODO esse botao é debug... mais pro futuro pode tirar
