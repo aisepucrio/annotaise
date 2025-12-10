@@ -120,6 +120,15 @@ export default function LabelingsPage() {
       <SidebarLayout>
         <PageHeader
           page_title="Gerenciar Rotulações"
+          tooltip={`Crie rotulações com o fluxo:
+            
+1. Importar CSV para mapeamento de colunas.
+2. Dar um título para a rotulação, vincular a um projeto inicial, definir data inicial e final, e quantos usuários precisam rotular cada item antes de finalizar.
+3. Gerencie sua nova rotulação podendo:
+   • Criar um formulário usando colunas mapeadas como contextos, com perguntas relacionadas a cada contexto e seções organizadas.
+   • Atribuir usuários para responder a rotulação.
+   • Inspecionar respostas em um dashboard.
+   • Exportar um CSV com respostas de todos os usuários para cada linha mapeada.`}
           description="Gerencie e visualize rotulações. Clique em 'Nova Rotulação' para importar um CSV e iniciar a configuração."
         />
 
