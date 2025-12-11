@@ -11,6 +11,7 @@ services:
     depends_on:
       - db
     environment:
+      DEBUG: ${DEBUG}
       DJANGO_DB_HOST: db
       DJANGO_DB_PORT: 5432
       DJANGO_DB_NAME: ${DJANGO_DB_NAME}
@@ -38,6 +39,10 @@ services:
       - /app/node_modules
     depends_on:
       - api
+    environment:
+      DEBUG: ${DEBUG}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_BASE_URL}
+      
   db:
     image: postgres:17-alpine
     environment:
@@ -48,6 +53,18 @@ services:
       - "5432:5432"
     volumes:
       - pg_annotaise:/var/lib/postgresql/data
+
+  nginx:
+    image: nginx:alpine
+    volumes:
+      - static_volume:/app/static
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - "8080:8080"
+    depends_on:
+      - api
+    profiles:
+      - production
 
 volumes:
   pg_annotaise:
