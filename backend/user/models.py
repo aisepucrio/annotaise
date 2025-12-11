@@ -5,8 +5,6 @@ from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
 
-
-
 class CustomUser(AbstractUser):
     '''a pk do usuario é o email. o username é um id aleatorio.'''
 
