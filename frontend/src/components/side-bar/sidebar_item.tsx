@@ -31,16 +31,16 @@ export default function SidebarItem({
   const pathname = usePathname();
   const isActive = pathname === alias;
 
-  // controls delayed label appearance when expanding the sidebar
+  // controla a aparição atrasada do rótulo ao expandir a barra lateral
   const [showLabel, setShowLabel] = useState(!collapsed);
 
   useEffect(() => {
     let t: ReturnType<typeof setTimeout> | null = null;
     if (collapsed) {
-      // hide immediately when collapsing
+      // Esconde o rótulo imediatamente ao recolher
       setShowLabel(false);
     } else {
-      // when expanding, wait the sidebar animation (300ms) then show
+      // Quando expandir, aguarde 300ms antes de mostrar o rótulo
       t = setTimeout(() => setShowLabel(true), 300);
     }
     return () => {

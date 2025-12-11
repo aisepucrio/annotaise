@@ -16,16 +16,16 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
   const toggle = sidebar?.toggle ?? (() => setLocalOpen((prev) => !prev));
 
   return (
-    <div className="bg-gray-300 min-h-screen">
+    <>
       <Sidebar isOpen={isOpen} onToggle={toggle} />
       <div
         className={`
-          bg-white min-h-screen p-4 transition-all duration-300
+          bg-white transition-all duration-300
           ${isOpen ? "ml-[14vw]" : "ml-[4vw]"}
         `}
       >
         {children}
       </div>
-    </div>
+    </>
   );
 }
