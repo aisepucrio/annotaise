@@ -16,7 +16,6 @@ import {
   importLabelingItemsCsv,
 } from "@/lib/services/labeling_service";
 import useCurrent from "@/hooks/current_user_hook";
-import SidebarLayout from "@/components/side-bar/sidebar_layout";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
@@ -117,8 +116,7 @@ export default function LabelingsPage() {
 
   return (
     <>
-      <SidebarLayout>
-        <PageHeader
+      <PageHeader
           page_title="Gerenciar Rotulações"
           tooltip={`Crie rotulações com o fluxo:
             
@@ -185,7 +183,6 @@ export default function LabelingsPage() {
             somente administradores podem criar novas.
           </div>
         )}
-      </SidebarLayout>
 
       {/* Modal */}
       <UploadCsvModal

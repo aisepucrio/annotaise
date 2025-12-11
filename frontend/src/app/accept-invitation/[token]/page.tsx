@@ -127,7 +127,7 @@ export default function AcceptInvitationPage() {
   return (
     <div className="bg-gray-200 p-4 min-h-screen">
       <Image
-        src="/full_logo_icon.svg"
+        src="/Full_Logo_Light.svg"
         alt="Logo"
         width={490}
         height={100}
@@ -200,7 +200,6 @@ export default function AcceptInvitationPage() {
           })}
           className="mt-6 flex flex-col items-center"
         >
-
           <div className="mt-2 relative w-80">
             <label className="absolute -top-2 left-3 bg-white px-1 text-xs text-gray-600">
               Primeiro nome

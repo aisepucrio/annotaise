@@ -60,7 +60,7 @@ export default function LoginPage() {
   return (
     <div className="bg-gray-200 p-4 min-h-screen">
       <Image
-        src="/full_logo_icon.svg"
+        src="/Full_Logo_Light.svg"
         alt="Logo"
         width={490}
         height={100}

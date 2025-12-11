@@ -1,24 +1,14 @@
 "use client";
 
-import PageHeader from "@/components/page_header";
-import UseCurrent from "@/hooks/current_user_hook";
-import SidebarLayout from "@/components/side-bar/sidebar_layout";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function Home() {
-  const user = UseCurrent();
+  const router = useRouter();
 
-  return (
-    <SidebarLayout>
-      <PageHeader
-        page_title="Home"
-        description="Nesta página você pode visualizar dados e estatísticas de todos os projetos em que participa."
-      />
-      <div className="">
-        <h1 className="text-xl text-gray-800 bg-white w-full mt-5 ml-3 p-1 rounded-xl">
-          Bem-vindo,{" "}
-          {user ? user.first_name + " " + user.last_name : "Carregando..."}
-        </h1>
-      </div>
-    </SidebarLayout>
-  );
+  useEffect(() => {
+    router.push("/dashboard");
+  }, [router]);
+
+  return null;
 }

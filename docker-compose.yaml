@@ -1,7 +1,6 @@
 name: annotaise
 
 services:
-
   api:
     build: ./backend/
     volumes:

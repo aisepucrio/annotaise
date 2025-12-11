@@ -17,7 +17,6 @@ import {
   importLabelingItemsCsv,
 } from "@/lib/services/labeling_service";
 import useCurrent from "@/hooks/current_user_hook";
-import SidebarLayout from "@/components/side-bar/sidebar_layout";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
@@ -69,8 +68,7 @@ export default function LabelingsPage() {
 
   return (
     <>
-      <SidebarLayout>
-        <PageHeader
+      <PageHeader
           page_title="Rotulações"
           tooltip={`Acompanhe todas as rotulações que você pode responder:
 - Veja progresso geral e pendências.
@@ -80,7 +78,7 @@ export default function LabelingsPage() {
         />
 
         <div className="flex flex-nowrap items-center mt-5">
-          <FilterBar />
+          <FilterBar value={searchTerm} onChange={setSearchTerm} placeholder="Pesquisar rotulações..." />
           
         </div>
 
@@ -116,8 +114,6 @@ export default function LabelingsPage() {
             somente administradores podem criar novas.
           </div>
         )}
-      </SidebarLayout>
-
     </>
   );
 }

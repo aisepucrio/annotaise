@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import AuthGuard from "@/components/auth-guard";
-import { SidebarProvider } from "@/components/side-bar/sidebar_provider";
 import { Montserrat } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 const montserrat = Montserrat({
@@ -26,12 +24,8 @@ export default function RootLayout({
         className={`${montserrat.variable} antialiased`}
         style={{ fontFamily: "var(--font-montserrat)" }}
       >
-        <SidebarProvider>
-          <AuthGuard>
-            {children}
-            <Toaster />
-          </AuthGuard>
-        </SidebarProvider>
+        {children}
+        <Toaster />
       </body>
     </html>
   );

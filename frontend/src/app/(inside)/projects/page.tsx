@@ -17,7 +17,6 @@ import {
   type ProjectPayload,
 } from "@/lib/services/project_service";
 import useCurrent from "@/hooks/current_user_hook";
-import SidebarLayout from "@/components/side-bar/sidebar_layout";
 import { toast } from "sonner";
 
 export default function Projects() {
@@ -81,17 +80,15 @@ export default function Projects() {
 
   if (userLoading) {
     return (
-      <SidebarLayout>
-        <p className="mt-6 text-sm text-gray-500">
-          Carregando informações do usuário...
-        </p>
-      </SidebarLayout>
+      <p className="mt-6 text-sm text-gray-500">
+        Carregando informações do usuário...
+      </p>
     );
   }
 
   if (!canSeeProjects) {
     return (
-      <SidebarLayout>
+      <>
         <PageHeader
           page_title="Projetos"
           description="Apenas editores ou administradores podem acessar esta página."
@@ -99,14 +96,13 @@ export default function Projects() {
         <p className="mt-6 ml-5 text-sm text-gray-600">
           Seu perfil não possui permissão para visualizar projetos.
         </p>
-      </SidebarLayout>
+      </>
     );
   }
 
   return (
     <>
-      <SidebarLayout>
-        <PageHeader
+      <PageHeader
           page_title="Projetos"
           tooltip={`Crie e gerencie projetos para criar rotulações vinculadas a eles:
 • Cadastre novos projetos e mantenha as informações principais em dia.
@@ -158,7 +154,6 @@ export default function Projects() {
             </GridLayout>
           )}
         </div>
-      </SidebarLayout>
       <NewProjectModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}

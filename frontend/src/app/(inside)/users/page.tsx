@@ -19,7 +19,6 @@ import {
 import NewUserModal from "./new_user_modal";
 import useCurrent from "@/hooks/current_user_hook";
 import EditUserModal from "./edit_user_modal";
-import SidebarLayout from "@/components/side-bar/sidebar_layout";
 import { toast } from "sonner";
 
 export default function UsersPage() {
@@ -92,8 +91,7 @@ export default function UsersPage() {
 
   return (
     <>
-      <SidebarLayout>
-        <PageHeader
+      <PageHeader
           page_title="Usuários"
           tooltip={`Administre a criação de novos usuários e gerencie o perfil deles:
    • Crie convites rapidamente e acompanhe quem já ingressou.
@@ -148,7 +146,6 @@ export default function UsersPage() {
             </GridLayout>
           )}
         </div>
-      </SidebarLayout>
       <NewUserModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
