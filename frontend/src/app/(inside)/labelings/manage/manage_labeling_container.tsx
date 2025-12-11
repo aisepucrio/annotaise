@@ -49,7 +49,7 @@ export default function LabelingContainer({
       </h3>
 
       {/* linha divisória */}
-      <div className="mt-2 h-1 rounded-full bg-blue-200/60" />
+      <div className="mt-2 h-0.75 rounded-full bg-metal-50" />
 
       <div className="mt-3 flex flex-col gap-3 min-w-0 w-full">
         {/* métricas */}
@@ -73,7 +73,7 @@ export default function LabelingContainer({
             icon={<Pen size={18} strokeWidth={1.75} />}
             onClick={handleManageLabelingButton}
             variant="normal"
-            fill={false}
+            fill={true}
             className="px-4"
             ariaLabel="Gerenciar rotulação"
           >

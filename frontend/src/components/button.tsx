@@ -1,8 +1,13 @@
 import React from "react";
 
 /* Variantes de cor disponíveis para o botão */
-type ButtonVariant = "normal" | "light" | "red" | "green" | "disabled";
-
+type ButtonVariant =
+  | "normal"
+  | "light"
+  | "red"
+  | "green"
+  | "disabled"
+  | "white";
 
 type ButtonProps = {
   /** Texto do botão */
@@ -50,6 +55,13 @@ export default function Button({
     }
 
     switch (variant) {
+      case "white":
+        return {
+          bg: "var(--metal-50)",
+          text: "var(--blueberry-700)",
+          hoverBg: "var(--metal-100)",
+        };
+
       case "light":
         return {
           bg: "var(--blueberry-500)",

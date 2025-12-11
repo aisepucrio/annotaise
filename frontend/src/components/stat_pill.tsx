@@ -7,6 +7,8 @@ type StatPillProps = {
   textColor: string;
   /** Cor de fundo (variável CSS do globals.css) */
   backgroundColor: string;
+  /** Indica se o "corte" visual deve aparecer à esquerda ou à direita */
+  cut?: "left" | "right";
 };
 
 export default function StatPill({
@@ -14,10 +16,18 @@ export default function StatPill({
   value,
   textColor,
   backgroundColor,
+  cut,
 }: StatPillProps) {
+  const cutClass =
+    cut === "left"
+      ? "rounded-l-md"
+      : cut === "right"
+      ? "rounded-r-md"
+      : "rounded-md";
+
   return (
     <div
-      className="flex flex-wrap items-center gap-1 rounded-lg px-3 py-2 text-sm w-full"
+      className={`flex flex-wrap items-center gap-1 ${cutClass} px-3 py-2 text-sm w-full`}
       style={{
         color: textColor,
         backgroundColor: backgroundColor,

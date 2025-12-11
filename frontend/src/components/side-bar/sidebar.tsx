@@ -3,7 +3,7 @@
 import Image from "next/image"; // mantem para o LOGO
 import SidebarItem from "./sidebar_item";
 import {
-  Home,
+  LayoutDashboard,
   Users,
   FolderKanban,
   Tags,
@@ -114,7 +114,7 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
         {/* Topo */}
         <ul className="space-y-1 mt-3 w-full">
           <SidebarItem
-            icon={<Home size={24} />}
+            icon={<LayoutDashboard size={24} />}
             label="Dashboard"
             href="/dashboard"
             alias="/dashboard"

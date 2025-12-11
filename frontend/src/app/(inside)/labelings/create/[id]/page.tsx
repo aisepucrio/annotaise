@@ -44,8 +44,8 @@ import {
 import { fetchUsers, type User } from "@/lib/services/user_service";
 import { fetchProject } from "@/lib/services/project_service";
 import EditLabelingModal from "../../edit_labeling_modal";
-import GridLayout from "@/components/grid_layout";
-import GridItemCard from "@/components/grid_item_card";
+import GridLayout from "@/components/grid/grid_layout";
+import GridItemCard from "@/components/grid/grid_item_card";
 import Button from "@/components/button";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
