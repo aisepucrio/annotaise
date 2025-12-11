@@ -672,8 +672,8 @@ export default function LabelingFormPage() {
   return (
     <>
       {/* Cabeçalho */}
-      <div className="bg-blue-900 text-white px-6 py-3 rounded-t-xl shadow-md">
-        <div className="flex items-start justify-between">
+      <div className="bg-blue-900 text-white px-6 py-3 shadow-md">
+        <div className="flex items-center justify-between">
           <div className="flex items-start gap-3">
             <button
               type="button"
@@ -772,7 +772,7 @@ export default function LabelingFormPage() {
       </div>
 
       {/* Conteúdo */}
-      <div className="bg-white border-x border-b border-blue-200 rounded-b-xl shadow-lg p-4">
+      <div className="bg-white   p-4">
         {activeTab === "form" ? (
           <>
             {/* Colunas do CSV */}
