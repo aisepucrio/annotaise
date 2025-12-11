@@ -149,3 +149,9 @@ class InvitationViewSet(viewsets.ModelViewSet):
 
         serializer = CustomUserSerializer(user)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class UserGroupViewset(viewsets.ModelViewSet):
+    http_method_names = ['get','delete','post','patch']
+    permission_classes = [IsAdminAccount]
+    #TODO talvez seja valido depois colocar uma permissão aqui pra não permitir deletar/ editar grupo dos outros

@@ -2,7 +2,7 @@ from django.db import models
 from django.utils import timezone
 from django.conf import settings
 from django.core.validators import MinValueValidator
-
+from user.models import UserGroup
 
 class Labeling(models.Model):
     class Status(models.TextChoices):
@@ -22,6 +22,7 @@ class Labeling(models.Model):
     final_date = models.DateField(null=False, blank=False)
 
     guide = models.TextField(default="",blank=True)
+    
 
     users_per_item = models.PositiveIntegerField(null=False, blank=False,default=1)
     block_section_back = models.BooleanField(default=False)
@@ -38,6 +39,18 @@ class Labeling(models.Model):
 
     def __str__(self):
         return f"Rotulação:{self.title} Status:({self.get_status_display()})"
+
+class LabelingGroupQuota(models.Model):
+    labeling = models.ForeignKey(
+        Labeling,
+        related_name="role_quotas",
+        on_delete=models.CASCADE,
+    )
+    group = models.ForeignKey(UserGroup,on_delete=models.DO_NOTHING)
+    required_answers_per_item = models.PositiveSmallIntegerField()
+
+    class Meta:
+        unique_together = ("labeling", "group")
 
 
 class LabelingSection(models.Model):

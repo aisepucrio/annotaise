@@ -28,28 +28,14 @@ export default function LabelingContainer({
   onUpdated,
 }: LabelingContainerProps) {
   const router = useRouter();
-  const currentUser = useCurrent();
-  const isAdmin = Boolean(
-    currentUser?.is_staff || currentUser?.account_type === "admin"
-  );
+
+
   const [editOpen, setEditOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
-  function handleEditLabelingButton() {
-    if (isAdmin) {
-      router.push(`/labelings/create/${id}`);
-    } else {
-      router.push(`/labelings/${id}/my-answers`);
-    }
-  }
 
   function handleAnswerLabelingButton() {
     router.push(`/labelings/${id}/answer`);
-  }
-
-  function handleManageMemberships() {
-    if (!isAdmin) return;
-    setEditOpen(true);
   }
 
   if (labelings_done != 0 && labelings_pending === 0) {
