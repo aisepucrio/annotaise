@@ -1,4 +1,4 @@
-if [ "$DEBUG" = "false" ]; then
+if [ "$DEBUG_NEXT" = "false" ]; then
     npm run build
     npm run start
 else

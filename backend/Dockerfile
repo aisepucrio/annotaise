@@ -9,8 +9,8 @@ ADD https://astral.sh/uv/0.8.22/install.sh /uv-installer.sh
 RUN sh /uv-installer.sh && rm /uv-installer.sh
 ENV PATH="/root/.local/bin/:$PATH"
 
-WORKDIR /src
-COPY --chmod=755 . /src/
+WORKDIR /app
+COPY --chmod=755 . /app/
 RUN uv sync --locked
 
 RUN chmod +x ./run.sh
