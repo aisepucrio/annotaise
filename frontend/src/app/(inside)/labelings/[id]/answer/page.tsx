@@ -17,7 +17,6 @@ import {
   validateSectionRequired,
 } from "./answer_utils";
 import type { AnswerMap } from "./answer_types";
-import SidebarLayout from "@/components/side-bar/sidebar_layout";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -98,7 +97,9 @@ export default function LabelingAnswerPage() {
 
       let message = "Não foi possível carregar um item para responder.";
       if (axios.isAxiosError(error)) {
-        const data = error.response?.data as { detail?: string; code?: string } | undefined;
+        const data = error.response?.data as
+          | { detail?: string; code?: string }
+          | undefined;
         if (data?.code === "NO_LABELINGS_TO_ANSWER") {
           message = data.detail ?? "Você não tem rotulações para responder.";
         } else if (data?.detail) {
@@ -204,7 +205,7 @@ export default function LabelingAnswerPage() {
   };
 
   return (
-    <SidebarLayout>
+    <>
       <header className="flex flex-col gap-3 rounded-xl bg-blue-900 px-6 py-4 text-white shadow-md lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-3">
           <button
@@ -340,6 +341,6 @@ export default function LabelingAnswerPage() {
           </div>
         ) : null}
       </section>
-    </SidebarLayout>
+    </>
   );
 }

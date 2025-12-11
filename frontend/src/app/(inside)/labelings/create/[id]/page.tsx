@@ -3,7 +3,16 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import axios from "axios";
-import { ArrowLeft, Save, Edit, Calendar, Users, Trash2, Download, GripVertical } from "lucide-react";
+import {
+  ArrowLeft,
+  Save,
+  Edit,
+  Calendar,
+  Users,
+  Trash2,
+  Download,
+  GripVertical,
+} from "lucide-react";
 import {
   SectionData,
   ContextElement,
@@ -28,11 +37,13 @@ import {
   type LabelingMembershipRole,
   deleteLabeling,
 } from "@/lib/services/labeling_service";
-import { fetchLabelingAnswers, type AnswerResponse } from "@/lib/services/answer_service";
+import {
+  fetchLabelingAnswers,
+  type AnswerResponse,
+} from "@/lib/services/answer_service";
 import { fetchUsers, type User } from "@/lib/services/user_service";
 import { fetchProject } from "@/lib/services/project_service";
 import EditLabelingModal from "../../edit_labeling_modal";
-import SidebarLayout from "@/components/side-bar/sidebar_layout";
 import GridLayout from "@/components/grid_layout";
 import GridItemCard from "@/components/grid_item_card";
 import Button from "@/components/button";
@@ -111,27 +122,38 @@ export default function LabelingFormPage() {
   const [projectId, setProjectId] = useState<number | null>(null);
   const [startDateInfo, setStartDateInfo] = useState<string | null>(null);
   const [finalDateInfo, setFinalDateInfo] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"form" | "assign" | "answers" | "guide">("form");
+  const [activeTab, setActiveTab] = useState<
+    "form" | "assign" | "answers" | "guide"
+  >("form");
   const [isEditInfoOpen, setIsEditInfoOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const [memberships, setMemberships] = useState<LabelingMembershipDashboard[]>([]);
+  const [memberships, setMemberships] = useState<LabelingMembershipDashboard[]>(
+    []
+  );
   const [users, setUsers] = useState<User[]>([]);
   const [membershipLoading, setMembershipLoading] = useState(false);
   const [membershipError, setMembershipError] = useState<string | null>(null);
   const [membershipSaving, setMembershipSaving] = useState(false);
   const [newMemberId, setNewMemberId] = useState<string>("");
-  const [newMemberRole, setNewMemberRole] = useState<LabelingMembershipRole>("annotator");
+  const [newMemberRole, setNewMemberRole] =
+    useState<LabelingMembershipRole>("annotator");
 
-  const [structureSections, setStructureSections] = useState<LabelingStructureSection[]>([]);
+  const [structureSections, setStructureSections] = useState<
+    LabelingStructureSection[]
+  >([]);
   const [guideText, setGuideText] = useState<string>("");
   const [answers, setAnswers] = useState<AnswerResponse[]>([]);
   const [answersLoading, setAnswersLoading] = useState(false);
   const [answersError, setAnswersError] = useState<string | null>(null);
-  const [selectedResponder, setSelectedResponder] = useState<"all" | number>("all");
-  const [inspectAnswer, setInspectAnswer] = useState<AnswerResponse | null>(null);
+  const [selectedResponder, setSelectedResponder] = useState<"all" | number>(
+    "all"
+  );
+  const [inspectAnswer, setInspectAnswer] = useState<AnswerResponse | null>(
+    null
+  );
   const [exporting, setExporting] = useState(false);
   const [actionsAnchor, setActionsAnchor] = useState<{
     sectionId: string;
@@ -278,11 +300,15 @@ export default function LabelingFormPage() {
       setFinalDateInfo(labeling.final_date ?? null);
       setGuideText(labeling.guide ?? "");
 
-      const csvColumns = Array.isArray(labeling.column_names) ? labeling.column_names : [];
+      const csvColumns = Array.isArray(labeling.column_names)
+        ? labeling.column_names
+        : [];
       const structureColumns = deriveColumnsFromStructure(structure);
       setColumns(csvColumns.length > 0 ? csvColumns : structureColumns);
       const mappedSections = mapSectionsFromDTO(structure);
-      setSections(mappedSections.length > 0 ? mappedSections : [createDefaultSection()]);
+      setSections(
+        mappedSections.length > 0 ? mappedSections : [createDefaultSection()]
+      );
       setStructureSections(structure);
 
       if (labeling.project) {
@@ -321,8 +347,11 @@ export default function LabelingFormPage() {
         setUsers(usersRes);
       } catch (err) {
         const detail =
-          (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
-          (err instanceof Error ? err.message : "Não foi possível carregar membros.");
+          (err as { response?: { data?: { detail?: string } } })?.response?.data
+            ?.detail ??
+          (err instanceof Error
+            ? err.message
+            : "Não foi possível carregar membros.");
         setMembershipError(detail);
       } finally {
         setMembershipLoading(false);
@@ -480,15 +509,21 @@ export default function LabelingFormPage() {
       setNewMemberRole("annotator");
     } catch (err) {
       const detail =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
-        (err instanceof Error ? err.message : "Não foi possível adicionar o membro.");
+        (err as { response?: { data?: { detail?: string } } })?.response?.data
+          ?.detail ??
+        (err instanceof Error
+          ? err.message
+          : "Não foi possível adicionar o membro.");
       setMembershipError(detail);
     } finally {
       setMembershipSaving(false);
     }
   };
 
-  const handleChangeRole = async (membership: LabelingMembershipDashboard, role: LabelingMembershipRole) => {
+  const handleChangeRole = async (
+    membership: LabelingMembershipDashboard,
+    role: LabelingMembershipRole
+  ) => {
     if (membership.role === role) return;
     setMembershipSaving(true);
     setMembershipError(null);
@@ -498,15 +533,20 @@ export default function LabelingFormPage() {
       setMemberships(updated);
     } catch (err) {
       const detail =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
-        (err instanceof Error ? err.message : "Não foi possível atualizar o membro.");
+        (err as { response?: { data?: { detail?: string } } })?.response?.data
+          ?.detail ??
+        (err instanceof Error
+          ? err.message
+          : "Não foi possível atualizar o membro.");
       setMembershipError(detail);
     } finally {
       setMembershipSaving(false);
     }
   };
 
-  const handleRemoveMember = async (membership: LabelingMembershipDashboard) => {
+  const handleRemoveMember = async (
+    membership: LabelingMembershipDashboard
+  ) => {
     const confirmed = window.confirm("Remover este membro da rotulação?");
     if (!confirmed) return;
     setMembershipSaving(true);
@@ -516,8 +556,11 @@ export default function LabelingFormPage() {
       setMemberships((prev) => prev.filter((m) => m.id !== membership.id));
     } catch (err) {
       const detail =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
-        (err instanceof Error ? err.message : "Não foi possível remover o membro.");
+        (err as { response?: { data?: { detail?: string } } })?.response?.data
+          ?.detail ??
+        (err instanceof Error
+          ? err.message
+          : "Não foi possível remover o membro.");
       setMembershipError(detail);
     } finally {
       setMembershipSaving(false);
@@ -546,7 +589,10 @@ export default function LabelingFormPage() {
         };
         if (data?.code && codeMessageMap[data.code]) {
           message = codeMessageMap[data.code];
-        } else if (typeof error.message === "string" && error.message.length > 0) {
+        } else if (
+          typeof error.message === "string" &&
+          error.message.length > 0
+        ) {
           message = error.message;
         }
       } else if (error instanceof Error) {
@@ -571,7 +617,10 @@ export default function LabelingFormPage() {
         const data = error.response?.data as { detail?: string } | undefined;
         if (typeof data?.detail === "string") {
           message = data.detail;
-        } else if (typeof error.message === "string" && error.message.length > 0) {
+        } else if (
+          typeof error.message === "string" &&
+          error.message.length > 0
+        ) {
           message = error.message;
         }
       } else if (error instanceof Error) {
@@ -591,7 +640,8 @@ export default function LabelingFormPage() {
     } catch (error) {
       let message = "Não foi possível salvar o guia.";
       if (axios.isAxiosError(error)) {
-        const detail = (error.response?.data as { detail?: string } | undefined)?.detail;
+        const detail = (error.response?.data as { detail?: string } | undefined)
+          ?.detail;
         if (detail) message = detail;
       } else if (error instanceof Error) {
         message = error.message;
@@ -620,7 +670,7 @@ export default function LabelingFormPage() {
   };
 
   return (
-    <SidebarLayout>
+    <>
       {/* Cabeçalho */}
       <div className="bg-blue-900 text-white px-6 py-3 rounded-t-xl shadow-md">
         <div className="flex items-start justify-between">
@@ -636,12 +686,15 @@ export default function LabelingFormPage() {
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
                 <span className="text-2xl font-semibold leading-tight">
-                  {labelingTitle || (isLoadingLabeling ? "Carregando..." : "Rotulação")}
+                  {labelingTitle ||
+                    (isLoadingLabeling ? "Carregando..." : "Rotulação")}
                 </span>
               </div>
               <div className="flex items-center gap-2 text-sm opacity-90 mt-1">
                 <span className="font-medium">
-                  {projectName ? `Projeto: ${projectName}` : "Projeto não informado"}
+                  {projectName
+                    ? `Projeto: ${projectName}`
+                    : "Projeto não informado"}
                 </span>
                 <button
                   type="button"
@@ -655,7 +708,9 @@ export default function LabelingFormPage() {
               <div className="flex items-center gap-3 text-xs mt-1">
                 <span className="flex items-center gap-1">
                   <Calendar size={14} />
-                  {`${formatDate(startDateInfo)} → ${formatDate(finalDateInfo)}`}
+                  {`${formatDate(startDateInfo)} → ${formatDate(
+                    finalDateInfo
+                  )}`}
                 </span>
                 {projectStatusLabel ? (
                   <span className="px-2 py-1 rounded-md bg-white/20 text-white text-[11px] font-semibold uppercase tracking-wide">
@@ -665,21 +720,21 @@ export default function LabelingFormPage() {
               </div>
             </div>
           </div>
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={handleSaveStructure}
-            className="bg-white text-blue-900 font-semibold px-5 py-2 rounded-lg hover:bg-gray-100 shadow-sm flex items-center gap-2 cursor-pointer"
-            disabled={isSaving || isLoadingLabeling}
-          >
-            <Save size={18} />
-            {isSaving ? "Salvando..." : "Salvar alterações"}
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsDeleteOpen(true)}
-            className="p-2 rounded-md hover:bg-white/10 border border-white/30 text-white flex items-center justify-center cursor-pointer"
-            aria-label="Excluir rotulação"
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleSaveStructure}
+              className="bg-white text-blue-900 font-semibold px-5 py-2 rounded-lg hover:bg-gray-100 shadow-sm flex items-center gap-2 cursor-pointer"
+              disabled={isSaving || isLoadingLabeling}
+            >
+              <Save size={18} />
+              {isSaving ? "Salvando..." : "Salvar alterações"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsDeleteOpen(true)}
+              className="p-2 rounded-md hover:bg-white/10 border border-white/30 text-white flex items-center justify-center cursor-pointer"
+              aria-label="Excluir rotulação"
               disabled={isDeleting || isLoadingLabeling}
             >
               <Trash2 size={18} />
@@ -692,18 +747,18 @@ export default function LabelingFormPage() {
 
         {/* Tabs */}
         <div className="flex gap-6 mt-3 text-sm justify-center">
-            {[
-              { key: "form", label: "Formulário" },
-              { key: "assign", label: "Atribuir Usuários" },
-              { key: "answers", label: "Respostas" },
-              { key: "guide", label: "Guia" },
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() =>
-                  setActiveTab(tab.key as "form" | "assign" | "answers" | "guide")
-                }
+          {[
+            { key: "form", label: "Formulário" },
+            { key: "assign", label: "Atribuir Usuários" },
+            { key: "answers", label: "Respostas" },
+            { key: "guide", label: "Guia" },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() =>
+                setActiveTab(tab.key as "form" | "assign" | "answers" | "guide")
+              }
               className={`pb-2 border-b-2 transition-colors cursor-pointer ${
                 activeTab === tab.key
                   ? "border-white font-semibold text-white"
@@ -722,7 +777,9 @@ export default function LabelingFormPage() {
           <>
             {/* Colunas do CSV */}
             <div className="mb-4 max-w-[860px] mx-auto">
-              <h2 className="text-sm font-semibold text-blue-900">Colunas importadas do CSV</h2>
+              <h2 className="text-sm font-semibold text-blue-900">
+                Colunas importadas do CSV
+              </h2>
               {columns.length > 0 ? (
                 <div className="mt-2 flex flex-wrap gap-2">
                   {columns.map((c) => (
@@ -766,7 +823,9 @@ export default function LabelingFormPage() {
                         onAddSection={addSection}
                         onChangeTitle={(t) => updateSectionTitle(section.id, t)}
                         onRemoveSection={() => {
-                          setSections((prev) => prev.filter((s) => s.id !== section.id));
+                          setSections((prev) =>
+                            prev.filter((s) => s.id !== section.id)
+                          );
                           setActionsAnchor((prev) =>
                             prev?.sectionId === section.id ? null : prev
                           );
@@ -776,7 +835,9 @@ export default function LabelingFormPage() {
                             prev.map((s) => (s.id === section.id ? updated : s))
                           );
                         }}
-                        onFocusElement={(sectionId, el) => focusActionsAt(sectionId, el)}
+                        onFocusElement={(sectionId, el) =>
+                          focusActionsAt(sectionId, el)
+                        }
                       />
                     </SortableSection>
                   ))}
@@ -814,7 +875,9 @@ export default function LabelingFormPage() {
             ) : (
               <div className="space-y-2">
                 {memberships.map((membership) => {
-                  const fullName = `${membership.first_name || ""} ${membership.last_name || ""}`.trim();
+                  const fullName = `${membership.first_name || ""} ${
+                    membership.last_name || ""
+                  }`.trim();
                   return (
                     <div
                       key={membership.id}
@@ -826,14 +889,19 @@ export default function LabelingFormPage() {
                           <p className="text-sm font-medium text-gray-900">
                             {fullName || membership.email}
                           </p>
-                          <p className="text-xs text-gray-500">{membership.email}</p>
+                          <p className="text-xs text-gray-500">
+                            {membership.email}
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <select
                           value={membership.role}
                           onChange={(e) =>
-                            handleChangeRole(membership, e.target.value as LabelingMembershipRole)
+                            handleChangeRole(
+                              membership,
+                              e.target.value as LabelingMembershipRole
+                            )
                           }
                           disabled={membershipSaving}
                           className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200"
@@ -860,7 +928,9 @@ export default function LabelingFormPage() {
             )}
 
             <div className="rounded-lg border border-gray-200 p-3 space-y-3">
-              <p className="text-sm font-medium text-gray-900">Adicionar membro</p>
+              <p className="text-sm font-medium text-gray-900">
+                Adicionar membro
+              </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                 <select
                   value={newMemberId}
@@ -871,13 +941,17 @@ export default function LabelingFormPage() {
                   <option value="">Selecione um usuário</option>
                   {availableUsers.map((user) => (
                     <option key={user.id} value={user.id}>
-                      {`${user.first_name || ""} ${user.last_name || ""}`.trim() || user.email}
+                      {`${user.first_name || ""} ${
+                        user.last_name || ""
+                      }`.trim() || user.email}
                     </option>
                   ))}
                 </select>
                 <select
                   value={newMemberRole}
-                  onChange={(e) => setNewMemberRole(e.target.value as LabelingMembershipRole)}
+                  onChange={(e) =>
+                    setNewMemberRole(e.target.value as LabelingMembershipRole)
+                  }
                   disabled={membershipSaving}
                   className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200"
                 >
@@ -914,7 +988,9 @@ export default function LabelingFormPage() {
               <Button
                 variant="normal"
                 onClick={() => void handleSaveGuide()}
-                disabled={isSaving || isLoadingLabeling || Number.isNaN(labelingId)}
+                disabled={
+                  isSaving || isLoadingLabeling || Number.isNaN(labelingId)
+                }
                 className="px-4 py-2 shadow-md text-sm"
               >
                 Salvar guia
@@ -925,12 +1001,20 @@ export default function LabelingFormPage() {
           <div className="max-w-6xl mx-auto mt-2 space-y-4">
             <div className="flex flex-wrap items-end gap-3">
               <div className="flex flex-col">
-                <label className="text-sm font-semibold text-gray-800">Usuário que rotulou</label>
+                <label className="text-sm font-semibold text-gray-800">
+                  Usuário que rotulou
+                </label>
                 <select
-                  value={selectedResponder === "all" ? "all" : String(selectedResponder)}
+                  value={
+                    selectedResponder === "all"
+                      ? "all"
+                      : String(selectedResponder)
+                  }
                   onChange={(e) => {
                     const value = e.target.value;
-                    setSelectedResponder(value === "all" ? "all" : Number(value));
+                    setSelectedResponder(
+                      value === "all" ? "all" : Number(value)
+                    );
                   }}
                   className="mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200"
                 >
@@ -956,7 +1040,8 @@ export default function LabelingFormPage() {
                   {exporting ? "Exportando..." : "Exportar CSV"}
                 </Button>
                 <span className="text-sm text-gray-600">
-                  {filteredAnswers.length} {filteredAnswers.length === 1 ? "resposta" : "respostas"}
+                  {filteredAnswers.length}{" "}
+                  {filteredAnswers.length === 1 ? "resposta" : "respostas"}
                 </span>
               </div>
             </div>
@@ -978,15 +1063,23 @@ export default function LabelingFormPage() {
                       ? `Item #${rowIndex + 1}`
                       : `Item ID ${answer.item_detail?.id ?? answer.item}`;
                   const userLabel = getUserLabel(answer.answered_by);
-                  const answeredAt = new Date(answer.created_at).toLocaleString("pt-BR");
-                  const answeredCount = Object.keys(answer.answer_payload ?? {}).length;
+                  const answeredAt = new Date(answer.created_at).toLocaleString(
+                    "pt-BR"
+                  );
+                  const answeredCount = Object.keys(
+                    answer.answer_payload ?? {}
+                  ).length;
 
                   return (
                     <GridItemCard key={answer.id} index={index}>
                       <div className="flex items-start justify-between gap-3">
                         <div className="space-y-1">
-                          <p className="text-sm font-semibold text-blue-900">{itemLabel}</p>
-                          <p className="text-sm text-gray-800">Usuário: {userLabel}</p>
+                          <p className="text-sm font-semibold text-blue-900">
+                            {itemLabel}
+                          </p>
+                          <p className="text-sm text-gray-800">
+                            Usuário: {userLabel}
+                          </p>
                           <p className="text-xs text-gray-500">{answeredAt}</p>
                         </div>
                         <Button
@@ -1000,7 +1093,10 @@ export default function LabelingFormPage() {
                         </Button>
                       </div>
                       <p className="mt-3 text-xs text-gray-600">
-                        {answeredCount} {answeredCount === 1 ? "campo respondido" : "campos respondidos"}
+                        {answeredCount}{" "}
+                        {answeredCount === 1
+                          ? "campo respondido"
+                          : "campos respondidos"}
                       </p>
                     </GridItemCard>
                   );
@@ -1028,7 +1124,9 @@ export default function LabelingFormPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
             <div className="flex items-start justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Excluir Rotulação</h2>
+              <h2 className="text-lg font-semibold text-gray-900">
+                Excluir Rotulação
+              </h2>
               <button
                 type="button"
                 onClick={() => setIsDeleteOpen(false)}
@@ -1039,9 +1137,12 @@ export default function LabelingFormPage() {
               </button>
             </div>
             <p className="mt-3 text-sm text-gray-700">
-              Você tem <strong>certeza</strong> que deseja excluir esta rotulação?
+              Você tem <strong>certeza</strong> que deseja excluir esta
+              rotulação?
             </p>
-            <p className="text-xs text-gray-500 mt-1">Atenção: Essa ação NÃO pode ser desfeita.</p>
+            <p className="text-xs text-gray-500 mt-1">
+              Atenção: Essa ação NÃO pode ser desfeita.
+            </p>
 
             <div className="mt-5 flex justify-between gap-3">
               <button
@@ -1063,7 +1164,7 @@ export default function LabelingFormPage() {
           </div>
         </div>
       ) : null}
-    </SidebarLayout>
+    </>
   );
 }
 
@@ -1080,7 +1181,14 @@ type SortableSectionProps = {
 };
 
 function SortableSection({ id, children }: SortableSectionProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
     id,
   });
   const style = {
@@ -1089,7 +1197,11 @@ function SortableSection({ id, children }: SortableSectionProps) {
   };
 
   return (
-    <div ref={setNodeRef} style={style} className={`relative ${isDragging ? "z-10" : ""}`}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`relative ${isDragging ? "z-10" : ""}`}
+    >
       <button
         type="button"
         aria-label="Arrastar seção"
@@ -1099,14 +1211,21 @@ function SortableSection({ id, children }: SortableSectionProps) {
       >
         <GripVertical size={16} />
       </button>
-      <div className={isDragging ? "rounded-xl ring-2 ring-blue-300 shadow-lg" : ""}>{children}</div>
+      <div
+        className={
+          isDragging ? "rounded-xl ring-2 ring-blue-300 shadow-lg" : ""
+        }
+      >
+        {children}
+      </div>
     </div>
   );
 }
 
 function formatAnswerValue(value: unknown): string {
   if (value === null || value === undefined) return "—";
-  if (Array.isArray(value)) return value.map((v) => formatAnswerValue(v)).join(", ");
+  if (Array.isArray(value))
+    return value.map((v) => formatAnswerValue(v)).join(", ");
   if (typeof value === "boolean") return value ? "Sim" : "Não";
   if (typeof value === "object") {
     try {
@@ -1137,20 +1256,34 @@ function InspectAnswerModal({
       : `Item ID ${answer.item_detail?.id ?? answer.item}`;
   const answeredAt = new Date(answer.created_at).toLocaleString("pt-BR");
 
-  const orderedSections = [...sections].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  const orderedSections = [...sections].sort(
+    (a, b) => (a.order ?? 0) - (b.order ?? 0)
+  );
   const answersByQuestion = new Map<string, unknown>();
-  answerEntries.forEach(([key, value]) => answersByQuestion.set(String(key), value));
-  const itemPayload = (answer.item_detail?.payload ?? {}) as Record<string, unknown>;
+  answerEntries.forEach(([key, value]) =>
+    answersByQuestion.set(String(key), value)
+  );
+  const itemPayload = (answer.item_detail?.payload ?? {}) as Record<
+    string,
+    unknown
+  >;
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/50 z-40 cursor-pointer" onClick={onClose} />
+      <div
+        className="fixed inset-0 bg-black/50 z-40 cursor-pointer"
+        onClick={onClose}
+      />
       <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
         <div className="w-full max-w-3xl rounded-2xl bg-white shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-xs uppercase tracking-wide text-gray-500">{answeredAt}</p>
-              <h3 className="text-lg font-semibold text-gray-900">{itemLabel}</h3>
+              <p className="text-xs uppercase tracking-wide text-gray-500">
+                {answeredAt}
+              </p>
+              <h3 className="text-lg font-semibold text-gray-900">
+                {itemLabel}
+              </h3>
               <p className="text-sm text-gray-700">Usuário: {userLabel}</p>
             </div>
             <button
@@ -1164,9 +1297,13 @@ function InspectAnswerModal({
 
           <div className="mt-5 space-y-4">
             <div className="rounded-lg border border-blue-100 bg-blue-50 p-4">
-              <h4 className="text-sm font-semibold text-blue-900 mb-2">Contexto do item</h4>
+              <h4 className="text-sm font-semibold text-blue-900 mb-2">
+                Contexto do item
+              </h4>
               {payloadEntries.length === 0 ? (
-                <p className="text-sm text-gray-600">Nenhum contexto disponível.</p>
+                <p className="text-sm text-gray-600">
+                  Nenhum contexto disponível.
+                </p>
               ) : (
                 <div className="grid gap-2 md:grid-cols-2">
                   {payloadEntries.map(([key, value]) => (
@@ -1174,8 +1311,12 @@ function InspectAnswerModal({
                       key={key}
                       className="rounded-md border border-blue-100 bg-white px-3 py-2 text-sm text-gray-800"
                     >
-                      <p className="text-xs uppercase tracking-wide text-blue-700">{key}</p>
-                      <p className="mt-1 break-words">{formatAnswerValue(value)}</p>
+                      <p className="text-xs uppercase tracking-wide text-blue-700">
+                        {key}
+                      </p>
+                      <p className="mt-1 break-words">
+                        {formatAnswerValue(value)}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -1183,9 +1324,13 @@ function InspectAnswerModal({
             </div>
 
             <div className="rounded-lg border border-gray-200 bg-white p-4">
-              <h4 className="text-sm font-semibold text-gray-900 mb-2">Respostas</h4>
+              <h4 className="text-sm font-semibold text-gray-900 mb-2">
+                Respostas
+              </h4>
               {answerEntries.length === 0 ? (
-                <p className="text-sm text-gray-600">Nenhuma resposta registrada.</p>
+                <p className="text-sm text-gray-600">
+                  Nenhuma resposta registrada.
+                </p>
               ) : orderedSections.length === 0 ? (
                 <p className="text-sm text-gray-600">
                   Estrutura da rotulação não encontrada para exibir as seções.
@@ -1193,7 +1338,9 @@ function InspectAnswerModal({
               ) : (
                 <div className="space-y-4">
                   {orderedSections.map((section) => {
-                    const contexts = section.elements.filter((el) => el.question_type === "context");
+                    const contexts = section.elements.filter(
+                      (el) => el.question_type === "context"
+                    );
                     const questions = section.elements.filter(
                       (el) => el.question_type && el.question_type !== "context"
                     );
@@ -1213,7 +1360,9 @@ function InspectAnswerModal({
                               </ReactMarkdown>
                             </div>
                           </div>
-                          <span className="text-xs text-blue-100">{questions.length} perguntas</span>
+                          <span className="text-xs text-blue-100">
+                            {questions.length} perguntas
+                          </span>
                         </div>
 
                         <div className="space-y-4 p-4">
@@ -1224,23 +1373,32 @@ function InspectAnswerModal({
                               </p>
                               <div className="grid gap-2 md:grid-cols-2">
                                 {contexts.map((ctx, idx) => {
-                                  const payloadKey = ctx.column_name ?? ctx.text?.trim();
-                                  const value = payloadKey ? itemPayload[payloadKey] : undefined;
+                                  const payloadKey =
+                                    ctx.column_name ?? ctx.text?.trim();
+                                  const value = payloadKey
+                                    ? itemPayload[payloadKey]
+                                    : undefined;
                                   const contextLabel =
-                                    ctx.text?.trim() || ctx.column_name || `Contexto ${idx + 1}`;
+                                    ctx.text?.trim() ||
+                                    ctx.column_name ||
+                                    `Contexto ${idx + 1}`;
                                   return (
                                     <div
                                       key={ctx.id ?? `${section.id}-${idx}`}
                                       className="rounded-md border border-blue-100 bg-white px-3 py-2 text-sm text-gray-800"
                                     >
                                       <div className="prose prose-sm max-w-none">
-                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                        <ReactMarkdown
+                                          remarkPlugins={[remarkGfm]}
+                                        >
                                           {contextLabel}
                                         </ReactMarkdown>
                                       </div>
                                       <p className="text-[11px] uppercase tracking-wide text-blue-500">
                                         Coluna: {ctx.column_name ?? "—"}
-                                        {ctx.context_type ? ` • Tipo: ${ctx.context_type}` : ""}
+                                        {ctx.context_type
+                                          ? ` • Tipo: ${ctx.context_type}`
+                                          : ""}
                                       </p>
                                       <p className="mt-1 break-words text-sm text-gray-800">
                                         {formatAnswerValue(value)}
@@ -1253,13 +1411,19 @@ function InspectAnswerModal({
                           ) : null}
 
                           {questions.length === 0 ? (
-                            <p className="text-sm text-gray-600">Nenhuma pergunta nesta seção.</p>
+                            <p className="text-sm text-gray-600">
+                              Nenhuma pergunta nesta seção.
+                            </p>
                           ) : (
                             <div className="space-y-3">
                               {questions.map((q, idx) => {
-                                const val = answersByQuestion.get(String(q.id ?? q.order ?? idx));
+                                const val = answersByQuestion.get(
+                                  String(q.id ?? q.order ?? idx)
+                                );
                                 const label =
-                                  (q.text && q.text.trim().length > 0 ? q.text : "Pergunta") ?? "Pergunta";
+                                  (q.text && q.text.trim().length > 0
+                                    ? q.text
+                                    : "Pergunta") ?? "Pergunta";
                                 return (
                                   <div
                                     key={q.id ?? `${section.id}-q-${idx}`}
@@ -1267,7 +1431,9 @@ function InspectAnswerModal({
                                   >
                                     <div className="flex items-start justify-between gap-3">
                                       <div className="prose prose-sm max-w-none">
-                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                        <ReactMarkdown
+                                          remarkPlugins={[remarkGfm]}
+                                        >
                                           {label}
                                         </ReactMarkdown>
                                       </div>

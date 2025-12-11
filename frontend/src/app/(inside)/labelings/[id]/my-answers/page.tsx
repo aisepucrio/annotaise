@@ -16,7 +16,6 @@ import { buildInitialAnswers } from "../answer/answer_utils";
 import type { LabelingStructureSection } from "@/lib/services/labeling_create_service";
 import { fetchLabelingStructure } from "@/lib/services/labeling_create_service";
 import type { AnswerMap } from "../answer/answer_types";
-import SidebarLayout from "@/components/side-bar/sidebar_layout";
 import { toast } from "sonner";
 
 export default function MyAnswersPage() {
@@ -133,7 +132,7 @@ export default function MyAnswersPage() {
   }, [myAnswersError]);
 
   return (
-    <SidebarLayout>
+    <>
       <header className="flex flex-col gap-3 rounded-xl bg-blue-900 px-6 py-4 text-white shadow-md lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-3">
           <button
@@ -256,6 +255,6 @@ export default function MyAnswersPage() {
           </div>
         </section>
       ) : null}
-    </SidebarLayout>
+    </>
   );
 }
