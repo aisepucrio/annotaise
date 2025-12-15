@@ -42,29 +42,33 @@ export default function UserContainer({
         </Button>
       </div>
 
+      {/* separador vertical */}
+      <div className="w-0.75 rounded-full bg-metal-50 self-stretch " />
+
       {/* métricas */}
-      <div className="grid grid-cols-1 gap-2 flex-1 justify-end items-start min-w-0">
+      <div className="-mr-3 grid grid-cols-1 gap-2 flex-1 justify-end items-start min-w-0">
         <StatPill
           label="Projetos"
           value={projects}
           textColor="var(--blueberry-700)"
           backgroundColor="var(--blueberry-700-10)"
+          cut="left"
         />
         <StatPill
           label="Rotulações finalizadas"
           value={labelings_done}
           textColor="var(--green-blueberry)"
           backgroundColor="var(--green-blueberry-10)"
+          cut="left"
         />
         <StatPill
           label="Rotulações pendentes"
           value={labelings_pending}
           textColor="var(--orange-blueberry)"
           backgroundColor="var(--orange-blueberry-10)"
+          cut="left"
         />
       </div>
     </div>
   );
 }
-
-

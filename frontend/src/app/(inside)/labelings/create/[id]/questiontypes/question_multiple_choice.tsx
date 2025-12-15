@@ -1,6 +1,6 @@
 import type { ChangeEvent } from "react";
 import { Plus, Trash2 } from "lucide-react";
-import { MultipleChoiceQuestionConfig } from "@/labeling_types";
+import { MultipleChoiceQuestionConfig } from "../labeling_types";
 
 type Props = {
   config: MultipleChoiceQuestionConfig;

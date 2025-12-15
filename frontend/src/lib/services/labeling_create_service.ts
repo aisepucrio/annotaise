@@ -3,7 +3,7 @@ import type { Labeling } from "./labeling_service";
 import type {
   ElementDTO,
   SectionDTO,
-} from "@/app/labelings/create/[id]/labeling_api_types";
+} from "@/app/(inside)/labelings/create/[id]/labeling_api_types";
 
 export type LabelingStructureElement = ElementDTO & {
   id?: number;

@@ -46,7 +46,6 @@ export default function AcceptInvitationPage() {
   const {
     register,
     handleSubmit,
-    formState: { errors },
   } = useForm<FormData>();
 
   const inviteStatus = useMemo(() => {

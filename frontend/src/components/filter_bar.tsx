@@ -1,4 +1,5 @@
 import { Search, Filter } from "lucide-react";
+import Button from "./button";
 
 type FilterBarProps = {
   value: string;
@@ -7,7 +8,12 @@ type FilterBarProps = {
   disabled?: boolean;
 };
 
-export default function FilterBar({ value, onChange, placeholder = "Pesquisar...", disabled }: FilterBarProps) {
+export default function FilterBar({
+  value,
+  onChange,
+  placeholder = "Pesquisar...",
+  disabled,
+}: FilterBarProps) {
   return (
     <div className="flex items-center justify-start gap-3 ml-5">
       {/* Campo de busca */}
@@ -18,12 +24,12 @@ export default function FilterBar({ value, onChange, placeholder = "Pesquisar...
           value={value}
           onChange={(e) => onChange(e.target.value)}
           className="
-            w-full rounded-xs border border-gray-300
+            w-full rounded-xs bg-metal-50
             px-5 py-2 pr-12 text-sm text-gray-700
             placeholder-gray-400 focus:outline-none
             shadow-sm
             border-b-3
-            border-b-blue-800
+            border-b-blueberry-700
             disabled:bg-gray-100 disabled:text-gray-500
           "
           aria-label="Buscar projeto"
@@ -36,18 +42,15 @@ export default function FilterBar({ value, onChange, placeholder = "Pesquisar...
       </div>
 
       {/* Botão Filtrar */}
-      <button
-        className="
-          flex items-center gap-2 rounded-lg bg-blue-900
-          hover:bg-blue-800 text-white px-4 py-2
-          shadow-md text-sm transition-colors cursor-pointer
-        "
-        type="button"
-        aria-label="Abrir filtros"
+      <Button
+        variant="normal"
+        icon={<Filter size={16} className="opacity-90" />}
+        fill={false}
+        className="px-4 py-2 shadow-md text-sm"
+        ariaLabel="Abrir filtros"
       >
-        <Filter size={16} className="opacity-90" />
         Filtrar
-      </button>
+      </Button>
     </div>
   );
 }

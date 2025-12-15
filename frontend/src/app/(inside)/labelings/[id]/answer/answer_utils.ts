@@ -15,9 +15,6 @@ export function buildInitialAnswers(sections: LabelingStructureSection[]): Answe
         case "range":
           initial[element.id] = element.question_range?.start ?? 0;
           break;
-        case "bool":
-          initial[element.id] = null;
-          break;
         default:
           initial[element.id] = "";
           break;
@@ -93,7 +90,7 @@ export function formatPayloadValue(value: unknown): string {
   if (typeof value === "object") {
     try {
       return JSON.stringify(value);
-    } catch (error) {
+    } catch {
       return String(value);
     }
   }
@@ -112,8 +109,6 @@ export function labelForQuestion(
       return "Intervalo";
     case "multiple_choice":
       return "Seleção múltipla";
-    case "bool":
-      return "Sim/Não";
     default:
       return "Pergunta";
   }

@@ -107,7 +107,9 @@ export default function ProjectDetailsPage() {
 
   useEffect(() => {
     if (!userLoading && !canSeeProjects) {
-      toast.error("Seu perfil não possui permissão para visualizar este projeto.");
+      toast.error(
+        "Seu perfil não possui permissão para visualizar este projeto."
+      );
     }
   }, [canSeeProjects, userLoading]);
 
@@ -254,7 +256,7 @@ export default function ProjectDetailsPage() {
 
   if (!canSeeProjects) {
     return (
-      <SidebarLayout>
+      <>
         <PageHeader
           page_title="Projeto"
           description="Apenas editores ou administradores podem acessar detalhes de projetos."
@@ -262,12 +264,12 @@ export default function ProjectDetailsPage() {
         <p className="mt-6 ml-5 text-sm text-gray-600">
           Seu perfil não possui permissão para visualizar este projeto.
         </p>
-      </SidebarLayout>
+      </>
     );
   }
 
   return (
-    <SidebarLayout>
+    <>
       <PageHeader
         page_title={project ? `Projeto: ${project.name}` : "Projeto"}
         description="Edite os dados do projeto e gerencie o time de membros autorizados."
@@ -364,9 +366,12 @@ export default function ProjectDetailsPage() {
       <section className="mx-5 mt-8 rounded-xl bg-white p-6 shadow-sm">
         <header className="mb-4 flex flex-col gap-1">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">Membros do projeto</h2>
+            <h2 className="text-lg font-semibold text-gray-900">
+              Membros do projeto
+            </h2>
             <p className="text-sm text-gray-500">
-              Controle quem tem acesso ao projeto e quais permissões cada pessoa possui.
+              Controle quem tem acesso ao projeto e quais permissões cada pessoa
+              possui.
             </p>
           </div>
         </header>
@@ -426,8 +431,13 @@ export default function ProjectDetailsPage() {
               })}
             </ul>
 
-            <form onSubmit={handleAddMember} className="mt-6 grid gap-3 rounded-lg border border-dashed border-gray-300 p-4">
-              <p className="text-sm font-medium text-gray-900">Adicionar novo membro</p>
+            <form
+              onSubmit={handleAddMember}
+              className="mt-6 grid gap-3 rounded-lg border border-dashed border-gray-300 p-4"
+            >
+              <p className="text-sm font-medium text-gray-900">
+                Adicionar novo membro
+              </p>
               <div className="grid gap-3 md:grid-cols-2">
                 <select
                   value={newMemberId}
@@ -447,7 +457,9 @@ export default function ProjectDetailsPage() {
                 <select
                   value={newMemberRole}
                   onChange={(event) =>
-                    setNewMemberRole(event.target.value as ProjectMembershipPayload["role"])
+                    setNewMemberRole(
+                      event.target.value as ProjectMembershipPayload["role"]
+                    )
                   }
                   disabled={!isAdmin}
                   className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:bg-gray-100 disabled:text-gray-500"
@@ -470,6 +482,6 @@ export default function ProjectDetailsPage() {
           </>
         )}
       </section>
-    </SidebarLayout>
+    </>
   );
 }

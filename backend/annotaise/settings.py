@@ -33,7 +33,7 @@ SECRET_KEY = os.getenv(
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env_bool(os.getenv("DJANGO_DEBUG"), True)
+DEBUG = os.getenv("DEBUG", "true").lower() != "false"
 
 allowed_hosts = os.getenv("DJANGO_ALLOWED_HOSTS", "*")
 ALLOWED_HOSTS = [host.strip() for host in allowed_hosts.split(",") if host.strip()]
@@ -220,9 +220,6 @@ CORS_ALLOWED_ORIGINS = [
 
 CORS_ALLOW_CREDENTIALS = True
 
-
-import os
-
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", 587))
@@ -232,4 +229,32 @@ EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER)
 
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
-FRONTEND_URL
+
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/5.0/howto/static-files/
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_URL = '/static/'
+
+# User-uploaded files
+# https://docs.djangoproject.com/en/5.0/ref/settings/#std-setting-MEDIA_ROOT
+
+MEDIA_ROOT_NAME = 'media'
+MEDIA_ROOT = os.path.join(BASE_DIR, MEDIA_ROOT_NAME)
+MEDIA_URL = f'/{MEDIA_ROOT_NAME}/'
+
+EXPORT_DIRECTORY = os.path.join(BASE_DIR, 'exports')
+
+STORAGES = {
+        'default': {
+            'BACKEND': 'django.core.files.storage.FileSystemStorage',
+            'OPTIONS': {
+                'location': MEDIA_ROOT,
+                'base_url': MEDIA_URL,
+            },
+        },
+        'staticfiles': {
+            'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+            'LOCATION': STATIC_ROOT
+        },
+    }

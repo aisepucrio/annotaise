@@ -7,16 +7,20 @@ import "react-tooltip/dist/react-tooltip.css";
 
 type TooltipProps = {
   content: string;
-  children: React.ReactElement;
+  children: React.ReactElement<TooltipTriggerProps>;
   place?: "top" | "bottom" | "left" | "right";
 };
+
+type TooltipTriggerProps = {
+  onMouseEnter?: React.MouseEventHandler;
+  onMouseLeave?: React.MouseEventHandler;
+} & Record<string, unknown>;
 
 export function Tooltip({ content, children, place = "bottom" }: TooltipProps) {
   const tooltipId = useId();
   const [hovered, setHovered] = useState(false);
 
   const trigger = cloneElement(children, {
-    ...children.props,
     "data-tooltip-id": tooltipId,
     "data-tooltip-content": content,
     onMouseEnter: (e: React.MouseEvent) => {
@@ -44,7 +48,7 @@ export function Tooltip({ content, children, place = "bottom" }: TooltipProps) {
         id={tooltipId}
         place={place}
         opacity={0.9}
-        className="z-50 !bg-white !text-black !border !border-gray-200 !rounded-md !px-3 !py-2 !text-sm !shadow-lg !opacity-95 hover:!opacity-80 transition-opacity duration-150 !max-w-md !whitespace-pre-wrap"
+        className="z-50 bg-white! text-black! border! border-gray-200! rounded-md! px-3! py-2! text-sm! shadow-lg! opacity-95! hover:opacity-80! transition-opacity duration-150 max-w-md! whitespace-pre-wrap!"
       />
     </>
   );

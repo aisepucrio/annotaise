@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import useSWR from "swr";
 import axios from "axios";
 import { ArrowLeft, RefreshCw, Send } from "lucide-react";
 import {
@@ -206,7 +205,7 @@ export default function LabelingAnswerPage() {
 
   return (
     <>
-      <header className="flex flex-col gap-3 rounded-xl bg-blue-900 px-6 py-4 text-white shadow-md lg:flex-row lg:items-center lg:justify-between">
+      <header className="flex flex-col gap-3  bg-blue-900 px-6 py-4 text-white shadow-md lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -249,7 +248,7 @@ export default function LabelingAnswerPage() {
               side="right"
               className="sm:max-w-xl overflow-y-auto p-4 "
             >
-              <SheetHeader className="p-3 bg-[var(--blueberry-700)] text-white w-5/6 rounded-xl">
+              <SheetHeader className="p-3 bg-blueberry-700 text-white w-5/6 rounded-xl">
                 <SheetTitle className="text-white">Guia</SheetTitle>
                 <SheetDescription className="text-white">
                   Informações adicionais para responder os itens.
@@ -280,7 +279,7 @@ export default function LabelingAnswerPage() {
         </div>
       </header>
 
-      <section className="mt-4 rounded-xl border border-blue-200 bg-white p-4 shadow-lg">
+      <section className="mt-4 rounded-xl  bg-white p-4 ">
         {loadError ? (
           <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
             {loadError}

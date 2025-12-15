@@ -24,7 +24,6 @@ export default function ProjectContainer({
   labelings_late,
   onManage,
   canManage = true,
-
 }: ProjectContainerProps) {
   const router = useRouter();
 
@@ -51,28 +50,31 @@ export default function ProjectContainer({
       </h3>
 
       {/* linha divisória */}
-      <div className="mt-2 h-1 rounded-full bg-blue-200/60" />
+      <div className="mt-2 h-0.75 rounded-full bg-metal-50" />
 
-      <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
+      <div className="-ml-3 mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
         {/* métricas (coluna esquerda) */}
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 ">
           <StatPill
             label="Usuários rotulando"
             value={user_count}
             textColor="var(--blueberry-700)"
             backgroundColor="var(--blueberry-700-10)"
+            cut="right"
           />
           <StatPill
             label="Rotulações finalizadas"
             value={labelings_done}
             textColor="var(--green-blueberry)"
             backgroundColor="var(--green-blueberry-10)"
+            cut="right"
           />
           <StatPill
             label="Rotulações pendentes"
             value={labelings_pending}
             textColor="var(--orange-blueberry)"
             backgroundColor="var(--orange-blueberry-10)"
+            cut="right"
           />
         </div>
 

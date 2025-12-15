@@ -1,4 +1,4 @@
-export type QuestionType = "text" | "number" | "range" | "multiple_choice" | "bool";
+export type QuestionType = "text" | "number" | "range" | "multiple_choice";
 export type ContextType = "text" | "number" | "date" | "category";
 
 export type MultipleChoiceChoice = {
@@ -33,18 +33,11 @@ export type MultipleChoiceQuestionConfig = {
   choices: MultipleChoiceChoice[];
 };
 
-export type BoolQuestionConfig = {
-  type: "bool";
-  trueLabel?: string;
-  falseLabel?: string;
-};
-
 export type QuestionConfig =
   | TextQuestionConfig
   | NumberQuestionConfig
   | RangeQuestionConfig
-  | MultipleChoiceQuestionConfig
-  | BoolQuestionConfig;
+  | MultipleChoiceQuestionConfig;
 
 export type QuestionElement = {
   id: string;
@@ -88,8 +81,6 @@ export const getDefaultQuestionConfig = (type: QuestionType): QuestionConfig => 
       return { type: "range", min: 0, max: 10, step: 1 };
     case "multiple_choice":
       return { type: "multiple_choice", allowMultiple: false, choices: createDefaultChoices() };
-    case "bool":
-      return { type: "bool", trueLabel: "Sim", falseLabel: "Não" };
     case "text":
     default:
       return { type: "text", placeholder: "", maxLength: 255 };

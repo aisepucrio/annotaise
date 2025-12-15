@@ -19,7 +19,7 @@ echo "Migrations applied successfully."
 
 # Create superuser
 echo "Creating superuser..."
-uv run manage.py createsuperuser --noinput --username "${DJANGO_SUPERUSER_USERNAME}" --email "${DJANGO_SUPERUSER_EMAIL}"
+uv run manage.py createsuperuser --noinput --username "${DJANGO_SUPERUSER_USER}" --email "${DJANGO_SUPERUSER_EMAIL}"
 echo "Superuser created or already exists."
 
 # Start the server

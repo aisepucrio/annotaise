@@ -1,5 +1,5 @@
 import type { ChangeEvent } from "react";
-import { RangeQuestionConfig } from "@/labeling_types";
+import { RangeQuestionConfig } from "../labeling_types";
 
 type Props = {
   config: RangeQuestionConfig;

@@ -1,4 +1,4 @@
-import { MultipleChoiceItemDTO, QuestionRangeDTO, SectionDTO, ElementDTO } from "./labeling_api_types";
+import { QuestionRangeDTO, SectionDTO, ElementDTO } from "./labeling_api_types";
 import {
   SectionElement,
   SectionData,
@@ -7,6 +7,7 @@ import {
   RangeQuestionConfig,
   MultipleChoiceQuestionConfig,
   RangeQuestionConfig as FrontRangeConfig,
+  QuestionConfig,
 } from "./labeling_types";
 import type { LabelingStructureSection, LabelingStructureElement } from "@/lib/services/labeling_create_service";
 
@@ -30,7 +31,6 @@ const mapSectionToDTO = (section: SectionData, sectionIndex: number): SectionDTO
   const safeElements = Array.isArray(section.elements) ? section.elements : [];
 
   return {
-    id: maybeId,
     title: section.title,
     order: section.order ?? sectionIndex,
     elements: safeElements.map((element, elementIndex) =>
@@ -54,10 +54,8 @@ const mapElementToDTO = (el: SectionElement, elementIndex: number): ElementDTO =
 
 const mapQuestionElementToDTO = (q: QuestionElement, fallbackOrder: number): ElementDTO => {
   const parsedId = Number(q.id);
-  const maybeId = Number.isFinite(parsedId) ? parsedId : undefined;
   const questionType = q.question_type ?? "text";
   const base: ElementDTO = {
-    id: maybeId,
     order: q.order ?? fallbackOrder,
     text: q.text ?? "",
     required: q.required ?? false,
@@ -89,11 +87,6 @@ const mapQuestionElementToDTO = (q: QuestionElement, fallbackOrder: number): Ele
         ...base,
         question_type: "number",
       };
-    case "bool":
-      return {
-        ...base,
-        question_type: "bool",
-      };
     case "text":
     default:
       return {
@@ -110,7 +103,6 @@ const mapRangeConfig = (config?: RangeQuestionConfig): QuestionRangeDTO => ({
 });
 
 const mapContextElementToDTO = (c: ContextElement, fallbackOrder: number): ElementDTO => ({
-  id: Number.isFinite(Number(c.id)) ? Number(c.id) : undefined,
   order: c.order ?? fallbackOrder,
   text: c.title ?? "",
   required: false,
@@ -149,7 +141,7 @@ const resolveQuestionConfig = (
       return {
         type: "multiple_choice",
         allowMultiple: element.allow_multiple ?? false,
-        choices: element.multiple_choice_items.map((item) => ({
+        choices: element.multiple_choice_items.map((item: LabelingStructureElement["multiple_choice_items"][number]) => ({
           id: crypto.randomUUID(),
           text: item.text,
           value: item.value,
@@ -164,8 +156,6 @@ const resolveQuestionConfig = (
       } satisfies FrontRangeConfig;
     case "number":
       return { type: "number" };
-    case "bool":
-      return { type: "bool" };
     case "text":
     default:
       return { type: "text" };

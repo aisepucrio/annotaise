@@ -44,8 +44,8 @@ import {
 import { fetchUsers, type User } from "@/lib/services/user_service";
 import { fetchProject } from "@/lib/services/project_service";
 import EditLabelingModal from "../../edit_labeling_modal";
-import GridLayout from "@/components/grid_layout";
-import GridItemCard from "@/components/grid_item_card";
+import GridLayout from "@/components/grid/grid_layout";
+import GridItemCard from "@/components/grid/grid_item_card";
 import Button from "@/components/button";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -119,7 +119,6 @@ export default function LabelingFormPage() {
   const [isLoadingLabeling, setIsLoadingLabeling] = useState(true);
   const [projectName, setProjectName] = useState<string>("");
   const [projectStatus, setProjectStatus] = useState<string | null>(null);
-  const [projectId, setProjectId] = useState<number | null>(null);
   const [startDateInfo, setStartDateInfo] = useState<string | null>(null);
   const [finalDateInfo, setFinalDateInfo] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<
@@ -295,7 +294,6 @@ export default function LabelingFormPage() {
       ]);
 
       setLabelingTitle(labeling.title);
-      setProjectId(labeling.project ?? null);
       setStartDateInfo(labeling.start_date ?? null);
       setFinalDateInfo(labeling.final_date ?? null);
       setGuideText(labeling.guide ?? "");
@@ -672,8 +670,8 @@ export default function LabelingFormPage() {
   return (
     <>
       {/* Cabeçalho */}
-      <div className="bg-blue-900 text-white px-6 py-3 rounded-t-xl shadow-md">
-        <div className="flex items-start justify-between">
+      <div className="bg-blue-900 text-white px-6 py-3 shadow-md">
+        <div className="flex items-center justify-between">
           <div className="flex items-start gap-3">
             <button
               type="button"
@@ -772,7 +770,7 @@ export default function LabelingFormPage() {
       </div>
 
       {/* Conteúdo */}
-      <div className="bg-white border-x border-b border-blue-200 rounded-b-xl shadow-lg p-4">
+      <div className="bg-white   p-4">
         {activeTab === "form" ? (
           <>
             {/* Colunas do CSV */}
@@ -818,9 +816,6 @@ export default function LabelingFormPage() {
                         index={idx}
                         total={sections.length}
                         columns={columns}
-                        onAddContext={() => addContext(section.id)}
-                        onAddQuestion={() => addQuestion(section.id)}
-                        onAddSection={addSection}
                         onChangeTitle={(t) => updateSectionTitle(section.id, t)}
                         onRemoveSection={() => {
                           setSections((prev) =>

@@ -3,7 +3,6 @@ export type QuestionTypeDTO =
   | "number"
   | "range"
   | "multiple_choice"
-  | "bool"
   | "context";
 
 export type MultipleChoiceItemDTO = {

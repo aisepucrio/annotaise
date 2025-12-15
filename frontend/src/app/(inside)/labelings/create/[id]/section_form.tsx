@@ -26,9 +26,6 @@ type Props = {
   index: number; // 0-based
   total: number;
   columns?: string[];
-  onAddContext: () => void;
-  onAddQuestion: () => void;
-  onAddSection: () => void;
   onChangeTitle: (title: string) => void;
   onRemoveSection?: () => void;
   onUpdateSection: (updated: SectionData) => void;
@@ -40,9 +37,6 @@ export default function SectionForm({
   index,
   total,
   columns = [],
-  onAddContext,
-  onAddQuestion,
-  onAddSection,
   onChangeTitle,
   onRemoveSection,
   onUpdateSection,

@@ -7,10 +7,11 @@ import type {
   MultipleChoiceQuestionConfig,
   NumberQuestionConfig,
   QuestionConfig,
-  QuestionType,
   RangeQuestionConfig,
   TextQuestionConfig,
-} from "@/labeling_types";
+} from "@/app/(inside)/labelings/create/[id]/labeling_types";
+
+
 
 export type QuestionTypeComponentProps<TConfig extends QuestionConfig> = {
   config: TConfig;

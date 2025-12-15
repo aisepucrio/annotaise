@@ -14,9 +14,9 @@ export default function PageHeader({
   tooltip,
 }: PageHeaderProps) {
   return (
-    <header className="ml-4 mr-6 mt-4">
-      <div className="rounded-2xl bg-[var(--blueberry-700)] text-[var(--blue-50)] shadow-md p-5 flex">
-        <div className="w-5 h-auto bg-[var(--blue-50)]  rounded-xs shrink-0"></div>
+    <header className="mr-6 mt-4">
+      <div className="rounded-r-2xl bg-blueberry-700 text-blue-50 shadow-md p-5 flex">
+        <div className="w-3 h-auto bg-blue-50 rounded-xs shrink-0"></div>
         <div className="flex-col ml-4">
           <div className="flex items-center gap-2">
             <h1 className="text-xl md:text-2xl font-semibold leading-tight text-left">

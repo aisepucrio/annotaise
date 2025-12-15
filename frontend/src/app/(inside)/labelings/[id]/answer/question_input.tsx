@@ -126,36 +126,6 @@ export default function QuestionInput({ element, value, onChange }: QuestionInpu
       );
     }
 
-    case "bool": {
-      const boolValue = typeof value === "boolean" ? value : null;
-      const groupName = `bool-${element.id ?? element.order ?? "question"}`;
-
-      return (
-        <div className="flex gap-4">
-          <label className="inline-flex items-center gap-2 text-sm text-gray-800">
-            <input
-              type="radio"
-              name={groupName}
-              checked={boolValue === true}
-              onChange={() => onChange(true)}
-              className="h-4 w-4 text-blue-900"
-            />
-            Sim
-          </label>
-          <label className="inline-flex items-center gap-2 text-sm text-gray-800">
-            <input
-              type="radio"
-              name={groupName}
-              checked={boolValue === false}
-              onChange={() => onChange(false)}
-              className="h-4 w-4 text-blue-900"
-            />
-            Não
-          </label>
-        </div>
-      );
-    }
-
     default:
       return (
         <p className="text-xs text-gray-500">

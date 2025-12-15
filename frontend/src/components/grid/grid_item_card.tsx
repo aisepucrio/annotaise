@@ -1,4 +1,5 @@
 import React from "react";
+import { useGridColumns } from "./grid_layout";
 
 type GridItemCardProps = {
   /** Elementos filhos a serem renderizados dentro do card */
@@ -14,9 +15,11 @@ export default function GridItemCard({
   index,
   className = "",
 }: GridItemCardProps) {
-  // Alterna entre blueberry-700 (#1e2f93) e blueberry-900 (#0e1862) baseado no índice
-  const borderColor =
-    index % 2 === 0 ? "var(--blueberry-500)" : "var(--blueberry-700)";
+  const columnCount = useGridColumns();
+  const row = Math.floor(index / columnCount);
+  const col = index % columnCount;
+  const isEven = (row + col) % 2 === 0;
+  const borderColor = isEven ? "var(--blueberry-500)" : "var(--blueberry-700)";
 
   return (
     <div

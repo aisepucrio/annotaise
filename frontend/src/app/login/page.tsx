@@ -18,7 +18,6 @@ export default function LoginPage() {
   const {
     register,
     handleSubmit,
-    formState: { errors },
   } = useForm<FormData>();
 
   const router = useRouter();

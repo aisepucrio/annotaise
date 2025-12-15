@@ -8,8 +8,8 @@ import ProjectContainer from "./project_container";
 import FilterBar from "@/components/filter_bar";
 import { Plus } from "lucide-react";
 import NewProjectModal from "./new_project_modal";
-import GridLayout from "@/components/grid_layout";
-import GridItemCard from "@/components/grid_item_card";
+import GridLayout from "@/components/grid/grid_layout";
+import GridItemCard from "@/components/grid/grid_item_card";
 import Button from "@/components/button";
 import {
   createProject,
@@ -72,9 +72,7 @@ export default function Projects() {
 
   useEffect(() => {
     if (!userLoading && !canSeeProjects) {
-      toast.error(
-        "Seu perfil não possui permissão para visualizar projetos."
-      );
+      toast.error("Seu perfil não possui permissão para visualizar projetos.");
     }
   }, [canSeeProjects, userLoading]);
 
@@ -103,57 +101,61 @@ export default function Projects() {
   return (
     <>
       <PageHeader
-          page_title="Projetos"
-          tooltip={`Crie e gerencie projetos para criar rotulações vinculadas a eles:
+        page_title="Projetos"
+        tooltip={`Crie e gerencie projetos para criar rotulações vinculadas a eles:
 • Cadastre novos projetos e mantenha as informações principais em dia.
 • Adicione membros e gerencie permissões como membros para cada projeto.
 • Esses projetos devem ser criados para iniciar rotulações vinculadas a eles.`}
-          description="Nesta página você pode visualizar todos os projetos criados, assim como suas informações principais. Clique em “Gerenciar” para ver mais informações sobre o projeto."
-        ></PageHeader>
+        description="Nesta página você pode visualizar todos os projetos criados, assim como suas informações principais. Clique em “Gerenciar” para ver mais informações sobre o projeto."
+      ></PageHeader>
 
-        <div className="flex flex-nowrap items-center mt-5">
-          <FilterBar value={searchTerm} onChange={setSearchTerm} placeholder="Pesquisar projetos..." />
-          <div className="ml-auto mr-6 w-auto">
-            <Button
-              icon={<Plus size={16} strokeWidth={1.75} />}
-              onClick={() => setModalOpen(true)}
-              disabled={!isAdmin}
-              variant="normal"
-              fill={false}
-              className="px-4 py-2 shadow-md text-sm"
-              ariaLabel="Criar novo projeto"
-            >
-              Novo Projeto
-            </Button>
-          </div>
+      <div className="flex flex-nowrap items-center mt-5">
+        <FilterBar
+          value={searchTerm}
+          onChange={setSearchTerm}
+          placeholder="Pesquisar projetos..."
+        />
+        <div className="ml-auto mr-6 w-auto">
+          <Button
+            icon={<Plus size={16} strokeWidth={3} />}
+            onClick={() => setModalOpen(true)}
+            disabled={!isAdmin}
+            variant="normal"
+            fill={false}
+            className="px-4 py-2 shadow-md text-sm"
+            ariaLabel="Criar novo projeto"
+          >
+            Novo Projeto
+          </Button>
         </div>
-        <div className="ml-5 mr-5 mt-5">
-          {isLoading ? (
-            <p className="text-sm text-gray-500">Carregando projetos...</p>
-          ) : projectList.length === 0 ? (
-            <p className="text-sm text-gray-500">Nenhum projeto encontrado.</p>
-          ) : (
-            <GridLayout minColumnWidth="480px">
-              {projectList.map((project, index) => (
-                <GridItemCard key={project.id} index={index}>
-                  <ProjectContainer
-                    title={project.name}
-                    user_count={project.labeling_users}
-                    labelings_done={project.finished_labelings}
-                    labelings_pending={project.pending_labelings}
-                    labelings_late={project.late_labelings}
-                    onManage={
-                      isAdmin
-                        ? () => router.push(`/projects/${project.id}`)
-                        : undefined
-                    }
-                    canManage={isAdmin}
-                  />
-                </GridItemCard>
-              ))}
-            </GridLayout>
-          )}
-        </div>
+      </div>
+      <div className="ml-5 mr-5 mt-5">
+        {isLoading ? (
+          <p className="text-sm text-gray-500">Carregando projetos...</p>
+        ) : projectList.length === 0 ? (
+          <p className="text-sm text-gray-500">Nenhum projeto encontrado.</p>
+        ) : (
+          <GridLayout minColumnWidth="480px">
+            {projectList.map((project, index) => (
+              <GridItemCard key={project.id} index={index}>
+                <ProjectContainer
+                  title={project.name}
+                  user_count={project.labeling_users}
+                  labelings_done={project.finished_labelings}
+                  labelings_pending={project.pending_labelings}
+                  labelings_late={project.late_labelings}
+                  onManage={
+                    isAdmin
+                      ? () => router.push(`/projects/${project.id}`)
+                      : undefined
+                  }
+                  canManage={isAdmin}
+                />
+              </GridItemCard>
+            ))}
+          </GridLayout>
+        )}
+      </div>
       <NewProjectModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}

@@ -11,7 +11,7 @@ type ActionsSidebarProps = {
         y: number;
       }
     | null;
-  toolbarRef: React.RefObject<HTMLDivElement>;
+  toolbarRef: React.RefObject<HTMLDivElement | null>;
   closing?: boolean;
   onAddQuestion: () => void;
   onAddContext: () => void;
