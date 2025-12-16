@@ -20,13 +20,10 @@ import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
 import Button from "@/components/button";
 
 export default function LabelingAnswerPage() {
@@ -50,6 +47,7 @@ export default function LabelingAnswerPage() {
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
   const [currentSectionIdx, setCurrentSectionIdx] = useState<number>(0);
   const [guideText, setGuideText] = useState<string>("");
+  const [showGuide, setShowGuide] = useState<boolean>(false);
 
   useEffect(() => {
     if (loadError) {
@@ -203,6 +201,25 @@ export default function LabelingAnswerPage() {
     setCurrentSectionIdx((idx) => Math.min(idx + 1, totalSections - 1));
   };
 
+  const mainContent = (
+    <MainContent
+      loadError={loadError}
+      loadErrorCode={loadErrorCode}
+      isLoading={isLoading}
+      orderedSections={orderedSections}
+      currentSection={currentSection}
+      currentSectionIdx={currentSectionIdx}
+      payload={payload}
+      answers={answers}
+      handleAnswerChange={handleAnswerChange}
+      goToNextSection={goToNextSection}
+      handleSubmit={handleSubmit}
+      isSubmitting={isSubmitting}
+      currentItemId={currentItemId}
+      isLastSection={isLastSection}
+    />
+  );
+
   return (
     <>
       <header className="flex flex-col gap-3  bg-blue-900 px-6 py-4 text-white shadow-md lg:flex-row lg:items-center lg:justify-between">
@@ -234,39 +251,14 @@ export default function LabelingAnswerPage() {
               Seção {currentSectionIdx + 1} de {totalSections}
             </span>
           ) : null}
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button
-                fill={false}
-                variant="light"
-                className="border border-white/30"
-              >
-                Guia
-              </Button>
-            </SheetTrigger>
-            <SheetContent
-              side="right"
-              className="sm:max-w-xl overflow-y-auto p-4 "
-            >
-              <SheetHeader className="p-3 bg-blueberry-700 text-white w-5/6 rounded-xl">
-                <SheetTitle className="text-white">Guia</SheetTitle>
-                <SheetDescription className="text-white">
-                  Informações adicionais para responder os itens.
-                </SheetDescription>
-              </SheetHeader>
-              <div className="mt-4 space-y-4">
-                {guideText ? (
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {guideText}
-                  </ReactMarkdown>
-                ) : (
-                  <p className="text-sm text-gray-600">
-                    Nenhum guia foi fornecido para esta rotulação.
-                  </p>
-                )}
-              </div>
-            </SheetContent>
-          </Sheet>
+          <Button
+            fill={false}
+            variant="light"
+            className={`border border-white/30 ${showGuide ? "bg-white/10" : ""}`}
+            onClick={() => setShowGuide((prev) => !prev)}
+          >
+            {showGuide ? "Ocultar guia" : "Guia"}
+          </Button>
           <button
             type="button"
             onClick={() => void loadItem()} // TODO esse botao é debug... mais pro futuro pode tirar
@@ -279,67 +271,159 @@ export default function LabelingAnswerPage() {
         </div>
       </header>
 
-      <section className="mt-4 rounded-xl  bg-white p-4 ">
-        {loadError ? (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-            {loadError}
-            {loadErrorCode ? (
-              <span className="ml-2 text-[11px] uppercase tracking-wide text-red-600">
-                ({loadErrorCode})
-              </span>
-            ) : null}
-          </div>
-        ) : null}
-        {isLoading ? (
-          <p className="text-sm text-gray-600">
-            Carregando item e perguntas...
-          </p>
-        ) : orderedSections.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-blue-200 bg-blue-50 px-4 py-6 text-center text-sm text-blue-900">
-            Nenhum item disponível para resposta agora.
-          </div>
-        ) : currentSection ? (
-          <div className="space-y-6">
-            <SectionCard
-              key={currentSection.id ?? currentSectionIdx}
-              section={currentSection}
-              payload={payload}
-              answers={answers}
-              onChange={handleAnswerChange}
-            />
-            <div className="flex justify-between items-center pt-2">
-              <div />
-              <div className="flex gap-3">
-                {!isLastSection ? (
-                  <button
-                    type="button"
-                    onClick={goToNextSection}
-                    disabled={isLoading || isSubmitting}
-                    className="cursor-pointer inline-flex items-center gap-2 rounded-lg bg-blue-900 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
+      <div
+        className={`mt-4 ${
+          showGuide ? "h-[calc(100vh-170px)]" : "min-h-[calc(100vh-170px)]"
+        }`}
+      >
+        {showGuide ? (
+          <ResizablePanelGroup direction="horizontal" className="h-full gap-3">
+            <ResizablePanel defaultSize={70} minSize={30}>
+              <div className="h-full">{mainContent}</div>
+            </ResizablePanel>
+            <ResizableHandle withHandle />
+            <ResizablePanel defaultSize={30} minSize={25}>
+              <div className="h-full rounded-xl border border-gray-200 bg-white p-4 shadow-sm overflow-auto space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900">Guia</h3>
+                    <p className="text-xs text-gray-500">
+                      Informações adicionais para responder os itens.
+                    </p>
+                  </div>
+                  <Button
+                    variant="light"
+                    fill={false}
+                    size="compact"
+                    className="text-xs"
+                    onClick={() => {
+                      if (Number.isNaN(labelingId)) return;
+                      window.open(
+                        `/labelings/${labelingId}/guide`,
+                        "_blank",
+                        "noopener,noreferrer"
+                      );
+                    }}
                   >
-                    Avançar
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => void handleSubmit()}
-                    disabled={
-                      isLoading ||
-                      isSubmitting ||
-                      !currentItemId ||
-                      orderedSections.length === 0
-                    }
-                    className="inline-flex items-center gap-2 rounded-lg bg-blue-900 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
-                  >
-                    <Send size={16} />
-                    {isSubmitting ? "Enviando..." : "Enviar resposta"}
-                  </button>
-                )}
+                    Abrir em nova aba
+                  </Button>
+                </div>
+                <div className="mt-1 space-y-4">
+                  {guideText ? (
+                    <div className="prose prose-sm max-w-none text-gray-900">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {guideText}
+                      </ReactMarkdown>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-600">
+                      Nenhum guia foi fornecido para esta rotulação.
+                    </p>
+                  )}
+                </div>
               </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        ) : (
+          mainContent
+        )}
+      </div>
+    </>
+  );
+}
+
+type MainContentProps = {
+  loadError: string | null;
+  loadErrorCode: string | null;
+  isLoading: boolean;
+  orderedSections: LabelingStructureSection[];
+  currentSection: LabelingStructureSection | null;
+  currentSectionIdx: number;
+  payload: Record<string, unknown>;
+  answers: AnswerMap;
+  handleAnswerChange: (questionId: number | string, value: unknown) => void;
+  goToNextSection: () => void;
+  handleSubmit: () => void | Promise<void>;
+  isSubmitting: boolean;
+  currentItemId: number | null;
+  isLastSection: boolean;
+};
+
+function MainContent({
+  loadError,
+  loadErrorCode,
+  isLoading,
+  orderedSections,
+  currentSection,
+  currentSectionIdx,
+  payload,
+  answers,
+  handleAnswerChange,
+  goToNextSection,
+  handleSubmit,
+  isSubmitting,
+  currentItemId,
+  isLastSection,
+}: MainContentProps) {
+  return (
+    <section className="rounded-xl bg-white p-4 h-full overflow-y-auto">
+      {loadError ? (
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          {loadError}
+          {loadErrorCode ? (
+            <span className="ml-2 text-[11px] uppercase tracking-wide text-red-600">
+              ({loadErrorCode})
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+      {isLoading ? (
+        <p className="text-sm text-gray-600">Carregando item e perguntas...</p>
+      ) : orderedSections.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-blue-200 bg-blue-50 px-4 py-6 text-center text-sm text-blue-900">
+          Nenhum item disponível para resposta agora.
+        </div>
+      ) : currentSection ? (
+        <div className="space-y-6">
+          <SectionCard
+            key={currentSection.id ?? currentSectionIdx}
+            section={currentSection}
+            payload={payload}
+            answers={answers}
+            onChange={handleAnswerChange}
+          />
+          <div className="flex justify-between items-center pt-2">
+            <div />
+            <div className="flex gap-3">
+              {!isLastSection ? (
+                <button
+                  type="button"
+                  onClick={goToNextSection}
+                  disabled={isLoading || isSubmitting}
+                  className="cursor-pointer inline-flex items-center gap-2 rounded-lg bg-blue-900 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Avançar
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => void handleSubmit()}
+                  disabled={
+                    isLoading ||
+                    isSubmitting ||
+                    !currentItemId ||
+                    orderedSections.length === 0
+                  }
+                  className="inline-flex items-center gap-2 rounded-lg bg-blue-900 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+                >
+                  <Send size={16} />
+                  {isSubmitting ? "Enviando..." : "Enviar resposta"}
+                </button>
+              )}
             </div>
           </div>
-        ) : null}
-      </section>
-    </>
+        </div>
+      ) : null}
+    </section>
   );
 }

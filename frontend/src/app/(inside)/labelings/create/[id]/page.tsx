@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import axios from "axios";
 import {
@@ -8,10 +8,7 @@ import {
   Save,
   Edit,
   Calendar,
-  Users,
   Trash2,
-  Download,
-  GripVertical,
 } from "lucide-react";
 import {
   SectionData,
@@ -19,7 +16,6 @@ import {
   QuestionElement,
   getDefaultQuestionConfig,
 } from "./labeling_types";
-import SectionForm from "./section_form";
 import { mapSectionsToDTO, mapSectionsFromDTO } from "./labeling_mappers";
 import {
   fetchLabelingById,
@@ -44,30 +40,12 @@ import {
 import { fetchUsers, type User } from "@/lib/services/user_service";
 import { fetchProject } from "@/lib/services/project_service";
 import EditLabelingModal from "../../edit_labeling_modal";
-import GridLayout from "@/components/grid/grid_layout";
-import GridItemCard from "@/components/grid/grid_item_card";
-import Button from "@/components/button";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { exportLabelingAnswersCsv } from "@/lib/services/labeling_service";
-import { useRef } from "react";
-import {
-  DndContext,
-  PointerSensor,
-  closestCenter,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-  useSortable,
-  arrayMove,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import ActionsSidebar from "./actions_sidebar";
 import { toast } from "sonner";
+import FormTab from "./form_tab";
+import AssignTab from "./assign_tab";
+import GuideTab from "./guide_tab";
+import AnswersTab from "./answers_tab";
 
 const createContextElement = (order: number): ContextElement => ({
   id: crypto.randomUUID(),
@@ -119,6 +97,7 @@ export default function LabelingFormPage() {
   const [isLoadingLabeling, setIsLoadingLabeling] = useState(true);
   const [projectName, setProjectName] = useState<string>("");
   const [projectStatus, setProjectStatus] = useState<string | null>(null);
+  const [usersPerItem, setUsersPerItem] = useState<number | null>(null);
   const [startDateInfo, setStartDateInfo] = useState<string | null>(null);
   const [finalDateInfo, setFinalDateInfo] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<
@@ -272,11 +251,6 @@ export default function LabelingFormPage() {
       toast.error(answersError);
     }
   }, [answersError]);
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 6 },
-    })
-  );
 
   const loadLabelingAndStructure = useCallback(async () => {
     if (Number.isNaN(labelingId)) {
@@ -296,6 +270,7 @@ export default function LabelingFormPage() {
       setLabelingTitle(labeling.title);
       setStartDateInfo(labeling.start_date ?? null);
       setFinalDateInfo(labeling.final_date ?? null);
+      setUsersPerItem(labeling.users_per_item ?? null);
       setGuideText(labeling.guide ?? "");
 
       const csvColumns = Array.isArray(labeling.column_names)
@@ -441,6 +416,19 @@ export default function LabelingFormPage() {
       prev.map((s) => (s.id === sectionId ? { ...s, title } : s))
     );
   }
+
+  const handleRemoveSection = useCallback((sectionId: string) => {
+    setSections((prev) => prev.filter((s) => s.id !== sectionId));
+    setActionsAnchor((prev) =>
+      prev?.sectionId === sectionId ? null : prev
+    );
+  }, [setActionsAnchor, setSections]);
+
+  const handleUpdateSection = useCallback((updated: SectionData) => {
+    setSections((prev) =>
+      prev.map((s) => (s.id === updated.id ? updated : s))
+    );
+  }, [setSections]);
 
   function formatDate(dateStr: string | null) {
     if (!dateStr) return "--/--/----";
@@ -648,25 +636,6 @@ export default function LabelingFormPage() {
     }
   };
 
-  const handleSectionDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) {
-      return;
-    }
-
-    setSections((prev) => {
-      const oldIndex = prev.findIndex((section) => section.id === active.id);
-      const newIndex = prev.findIndex((section) => section.id === over.id);
-      if (oldIndex === -1 || newIndex === -1) return prev;
-
-      const reordered = arrayMove(prev, oldIndex, newIndex);
-      return reordered.map((section, index) => ({
-        ...section,
-        order: index,
-      }));
-    });
-  };
-
   return (
     <>
       {/* Cabeçalho */}
@@ -713,6 +682,11 @@ export default function LabelingFormPage() {
                 {projectStatusLabel ? (
                   <span className="px-2 py-1 rounded-md bg-white/20 text-white text-[11px] font-semibold uppercase tracking-wide">
                     {projectStatusLabel}
+                  </span>
+                ) : null}
+                {usersPerItem !== null ? (
+                  <span className="px-2 py-1 rounded-md bg-white/20 text-white text-[11px] font-semibold uppercase tracking-wide">
+                    {`Usuários por Rotulação: ${usersPerItem}`}
                   </span>
                 ) : null}
               </div>
@@ -772,358 +746,63 @@ export default function LabelingFormPage() {
       {/* Conteúdo */}
       <div className="bg-white   p-4">
         {activeTab === "form" ? (
-          <>
-            {/* Colunas do CSV */}
-            <div className="mb-4 max-w-[860px] mx-auto">
-              <h2 className="text-sm font-semibold text-blue-900">
-                Colunas importadas do CSV
-              </h2>
-              {columns.length > 0 ? (
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {columns.map((c) => (
-                    <span
-                      key={c}
-                      className="rounded-md bg-blue-100 text-blue-800 text-xs px-2 py-1"
-                    >
-                      {c}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <p className="mt-2 text-sm text-gray-500">
-                  {isLoadingLabeling
-                    ? "Carregando colunas..."
-                    : "Nenhuma coluna detectada para esta rotulação."}
-                </p>
-              )}
-            </div>
-
-            {/* Seções (form mais estreito para acomodar os botões) */}
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleSectionDragEnd}
-            >
-              <SortableContext
-                items={sections.map((section) => section.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                <div className="mt-2 space-y-6 max-w-[860px] mx-auto pr-10">
-                  {sections.map((section, idx) => (
-                    <SortableSection key={section.id} id={section.id}>
-                      <SectionForm
-                        data={section}
-                        index={idx}
-                        total={sections.length}
-                        columns={columns}
-                        onChangeTitle={(t) => updateSectionTitle(section.id, t)}
-                        onRemoveSection={() => {
-                          setSections((prev) =>
-                            prev.filter((s) => s.id !== section.id)
-                          );
-                          setActionsAnchor((prev) =>
-                            prev?.sectionId === section.id ? null : prev
-                          );
-                        }}
-                        onUpdateSection={(updated) => {
-                          setSections((prev) =>
-                            prev.map((s) => (s.id === section.id ? updated : s))
-                          );
-                        }}
-                        onFocusElement={(sectionId, el) =>
-                          focusActionsAt(sectionId, el)
-                        }
-                      />
-                    </SortableSection>
-                  ))}
-                </div>
-              </SortableContext>
-            </DndContext>
-            <ActionsSidebar
-              anchor={
-                actionsAnchor
-                  ? {
-                      x: actionsAnchor.x,
-                      y: actionsAnchor.y,
-                    }
-                  : null
-              }
-              toolbarRef={toolbarRef}
-              closing={actionsClosing}
-              onAddContext={() => {
-                if (!actionsAnchor) return;
-                addContext(actionsAnchor.sectionId);
-              }}
-              onAddQuestion={() => {
-                if (!actionsAnchor) return;
-                addQuestion(actionsAnchor.sectionId);
-              }}
-              onAddSection={addSection}
-            />
-          </>
+          <FormTab
+            columns={columns}
+            isLoadingLabeling={isLoadingLabeling}
+            sections={sections}
+            onUpdateSectionTitle={updateSectionTitle}
+            onRemoveSection={handleRemoveSection}
+            onUpdateSection={handleUpdateSection}
+            onAddContext={addContext}
+            onAddQuestion={addQuestion}
+            onAddSection={addSection}
+            actionsAnchor={actionsAnchor}
+            actionsClosing={actionsClosing}
+            toolbarRef={toolbarRef}
+            focusActionsAt={focusActionsAt}
+            setSections={setSections}
+          />
         ) : activeTab === "assign" ? (
-          <div className="max-w-4xl mx-auto mt-2 space-y-4">
-            {membershipLoading ? (
-              <p className="text-sm text-gray-500">Carregando membros...</p>
-            ) : memberships.length === 0 ? (
-              <p className="text-sm text-gray-600">Nenhum membro atribuído.</p>
-            ) : (
-              <div className="space-y-2">
-                {memberships.map((membership) => {
-                  const fullName = `${membership.first_name || ""} ${
-                    membership.last_name || ""
-                  }`.trim();
-                  return (
-                    <div
-                      key={membership.id}
-                      className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 rounded-lg border border-gray-200 p-3"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Users size={16} className="text-blue-900" />
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">
-                            {fullName || membership.email}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {membership.email}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <select
-                          value={membership.role}
-                          onChange={(e) =>
-                            handleChangeRole(
-                              membership,
-                              e.target.value as LabelingMembershipRole
-                            )
-                          }
-                          disabled={membershipSaving}
-                          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                        >
-                          {roleOptions.map((opt) => (
-                            <option key={opt} value={opt}>
-                              {opt}
-                            </option>
-                          ))}
-                        </select>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveMember(membership)}
-                          disabled={membershipSaving}
-                          className="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
-                        >
-                          Remover
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            <div className="rounded-lg border border-gray-200 p-3 space-y-3">
-              <p className="text-sm font-medium text-gray-900">
-                Adicionar membro
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                <select
-                  value={newMemberId}
-                  onChange={(e) => setNewMemberId(e.target.value)}
-                  disabled={membershipSaving}
-                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                >
-                  <option value="">Selecione um usuário</option>
-                  {availableUsers.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {`${user.first_name || ""} ${
-                        user.last_name || ""
-                      }`.trim() || user.email}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  value={newMemberRole}
-                  onChange={(e) =>
-                    setNewMemberRole(e.target.value as LabelingMembershipRole)
-                  }
-                  disabled={membershipSaving}
-                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                >
-                  {roleOptions.map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  onClick={handleAddMember}
-                  disabled={!newMemberId || membershipSaving}
-                  className="rounded-lg bg-blue-900 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
-                >
-                  {membershipSaving ? "Adicionando..." : "Adicionar"}
-                </button>
-              </div>
-            </div>
-          </div>
+          <AssignTab
+            memberships={memberships}
+            membershipLoading={membershipLoading}
+            membershipSaving={membershipSaving}
+            availableUsers={availableUsers}
+            roleOptions={roleOptions}
+            newMemberId={newMemberId}
+            newMemberRole={newMemberRole}
+            onChangeNewMemberId={setNewMemberId}
+            onChangeNewMemberRole={(role) => setNewMemberRole(role)}
+            onAddMember={handleAddMember}
+            onChangeRole={handleChangeRole}
+            onRemoveMember={handleRemoveMember}
+          />
         ) : activeTab === "guide" ? (
-          <div className="max-w-5xl mx-auto mt-4 space-y-4">
-            <p className="text-sm text-gray-600">
-              Escreva orientações gerais para quem vai responder esta rotulação.
-            </p>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-800">
-                  Guia (Markdowns são permitidos)
-                </label>
-                <textarea
-                  value={guideText}
-                  onChange={(e) => setGuideText(e.target.value)}
-                  rows={14}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-blue-600 shadow-sm resize-y"
-                  placeholder="Instruções, contexto ou exemplos para guiar os respondentes..."
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-800">
-                  Pré-visualização (somente leitura)
-                </label>
-                <div className="min-h-[250px] w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm shadow-inner overflow-y-scroll h-75 resize-y">
-                  {guideText ? (
-                    <div className="prose prose-sm max-w-none text-gray-900">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {guideText}
-                      </ReactMarkdown>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-gray-500">
-                      A pré-visualização do guia será exibida aqui.
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-end">
-              <Button
-                variant="normal"
-                onClick={() => void handleSaveGuide()}
-                disabled={
-                  isSaving || isLoadingLabeling || Number.isNaN(labelingId)
-                }
-                className="px-4 py-2 shadow-md text-sm"
-              >
-                Salvar guia
-              </Button>
-            </div>
-          </div>
+          <GuideTab
+            guideText={guideText}
+            onGuideChange={setGuideText}
+            onSaveGuide={() => void handleSaveGuide()}
+            disableSave={
+              isSaving || isLoadingLabeling || Number.isNaN(labelingId)
+            }
+            isSaving={isSaving}
+          />
         ) : (
-          <div className="max-w-6xl mx-auto mt-2 space-y-4">
-            <div className="flex flex-wrap items-end gap-3">
-              <div className="flex flex-col">
-                <label className="text-sm font-semibold text-gray-800">
-                  Usuário que rotulou
-                </label>
-                <select
-                  value={
-                    selectedResponder === "all"
-                      ? "all"
-                      : String(selectedResponder)
-                  }
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setSelectedResponder(
-                      value === "all" ? "all" : Number(value)
-                    );
-                  }}
-                  className="mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                >
-                  <option value="all">Todos os usuários</option>
-                  {responderOptions.map((opt) => (
-                    <option key={opt.id} value={opt.id}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex items-center gap-2 ml-auto">
-                <Button
-                  variant="normal"
-                  fill={false}
-                  size="compact"
-                  onClick={() => void handleExportCsv()}
-                  disabled={exporting}
-                  className="px-4"
-                  ariaLabel="Exportar respostas em CSV"
-                  icon={<Download size={16} />}
-                >
-                  {exporting ? "Exportando..." : "Exportar CSV"}
-                </Button>
-                <span className="text-sm text-gray-600">
-                  {filteredAnswers.length}{" "}
-                  {filteredAnswers.length === 1 ? "resposta" : "respostas"}
-                </span>
-              </div>
-            </div>
-
-            {answersLoading ? (
-              <p className="text-sm text-gray-500">Carregando respostas...</p>
-            ) : filteredAnswers.length === 0 ? (
-              <p className="text-sm text-gray-600">
-                {answers.length === 0
-                  ? "Nenhuma resposta encontrada para esta rotulação."
-                  : "Nenhuma resposta para o usuário selecionado."}
-              </p>
-            ) : (
-              <GridLayout minColumnWidth="420px">
-                {filteredAnswers.map((answer, index) => {
-                  const rowIndex = answer.item_detail?.row_index;
-                  const itemLabel =
-                    rowIndex !== undefined && rowIndex !== null
-                      ? `Item #${rowIndex + 1}`
-                      : `Item ID ${answer.item_detail?.id ?? answer.item}`;
-                  const userLabel = getUserLabel(answer.answered_by);
-                  const answeredAt = new Date(answer.created_at).toLocaleString(
-                    "pt-BR"
-                  );
-                  const answeredCount = Object.keys(
-                    answer.answer_payload ?? {}
-                  ).length;
-
-                  return (
-                    <GridItemCard key={answer.id} index={index}>
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="space-y-1">
-                          <p className="text-sm font-semibold text-blue-900">
-                            {itemLabel}
-                          </p>
-                          <p className="text-sm text-gray-800">
-                            Usuário: {userLabel}
-                          </p>
-                          <p className="text-xs text-gray-500">{answeredAt}</p>
-                        </div>
-                        <Button
-                          variant="normal"
-                          fill={false}
-                          onClick={() => setInspectAnswer(answer)}
-                          ariaLabel="Inspecionar respostas"
-                          className="px-4 py-2"
-                        >
-                          Inspecionar
-                        </Button>
-                      </div>
-                      <p className="mt-3 text-xs text-gray-600">
-                        {answeredCount}{" "}
-                        {answeredCount === 1
-                          ? "campo respondido"
-                          : "campos respondidos"}
-                      </p>
-                    </GridItemCard>
-                  );
-                })}
-              </GridLayout>
-            )}
-          </div>
+          <AnswersTab
+            responderOptions={responderOptions}
+            selectedResponder={selectedResponder}
+            onResponderChange={setSelectedResponder}
+            onExportCsv={() => void handleExportCsv()}
+            exporting={exporting}
+            answersLoading={answersLoading}
+            filteredAnswers={filteredAnswers}
+            totalAnswers={answers.length}
+            getUserLabel={getUserLabel}
+            onInspectAnswer={setInspectAnswer}
+            inspectAnswer={inspectAnswer}
+            onCloseInspect={() => setInspectAnswer(null)}
+            structureSections={structureSections}
+          />
         )}
       </div>
 
@@ -1132,12 +811,6 @@ export default function LabelingFormPage() {
         labelingId={labelingId}
         onClose={() => setIsEditInfoOpen(false)}
         onUpdated={() => void loadLabelingAndStructure()}
-      />
-      <InspectAnswerModal
-        answer={inspectAnswer}
-        onClose={() => setInspectAnswer(null)}
-        userLabel={inspectAnswer ? getUserLabel(inspectAnswer.answered_by) : ""}
-        sections={structureSections}
       />
 
       {isDeleteOpen ? (
@@ -1184,303 +857,6 @@ export default function LabelingFormPage() {
           </div>
         </div>
       ) : null}
-    </>
-  );
-}
-
-type InspectAnswerModalProps = {
-  answer: AnswerResponse | null;
-  onClose: () => void;
-  userLabel: string;
-  sections: LabelingStructureSection[];
-};
-
-type SortableSectionProps = {
-  id: string;
-  children: React.ReactNode;
-};
-
-function SortableSection({ id, children }: SortableSectionProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
-    id,
-  });
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`relative ${isDragging ? "z-10" : ""}`}
-    >
-      <button
-        type="button"
-        aria-label="Arrastar seção"
-        className="absolute -left-7 top-5 flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 shadow-sm hover:bg-gray-100 cursor-pointer"
-        {...attributes}
-        {...listeners}
-      >
-        <GripVertical size={16} />
-      </button>
-      <div
-        className={
-          isDragging ? "rounded-xl ring-2 ring-blue-300 shadow-lg" : ""
-        }
-      >
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function formatAnswerValue(value: unknown): string {
-  if (value === null || value === undefined) return "—";
-  if (Array.isArray(value))
-    return value.map((v) => formatAnswerValue(v)).join(", ");
-  if (typeof value === "boolean") return value ? "Sim" : "Não";
-  if (typeof value === "object") {
-    try {
-      return JSON.stringify(value);
-    } catch {
-      return String(value);
-    }
-  }
-  return String(value);
-}
-
-function InspectAnswerModal({
-  answer,
-  onClose,
-  userLabel,
-  sections,
-}: InspectAnswerModalProps) {
-  if (!answer) return null;
-
-  const payloadEntries = Object.entries(
-    (answer.item_detail?.payload ?? {}) as Record<string, unknown>
-  );
-  const answerEntries = Object.entries(answer.answer_payload ?? {});
-  const rowIndex = answer.item_detail?.row_index;
-  const itemLabel =
-    rowIndex !== undefined && rowIndex !== null
-      ? `Item #${rowIndex + 1}`
-      : `Item ID ${answer.item_detail?.id ?? answer.item}`;
-  const answeredAt = new Date(answer.created_at).toLocaleString("pt-BR");
-
-  const orderedSections = [...sections].sort(
-    (a, b) => (a.order ?? 0) - (b.order ?? 0)
-  );
-  const answersByQuestion = new Map<string, unknown>();
-  answerEntries.forEach(([key, value]) =>
-    answersByQuestion.set(String(key), value)
-  );
-  const itemPayload = (answer.item_detail?.payload ?? {}) as Record<
-    string,
-    unknown
-  >;
-
-  return (
-    <>
-      <div
-        className="fixed inset-0 bg-black/50 z-40 cursor-pointer"
-        onClick={onClose}
-      />
-      <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-        <div className="w-full max-w-3xl rounded-2xl bg-white shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-xs uppercase tracking-wide text-gray-500">
-                {answeredAt}
-              </p>
-              <h3 className="text-lg font-semibold text-gray-900">
-                {itemLabel}
-              </h3>
-              <p className="text-sm text-gray-700">Usuário: {userLabel}</p>
-            </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-md border border-gray-200 px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 cursor-pointer"
-            >
-              Fechar
-            </button>
-          </div>
-
-          <div className="mt-5 space-y-4">
-            <div className="rounded-lg border border-blue-100 bg-blue-50 p-4">
-              <h4 className="text-sm font-semibold text-blue-900 mb-2">
-                Contexto do item
-              </h4>
-              {payloadEntries.length === 0 ? (
-                <p className="text-sm text-gray-600">
-                  Nenhum contexto disponível.
-                </p>
-              ) : (
-                <div className="grid gap-2 md:grid-cols-2">
-                  {payloadEntries.map(([key, value]) => (
-                    <div
-                      key={key}
-                      className="rounded-md border border-blue-100 bg-white px-3 py-2 text-sm text-gray-800"
-                    >
-                      <p className="text-xs uppercase tracking-wide text-blue-700">
-                        {key}
-                      </p>
-                      <p className="mt-1 break-words">
-                        {formatAnswerValue(value)}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="rounded-lg border border-gray-200 bg-white p-4">
-              <h4 className="text-sm font-semibold text-gray-900 mb-2">
-                Respostas
-              </h4>
-              {answerEntries.length === 0 ? (
-                <p className="text-sm text-gray-600">
-                  Nenhuma resposta registrada.
-                </p>
-              ) : orderedSections.length === 0 ? (
-                <p className="text-sm text-gray-600">
-                  Estrutura da rotulação não encontrada para exibir as seções.
-                </p>
-              ) : (
-                <div className="space-y-4">
-                  {orderedSections.map((section) => {
-                    const contexts = section.elements.filter(
-                      (el) => el.question_type === "context"
-                    );
-                    const questions = section.elements.filter(
-                      (el) => el.question_type && el.question_type !== "context"
-                    );
-                    return (
-                      <div
-                        key={section.id ?? section.order ?? crypto.randomUUID()}
-                        className="rounded-xl border border-gray-100 shadow-sm"
-                      >
-                        <div className="flex items-center justify-between bg-blue-900 px-4 py-3 text-white rounded-t-xl">
-                          <div className="flex flex-col">
-                            <span className="text-[11px] uppercase tracking-wide text-blue-100">
-                              Seção {section.order ?? ""}
-                            </span>
-                            <div className="prose prose-sm max-w-none text-white">
-                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                {section.title?.trim() || "Seção"}
-                              </ReactMarkdown>
-                            </div>
-                          </div>
-                          <span className="text-xs text-blue-100">
-                            {questions.length} perguntas
-                          </span>
-                        </div>
-
-                        <div className="space-y-4 p-4">
-                          {contexts.length > 0 ? (
-                            <div className="rounded-lg border border-blue-100 bg-blue-50 p-3">
-                              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-blue-900">
-                                Contexto do item
-                              </p>
-                              <div className="grid gap-2 md:grid-cols-2">
-                                {contexts.map((ctx, idx) => {
-                                  const payloadKey =
-                                    ctx.column_name ?? ctx.text?.trim();
-                                  const value = payloadKey
-                                    ? itemPayload[payloadKey]
-                                    : undefined;
-                                  const contextLabel =
-                                    ctx.text?.trim() ||
-                                    ctx.column_name ||
-                                    `Contexto ${idx + 1}`;
-                                  return (
-                                    <div
-                                      key={ctx.id ?? `${section.id}-${idx}`}
-                                      className="rounded-md border border-blue-100 bg-white px-3 py-2 text-sm text-gray-800"
-                                    >
-                                      <div className="prose prose-sm max-w-none">
-                                        <ReactMarkdown
-                                          remarkPlugins={[remarkGfm]}
-                                        >
-                                          {contextLabel}
-                                        </ReactMarkdown>
-                                      </div>
-                                      <p className="text-[11px] uppercase tracking-wide text-blue-500">
-                                        Coluna: {ctx.column_name ?? "—"}
-                                        {ctx.context_type
-                                          ? ` • Tipo: ${ctx.context_type}`
-                                          : ""}
-                                      </p>
-                                      <p className="mt-1 break-words text-sm text-gray-800">
-                                        {formatAnswerValue(value)}
-                                      </p>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          ) : null}
-
-                          {questions.length === 0 ? (
-                            <p className="text-sm text-gray-600">
-                              Nenhuma pergunta nesta seção.
-                            </p>
-                          ) : (
-                            <div className="space-y-3">
-                              {questions.map((q, idx) => {
-                                const val = answersByQuestion.get(
-                                  String(q.id ?? q.order ?? idx)
-                                );
-                                const label =
-                                  (q.text && q.text.trim().length > 0
-                                    ? q.text
-                                    : "Pergunta") ?? "Pergunta";
-                                return (
-                                  <div
-                                    key={q.id ?? `${section.id}-q-${idx}`}
-                                    className="rounded-lg border border-gray-100 p-3 shadow-sm"
-                                  >
-                                    <div className="flex items-start justify-between gap-3">
-                                      <div className="prose prose-sm max-w-none">
-                                        <ReactMarkdown
-                                          remarkPlugins={[remarkGfm]}
-                                        >
-                                          {label}
-                                        </ReactMarkdown>
-                                      </div>
-                                      {q.required ? (
-                                        <span className="rounded-full bg-red-50 px-3 py-1 text-[11px] font-semibold uppercase text-red-700">
-                                          Obrigatória
-                                        </span>
-                                      ) : null}
-                                    </div>
-                                    <p className="mt-2 text-sm text-gray-800 break-words">
-                                      {formatAnswerValue(val)}
-                                    </p>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
     </>
   );
 }

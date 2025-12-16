@@ -2,7 +2,7 @@
 
 import { createPortal } from "react-dom";
 import { PlusCircle, PlusSquare, CircleQuestionMark } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type MutableRefObject } from "react";
 
 type ActionsSidebarProps = {
   anchor:
@@ -11,7 +11,7 @@ type ActionsSidebarProps = {
         y: number;
       }
     | null;
-  toolbarRef: React.RefObject<HTMLDivElement | null>;
+  toolbarRef: MutableRefObject<HTMLDivElement | null>;
   closing?: boolean;
   onAddQuestion: () => void;
   onAddContext: () => void;
