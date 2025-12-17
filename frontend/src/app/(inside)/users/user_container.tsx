@@ -1,6 +1,6 @@
 import { UserCog } from "lucide-react";
 import StatPill from "@/components/stat_pill";
-import Button from "@/components/button";
+import Button from "@/components/button/Button";
 
 type UserContainerProps = {
   name: string;

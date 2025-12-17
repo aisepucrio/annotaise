@@ -2,7 +2,7 @@
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import Button from "@/components/button";
+import Button from "@/components/button/Button";
 
 type GuideTabProps = {
   guideText: string;

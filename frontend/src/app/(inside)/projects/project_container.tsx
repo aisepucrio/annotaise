@@ -3,7 +3,7 @@
 import { NotebookPen } from "lucide-react";
 import { useRouter } from "next/navigation";
 import StatPill from "@/components/stat_pill";
-import Button from "@/components/button";
+import Button from "@/components/button/Button";
 import { ArrowUpRight } from "lucide-react";
 
 type ProjectContainerProps = {

@@ -5,7 +5,7 @@ import remarkGfm from "remark-gfm";
 import { Download } from "lucide-react";
 import GridItemCard from "@/components/grid/grid_item_card";
 import GridLayout from "@/components/grid/grid_layout";
-import Button from "@/components/button";
+import Button from "@/components/button/Button";
 import type { AnswerResponse } from "@/lib/services/answer_service";
 import type { LabelingStructureSection } from "@/lib/services/labeling_create_service";
 
@@ -51,7 +51,9 @@ export default function AnswersTab({
               Usuário que rotulou
             </label>
             <select
-              value={selectedResponder === "all" ? "all" : String(selectedResponder)}
+              value={
+                selectedResponder === "all" ? "all" : String(selectedResponder)
+              }
               onChange={(e) => {
                 const value = e.target.value;
                 onResponderChange(value === "all" ? "all" : Number(value));
@@ -106,8 +108,9 @@ export default function AnswersTab({
               const answeredAt = new Date(answer.created_at).toLocaleString(
                 "pt-BR"
               );
-              const answeredCount = Object.keys(answer.answer_payload ?? {})
-                .length;
+              const answeredCount = Object.keys(
+                answer.answer_payload ?? {}
+              ).length;
 
               return (
                 <GridItemCard key={answer.id} index={index}>
@@ -147,9 +150,7 @@ export default function AnswersTab({
       <InspectAnswerModal
         answer={inspectAnswer}
         onClose={onCloseInspect}
-        userLabel={
-          inspectAnswer ? getUserLabel(inspectAnswer.answered_by) : ""
-        }
+        userLabel={inspectAnswer ? getUserLabel(inspectAnswer.answered_by) : ""}
         sections={structureSections}
       />
     </>

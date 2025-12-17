@@ -10,7 +10,7 @@ import { Plus } from "lucide-react";
 import NewProjectModal from "./new_project_modal";
 import GridLayout from "@/components/grid/grid_layout";
 import GridItemCard from "@/components/grid/grid_item_card";
-import Button from "@/components/button";
+import Button from "@/components/button/Button";
 import {
   createProject,
   fetchProjectDashboard,

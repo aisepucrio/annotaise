@@ -4,6 +4,7 @@
 @plugin "@tailwindcss/typography";
 
 :root {
+  /* Custom colors */
   --full-white: #ffffff;
   --metal-50: #f4f5f7;
 
@@ -33,7 +34,7 @@
   --metal-500-15: rgba(124, 130, 146, 0.15);
   --blueberry-700-25: rgba(30, 47, 147, 0.25);
 
-  /* outros */
+  /* outros (shadcn) */
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -93,8 +94,8 @@
   --color-orange-blueberry: var(--orange-blueberry);
   --color-green-blueberry: var(--green-blueberry);
   --color-red-blueberry: var(--red-blueberry);
-  /* Custom colors (end) */
 
+  /* Others (shadcn) */
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);

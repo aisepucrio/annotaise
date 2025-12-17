@@ -1,5 +1,5 @@
 import { Search, Filter } from "lucide-react";
-import Button from "./button";
+import Button from "./button/Button";
 
 type FilterBarProps = {
   value: string;

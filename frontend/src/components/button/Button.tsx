@@ -29,7 +29,7 @@ type ButtonProps = {
   /** Aria label para acessibilidade */
   ariaLabel?: string;
   /** Tamanho do padding básico */
-  size?: "normal" | "compact" | "icon";
+  size?: "normal" | "icon";
 };
 
 export default function Button({
@@ -92,8 +92,7 @@ export default function Button({
 
   const colors = getColors();
   const fontWeight = bold ? "font-bold" : "font-normal";
-  const paddingClasses =
-    size === "icon" ? "p-2" : size === "compact" ? "px-2 py-2" : "px-4 py-2";
+  const paddingClasses = size === "icon" ? "p-2" : "px-4 py-2";
 
   return (
     <button

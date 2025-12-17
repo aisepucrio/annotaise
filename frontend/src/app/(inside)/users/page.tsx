@@ -8,7 +8,7 @@ import FilterBar from "@/components/filter_bar";
 import { UserPlus } from "lucide-react";
 import GridLayout from "@/components/grid/grid_layout";
 import GridItemCard from "@/components/grid/grid_item_card";
-import Button from "@/components/button";
+import Button from "@/components/button/Button";
 import {
   createInvitation,
   fetchUsers,

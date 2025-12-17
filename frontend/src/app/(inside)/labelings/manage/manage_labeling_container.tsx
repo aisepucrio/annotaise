@@ -1,6 +1,6 @@
 import { Pen } from "lucide-react";
 import { useRouter } from "next/navigation";
-import Button from "@/components/button";
+import Button from "@/components/button/Button";
 
 type LabelingContainerProps = {
   id: number;

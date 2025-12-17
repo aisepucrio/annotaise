@@ -24,7 +24,7 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import Button from "@/components/button";
+import Button from "@/components/button/Button";
 
 export default function LabelingAnswerPage() {
   const params = useParams<{ id: string }>();
@@ -254,7 +254,9 @@ export default function LabelingAnswerPage() {
           <Button
             fill={false}
             variant="light"
-            className={`border border-white/30 ${showGuide ? "bg-white/10" : ""}`}
+            className={`border border-white/30 ${
+              showGuide ? "bg-white/10" : ""
+            }`}
             onClick={() => setShowGuide((prev) => !prev)}
           >
             {showGuide ? "Ocultar guia" : "Guia"}
@@ -286,7 +288,9 @@ export default function LabelingAnswerPage() {
               <div className="h-full rounded-xl border border-gray-200 bg-white p-4 shadow-sm overflow-auto space-y-3">
                 <div className="flex items-center justify-between gap-2">
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-900">Guia</h3>
+                    <h3 className="text-sm font-semibold text-gray-900">
+                      Guia
+                    </h3>
                     <p className="text-xs text-gray-500">
                       Informações adicionais para responder os itens.
                     </p>
