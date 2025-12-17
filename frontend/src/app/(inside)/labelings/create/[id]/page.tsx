@@ -3,13 +3,7 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import axios from "axios";
-import {
-  ArrowLeft,
-  Save,
-  Edit,
-  Calendar,
-  Trash2,
-} from "lucide-react";
+import { ArrowLeft, Save, Edit, Calendar, Trash2 } from "lucide-react";
 import {
   SectionData,
   ContextElement,
@@ -417,18 +411,22 @@ export default function LabelingFormPage() {
     );
   }
 
-  const handleRemoveSection = useCallback((sectionId: string) => {
-    setSections((prev) => prev.filter((s) => s.id !== sectionId));
-    setActionsAnchor((prev) =>
-      prev?.sectionId === sectionId ? null : prev
-    );
-  }, [setActionsAnchor, setSections]);
+  const handleRemoveSection = useCallback(
+    (sectionId: string) => {
+      setSections((prev) => prev.filter((s) => s.id !== sectionId));
+      setActionsAnchor((prev) => (prev?.sectionId === sectionId ? null : prev));
+    },
+    [setActionsAnchor, setSections]
+  );
 
-  const handleUpdateSection = useCallback((updated: SectionData) => {
-    setSections((prev) =>
-      prev.map((s) => (s.id === updated.id ? updated : s))
-    );
-  }, [setSections]);
+  const handleUpdateSection = useCallback(
+    (updated: SectionData) => {
+      setSections((prev) =>
+        prev.map((s) => (s.id === updated.id ? updated : s))
+      );
+    },
+    [setSections]
+  );
 
   function formatDate(dateStr: string | null) {
     if (!dateStr) return "--/--/----";
@@ -637,9 +635,9 @@ export default function LabelingFormPage() {
   };
 
   return (
-    <>
+    <div className="h-screen flex flex-col">
       {/* Cabeçalho */}
-      <div className="bg-blue-900 text-white px-6 py-3 shadow-md">
+      <div className="bg-blue-900 text-white px-6 py-3 shadow-md flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-start gap-3">
             <button
@@ -744,39 +742,43 @@ export default function LabelingFormPage() {
       </div>
 
       {/* Conteúdo */}
-      <div className="bg-white   p-4">
+      <div className="flex-1 bg-white overflow-hidden">
         {activeTab === "form" ? (
-          <FormTab
-            columns={columns}
-            isLoadingLabeling={isLoadingLabeling}
-            sections={sections}
-            onUpdateSectionTitle={updateSectionTitle}
-            onRemoveSection={handleRemoveSection}
-            onUpdateSection={handleUpdateSection}
-            onAddContext={addContext}
-            onAddQuestion={addQuestion}
-            onAddSection={addSection}
-            actionsAnchor={actionsAnchor}
-            actionsClosing={actionsClosing}
-            toolbarRef={toolbarRef}
-            focusActionsAt={focusActionsAt}
-            setSections={setSections}
-          />
+          <div className="h-full p-4">
+            <FormTab
+              columns={columns}
+              isLoadingLabeling={isLoadingLabeling}
+              sections={sections}
+              onUpdateSectionTitle={updateSectionTitle}
+              onRemoveSection={handleRemoveSection}
+              onUpdateSection={handleUpdateSection}
+              onAddContext={addContext}
+              onAddQuestion={addQuestion}
+              onAddSection={addSection}
+              actionsAnchor={actionsAnchor}
+              actionsClosing={actionsClosing}
+              toolbarRef={toolbarRef}
+              focusActionsAt={focusActionsAt}
+              setSections={setSections}
+            />
+          </div>
         ) : activeTab === "assign" ? (
-          <AssignTab
-            memberships={memberships}
-            membershipLoading={membershipLoading}
-            membershipSaving={membershipSaving}
-            availableUsers={availableUsers}
-            roleOptions={roleOptions}
-            newMemberId={newMemberId}
-            newMemberRole={newMemberRole}
-            onChangeNewMemberId={setNewMemberId}
-            onChangeNewMemberRole={(role) => setNewMemberRole(role)}
-            onAddMember={handleAddMember}
-            onChangeRole={handleChangeRole}
-            onRemoveMember={handleRemoveMember}
-          />
+          <div className="h-full p-4">
+            <AssignTab
+              memberships={memberships}
+              membershipLoading={membershipLoading}
+              membershipSaving={membershipSaving}
+              availableUsers={availableUsers}
+              roleOptions={roleOptions}
+              newMemberId={newMemberId}
+              newMemberRole={newMemberRole}
+              onChangeNewMemberId={setNewMemberId}
+              onChangeNewMemberRole={(role) => setNewMemberRole(role)}
+              onAddMember={handleAddMember}
+              onChangeRole={handleChangeRole}
+              onRemoveMember={handleRemoveMember}
+            />
+          </div>
         ) : activeTab === "guide" ? (
           <GuideTab
             guideText={guideText}
@@ -788,21 +790,23 @@ export default function LabelingFormPage() {
             isSaving={isSaving}
           />
         ) : (
-          <AnswersTab
-            responderOptions={responderOptions}
-            selectedResponder={selectedResponder}
-            onResponderChange={setSelectedResponder}
-            onExportCsv={() => void handleExportCsv()}
-            exporting={exporting}
-            answersLoading={answersLoading}
-            filteredAnswers={filteredAnswers}
-            totalAnswers={answers.length}
-            getUserLabel={getUserLabel}
-            onInspectAnswer={setInspectAnswer}
-            inspectAnswer={inspectAnswer}
-            onCloseInspect={() => setInspectAnswer(null)}
-            structureSections={structureSections}
-          />
+          <div className="h-full p-4">
+            <AnswersTab
+              responderOptions={responderOptions}
+              selectedResponder={selectedResponder}
+              onResponderChange={setSelectedResponder}
+              onExportCsv={() => void handleExportCsv()}
+              exporting={exporting}
+              answersLoading={answersLoading}
+              filteredAnswers={filteredAnswers}
+              totalAnswers={answers.length}
+              getUserLabel={getUserLabel}
+              onInspectAnswer={setInspectAnswer}
+              inspectAnswer={inspectAnswer}
+              onCloseInspect={() => setInspectAnswer(null)}
+              structureSections={structureSections}
+            />
+          </div>
         )}
       </div>
 
@@ -857,7 +861,7 @@ export default function LabelingFormPage() {
           </div>
         </div>
       ) : null}
-    </>
+    </div>
   );
 }
 
