@@ -637,7 +637,7 @@ export default function LabelingFormPage() {
   return (
     <div className="h-screen flex flex-col">
       {/* Cabeçalho */}
-      <div className="bg-blue-900 text-white px-6 py-3 shadow-md flex-shrink-0">
+      <div className="bg-blueberry-700 text-white px-6 py-3 shadow-md flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-start gap-3">
             <button
@@ -713,10 +713,10 @@ export default function LabelingFormPage() {
         </div>
 
         {/* Linha separadora */}
-        <div className="mt-4 h-0.5 bg-white/80 rounded-full" />
+        <div className="mt-3 h-0.5 bg-white/80 rounded-full" />
 
         {/* Tabs */}
-        <div className="flex gap-6 mt-3 text-sm justify-center">
+        <div className="flex gap-6 mt-2 text-sm justify-center">
           {[
             { key: "form", label: "Formulário" },
             { key: "assign", label: "Atribuir Usuários" },
@@ -729,9 +729,9 @@ export default function LabelingFormPage() {
               onClick={() =>
                 setActiveTab(tab.key as "form" | "assign" | "answers" | "guide")
               }
-              className={`pb-2 border-b-2 transition-colors cursor-pointer ${
+              className={`pb-1 border-b-2 transition-colors cursor-pointer ${
                 activeTab === tab.key
-                  ? "border-white font-semibold text-white"
+                  ? "border-white font-semibold text-white "
                   : "border-transparent text-blue-100 hover:text-white"
               }`}
             >
