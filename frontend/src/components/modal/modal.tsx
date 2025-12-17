@@ -4,45 +4,35 @@ import { X } from "lucide-react";
 import { ReactNode, useEffect } from "react";
 
 export type ModalProps = {
-  /**
-   * Controla a visibilidade do modal
-   */
+  /** Controla a visibilidade do modal*/
+
   open: boolean;
-  /**
-   * Função chamada quando o modal deve ser fechado
-   */
+  /** Função chamada quando o modal deve ser fechado */
+
   onClose: () => void;
-  /**
-   * Título principal do modal (sempre visível, alinhado com botão X)
-   */
+  /** Título principal do modal (sempre visível, alinhado com botão X)  */
+
   title: ReactNode;
-  /**
-   * Subtítulo opcional - aparece abaixo do título quando presente
-   */
+  /** Subtítulo opcional - aparece abaixo do título quando presente */
+
   subtitle?: ReactNode;
-  /**
-   * Descrição opcional - aparece abaixo do subtítulo quando presente
-   */
+  /** Descrição opcional - aparece abaixo do subtítulo quando presente */
+
   description?: ReactNode;
-  /**
-   * Conteúdo principal do modal com scroll automático
-   */
+  /** Conteúdo principal do modal com scroll automático  */
+
   children: ReactNode;
-  /**
-   * Largura máxima do modal. Padrão: "md"
-   */
+  /** Largura máxima do modal. Padrão: "md" */
+
   maxWidth?: "sm" | "md" | "lg" | "xl" | "2xl";
-  /**
-   * Se true, não fecha o modal ao clicar no backdrop
-   */
+  /** Se true, não fecha o modal ao clicar no backdrop   */
+
   disableBackdropClick?: boolean;
-  /**
-   * Se true, esconde o botão X de fechar
-   */
+  /** Se true, esconde o botão X de fechar */
+
   hideCloseButton?: boolean;
-  /**
-   * Classe CSS adicional para o container do modal
-   */
+  /** Classe CSS adicional para o container do modal  */
+
   className?: string;
 };
 
