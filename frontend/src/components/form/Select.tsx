@@ -27,6 +27,8 @@ export type SelectProps = Omit<
   icon?: ReactNode;
   /** Classes CSS adicionais para o container */
   containerClassName?: string;
+  /** Tooltip informativo ao lado do label */
+  tooltip?: string;
 };
 
 /**
@@ -45,6 +47,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
       containerClassName = "",
       id,
       disabled = false,
+      tooltip,
       ...props
     },
     ref
@@ -56,6 +59,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
         error={error}
         required={required}
         className={containerClassName}
+        tooltip={tooltip}
       >
         <div className="relative">
           <select
@@ -88,7 +92,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
             ))}
           </select>
 
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 text-metal-200 pointer-events-none">
+          <div className="absolute right-2 top-1/2 -translate-y-1/2 text-metal-200 pointer-events-none">
             {icon || <ChevronDown className="w-6 h-6" />}
           </div>
         </div>

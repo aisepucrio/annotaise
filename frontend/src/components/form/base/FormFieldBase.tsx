@@ -1,5 +1,6 @@
 import React, { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import Tooltip from "@/components/tooltip/Tooltip";
 
 export type FormFieldBaseProps = {
   /** Label do campo */
@@ -14,11 +15,13 @@ export type FormFieldBaseProps = {
   children: ReactNode;
   /** Classes CSS adicionais para o container */
   className?: string;
+  /** Tooltip informativo ao lado do label */
+  tooltip?: string;
 };
 
 /**
  * Componente base para todos os campos de formulário
- * Fornece label flutuante, indicador de obrigatório e mensagem de erro
+ * Fornece label flutuante, indicador de obrigatório, tooltip opcional e mensagem de erro
  */
 export default function FormFieldBase({
   label,
@@ -27,17 +30,20 @@ export default function FormFieldBase({
   required = false,
   children,
   className = "",
+  tooltip,
 }: FormFieldBaseProps) {
   return (
     <div className={cn("relative w-full", className)}>
       {label && (
-        <label
-          htmlFor={id}
-          className="absolute -top-3 left-3 bg-white px-2 text-sm text-metal-700 z-10"
-        >
-          {label}
-          {required && <span className="text-red-400 ml-1">*</span>}
-        </label>
+        <div className="absolute -top-3 left-3 bg-white px-2 z-10 flex items-center gap-1">
+          <label htmlFor={id} className="text-sm text-metal-700">
+            {label}
+            {required && <span className="text-red-400 ml-1">*</span>}
+          </label>
+          {tooltip && (
+            <Tooltip content={tooltip} color="var(--metal-700)" size="sm" />
+          )}
+        </div>
       )}
 
       {children}

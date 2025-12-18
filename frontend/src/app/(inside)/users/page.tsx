@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
-import PageHeader from "@/components/page_header";
+import PageHeader from "@/components/PageHeader";
 import UserContainer from "./user_container";
 import FilterBar from "@/components/filter_bar";
 import { UserPlus } from "lucide-react";

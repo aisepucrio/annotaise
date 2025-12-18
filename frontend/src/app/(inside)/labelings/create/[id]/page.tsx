@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import axios from "axios";
-import { ArrowLeft, Save, Edit, Calendar, Trash2 } from "lucide-react";
 import {
   SectionData,
   ContextElement,
@@ -40,6 +39,7 @@ import FormTab from "./form_tab";
 import AssignTab from "./assign_tab";
 import GuideTab from "./guide_tab";
 import AnswersTab from "./answers_tab";
+import LabelingHeader from "./labeling_header";
 
 const createContextElement = (order: number): ContextElement => ({
   id: crypto.randomUUID(),
@@ -256,7 +256,10 @@ export default function LabelingFormPage() {
       ) {
         return;
       }
-      if (target instanceof Element && target.closest("[data-section-anchor-id]")) {
+      if (
+        target instanceof Element &&
+        target.closest("[data-section-anchor-id]")
+      ) {
         return;
       }
       if (toolbarRef.current && toolbarRef.current.contains(target)) return;
@@ -478,11 +481,6 @@ export default function LabelingFormPage() {
     [setSections]
   );
 
-  function formatDate(dateStr: string | null) {
-    if (!dateStr) return "--/--/----";
-    return new Date(dateStr).toLocaleDateString("pt-BR");
-  }
-
   const projectStatusLabel = useMemo(() => {
     if (!projectStatus) return null;
     const map: Record<string, string> = {
@@ -686,110 +684,23 @@ export default function LabelingFormPage() {
 
   return (
     <div className="h-screen flex flex-col">
-      {/* Cabeçalho */}
-      <div className="bg-blueberry-700 text-white px-6 py-3 shadow-md flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <div className="flex items-start gap-3">
-            <button
-              type="button"
-              onClick={() => router.push("/labelings/manage")}
-              className="p-1 rounded-md hover:bg-white/10 cursor-pointer"
-              aria-label="Voltar"
-            >
-              <ArrowLeft size={22} className="cursor-pointer" />
-            </button>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl font-semibold leading-tight">
-                  {labelingTitle ||
-                    (isLoadingLabeling ? "Carregando..." : "Rotulação")}
-                </span>
-              </div>
-              <div className="flex items-center gap-2 text-sm opacity-90 mt-1">
-                <span className="font-medium">
-                  {projectName
-                    ? `Projeto: ${projectName}`
-                    : "Projeto não informado"}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setIsEditInfoOpen(true)}
-                  className="p-1 rounded-md hover:bg-white/10 cursor-pointer"
-                  aria-label="Editar informações da rotulação"
-                >
-                  <Edit size={20} />
-                </button>
-              </div>
-              <div className="flex items-center gap-3 text-xs mt-1">
-                <span className="flex items-center gap-1">
-                  <Calendar size={14} />
-                  {`${formatDate(startDateInfo)} → ${formatDate(
-                    finalDateInfo
-                  )}`}
-                </span>
-                {projectStatusLabel ? (
-                  <span className="px-2 py-1 rounded-md bg-white/20 text-white text-[11px] font-semibold uppercase tracking-wide">
-                    {projectStatusLabel}
-                  </span>
-                ) : null}
-                {usersPerItem !== null ? (
-                  <span className="px-2 py-1 rounded-md bg-white/20 text-white text-[11px] font-semibold uppercase tracking-wide">
-                    {`Usuários por Rotulação: ${usersPerItem}`}
-                  </span>
-                ) : null}
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={handleSaveStructure}
-              className="bg-white text-blue-900 font-semibold px-5 py-2 rounded-lg hover:bg-gray-100 shadow-sm flex items-center gap-2 cursor-pointer"
-              disabled={isSaving || isLoadingLabeling}
-            >
-              <Save size={18} />
-              {isSaving ? "Salvando..." : "Salvar alterações"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsDeleteOpen(true)}
-              className="p-2 rounded-md hover:bg-white/10 border border-white/30 text-white flex items-center justify-center cursor-pointer"
-              aria-label="Excluir rotulação"
-              disabled={isDeleting || isLoadingLabeling}
-            >
-              <Trash2 size={18} />
-            </button>
-          </div>
-        </div>
-
-        {/* Linha separadora */}
-        <div className="mt-3 h-0.5 bg-white/80 rounded-full" />
-
-        {/* Tabs */}
-        <div className="flex gap-6 mt-2 text-sm justify-center">
-          {[
-            { key: "form", label: "Formulário" },
-            { key: "assign", label: "Atribuir Usuários" },
-            { key: "answers", label: "Respostas" },
-            { key: "guide", label: "Guia" },
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() =>
-                setActiveTab(tab.key as "form" | "assign" | "answers" | "guide")
-              }
-              className={`pb-1 border-b-2 transition-colors cursor-pointer ${
-                activeTab === tab.key
-                  ? "border-white font-semibold text-white "
-                  : "border-transparent text-blue-100 hover:text-white"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <LabelingHeader
+        labelingTitle={labelingTitle}
+        isLoadingLabeling={isLoadingLabeling}
+        projectName={projectName}
+        startDateInfo={startDateInfo}
+        finalDateInfo={finalDateInfo}
+        projectStatusLabel={projectStatusLabel}
+        usersPerItem={usersPerItem}
+        activeTab={activeTab}
+        isSaving={isSaving}
+        isDeleting={isDeleting}
+        onBack={() => router.push("/labelings/manage")}
+        onEditInfo={() => setIsEditInfoOpen(true)}
+        onSaveStructure={handleSaveStructure}
+        onDelete={() => setIsDeleteOpen(true)}
+        onTabChange={setActiveTab}
+      />
 
       {/* Conteúdo */}
       <div className="flex-1 min-h-0 bg-white overflow-hidden">

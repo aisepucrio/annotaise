@@ -180,6 +180,48 @@ export const Required: StoryObj<typeof Select> = {
 };
 
 /* =======================
+   COM TOOLTIP
+======================= */
+
+export const WithTooltip: StoryObj<typeof Select> = {
+  render: () => (
+    <div className="flex flex-col gap-6 w-96">
+      <Select
+        label="Projeto"
+        placeholder="Selecionar projeto relacionado..."
+        tooltip="Escolha o projeto ao qual esta rotulação será vinculada"
+        options={[
+          { value: "proj1", label: "Projeto Alpha" },
+          { value: "proj2", label: "Projeto Beta" },
+          { value: "proj3", label: "Projeto Gamma" },
+        ]}
+        icon={<Building2 className="w-6 h-6" />}
+      />
+
+      <Select
+        label="Tipo de rotulação"
+        placeholder="Selecione o tipo..."
+        required
+        tooltip="Define o método de rotulação que será utilizado neste projeto"
+        options={[
+          { value: "class", label: "Classificação" },
+          { value: "ner", label: "NER (Named Entity Recognition)" },
+          { value: "sentiment", label: "Análise de Sentimento" },
+        ]}
+      />
+    </div>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Selects com tooltip informativo. O ícone de informação aparece ao lado do label e mostra informações adicionais ao passar o mouse.",
+      },
+    },
+  },
+};
+
+/* =======================
    DESABILITADO
 ======================= */
 

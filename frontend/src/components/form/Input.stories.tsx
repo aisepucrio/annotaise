@@ -151,6 +151,47 @@ export const Required: StoryObj<typeof Input> = {
 };
 
 /* =======================
+   COM TOOLTIP
+======================= */
+
+export const WithTooltip: StoryObj<typeof Input> = {
+  render: () => (
+    <div className="flex flex-col gap-6 w-96">
+      <Input
+        label="Email"
+        type="email"
+        placeholder="seu@email.com"
+        tooltip="Digite um endereço de email válido"
+        icon={<Mail className="w-6 h-6" />}
+      />
+
+      <Input
+        label="Usuários por item"
+        type="number"
+        placeholder="Digite a quantidade..."
+        tooltip="Quantidade de usuários que irão rotular cada item"
+      />
+
+      <Input
+        label="Nome de usuário"
+        placeholder="Digite seu username..."
+        required
+        tooltip="O nome de usuário deve ter entre 3 e 20 caracteres"
+        icon={<User className="w-6 h-6" />}
+      />
+    </div>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Inputs com tooltip informativo. O ícone de informação aparece ao lado do label e mostra informações adicionais ao passar o mouse.",
+      },
+    },
+  },
+};
+
+/* =======================
    DESABILITADO
 ======================= */
 

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { useRouter } from "next/navigation";
-import PageHeader from "@/components/page_header";
+import PageHeader from "@/components/PageHeader";
 import ProjectContainer from "./project_container";
 import FilterBar from "@/components/filter_bar";
 import { Plus } from "lucide-react";

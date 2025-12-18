@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import PageHeader from "@/components/page_header";
+import PageHeader from "@/components/PageHeader";
 import FilterBar from "@/components/filter_bar";
 import LabelingContainer from "./labeling_container";
 import GridLayout from "@/components/grid/grid_layout";

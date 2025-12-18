@@ -16,6 +16,8 @@ export type DatePickerProps = Omit<
   required?: boolean;
   /** Classes CSS adicionais para o container */
   containerClassName?: string;
+  /** Tooltip informativo ao lado do label */
+  tooltip?: string;
 };
 
 /**
@@ -32,6 +34,7 @@ const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
       id,
       disabled = false,
       placeholder = "dd/mm/aaaa",
+      tooltip,
       ...props
     },
     ref
@@ -43,6 +46,7 @@ const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
         error={error}
         required={required}
         className={containerClassName}
+        tooltip={tooltip}
       >
         <div className="relative">
           <input
@@ -67,7 +71,7 @@ const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
             {...props}
           />
 
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 text-metal-200 pointer-events-none">
+          <div className="absolute right-2 top-1/2 -translate-y-1/2 text-metal-200 pointer-events-none">
             <Calendar className="w-6 h-6" />
           </div>
         </div>

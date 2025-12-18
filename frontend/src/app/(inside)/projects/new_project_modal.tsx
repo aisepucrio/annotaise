@@ -30,11 +30,13 @@ export default function NewProjectModal({
   onClose,
   onSubmit,
 }: NewProjectModalProps) {
+  // Hooks: formulário e estado local
   const { register, handleSubmit, reset } = useForm<ProjectPayload>({
     defaultValues: { name: "", description: "", status: "planning" },
   });
   const [submitting, setSubmitting] = useState(false);
 
+  // Efeitos: resetar formulário quando o modal fechar
   useEffect(() => {
     if (!open) {
       reset({ name: "", description: "", status: "planning" });
@@ -42,6 +44,7 @@ export default function NewProjectModal({
     }
   }, [open, reset]);
 
+  // Manipuladores: submissão do formulário e validação
   const submitForm = handleSubmit(
     async (values) => {
       try {
@@ -76,7 +79,8 @@ export default function NewProjectModal({
       description="Preencha as informações abaixo para criar um novo projeto."
       maxWidth="lg"
     >
-      <form onSubmit={submitForm} className="space-y-4">
+      {/* Render: UI do formulário */}
+      <form onSubmit={submitForm} className="space-y-5">
         <Input
           id="project-name"
           label="Nome"

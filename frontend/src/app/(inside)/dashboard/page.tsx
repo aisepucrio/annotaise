@@ -1,6 +1,6 @@
 "use client";
 
-import PageHeader from "@/components/page_header";
+import PageHeader from "@/components/PageHeader";
 import UseCurrent from "@/hooks/current_user_hook";
 
 export default function Dashboard() {

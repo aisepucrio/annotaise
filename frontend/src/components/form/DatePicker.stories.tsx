@@ -108,6 +108,43 @@ export const Required: StoryObj<typeof DatePicker> = {
 };
 
 /* =======================
+   COM TOOLTIP
+======================= */
+
+export const WithTooltip: StoryObj<typeof DatePicker> = {
+  render: () => (
+    <div className="flex flex-col gap-6 w-96">
+      <DatePicker
+        label="Data inicial"
+        placeholder="dd/mm/aaaa"
+        tooltip="Data em que o projeto de rotulação será iniciado"
+      />
+
+      <DatePicker
+        label="Data final"
+        placeholder="dd/mm/aaaa"
+        required
+        tooltip="Data limite para conclusão da rotulação"
+      />
+
+      <DatePicker
+        label="Data de nascimento"
+        placeholder="dd/mm/aaaa"
+        tooltip="Você deve ter pelo menos 18 anos para criar uma conta"
+      />
+    </div>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "DatePickers com tooltip informativo. O ícone de informação aparece ao lado do label e mostra informações adicionais ao passar o mouse.",
+      },
+    },
+  },
+};
+
+/* =======================
    DESABILITADO
 ======================= */
 

@@ -2,21 +2,39 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import Modal from "@/components/modal/Modal";
+import Input from "@/components/form/Input";
+import Select from "@/components/form/Select";
+import Button from "@/components/button/Button";
+
+type Payload = {
+  email: string;
+  account_type: "standard" | "editor" | "admin";
+};
 
 type NewUserModalProps = {
   open: boolean;
   onClose: () => void;
-  onSubmit: (payload: {
-    email: string;
-    account_type: "standard" | "editor" | "admin";
-  }) => Promise<string>;
+  onSubmit: (payload: Payload) => Promise<string>;
 };
 
-export default function NewUserModal({ open, onClose, onSubmit }: NewUserModalProps) {
+const ACCOUNT_OPTIONS = [
+  { value: "standard", label: "Padrão" },
+  { value: "admin", label: "Administrador" },
+];
+
+export default function NewUserModal({
+  open,
+  onClose,
+  onSubmit,
+}: NewUserModalProps) {
+  // Hooks: estado local
   const [email, setEmail] = useState("");
-  const [accountType, setAccountType] = useState<"standard" | "editor" | "admin">("standard");
+  const [accountType, setAccountType] =
+    useState<Payload["account_type"]>("standard");
   const [submitting, setSubmitting] = useState(false);
 
+  // Efeitos: resetar estado quando o modal fecha
   useEffect(() => {
     if (!open) {
       setEmail("");
@@ -25,38 +43,37 @@ export default function NewUserModal({ open, onClose, onSubmit }: NewUserModalPr
     }
   }, [open]);
 
-  if (!open) {
-    return null;
-  }
-
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!email.trim()) {
+  // Manipuladores: submissão do formulário
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = email.trim();
+    if (!trimmed) {
       toast.error("Informe o e-mail do usuário.");
       return;
     }
+
     setSubmitting(true);
     try {
       const link = await onSubmit({
-        email: email.trim(),
+        email: trimmed,
         account_type: accountType,
       });
       toast.success("Convite gerado", {
         description: link,
         action: {
           label: "Copiar link",
-          onClick: () => {
-            if (typeof navigator !== "undefined" && navigator.clipboard) {
-              navigator.clipboard.writeText(link).catch(() => undefined);
-            }
-          },
+          onClick: () =>
+            navigator?.clipboard?.writeText?.(link).catch(() => undefined),
         },
       });
       onClose();
     } catch (err) {
       const message =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
-        (err instanceof Error ? err.message : "Não foi possível criar o convite.");
+        (err as { response?: { data?: { detail?: string } } })?.response?.data
+          ?.detail ??
+        (err instanceof Error
+          ? err.message
+          : "Não foi possível criar o convite.");
       toast.error(message);
     } finally {
       setSubmitting(false);
@@ -64,62 +81,45 @@ export default function NewUserModal({ open, onClose, onSubmit }: NewUserModalPr
   };
 
   return (
-    <div
-      className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 px-4"
-      role="dialog"
-      aria-modal="true"
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Novo Usuário"
+      description="Envie um convite para criar uma nova conta."
+      maxWidth="md"
     >
-      <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl">
-        <header className="mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Novo convite</h2>
-          <p className="text-sm text-gray-500">Envie um convite para criar uma nova conta.</p>
-        </header>
+      {/* Render: UI do formulário */}
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <Input
+          id="invite-email"
+          label="E-mail"
+          type="email"
+          placeholder="usuario@exemplo.com"
+          value={email}
+          onChange={(e) => setEmail((e.target as HTMLInputElement).value)}
+          required
+        />
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-gray-700">E-mail</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200"
-              placeholder="usuario@exemplo.com"
-            />
-          </div>
+        <div>
+          <Select
+            id="invite-account"
+            label="Tipo de conta"
+            options={ACCOUNT_OPTIONS}
+            value={accountType}
+            onChange={(e) =>
+              setAccountType(
+                (e.target as HTMLSelectElement).value as Payload["account_type"]
+              )
+            }
+          />
+        </div>
 
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-gray-700">Tipo de conta</label>
-            <select
-              value={accountType}
-              onChange={(e) => setAccountType(e.target.value as "standard" | "editor" | "admin")}
-              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200"
-            >
-              <option value="standard">Padrão</option>
-              {/* <option value="editor">Editor</option> */}
-              <option value="admin">Administrador</option>
-            </select>
-            <p className="text-xs text-gray-500">Escolha o nível de acesso para o convidado.</p>
-          </div>
-
-          <div className="flex items-center justify-end gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 cursor-pointer"
-              disabled={submitting}
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="rounded-lg bg-blue-900 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
-            >
-              {submitting ? "Enviando..." : "Enviar convite"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div className="flex items-center justify-end gap-3 pt-2 w-[70%] mx-auto">
+          <Button type="submit" disabled={submitting}>
+            {submitting ? "Enviando..." : "Enviar convite"}
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 }

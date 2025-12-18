@@ -22,6 +22,8 @@ export type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "size"> & {
   rows?: number;
   /** Se o textarea pode ser redimensionado (quando multiline=true). Padrão: false */
   resizable?: boolean;
+  /** Tooltip informativo ao lado do label */
+  tooltip?: string;
 };
 
 /**
@@ -43,6 +45,7 @@ const Input = forwardRef<HTMLInputElement | HTMLTextAreaElement, InputProps>(
       multiline = false,
       rows = 4,
       resizable = false,
+      tooltip,
       ...props
     },
     ref
@@ -65,6 +68,7 @@ const Input = forwardRef<HTMLInputElement | HTMLTextAreaElement, InputProps>(
         error={error}
         required={required}
         className={containerClassName}
+        tooltip={tooltip}
       >
         <div className="relative">
           {leftIcon && !multiline && (
@@ -93,7 +97,7 @@ const Input = forwardRef<HTMLInputElement | HTMLTextAreaElement, InputProps>(
           )}
 
           {icon && !multiline && (
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-metal-200">
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 text-metal-200">
               {icon}
             </div>
           )}
