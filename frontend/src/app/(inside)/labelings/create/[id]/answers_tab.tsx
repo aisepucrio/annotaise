@@ -72,7 +72,7 @@ export default function AnswersTab({
             <Button
               variant="normal"
               fill={false}
-              size="compact"
+              size="icon"
               onClick={() => void onExportCsv()}
               disabled={exporting}
               className="px-4"
