@@ -28,6 +28,8 @@ type ButtonProps = {
   className?: string;
   /** Aria label para acessibilidade */
   ariaLabel?: string;
+  /** Tipo do botão (padrão: "button"). Permite 'submit' para submeter formulários. */
+  type?: "button" | "submit" | "reset";
   /** Tamanho do padding básico */
   size?: "normal" | "icon";
 };
@@ -43,6 +45,7 @@ export default function Button({
   fill = true,
   ariaLabel,
   size = "normal",
+  type = "button",
 }: ButtonProps) {
   // Define as cores baseadas na variante ou no estado disabled
   const getColors = () => {
@@ -119,7 +122,7 @@ export default function Button({
       onMouseLeave={(e) => {
         e.currentTarget.style.backgroundColor = colors.bg;
       }}
-      type="button"
+      type={type}
       aria-label={ariaLabel}
     >
       {icon && (
