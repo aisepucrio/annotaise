@@ -7,7 +7,7 @@ from django.utils import timezone
 class LabelingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Labeling
-        fields = ['id', 'project', 'title', 'created_at','status','column_names','start_date','final_date','users_per_item','block_section_back','guide']
+        fields = ['id', 'project', 'title', 'created_at','status','column_names','start_date','final_date','users_per_item','block_section_back','guide','decision']
         read_only_fields = ['id', 'created_at','created_by','column_names']
 
     def create(self, validated_data):
@@ -45,6 +45,7 @@ class LabelingElementSerializer(serializers.ModelSerializer):
             "multiple_choice_items",
             "question_range",
             "context_type",
+            "decisive_question"
         ]
 
 class LabelingSectionSerializer(serializers.ModelSerializer):

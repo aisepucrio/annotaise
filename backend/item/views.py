@@ -126,7 +126,7 @@ class NextItemView(RetrieveAPIView):
             .first()
         )
         if membership:
-            membership.created_at = timezone.now() # TODO esse atributo tem um nome bem enganoso...
+            membership.created_at = timezone.now() # TODO esse atributo tem um nome bem enganoso... melhor updated at
             return membership.item
 
         # 2) Pega um novo item elegível (sem membership prévio do user)

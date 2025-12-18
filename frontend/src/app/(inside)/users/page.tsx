@@ -10,7 +10,6 @@ import GridLayout from "@/components/grid/grid_layout";
 import GridItemCard from "@/components/grid/grid_item_card";
 import Button from "@/components/button/Button";
 import {
-  createInvitation,
   fetchUsers,
   updateUser,
   type UpdateUserPayload,
@@ -20,12 +19,14 @@ import NewUserModal from "./new_user_modal";
 import useCurrent from "@/hooks/current_user_hook";
 import EditUserModal from "./edit_user_modal";
 import { toast } from "sonner";
+import useInvitationCreator from "@/hooks/use_invitation_creator";
 
 export default function UsersPage() {
   const currentUser = useCurrent();
   const isAdmin = Boolean(
     currentUser?.is_staff || currentUser?.account_type === "admin"
   );
+  const handleCreateInvitation = useInvitationCreator();
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   useEffect(() => {
@@ -49,15 +50,6 @@ export default function UsersPage() {
       : error
       ? "Não foi possível carregar os usuários."
       : null;
-
-  const handleCreateInvitation = async (payload: {
-    email: string;
-    account_type: User["account_type"];
-  }) => {
-    const { link } = await createInvitation(payload);
-    toast.success("Convite gerado com sucesso.", { description: link });
-    return link;
-  };
 
   const handleUpdateUser = async (payload: UpdateUserPayload) => {
     if (!editingUser) return;

@@ -15,6 +15,8 @@ class Item(models.Model):
     row_index = models.PositiveIntegerField()
     status = models.CharField(max_length=50, default="pending")
 
+    decision_payload = models.JSONField(null=True,blank=True)
+
     def __str__(self):
         return self.name
     

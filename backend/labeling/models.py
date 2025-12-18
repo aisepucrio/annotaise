@@ -3,6 +3,7 @@ from django.utils import timezone
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from user.models import UserGroup
+from django.core.exceptions import ValidationError
 
 class Labeling(models.Model):
     class Status(models.TextChoices):
@@ -20,6 +21,7 @@ class Labeling(models.Model):
     description = models.TextField(blank=True)
     start_date = models.DateField(default=timezone.now)
     final_date = models.DateField(null=False, blank=False)
+    decision = models.BooleanField(default=False)
 
     guide = models.TextField(default="",blank=True)
     
@@ -94,6 +96,7 @@ class LabelingElement(models.Model):
     context_type = models.CharField(max_length=32, choices=ContextType.choices, blank=True, null=True)
     column_name = models.CharField(max_length=200, blank=True)
     allow_multiple = models.BooleanField(default=False)
+    decisive_question = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["labeling_section_id", "order", "id"]
@@ -103,6 +106,17 @@ class LabelingElement(models.Model):
                 name="unique_element_order_per_section"
             ),
         ]
+
+    def clean(self):
+        super().clean()
+
+        if self.decisive_question and self.question_type != self.QuestionType.MULTIPLE_CHOICE:
+            raise ValidationError(
+                " Só questões de múltipla escolha podem ser decisivas.")
+        
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
 
     def __str__(self):
         return f"[{self.get_question_type_display()}] {self.text}"

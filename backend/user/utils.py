@@ -71,4 +71,4 @@ Se você não reconhece este convite, ignore este e-mail.
         to=[invitation.email],
     )
     msg.attach_alternative(html_message, "text/html")
-    msg.send()
+    msg.send(fail_silently=False)

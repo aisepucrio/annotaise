@@ -4,21 +4,24 @@ from .serializers import AnswerSerializer, AnswerDashboardSerializer
 from labeling.models import LabelingElement
 from labeling.models import Labeling
 
+from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.views import APIView
 from user.permissions import IsAdminAccount
 from django.http import HttpResponse
+from user.permissions import IsAdminAccount
 
 import pandas as pd
 
 from rest_framework.generics import ListAPIView
 from django.db.models import Q
-
+#TODO aqui é melhor usar permission pra ver se o item membership existe!
 class AnswerViewset(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
     serializer_class = AnswerSerializer
+    permission_classes = [IsAdminAccount]
 
     def get_queryset(self):
         user = getattr(self.request, "user", None)
@@ -36,24 +39,15 @@ class AnswerViewset(viewsets.ModelViewSet):
         if labeling_id and labeling_id.isdigit():
             qs = qs.filter(labeling_id=int(labeling_id))
 
-        if (
-            getattr(user, "is_staff", False)
-            or getattr(user, "is_superuser", False)
-            or getattr(user, "account_type", "") == "admin"
-        ):
-            return qs
-
-        # usuários comuns só veem (e editam) as próprias respostas
-        return qs.filter(
-            Q(labeling__memberships__user=user) |
-            Q(answered_by=user)
-        )
+        return qs
 
     def create(self, request, *args, **kwargs):
         user = request.user
-        item_id = request.data.get('item')
-
         data = request.data
+
+        item_id = data.get('item')
+        item = get_object_or_404(Item,pk=item_id)
+
         # Garante que o usuário tenha membership nesse item
         membership = ItemMembership.objects.filter(
             user=user,
@@ -69,22 +63,40 @@ class AnswerViewset(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(data=data, context={'request':request})
         serializer.is_valid(raise_exception=True)
-
-        obj = Item.objects.select_related('labeling').get(id=item_id)
         
-        # Cria a Answer (se tiver campo answered_by, labeling etc, você pode setar aqui)
+        labeling = item.labeling
+    
         self.perform_create(serializer)
-
-        if obj.labeling.users_per_item <= Answer.objects.filter(item__id=item_id).count():
-            obj.status = 'finished'
-            obj.save()
 
         # Remove a reserva do item
         membership.delete()
 
-        headers = self.get_success_headers(serializer.data)
+        if labeling.decision == True:
+            #caso a validação seja por decisão, apenas 1 resposta por item existirá, e ela depende da maioria das respostas de questões decisivas. enquanto ela
+            #ainda não existe, vai jogando item pra todo mundo que ainda não respondeu
+            target_number = (labeling.users_per_item // 2) + 1
+            payload = data.answer_payload
 
-        return Response(serializer.data, status=201, headers=headers)
+            decisive_ids = LabelingElement.objects.filter(labeling=labeling,decisive_question=True).values_list(id,flat=False)
+            decision_dict = getattr(item.decision_payload,{})
+
+            for question_id, answer in payload.items():
+                
+                if question_id in decisive_ids:
+
+                    pass
+        else:
+
+            obj = Item.objects.select_related('labeling').get(id=item_id)
+            
+
+            if obj.labeling.users_per_item <= Answer.objects.filter(item__id=item_id).count():
+                obj.status = 'finished'
+                obj.save()
+
+            headers = self.get_success_headers(serializer.data)
+
+            return Response(serializer.data, status=201, headers=headers)
 
     def _assert_owner_or_admin(self, answer):
         user = self.request.user
@@ -138,7 +150,6 @@ class ExportAnswersView(APIView):
             payload = answer.answer_payload
             item_payload = answer.item.payload
             row = {}
-            print(payload)
             for question_number, response in payload.items():
                 row["context_id"] = (answer.item.row_index or 0) + 1
                 row["user_id"] = answer.answered_by

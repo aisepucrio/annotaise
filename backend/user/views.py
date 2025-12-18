@@ -117,6 +117,11 @@ class InvitationViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
+        email = serializer.validated_data.get("email",None) 
+        print(f"EMAIL : {email}")
+        if User.objects.filter(email=email).exists():
+            return Response({"detail": "Usuário com esse email já existe.","code":"EMAIL_ALREADY_EXISTS"},status=400)
+
         invitation = serializer.save(invited_by=request.user)
         link = FRONTEND_URL + f"/accept-invitation/{invitation.token}"
         

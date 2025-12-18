@@ -36,6 +36,8 @@ import { fetchProject } from "@/lib/services/project_service";
 import EditLabelingModal from "../../edit_labeling_modal";
 import { exportLabelingAnswersCsv } from "@/lib/services/labeling_service";
 import { toast } from "sonner";
+import NewUserModal from "@/app/(inside)/users/new_user_modal";
+import useInvitationCreator from "@/hooks/use_invitation_creator";
 import FormTab from "./form_tab";
 import AssignTab from "./assign_tab";
 import GuideTab from "./guide_tab";
@@ -112,6 +114,7 @@ export default function LabelingFormPage() {
   const [newMemberId, setNewMemberId] = useState<string>("");
   const [newMemberRole, setNewMemberRole] =
     useState<LabelingMembershipRole>("annotator");
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
   const [structureSections, setStructureSections] = useState<
     LabelingStructureSection[]
@@ -135,6 +138,7 @@ export default function LabelingFormPage() {
   } | null>(null);
   const [actionsClosing, setActionsClosing] = useState(false);
   const toolbarRef = useRef<HTMLDivElement | null>(null);
+  const handleCreateInvitation = useInvitationCreator();
 
   const computeAnchorPosition = useCallback((element: HTMLElement) => {
     const rect = element.getBoundingClientRect();
@@ -777,6 +781,7 @@ export default function LabelingFormPage() {
               onAddMember={handleAddMember}
               onChangeRole={handleChangeRole}
               onRemoveMember={handleRemoveMember}
+              onOpenInvitationModal={() => setIsInviteModalOpen(true)}
             />
           </div>
         ) : activeTab === "guide" ? (
@@ -815,6 +820,12 @@ export default function LabelingFormPage() {
         labelingId={labelingId}
         onClose={() => setIsEditInfoOpen(false)}
         onUpdated={() => void loadLabelingAndStructure()}
+      />
+
+      <NewUserModal
+        open={isInviteModalOpen}
+        onClose={() => setIsInviteModalOpen(false)}
+        onSubmit={handleCreateInvitation}
       />
 
       {isDeleteOpen ? (
