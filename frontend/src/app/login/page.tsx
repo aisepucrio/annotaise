@@ -6,23 +6,32 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { AuthActions } from "@/lib/authClient";
-import { EyeIcon, Mail } from "lucide-react";
+import { EyeIcon, EyeOff, Mail, LogIn } from "lucide-react";
 import { toast } from "sonner";
+import Button from "@/components/button/Button";
+import Input from "@/components/form/Input";
+
+// === Tipos ===
 type FormData = {
   email: string;
   password: string;
 };
 
+// === Componente: LoginPage ===
 export default function LoginPage() {
+  // --- Estado e hooks ---
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const {
     register,
     handleSubmit,
+    formState: { errors },
   } = useForm<FormData>();
 
   const router = useRouter();
   const { login, storeToken } = AuthActions();
 
+  // --- Handlers / Ações ---
   const onSubmit = async (data: FormData) => {
     setIsLoading(true);
     try {
@@ -56,15 +65,18 @@ export default function LoginPage() {
     }
   };
 
+  // --- Render (JSX) ---
   return (
-    <div className="bg-gray-200 p-4 min-h-screen">
-      <Image
-        src="/Full_Logo_Light.svg"
-        alt="Logo"
-        width={490}
-        height={100}
-        className="mx-auto mb-6 mt-20"
-      />
+    <div className="bg-metal-50 p-4 min-h-screen text-base sm:text-lg">
+      {/* -- Logo (Marca) -- */}
+      <div className="relative mx-auto mt-10 w-[80%] sm:w-[60%] md:w-[40%] aspect-49/10">
+        <Image
+          src="/Full_Logo_Light.svg"
+          alt="Logo"
+          fill
+          className="object-contain drop-shadow-[0_6px_3px_rgba(0,0,0,0.25)]"
+        />
+      </div>
 
       <form
         onSubmit={handleSubmit(onSubmit, (formErrors) => {
@@ -74,26 +86,26 @@ export default function LoginPage() {
             "Preencha os campos obrigatórios.";
           toast.error(msg);
         })}
-        className="mt-15 max-w-sm mx-auto bg-white p-8 rounded-lg shadow-2xl"
+        className="mt-16 w-[90%] sm:w-[60%] md:w-[45%] lg:w-[25%] mx-auto bg-white p-8 sm:p-8 rounded-xl shadow-[0_4px_10px_rgba(0,0,0,0.12),0_10px_30px_rgba(0,0,0,0.08)]"
       >
+        {/* -- Formulário de login -- */}
         <div className="flex flex-col gap-0 items-center font-montserrat">
-          <h2 className="text-2xl font-semibold mb-2 text-center text-blue-950">
+          <h2 className="text-3xl sm:text-3xl font-semibold mb-3 text-center text-blueberry-900">
             Login
           </h2>
-          <span className="text-gray-500 text-center text-sm">
+          <span className="text-gray-600 text-center text-base sm:text-md">
             Faca o login para acessar e rotular seus dados
           </span>
         </div>
 
-        <div className="mt-4 relative w-80">
-          <label className="absolute -top-2 left-3 bg-white px-1 text-xs text-gray-600">
-            Email
-          </label>
-
-          <input
+        {/* Campo: Email */}
+        <div className="mt-8">
+          <Input
+            label="Email"
             type="email"
             placeholder="Digite seu email..."
-            className="w-full border border-gray-300 rounded-md py-2 px-3 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-blue-500"
+            icon={<Mail className="w-8 h-8" />}
+            error={errors.email?.message}
             {...register("email", {
               required: "Informe um email.",
               pattern: {
@@ -102,38 +114,47 @@ export default function LoginPage() {
               },
             })}
           />
-
-          <Mail className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
         </div>
-        <div className="mt-4 relative w-80">
-          <label className="absolute -top-2 left-3 bg-white px-1 text-xs text-gray-600">
-            Senha
-          </label>
-
-          <input
-            type="password"
+        {/* Campo: Senha */}
+        <div className="mt-6 relative">
+          <Input
+            label="Senha"
+            type={showPassword ? "text" : "password"}
             placeholder="Digite sua senha..."
-            className="w-full border border-gray-300 rounded-md py-2 px-3 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-blue-500"
+            error={errors.password?.message}
             {...register("password", {
               required: "Informe sua senha.",
             })}
           />
-
-          <EyeIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
+          <button
+            type="button"
+            aria-label={showPassword ? "Esconder senha" : "Mostrar senha"}
+            onClick={() => setShowPassword((s) => !s)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded focus:outline-none text-metal-200 hover:text-metal-500 transition-colors z-20"
+          >
+            {showPassword ? (
+              <EyeOff className="w-8 h-8" />
+            ) : (
+              <EyeIcon className="w-8 h-8" />
+            )}
+          </button>
         </div>
-        <div className="flex w-80 justify-end mt-3">
-          <a className="text-xs text-blue-600 underline cursor-pointer">
+        {/* Ação: Esqueceu senha */}
+        <div className="flex w-full justify-end mt-3">
+          <a className="text-sm sm:text-md text-blueberry-900 underline cursor-pointer hover:text-blueberry-700">
             Esqueceu a senha?
           </a>
         </div>
 
-        <button
+        {/* Ação: Enviar formulário */}
+        <Button
+          icon={<LogIn className="w-6 h-6 mr-2" />}
           type="submit"
           disabled={isLoading}
-          className="mt-2 w-full flex items-center justify-center gap-2 rounded-lg bg-blue-900 hover:bg-blue-800 text-white px-4 py-3 shadow-md text-sm transition-colors disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
+          className="mt-8 text-[1rem] py-3"
         >
           {isLoading ? "Entrando..." : "Login"}
-        </button>
+        </Button>
       </form>
     </div>
   );

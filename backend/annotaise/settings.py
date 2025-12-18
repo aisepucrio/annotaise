@@ -216,6 +216,10 @@ AUTHENTICATION_BACKENDS = [
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "http://annotaise.devc.uk",
+    "http://annotaise-api.devc.uk",
+    "https://annotaise.devc.uk",
+    "https://annotaise-api.devc.uk",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
@@ -258,3 +262,21 @@ STORAGES = {
             'LOCATION': STATIC_ROOT
         },
     }
+
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:8000",
+    "http://localhost:8080",
+    "http://annotaise.devc.uk",
+    "https://annotaise.devc.uk",
+    "http://annotaise-api.devc.uk",
+    "https://annotaise-api.devc.uk",
+]
+
+CSRF_COOKIE_DOMAIN = ".devc.uk"   
+SESSION_COOKIE_DOMAIN = ".devc.uk"
+
+SESSION_COOKIE_SAMESITE = "None"
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

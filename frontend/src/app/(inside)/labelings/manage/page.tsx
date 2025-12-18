@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import PageHeader from "@/components/page_header";
+import PageHeader from "@/components/PageHeader";
 import FilterBar from "@/components/filter_bar";
 import LabelingContainer from "./manage_labeling_container";
 import { Plus } from "lucide-react";

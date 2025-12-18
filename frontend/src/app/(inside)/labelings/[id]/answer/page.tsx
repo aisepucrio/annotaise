@@ -25,6 +25,7 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import Button from "@/components/button/Button";
+import InnerPageHeader from "@/components/InnerPageHeader";
 
 export default function LabelingAnswerPage() {
   const params = useParams<{ id: string }>();
@@ -222,25 +223,14 @@ export default function LabelingAnswerPage() {
 
   return (
     <>
-      <header className="flex flex-col gap-3  bg-blue-900 px-6 py-4 text-white shadow-md lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => router.push("/labelings")}
-            className="rounded-md p-1 hover:bg-white/10 cursor-pointer"
-            aria-label="Voltar"
-          >
-            <ArrowLeft size={22} />
-          </button>
-          <div>
-            <h1 className="text-lg font-semibold leading-tight">
-              {labelingTitle ||
-                (isLoading ? "Carregando rotulação..." : "Responder rotulação")}
-            </h1>
-          </div>
+      <InnerPageHeader onBack={() => router.push("/labelings")}>
+        <div>
+          <h1 className="text-lg font-semibold leading-tight">
+            {labelingTitle ||
+              (isLoading ? "Carregando rotulação..." : "Responder rotulação")}
+          </h1>
         </div>
-
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-1 flex-wrap items-center justify-end gap-3">
           {rowIndex !== null ? (
             <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-blue-50">
               Item #{rowIndex + 1}
@@ -271,7 +261,7 @@ export default function LabelingAnswerPage() {
             Recarregar item
           </button>
         </div>
-      </header>
+      </InnerPageHeader>
 
       <div
         className={`mt-4 ${
@@ -298,7 +288,7 @@ export default function LabelingAnswerPage() {
                   <Button
                     variant="light"
                     fill={false}
-                    size="compact"
+                    size="icon"
                     className="text-xs"
                     onClick={() => {
                       if (Number.isNaN(labelingId)) return;

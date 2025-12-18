@@ -197,6 +197,7 @@ function SortableSection({ id, children }: SortableSectionProps) {
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+    opacity: isDragging ? 0.92 : 1,
   };
 
   return (
@@ -208,14 +209,16 @@ function SortableSection({ id, children }: SortableSectionProps) {
       <button
         type="button"
         aria-label="Arrastar seção"
-        className="absolute -left-7 top-5 flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 shadow-sm hover:bg-gray-100 cursor-pointer"
+        className="absolute -left-12 top-5 flex h-8 w-8 items-center justify-center rounded-md border-2 border-blue-800 bg-blue-50 text-blue-900 hover:bg-blue-100 cursor-grab active:cursor-grabbing"
         {...attributes}
         {...listeners}
       >
         <GripVertical size={16} />
       </button>
       <div
-        className={isDragging ? "rounded-xl ring-2 ring-blue-300 shadow-lg" : ""}
+        className={`-ml-4 w-[calc(100%+1rem)] ${
+          isDragging ? "rounded-xl ring-2 ring-blue-300 shadow-lg" : ""
+        }`}
       >
         {children}
       </div>

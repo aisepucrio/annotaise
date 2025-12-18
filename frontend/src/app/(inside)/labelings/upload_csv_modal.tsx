@@ -1,10 +1,15 @@
 "use client";
 
-import { Loader2, Upload, X } from "lucide-react";
+import { Loader2, TriangleAlert, Upload } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import useSWR from "swr";
 import { fetchProjects, Project } from "@/lib/services/project_service";
 import { toast } from "sonner";
+import Modal from "@/components/modal/modal";
+import Input from "@/components/form/Input";
+import Select from "@/components/form/Select";
+import DatePicker from "@/components/form/DatePicker";
+import Button from "@/components/button/Button";
 
 type UploadCsvModalProps = {
   open: boolean;
@@ -22,7 +27,12 @@ type UploadCsvModalProps = {
 
 type Step = "upload" | "details";
 
-export default function UploadCsvModal({ open, onClose, onConfirm }: UploadCsvModalProps) {
+export default function UploadCsvModal({
+  open,
+  onClose,
+  onConfirm,
+}: UploadCsvModalProps) {
+  // Hooks: refs + estado local
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
@@ -41,10 +51,10 @@ export default function UploadCsvModal({ open, onClose, onConfirm }: UploadCsvMo
     fetchProjects
   );
 
+  // Efeitos: selecionar primeiro projeto e resetar estado quando modal fecha
   useEffect(() => {
-    if (open && projects?.length && projectId === null) {
+    if (open && projects?.length && projectId === null)
       setProjectId(projects[0].id);
-    }
   }, [open, projects, projectId]);
 
   useEffect(() => {
@@ -59,11 +69,15 @@ export default function UploadCsvModal({ open, onClose, onConfirm }: UploadCsvMo
       setHasEmptyFields(false);
       setIsAnalyzingFile(false);
       setStep("upload");
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   }, [open]);
+
+  useEffect(() => {
+    if (open && !startDate) {
+      setStartDate(new Date().toISOString().split("T")[0]);
+    }
+  }, [open, startDate]);
 
   function validateFile(file: File) {
     if (!file.name.toLowerCase().endsWith(".csv")) {
@@ -134,7 +148,9 @@ export default function UploadCsvModal({ open, onClose, onConfirm }: UploadCsvMo
 
     const parsedUsersPerItem = Number(usersPerItem);
     if (!Number.isInteger(parsedUsersPerItem) || parsedUsersPerItem <= 0) {
-      toast.error("Defina a quantidade de usuários por item com um número inteiro a partir de 1.");
+      toast.error(
+        "Defina a quantidade de usuários por item com um número inteiro a partir de 1."
+      );
       return;
     }
 
@@ -157,7 +173,9 @@ export default function UploadCsvModal({ open, onClose, onConfirm }: UploadCsvMo
       });
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Não foi possível criar a rotulação.";
+        err instanceof Error
+          ? err.message
+          : "Não foi possível criar a rotulação.";
       toast.error(message);
     } finally {
       setIsSubmitting(false);
@@ -166,7 +184,7 @@ export default function UploadCsvModal({ open, onClose, onConfirm }: UploadCsvMo
 
   const canContinueUploadStep = useMemo(
     () => Boolean(selectedFile) && !isAnalyzingFile,
-    [selectedFile, isAnalyzingFile],
+    [selectedFile, isAnalyzingFile]
   );
 
   function handleContinueFromUpload() {
@@ -228,200 +246,174 @@ export default function UploadCsvModal({ open, onClose, onConfirm }: UploadCsvMo
     return cells;
   }
 
-  const hasProjects = (projects?.length ?? 0) > 0;
+  if (!open) return null;
 
-  if (!open) {
-    return null;
-  }
+  const modalDescription =
+    step === "upload" ? (
+      <p>
+        Faça upload de um arquivo <strong>.CSV</strong>. O arquivo deve conter
+        as colunas referentes ao contexto de rotulação disponível aos usuários.
+      </p>
+    ) : (
+      <p>
+        Preencha os campos abaixo (título, projeto, datas e quantidade de
+        usuários por item) antes de criar a rotulação.
+      </p>
+    );
 
   return (
-    <>
-      <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose} />
-      <div
-        role="dialog"
-        aria-modal="true"
-        className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      >
-        <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl p-6 relative">
-          <button
-            onClick={onClose}
-            className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
-            aria-label="Fechar"
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Nova rotulação"
+      description={modalDescription}
+      maxWidth="lg"
+    >
+      {/* Render: etapa de upload */}
+      {step === "upload" ? (
+        <div>
+          <div
+            className="flex flex-col items-center gap-3 border-2 border-dashed border-blueberry-700 rounded-xl p-6 text-center"
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
           >
-            <X size={20} />
-          </button>
-          <h2 className="text-xl font-semibold text-center text-blue-900 mb-2">Nova rotulação</h2>
-          {step === "upload" ? (
-            <>
-              <p className="text-center text-gray-600 text-sm mb-6">
-                Faça upload de um arquivo <strong>.CSV</strong>. O arquivo deve conter as colunas
-                referentes ao contexto de rotulação disponível aos usuários.
-              </p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv"
+              onChange={handleFile}
+              className="hidden"
+            />
 
-              <div
-                className="flex flex-col items-center gap-3 border-2 border-dashed border-blue-300 rounded-xl p-6 text-center"
-                onDrop={handleDrop}
-                onDragOver={handleDragOver}
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".csv"
-                  onChange={handleFile}
-                  className="hidden"
-                />
+            <Button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isAnalyzingFile}
+              icon={<Upload size={18} />}
+              fill={false}
+            >
+              Upload
+            </Button>
 
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center gap-2 rounded-lg bg-blue-900 hover:bg-blue-800 text-white px-5 py-2 shadow-md text-sm"
-                  disabled={isAnalyzingFile}
-                >
-                  <Upload size={18} />
-                  Upload
-                </button>
+            <p className="text-xs text-gray-600">
+              {selectedFile
+                ? `Arquivo selecionado: ${selectedFile.name}`
+                : "Escolha um arquivo ou arraste até aqui."}
+            </p>
 
-                <p className="text-xs text-gray-600">
-                  {selectedFile
-                    ? `Arquivo selecionado: ${selectedFile.name}`
-                    : "Escolha um arquivo ou arraste até aqui."}
-                </p>
-
-                {isAnalyzingFile && (
-                  <div className="flex items-center gap-2 text-xs text-gray-500">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Analisando campos vazios...
-                  </div>
-                )}
+            {isAnalyzingFile && (
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Analisando campos vazios...
               </div>
+            )}
+          </div>
 
-              {hasEmptyFields && (
-                <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                  Existem campos vazios na tabela. Os usuários que rotularem a linha referente aos
-                  contextos faltantes ficarão sem a informação; se esse comportamento não é esperado,
-                  envie outro arquivo.
-                </div>
-              )}
-
-              <div className="mt-6 flex justify-between gap-3">
-                <button
-                  onClick={onClose}
-                  className="px-4 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-100 cursor-pointer"
-                  disabled={isSubmitting}
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleContinueFromUpload}
-                  className="px-5 py-2 rounded-lg bg-blue-900 hover:bg-blue-800 text-white text-sm shadow inline-flex items-center gap-2 disabled:opacity-60 cursor-pointer"
-                  disabled={!canContinueUploadStep}
-                >
-                  Continuar
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <p className="text-center text-gray-600 text-sm mb-6">
-                Preencha as informações para criar sua rotulação.
-              </p>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Título</label>
-                  <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
-                    placeholder="Nome da rotulação"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Projeto</label>
-                  <select
-                    value={projectId ?? ""}
-                    onChange={(e) => setProjectId(Number(e.target.value))}
-                    className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
-                    disabled={isLoadingProjects || !hasProjects}
-                  >
-                    <option value="" disabled>
-                      {isLoadingProjects ? "Carregando projetos..." : "Selecione um projeto"}
-                    </option>
-                    {projects?.map((project) => (
-                      <option key={project.id} value={project.id}>
-                        {project.name}
-                      </option>
-                    ))}
-                  </select>
-                  {!isLoadingProjects && !hasProjects && (
-                    <p className="mt-1 text-xs text-orange-600">
-                      Você precisa ter pelo menos um projeto para criar rotulações.
-                    </p>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">Data inicial</label>
-                    <input
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">Data final</label>
-                    <input
-                      type="date"
-                      value={finalDate}
-                      onChange={(e) => setFinalDate(e.target.value)}
-                      className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Usuários por item</label>
-                  <input
-                    type="number"
-                    min={1}
-                    step={1}
-                    inputMode="numeric"
-                    value={usersPerItem}
-                    onChange={(e) => setUsersPerItem(e.target.value)}
-                    className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
-                    placeholder="1"
-                  />
-                  <p className="mt-1 text-xs text-gray-500">
-                    Quantas pessoas devem rotular cada item antes de ser finalizado.
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-6 flex justify-between gap-3">
-                <button
-                  onClick={handleBackToUpload}
-                  className="px-4 py-2 rounded-lg text-sm text-blue-900 border border-blue-200 hover:bg-blue-50 cursor-pointer"
-                  disabled={isSubmitting}
-                >
-                  Voltar
-                </button>
-                <button
-                  onClick={handleConfirm}
-                  className="px-5 py-2 rounded-lg bg-blue-900 hover:bg-blue-800 text-white text-sm shadow inline-flex items-center gap-2 disabled:opacity-60 cursor-pointer"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                  {isSubmitting ? "Processando..." : "Criar rotulação"}
-                </button>
-              </div>
-            </>
+          {hasEmptyFields && (
+            <div className="mt-4 rounded-lg border border-red-blueberry bg-red-50 px-3 py-2 text-sm text-red-blueberry">
+              <TriangleAlert className="inline-block mr-1 mb-0.5 w-4 h-4" />
+              Existem <strong>campos vazios</strong> na tabela. Os usuários que
+              rotularem a linha referente aos contextos faltantes ficarão
+              <strong> sem a informação</strong>; se esse comportamento{" "}
+              <strong>não é esperado</strong>, envie outro arquivo.
+            </div>
           )}
+
+          <div className="mt-6 flex justify-between gap-3 w-[70%] mx-auto">
+            <Button
+              onClick={handleContinueFromUpload}
+              disabled={!canContinueUploadStep}
+            >
+              Continuar
+            </Button>
+          </div>
         </div>
-      </div>
-    </>
+      ) : (
+        // Render: etapa de detalhes
+        <div>
+          <div className="space-y-5">
+            <Input
+              id="csv-title"
+              label="Título"
+              placeholder="Nome da rotulação"
+              value={title}
+              onChange={(e) => setTitle((e.target as HTMLInputElement).value)}
+            />
+
+            <Select
+              id="csv-project"
+              label="Projeto"
+              options={(projects ?? []).map((p) => ({
+                value: String(p.id),
+                label: p.name,
+              }))}
+              value={projectId ? String(projectId) : ""}
+              onChange={(e) =>
+                setProjectId(Number((e.target as HTMLSelectElement).value))
+              }
+            />
+            {!isLoadingProjects && !(projects?.length ?? 0) && (
+              <p className="mt-1 text-xs text-orange-600">
+                Você precisa ter pelo menos um projeto para criar rotulações.
+              </p>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <DatePicker
+                id="csv-start"
+                label="Data inicial"
+                value={startDate}
+                onChange={(e) =>
+                  setStartDate((e.target as HTMLInputElement).value)
+                }
+              />
+              <DatePicker
+                id="csv-final"
+                label="Data final"
+                value={finalDate}
+                onChange={(e) =>
+                  setFinalDate((e.target as HTMLInputElement).value)
+                }
+              />
+            </div>
+
+            <Input
+              id="csv-users-per-item"
+              label="Usuários por item"
+              type="number"
+              min={1}
+              value={usersPerItem}
+              onChange={(e) =>
+                setUsersPerItem((e.target as HTMLInputElement).value)
+              }
+              placeholder="1"
+              tooltip="Número de pessoas que devem rotular cada item antes de ser finalizado."
+            />
+          </div>
+
+          <div className="mt-6 flex justify-between gap-3">
+            <Button
+              type="button"
+              variant="white"
+              fill={true}
+              onClick={handleBackToUpload}
+              disabled={isSubmitting}
+            >
+              Voltar
+            </Button>
+            <Button onClick={handleConfirm} disabled={isSubmitting}>
+              {isSubmitting ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Processando...
+                </span>
+              ) : (
+                "Criar rotulação"
+              )}
+            </Button>
+          </div>
+        </div>
+      )}
+    </Modal>
   );
 }

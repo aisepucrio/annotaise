@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import axios from "axios";
-import { ArrowLeft, Save, Edit, Calendar, Trash2 } from "lucide-react";
 import {
   SectionData,
   ContextElement,
@@ -33,7 +32,7 @@ import {
 } from "@/lib/services/answer_service";
 import { fetchUsers, type User } from "@/lib/services/user_service";
 import { fetchProject } from "@/lib/services/project_service";
-import EditLabelingModal from "../../edit_labeling_modal";
+import EditLabelingModal from "./edit_labeling_modal";
 import { exportLabelingAnswersCsv } from "@/lib/services/labeling_service";
 import { toast } from "sonner";
 import NewUserModal from "@/app/(inside)/users/new_user_modal";
@@ -42,6 +41,7 @@ import FormTab from "./form_tab";
 import AssignTab from "./assign_tab";
 import GuideTab from "./guide_tab";
 import AnswersTab from "./answers_tab";
+import LabelingHeader from "./labeling_header";
 
 const createContextElement = (order: number): ContextElement => ({
   id: crypto.randomUUID(),
@@ -138,7 +138,12 @@ export default function LabelingFormPage() {
   } | null>(null);
   const [actionsClosing, setActionsClosing] = useState(false);
   const toolbarRef = useRef<HTMLDivElement | null>(null);
+<<<<<<< HEAD
   const handleCreateInvitation = useInvitationCreator();
+=======
+  const closeActionsTimeoutRef = useRef<number | null>(null);
+  const lastActionsSectionIdRef = useRef<string | null>(null);
+>>>>>>> 73ded4f84934fbac68d5b32bbf80232dc32ec8dc
 
   const computeAnchorPosition = useCallback((element: HTMLElement) => {
     const rect = element.getBoundingClientRect();
@@ -152,8 +157,13 @@ export default function LabelingFormPage() {
   const focusActionsAt = useCallback(
     (sectionId: string, element: HTMLElement) => {
       if (typeof window === "undefined") return;
+      if (closeActionsTimeoutRef.current) {
+        window.clearTimeout(closeActionsTimeoutRef.current);
+        closeActionsTimeoutRef.current = null;
+      }
       const { x, y } = computeAnchorPosition(element);
       setActionsClosing(false);
+      lastActionsSectionIdRef.current = sectionId;
       setActionsAnchor({
         sectionId,
         element,
@@ -166,10 +176,14 @@ export default function LabelingFormPage() {
 
   const hideActionsToolbar = useCallback(() => {
     if (!actionsAnchor) return;
+    if (closeActionsTimeoutRef.current) {
+      window.clearTimeout(closeActionsTimeoutRef.current);
+    }
     setActionsClosing(true);
-    setTimeout(() => {
+    closeActionsTimeoutRef.current = window.setTimeout(() => {
       setActionsAnchor(null);
       setActionsClosing(false);
+      closeActionsTimeoutRef.current = null;
     }, 150);
   }, [actionsAnchor]);
 
@@ -178,6 +192,27 @@ export default function LabelingFormPage() {
       hideActionsToolbar();
     }
   }, [activeTab, hideActionsToolbar]);
+
+  useEffect(() => {
+    if (activeTab !== "form") return;
+    if (actionsAnchor) return;
+    if (typeof document === "undefined") return;
+
+    const lastSectionId = lastActionsSectionIdRef.current;
+    const fallbackSectionId =
+      lastSectionId && sections.some((section) => section.id === lastSectionId)
+        ? lastSectionId
+        : sections[0]?.id;
+
+    if (!fallbackSectionId) return;
+
+    const fallbackEl = document.querySelector<HTMLElement>(
+      `[data-section-anchor-id="${fallbackSectionId}"]`
+    );
+    if (!fallbackEl) return;
+
+    focusActionsAt(fallbackSectionId, fallbackEl);
+  }, [activeTab, actionsAnchor, focusActionsAt, sections]);
 
   useEffect(() => {
     if (!actionsAnchor) return;
@@ -194,13 +229,28 @@ export default function LabelingFormPage() {
       });
     };
 
-    window.addEventListener("scroll", handleReposition, true);
+    document.addEventListener("scroll", handleReposition, true);
     window.addEventListener("resize", handleReposition);
     return () => {
-      window.removeEventListener("scroll", handleReposition, true);
+      document.removeEventListener("scroll", handleReposition, true);
       window.removeEventListener("resize", handleReposition);
     };
   }, [actionsAnchor, computeAnchorPosition]);
+
+  useEffect(() => {
+    if (activeTab !== "form") return;
+    if (!actionsAnchor) return;
+    const raf = window.requestAnimationFrame(() => {
+      setActionsAnchor((prev) => {
+        if (!prev) return null;
+        if (!document.body.contains(prev.element)) return null;
+        const { x, y } = computeAnchorPosition(prev.element);
+        if (prev.x === x && prev.y === y) return prev;
+        return { ...prev, x, y };
+      });
+    });
+    return () => window.cancelAnimationFrame(raf);
+  }, [activeTab, actionsAnchor, computeAnchorPosition, sections]);
 
   useEffect(() => {
     if (!actionsAnchor) return;
@@ -210,6 +260,12 @@ export default function LabelingFormPage() {
       if (
         target instanceof Element &&
         target.closest('[data-actions-anchor="true"]')
+      ) {
+        return;
+      }
+      if (
+        target instanceof Element &&
+        target.closest("[data-section-anchor-id]")
       ) {
         return;
       }
@@ -432,11 +488,6 @@ export default function LabelingFormPage() {
     [setSections]
   );
 
-  function formatDate(dateStr: string | null) {
-    if (!dateStr) return "--/--/----";
-    return new Date(dateStr).toLocaleDateString("pt-BR");
-  }
-
   const projectStatusLabel = useMemo(() => {
     if (!projectStatus) return null;
     const map: Record<string, string> = {
@@ -640,115 +691,28 @@ export default function LabelingFormPage() {
 
   return (
     <div className="h-screen flex flex-col">
-      {/* Cabeçalho */}
-      <div className="bg-blueberry-700 text-white px-6 py-3 shadow-md flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <div className="flex items-start gap-3">
-            <button
-              type="button"
-              onClick={() => router.push("/labelings/manage")}
-              className="p-1 rounded-md hover:bg-white/10 cursor-pointer"
-              aria-label="Voltar"
-            >
-              <ArrowLeft size={22} className="cursor-pointer" />
-            </button>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl font-semibold leading-tight">
-                  {labelingTitle ||
-                    (isLoadingLabeling ? "Carregando..." : "Rotulação")}
-                </span>
-              </div>
-              <div className="flex items-center gap-2 text-sm opacity-90 mt-1">
-                <span className="font-medium">
-                  {projectName
-                    ? `Projeto: ${projectName}`
-                    : "Projeto não informado"}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setIsEditInfoOpen(true)}
-                  className="p-1 rounded-md hover:bg-white/10 cursor-pointer"
-                  aria-label="Editar informações da rotulação"
-                >
-                  <Edit size={20} />
-                </button>
-              </div>
-              <div className="flex items-center gap-3 text-xs mt-1">
-                <span className="flex items-center gap-1">
-                  <Calendar size={14} />
-                  {`${formatDate(startDateInfo)} → ${formatDate(
-                    finalDateInfo
-                  )}`}
-                </span>
-                {projectStatusLabel ? (
-                  <span className="px-2 py-1 rounded-md bg-white/20 text-white text-[11px] font-semibold uppercase tracking-wide">
-                    {projectStatusLabel}
-                  </span>
-                ) : null}
-                {usersPerItem !== null ? (
-                  <span className="px-2 py-1 rounded-md bg-white/20 text-white text-[11px] font-semibold uppercase tracking-wide">
-                    {`Usuários por Rotulação: ${usersPerItem}`}
-                  </span>
-                ) : null}
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={handleSaveStructure}
-              className="bg-white text-blue-900 font-semibold px-5 py-2 rounded-lg hover:bg-gray-100 shadow-sm flex items-center gap-2 cursor-pointer"
-              disabled={isSaving || isLoadingLabeling}
-            >
-              <Save size={18} />
-              {isSaving ? "Salvando..." : "Salvar alterações"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsDeleteOpen(true)}
-              className="p-2 rounded-md hover:bg-white/10 border border-white/30 text-white flex items-center justify-center cursor-pointer"
-              aria-label="Excluir rotulação"
-              disabled={isDeleting || isLoadingLabeling}
-            >
-              <Trash2 size={18} />
-            </button>
-          </div>
-        </div>
-
-        {/* Linha separadora */}
-        <div className="mt-3 h-0.5 bg-white/80 rounded-full" />
-
-        {/* Tabs */}
-        <div className="flex gap-6 mt-2 text-sm justify-center">
-          {[
-            { key: "form", label: "Formulário" },
-            { key: "assign", label: "Atribuir Usuários" },
-            { key: "answers", label: "Respostas" },
-            { key: "guide", label: "Guia" },
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() =>
-                setActiveTab(tab.key as "form" | "assign" | "answers" | "guide")
-              }
-              className={`pb-1 border-b-2 transition-colors cursor-pointer ${
-                activeTab === tab.key
-                  ? "border-white font-semibold text-white "
-                  : "border-transparent text-blue-100 hover:text-white"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <LabelingHeader
+        labelingTitle={labelingTitle}
+        isLoadingLabeling={isLoadingLabeling}
+        projectName={projectName}
+        startDateInfo={startDateInfo}
+        finalDateInfo={finalDateInfo}
+        projectStatusLabel={projectStatusLabel}
+        usersPerItem={usersPerItem}
+        activeTab={activeTab}
+        isSaving={isSaving}
+        isDeleting={isDeleting}
+        onBack={() => router.push("/labelings/manage")}
+        onEditInfo={() => setIsEditInfoOpen(true)}
+        onSaveStructure={handleSaveStructure}
+        onDelete={() => setIsDeleteOpen(true)}
+        onTabChange={setActiveTab}
+      />
 
       {/* Conteúdo */}
-      <div className="flex-1 bg-white overflow-hidden">
+      <div className="flex-1 min-h-0 bg-white overflow-hidden">
         {activeTab === "form" ? (
-          <div className="h-full p-4">
+          <div className="h-full overflow-y-auto p-4">
             <FormTab
               columns={columns}
               isLoadingLabeling={isLoadingLabeling}
@@ -767,7 +731,7 @@ export default function LabelingFormPage() {
             />
           </div>
         ) : activeTab === "assign" ? (
-          <div className="h-full p-4">
+          <div className="h-full overflow-y-auto p-4">
             <AssignTab
               memberships={memberships}
               membershipLoading={membershipLoading}
@@ -795,7 +759,7 @@ export default function LabelingFormPage() {
             isSaving={isSaving}
           />
         ) : (
-          <div className="h-full p-4">
+          <div className="h-full overflow-y-auto p-4">
             <AnswersTab
               responderOptions={responderOptions}
               selectedResponder={selectedResponder}

@@ -7,6 +7,10 @@ import type {
   ProjectStatus,
 } from "@/lib/services/project_service";
 import { toast } from "sonner";
+import Modal from "@/components/modal/Modal";
+import Input from "@/components/form/Input";
+import Select from "@/components/form/Select";
+import Button from "@/components/button/Button";
 
 type NewProjectModalProps = {
   open: boolean;
@@ -26,147 +30,88 @@ export default function NewProjectModal({
   onClose,
   onSubmit,
 }: NewProjectModalProps) {
-  const {
-    register,
-    handleSubmit,
-    reset,
-  } = useForm<ProjectPayload>({
-    defaultValues: {
-      name: "",
-      description: "",
-      status: "planning",
-    },
+  // Hooks: formulário e estado local
+  const { register, handleSubmit, reset } = useForm<ProjectPayload>({
+    defaultValues: { name: "", description: "", status: "planning" },
   });
   const [submitting, setSubmitting] = useState(false);
 
+  // Efeitos: resetar formulário quando o modal fechar
   useEffect(() => {
     if (!open) {
-      reset({
-        name: "",
-        description: "",
-        status: "planning",
-      });
+      reset({ name: "", description: "", status: "planning" });
       setSubmitting(false);
     }
   }, [open, reset]);
 
-  if (!open) {
-    return null;
-  }
-
-  const submitForm = handleSubmit(async (values) => {
-    try {
-      setSubmitting(true);
-      await onSubmit(values);
-      reset({
-        name: "",
-        description: "",
-        status: "planning",
-      });
-      onClose();
-      toast.success("Projeto criado com sucesso.");
-    } catch (err) {
+  // Manipuladores: submissão do formulário e validação
+  const submitForm = handleSubmit(
+    async (values) => {
+      try {
+        setSubmitting(true);
+        await onSubmit(values);
+        reset({ name: "", description: "", status: "planning" });
+        onClose();
+        toast.success("Projeto criado com sucesso.");
+      } catch (err) {
+        const message =
+          (err as { response?: { data?: { detail?: string } } })?.response?.data
+            ?.detail ?? "Não foi possível salvar o projeto.";
+        toast.error(message);
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    (formErrors) => {
+      const firstError = Object.values(formErrors)[0];
       const message =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data
-          ?.detail ?? "Não foi possível salvar o projeto.";
+        (firstError as { message?: string } | undefined)?.message ??
+        "Preencha os campos obrigatórios.";
       toast.error(message);
-    } finally {
-      setSubmitting(false);
     }
-  }, (formErrors) => {
-    const firstError = Object.values(formErrors)[0];
-    const message =
-      (firstError as { message?: string } | undefined)?.message ??
-      "Preencha os campos obrigatórios.";
-    toast.error(message);
-  });
+  );
 
   return (
-    <div
-      className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 px-4"
-      role="dialog"
-      aria-modal="true"
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Novo Projeto"
+      description="Preencha as informações abaixo para criar um novo projeto."
+      maxWidth="lg"
     >
-      <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl">
-        <header className="mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Novo Projeto</h2>
-          <p className="text-sm text-gray-500">
-            Preencha as informações abaixo para criar um novo projeto.
-          </p>
-        </header>
+      {/* Render: UI do formulário */}
+      <form onSubmit={submitForm} className="space-y-5">
+        <Input
+          id="project-name"
+          label="Nome"
+          placeholder="Nome do projeto"
+          required
+          {...register("name", { required: "O nome é obrigatório." })}
+        />
 
-        <form onSubmit={submitForm} className="space-y-4">
-          <div className="space-y-1">
-            <label
-              htmlFor="project-name"
-              className="text-sm font-medium text-gray-700"
-            >
-              Nome
-            </label>
-          <input
-            id="project-name"
-            type="text"
-            {...register("name", { required: "O nome é obrigatório." })}
-            className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200"
-            placeholder="Nome do projeto"
-          />
+        <Input
+          id="project-description"
+          label="Descrição"
+          placeholder="Descreva o objetivo do projeto"
+          multiline
+          rows={4}
+          resizable={true}
+          {...register("description")}
+        />
+
+        <Select
+          id="project-status"
+          label="Status inicial"
+          options={STATUS_OPTIONS}
+          {...register("status")}
+        />
+
+        <div className="flex items-center justify-center gap-3 pt-2 w-1/2 mx-auto">
+          <Button type="submit" disabled={submitting} fill={true}>
+            {submitting ? "Salvando..." : "Criar projeto"}
+          </Button>
         </div>
-
-          <div className="space-y-1">
-            <label
-              htmlFor="project-description"
-              className="text-sm font-medium text-gray-700"
-            >
-              Descrição
-            </label>
-            <textarea
-              id="project-description"
-              rows={4}
-              {...register("description")}
-              className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200"
-              placeholder="Descreva o objetivo do projeto"
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label
-              htmlFor="project-status"
-              className="text-sm font-medium text-gray-700"
-            >
-              Status inicial
-            </label>
-            <select
-              id="project-status"
-              {...register("status")}
-              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200"
-            >
-              {STATUS_OPTIONS.map((status) => (
-                <option key={status.value} value={status.value}>
-                  {status.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex items-center justify-end gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 cursor-pointer"
-              disabled={submitting}
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="rounded-lg bg-blue-900 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
-            >
-              {submitting ? "Salvando..." : "Criar projeto"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+      </form>
+    </Modal>
   );
 }

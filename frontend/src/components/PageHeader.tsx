@@ -1,6 +1,5 @@
 // PageHeader.tsx
-import { Info } from "lucide-react";
-import { Tooltip } from "./ui/tooltip";
+import Tooltip from "./tooltip/Tooltip";
 
 type PageHeaderProps = {
   page_title: string;
@@ -22,16 +21,7 @@ export default function PageHeader({
             <h1 className="text-xl md:text-2xl font-semibold leading-tight text-left">
               {page_title}
             </h1>
-            {tooltip ? (
-              <Tooltip content={tooltip}>
-                <span
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-white cursor-default hover:bg-white/10 hover:opacity-80 transition"
-                  aria-label={`Mais informações sobre ${page_title}`}
-                >
-                  <Info size={20} strokeWidth={2.25} />
-                </span>
-              </Tooltip>
-            ) : null}
+            {tooltip && <Tooltip content={tooltip} color="white" size="md" />}
           </div>
           {description && (
             <p className="text-sm md:text-base text-blue-100 mt-1">

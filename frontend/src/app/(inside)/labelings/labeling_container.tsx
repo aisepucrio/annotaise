@@ -1,7 +1,7 @@
 import { Tag } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import EditLabelingModal from "./edit_labeling_modal";
+import EditLabelingModal from "./create/[id]/edit_labeling_modal";
 import Button from "@/components/button/Button";
 
 type LabelingContainerProps = {
