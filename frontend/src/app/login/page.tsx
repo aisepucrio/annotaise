@@ -9,6 +9,7 @@ import { AuthActions } from "@/lib/authClient";
 import { EyeIcon, EyeOff, Mail } from "lucide-react";
 import { toast } from "sonner";
 import Button from "@/components/button/Button";
+import Input from "@/components/form/Input";
 
 // === Tipos ===
 type FormData = {
@@ -21,7 +22,11 @@ export default function LoginPage() {
   // --- Estado e hooks ---
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const { register, handleSubmit } = useForm<FormData>();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormData>();
 
   const router = useRouter();
   const { login, storeToken } = AuthActions();
@@ -94,15 +99,13 @@ export default function LoginPage() {
         </div>
 
         {/* Campo: Email */}
-        <div className="mt-8 relative w-full">
-          <label className="absolute -top-3 left-3 bg-white px-2 text-sm text-gray-700">
-            Email
-          </label>
-
-          <input
+        <div className="mt-8">
+          <Input
+            label="Email"
             type="email"
             placeholder="Digite seu email..."
-            className="w-full border-[0.15rem] border-metal-700  rounded-md py-2 px-3 text-metal-700 placeholder-metal-400 placeholder:text-base focus:outline-none focus:border-blueberry-500 text-lg"
+            icon={<Mail className="w-8 h-8" />}
+            error={errors.email?.message}
             {...register("email", {
               required: "Informe um email.",
               pattern: {
@@ -111,34 +114,28 @@ export default function LoginPage() {
               },
             })}
           />
-
-          <Mail className="w-8 h-8 text-metal-200 absolute right-4 top-1/2 -translate-y-1/2" />
         </div>
         {/* Campo: Senha */}
-        <div className="mt-6 relative w-full">
-          <label className="absolute -top-3 left-3 bg-white px-2 text-sm text-gray-700">
-            Senha
-          </label>
-
-          <input
+        <div className="mt-6 relative">
+          <Input
+            label="Senha"
             type={showPassword ? "text" : "password"}
             placeholder="Digite sua senha..."
-            className="w-full border-[0.15rem] border-metal-700 rounded-md py-2 px-3 text-metal-700 placeholder-metal-400 placeholder:text-base focus:outline-none focus:border-blueberry-500 text-lg"
+            error={errors.password?.message}
             {...register("password", {
               required: "Informe sua senha.",
             })}
           />
-
           <button
             type="button"
             aria-label={showPassword ? "Esconder senha" : "Mostrar senha"}
             onClick={() => setShowPassword((s) => !s)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded focus:outline-none"
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded focus:outline-none text-metal-200 hover:text-metal-500 transition-colors z-20"
           >
             {showPassword ? (
-              <EyeOff className="w-8 h-8 text-metal-200 " />
+              <EyeOff className="w-8 h-8" />
             ) : (
-              <EyeIcon className="w-8 h-8 text-metal-200" />
+              <EyeIcon className="w-8 h-8" />
             )}
           </button>
         </div>

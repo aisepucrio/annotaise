@@ -95,6 +95,13 @@
   --color-green-blueberry: var(--green-blueberry);
   --color-red-blueberry: var(--red-blueberry);
 
+  --green-blueberry-10: var(--green-blueberry-10);
+  --orange-blueberry-10: var(--orange-blueberry-10);
+  --red-blueberry-10: var(--red-blueberry-10);
+  --blueberry-700-10: var(--blueberry-700-10);
+  --metal-500-15: var(--metal-500-15);
+  --blueberry-700-25: var(--blueberry-700-25);
+
   /* Others (shadcn) */
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
