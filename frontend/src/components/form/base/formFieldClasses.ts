@@ -6,13 +6,13 @@ import { cn } from "@/lib/utils";
 export const formFieldClasses = {
   /** Classes base para inputs, selects e date pickers */
   base: cn(
-    "w-full border-[0.15rem] rounded-md py-2 px-3",
-    "text-metal-700 text-lg",
+    "w-full border-[0.12rem] rounded-md py-2 px-3",
+    "text-metal-700 text-md",
     "focus:outline-none"
   ),
 
   /** Classes para placeholder */
-  placeholder: "placeholder-metal-400 placeholder:text-base",
+  placeholder: "placeholder-metal-400 placeholder:text-sm",
 
   /** Classes para estado normal */
   normal: "border-metal-700 focus:border-blueberry-500",

@@ -73,13 +73,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
             {...props}
           >
             {placeholder && (
-              <option
-                value=""
-                disabled
-                selected
-                hidden
-                className="text-metal-400"
-              >
+              <option value="" disabled hidden className="text-metal-400">
                 {placeholder}
               </option>
             )}

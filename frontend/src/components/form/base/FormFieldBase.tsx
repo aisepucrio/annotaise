@@ -33,7 +33,7 @@ export default function FormFieldBase({
       {label && (
         <label
           htmlFor={id}
-          className="absolute -top-3 left-3 bg-white px-2 text-sm text-gray-700 z-10"
+          className="absolute -top-3 left-3 bg-white px-2 text-sm text-metal-700 z-10"
         >
           {label}
           {required && <span className="text-red-400 ml-1">*</span>}

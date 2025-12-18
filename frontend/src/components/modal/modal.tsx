@@ -94,14 +94,14 @@ export default function Modal({
         className="fixed inset-0 z-50 flex items-center justify-center p-4"
       >
         <div
-          className={`w-full ${maxWidthClasses[maxWidth]} rounded-2xl shadow-2xl flex flex-col max-h-[90vh] p-4 ${className}`}
+          className={`w-full ${maxWidthClasses[maxWidth]} rounded-2xl shadow-2xl flex flex-col max-h-[90vh] p-5 ${className}`}
           style={{ backgroundColor: "var(--full-white)" }}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header: Título + Botão X */}
-          <div className="relative  flex-shrink-0">
+          <div className="relative shrink-0">
             <h2
-              className="text-xl font-semibold text-center"
+              className="text-xl font-semibold text-left"
               style={{ color: "var(--metal-900)" }}
             >
               {title}
@@ -129,7 +129,7 @@ export default function Modal({
 
           {/* Subtítulo (opcional) */}
           {subtitle && (
-            <div className="px-6 pt-3 text-center flex-shrink-0">
+            <div className="py-3 text-left shrink-0">
               <div
                 className="text-md font-medium"
                 style={{ color: "var(--metal-700)" }}
@@ -141,16 +141,16 @@ export default function Modal({
 
           {/* Descrição (opcional) */}
           {description && (
-            <div className="px-6 pt-2 text-center flex-shrink-0">
-              <div className="text-sm" style={{ color: "var(--metal-700)" }}>
+            <div className=" py-2 text-left shrink-0">
+              <div className="text-sm" style={{ color: "var(--metal-500)" }}>
                 {description}
               </div>
             </div>
           )}
 
           {/* Content com scroll */}
-          <div className="flex min-h-0 px-4">
-            <div className="p-4 overflow-y-auto flex-1 hide-scrollbar-arrows">
+          <div className="flex min-h-0 ">
+            <div className="pt-4 pr-2 overflow-y-auto flex-1 hide-scrollbar-arrows">
               {children}
             </div>
           </div>

@@ -255,3 +255,119 @@ export const PasswordWithToggle: StoryObj<typeof Input> = {
     },
   },
 };
+
+/* =======================
+   MULTILINE (TEXTAREA)
+======================= */
+
+export const Multiline: StoryObj<typeof Input> = {
+  render: () => (
+    <div className="flex flex-col gap-6 w-96">
+      <Input
+        label="Descrição"
+        placeholder="Digite uma descrição detalhada..."
+        multiline
+        rows={4}
+      />
+
+      <Input
+        label="Comentário"
+        placeholder="Deixe seu comentário..."
+        multiline
+        rows={3}
+        required
+      />
+
+      <Input
+        label="Descrição com erro"
+        placeholder="Digite..."
+        multiline
+        rows={4}
+        error="Campo obrigatório"
+        required
+      />
+    </div>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Input em modo textarea usando `multiline={true}`. Por padrão, o redimensionamento está desabilitado.",
+      },
+    },
+  },
+};
+
+/* =======================
+   MULTILINE REDIMENSIONÁVEL
+======================= */
+
+export const MultilineResizable: StoryObj<typeof Input> = {
+  render: () => (
+    <div className="flex flex-col gap-6 w-96">
+      <Input
+        label="Descrição redimensionável"
+        placeholder="Você pode ajustar o tamanho verticalmente..."
+        multiline
+        rows={4}
+        resizable
+      />
+
+      <Input
+        label="Comentário redimensionável"
+        placeholder="Ajuste conforme necessário..."
+        multiline
+        rows={3}
+        resizable
+        required
+      />
+    </div>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Textarea com `resizable={true}`, permitindo ao usuário ajustar a altura manualmente.",
+      },
+    },
+  },
+};
+
+/* =======================
+   MULTILINE COM ALTURA CUSTOMIZADA
+======================= */
+
+export const MultilineCustomHeight: StoryObj<typeof Input> = {
+  render: () => (
+    <div className="flex flex-col gap-6 w-96">
+      <Input
+        label="Descrição curta (2 linhas)"
+        placeholder="Descrição breve..."
+        multiline
+        rows={2}
+      />
+
+      <Input
+        label="Descrição média (4 linhas)"
+        placeholder="Descrição padrão..."
+        multiline
+        rows={4}
+      />
+
+      <Input
+        label="Descrição longa (8 linhas)"
+        placeholder="Descrição detalhada..."
+        multiline
+        rows={8}
+      />
+    </div>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Exemplos de textarea com diferentes alturas usando a prop `rows`.",
+      },
+    },
+  },
+};

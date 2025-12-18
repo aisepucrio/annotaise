@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { AuthActions } from "@/lib/authClient";
-import { EyeIcon, EyeOff, Mail } from "lucide-react";
+import { EyeIcon, EyeOff, Mail, LogIn } from "lucide-react";
 import { toast } from "sonner";
 import Button from "@/components/button/Button";
 import Input from "@/components/form/Input";
@@ -141,16 +141,17 @@ export default function LoginPage() {
         </div>
         {/* Ação: Esqueceu senha */}
         <div className="flex w-full justify-end mt-3">
-          <a className="text-sm sm:text-base text-blueberry-900 underline cursor-pointer hover:text-blueberry-700">
+          <a className="text-sm sm:text-md text-blueberry-900 underline cursor-pointer hover:text-blueberry-700">
             Esqueceu a senha?
           </a>
         </div>
 
         {/* Ação: Enviar formulário */}
         <Button
+          icon={<LogIn className="w-6 h-6 mr-2" />}
           type="submit"
           disabled={isLoading}
-          className="mt-8 text-[1rem] px-6 py-3"
+          className="mt-8 text-[1rem] py-3"
         >
           {isLoading ? "Entrando..." : "Login"}
         </Button>
