@@ -33,6 +33,7 @@ import {
 import { fetchUsers, type User } from "@/lib/services/user_service";
 import { fetchProject } from "@/lib/services/project_service";
 import EditLabelingModal from "./edit_labeling_modal";
+import ConfirmDeleteModal from "@/components/ConfirmDeleteModal";
 import { exportLabelingAnswersCsv } from "@/lib/services/labeling_service";
 import { toast } from "sonner";
 import FormTab from "./form_tab";
@@ -778,50 +779,23 @@ export default function LabelingFormPage() {
         onUpdated={() => void loadLabelingAndStructure()}
       />
 
-      {isDeleteOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
-            <div className="flex items-start justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Excluir Rotulação
-              </h2>
-              <button
-                type="button"
-                onClick={() => setIsDeleteOpen(false)}
-                className="text-gray-400 hover:text-gray-600 p-1 cursor-pointer"
-                aria-label="Fechar"
-              >
-                ×
-              </button>
-            </div>
-            <p className="mt-3 text-sm text-gray-700">
-              Você tem <strong>certeza</strong> que deseja excluir esta
-              rotulação?
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              Atenção: Essa ação NÃO pode ser desfeita.
-            </p>
-
-            <div className="mt-5 flex justify-between gap-3">
-              <button
-                type="button"
-                onClick={() => setIsDeleteOpen(false)}
-                className="flex-1 rounded-lg bg-blue-900 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 cursor-pointer"
-              >
-                Voltar
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleDeleteLabeling()}
-                disabled={isDeleting}
-                className="flex-1 rounded-lg bg-red-800 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
-              >
-                {isDeleting ? "Excluindo..." : "Excluir Rotulação"}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <ConfirmDeleteModal
+        open={isDeleteOpen}
+        onClose={() => setIsDeleteOpen(false)}
+        onConfirm={() => void handleDeleteLabeling()}
+        isDeleting={isDeleting}
+        title="Excluir Rotulação"
+        itemName={labelingTitle}
+        description={
+          <>
+            Você tem <strong>certeza</strong> que deseja excluir esta rotulação?
+            <strong> Todos os dados </strong> relacionados serão{" "}
+            <strong>perdidos permanentemente</strong>.
+          </>
+        }
+        confirmButtonText="Excluir Rotulação"
+        cancelButtonText="Cancelar"
+      />
     </div>
   );
 }

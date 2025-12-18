@@ -4,7 +4,15 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import useSWR from "swr";
 import { useForm } from "react-hook-form";
-import PageHeader from "@/components/PageHeader";
+import { toast } from "sonner";
+import { Save, Trash2 } from "lucide-react";
+import InnerPageHeader from "@/components/InnerPageHeader";
+import Button from "@/components/button/Button";
+import ConfirmDeleteModal from "@/components/ConfirmDeleteModal";
+import Input from "@/components/form/Input";
+import Select from "@/components/form/Select";
+import useCurrent from "@/hooks/current_user_hook";
+import SidebarLayout from "@/components/side-bar/sidebar_layout";
 import {
   createProjectMembership,
   deleteProject,
@@ -17,19 +25,41 @@ import {
   updateProject,
   updateProjectMembership,
 } from "@/lib/services/project_service";
-import { fetchUsers } from "@/lib/services/user_service";
-import useCurrent from "@/hooks/current_user_hook";
-import SidebarLayout from "@/components/side-bar/sidebar_layout";
-import { toast } from "sonner";
+import { fetchUsers, type User } from "@/lib/services/user_service";
 
 type Params = {
   projectId: string;
 };
 
+// Opções de status do projeto
+const STATUS_OPTIONS = [
+  { value: "planning", label: "Planejamento" },
+  { value: "active", label: "Ativo" },
+  { value: "completed", label: "Concluído" },
+  { value: "cancelled", label: "Cancelado" },
+];
+
+// Opções de papel/permissão de membro
+const ROLE_OPTIONS = [
+  { value: "owner", label: "Proprietário" },
+  { value: "contributor", label: "Colaborador" },
+  { value: "viewer", label: "Visualizador" },
+];
+
 export default function ProjectDetailsPage() {
   const router = useRouter();
   const params = useParams<Params>();
   const currentUser = useCurrent();
+  const projectId = Number(params?.projectId);
+
+  // Estados locais
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [newMemberId, setNewMemberId] = useState<string>("");
+  const [newMemberRole, setNewMemberRole] =
+    useState<ProjectMembershipPayload["role"]>("viewer");
+
+  // Verificações de permissão
   const userLoading = currentUser === undefined;
   const canSeeProjects = Boolean(
     currentUser &&
@@ -38,8 +68,8 @@ export default function ProjectDetailsPage() {
   const isAdmin = Boolean(
     currentUser?.is_staff || currentUser?.account_type === "admin"
   );
-  const projectId = Number(params?.projectId);
 
+  // Buscar dados do projeto
   const {
     data: project,
     isLoading: loadingProject,
@@ -49,6 +79,7 @@ export default function ProjectDetailsPage() {
     fetchProject(projectId)
   );
 
+  // Buscar membros do projeto
   const {
     data: memberships,
     isLoading: loadingMemberships,
@@ -59,49 +90,62 @@ export default function ProjectDetailsPage() {
     () => fetchProjectMemberships(projectId)
   );
 
+  // Buscar todos os usuários
   const {
     data: users,
     isLoading: loadingUsers,
     error: usersError,
   } = useSWR(canSeeProjects ? "project-users" : null, () => fetchUsers());
 
+  // Form para editar projeto
   const {
     register,
     handleSubmit,
     reset,
     formState: { isSubmitting },
   } = useForm<ProjectPayload>({
-    defaultValues: {
-      name: "",
-      description: "",
-      status: "planning",
-    },
+    defaultValues: { name: "", description: "", status: "planning" },
   });
 
-  const [deleteLoading, setDeleteLoading] = useState(false);
-  const [newMemberId, setNewMemberId] = useState<string>("");
-  const [newMemberRole, setNewMemberRole] =
-    useState<ProjectMembershipPayload["role"]>("viewer");
+  // Usuários disponíveis para adicionar (que não são membros ainda)
+  const availableUsers = useMemo(() => {
+    if (!users || !memberships) return [];
+    const assignedIds = new Set(memberships.map((m) => m.user));
+    return users.filter((user) => !assignedIds.has(user.id));
+  }, [users, memberships]);
 
+  // Exibir nome do usuário
+  const getUserName = (
+    user?:
+      | Partial<User>
+      | { email?: string; first_name?: string; last_name?: string }
+  ) => {
+    if (!user) return "";
+    const fullName = `${user.first_name || ""} ${user.last_name || ""}`.trim();
+    return fullName || user.email || "";
+  };
+
+  // ===============================
+  // EFEITOS - Tratamento de erros e reset de formulário
+  // ===============================
   useEffect(() => {
     if (projectError) {
-      const message =
+      toast.error(
         projectError instanceof Error
           ? projectError.message
-          : "Erro ao carregar o projeto.";
-      toast.error(message);
+          : "Erro ao carregar o projeto."
+      );
     }
   }, [projectError]);
 
   useEffect(() => {
     if (membershipsError || usersError) {
-      const message =
-        membershipsError instanceof Error
-          ? membershipsError.message
-          : usersError instanceof Error
-          ? usersError.message
-          : "Erro ao carregar os dados de membros.";
-      toast.error(message);
+      const error = membershipsError || usersError;
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Erro ao carregar os dados de membros."
+      );
     }
   }, [membershipsError, usersError]);
 
@@ -123,22 +167,16 @@ export default function ProjectDetailsPage() {
     }
   }, [project, reset]);
 
-  const availableUsers = useMemo(() => {
-    if (!users || !memberships) {
-      return [];
-    }
-    const assignedIds = new Set(
-      memberships.map((membership) => membership.user)
-    );
-    return users.filter((user) => !assignedIds.has(user.id));
-  }, [users, memberships]);
-
+  // ===============================
+  // HANDLERS - Ações do usuário
+  // ===============================
   const handleSaveProject = handleSubmit(async (values) => {
     if (!isAdmin) {
       toast.error("Apenas administradores podem editar projetos.");
       return;
     }
     if (!projectId) return;
+
     try {
       await updateProject(projectId, values);
       await mutateProject();
@@ -157,14 +195,11 @@ export default function ProjectDetailsPage() {
       return;
     }
     if (!projectId) return;
-    const confirmed = window.confirm(
-      "Tem certeza que deseja excluir este projeto?"
-    );
-    if (!confirmed) return;
 
     try {
       setDeleteLoading(true);
       await deleteProject(projectId);
+      setIsDeleteModalOpen(false);
       router.push("/projects");
     } catch (error) {
       const message =
@@ -182,9 +217,8 @@ export default function ProjectDetailsPage() {
       toast.error("Apenas administradores podem adicionar membros.");
       return;
     }
-    if (!projectId || !newMemberId) {
-      return;
-    }
+    if (!projectId || !newMemberId) return;
+
     try {
       await createProjectMembership({
         project: projectId,
@@ -194,6 +228,7 @@ export default function ProjectDetailsPage() {
       setNewMemberId("");
       setNewMemberRole("viewer");
       await mutateMemberships();
+      toast.success("Membro adicionado com sucesso.");
     } catch (error) {
       const message =
         (error as { response?: { data?: { detail?: string } } })?.response?.data
@@ -211,9 +246,11 @@ export default function ProjectDetailsPage() {
       return;
     }
     if (membership.role === nextRole) return;
+
     try {
       await updateProjectMembership(membership.id, { role: nextRole });
       await mutateMemberships();
+      toast.success("Permissão atualizada.");
     } catch (error) {
       const message =
         (error as { response?: { data?: { detail?: string } } })?.response?.data
@@ -227,11 +264,11 @@ export default function ProjectDetailsPage() {
       toast.error("Apenas administradores podem remover membros.");
       return;
     }
-    const confirmed = window.confirm("Remover este membro do projeto?");
-    if (!confirmed) return;
+
     try {
       await deleteProjectMembership(membership.id);
       await mutateMemberships();
+      toast.success("Membro removido.");
     } catch (error) {
       const message =
         (error as { response?: { data?: { detail?: string } } })?.response?.data
@@ -240,14 +277,15 @@ export default function ProjectDetailsPage() {
     }
   };
 
-  if (!projectId) {
-    return null;
-  }
+  // ===============================
+  // RENDERIZAÇÃO - Estados de carregamento e permissão
+  // ===============================
+  if (!projectId) return null;
 
   if (userLoading) {
     return (
       <SidebarLayout>
-        <p className="mt-6 text-sm text-gray-500">
+        <p className="mt-6 text-sm text-metal-500">
           Carregando informações do usuário...
         </p>
       </SidebarLayout>
@@ -256,232 +294,244 @@ export default function ProjectDetailsPage() {
 
   if (!canSeeProjects) {
     return (
-      <>
-        <PageHeader
-          page_title="Projeto"
-          description="Apenas editores ou administradores podem acessar detalhes de projetos."
-        />
-        <p className="mt-6 ml-5 text-sm text-gray-600">
-          Seu perfil não possui permissão para visualizar este projeto.
-        </p>
-      </>
+      <div className="flex flex-col h-screen">
+        <InnerPageHeader onBack={() => router.push("/projects")}>
+          <h1 className="text-xl font-semibold">Projeto</h1>
+        </InnerPageHeader>
+        <div className="flex-1 p-6">
+          <p className="text-sm text-metal-700">
+            Seu perfil não possui permissão para visualizar este projeto.
+          </p>
+        </div>
+      </div>
     );
   }
 
   return (
-    <>
-      <PageHeader
-        page_title={project ? `Projeto: ${project.name}` : "Projeto"}
-        description="Edite os dados do projeto e gerencie o time de membros autorizados."
-      />
+    <div className="flex flex-col h-screen">
+      {/* Header */}
+      <InnerPageHeader onBack={() => router.push("/projects")}>
+        <>
+          <h1 className="text-xl font-semibold">
+            {project ? project.name : "Carregando..."}
+          </h1>
+          <div className="flex items-center gap-3">
+            <Button
+              type="submit"
+              disabled={isSubmitting || !isAdmin}
+              variant="white"
+              fill={false}
+              icon={<Save size={20} />}
+            >
+              {isSubmitting ? "Salvando..." : "Salvar alterações"}
+            </Button>
 
-      <section className="mx-5 mt-6 rounded-xl bg-white p-6 shadow-sm">
-        <header className="mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">
-            Informações do projeto
-          </h2>
-          <p className="text-sm text-gray-500">
-            Atualize o nome, descrição ou status do projeto.
-          </p>
-        </header>
+            <Button
+              variant="red"
+              fill={false}
+              onClick={() => setIsDeleteModalOpen(true)}
+              disabled={deleteLoading || !isAdmin}
+              icon={<Trash2 size={16} />}
+            >
+              Excluir projeto
+            </Button>
+          </div>
+        </>
+      </InnerPageHeader>
 
-        {loadingProject ? (
-          <p className="text-sm text-gray-500">Carregando projeto...</p>
-        ) : project ? (
-          <form onSubmit={handleSaveProject} className="space-y-4">
-            <div className="space-y-1">
-              <label
-                htmlFor="project-name"
-                className="text-sm font-medium text-gray-700"
-              >
-                Nome
-              </label>
-              <input
-                id="project-name"
-                type="text"
+      {/* Conteúdo */}
+      <div className="  py-6 px-8 space-y-6">
+        {/* Seção: Informações do Projeto */}
+        <div className="mb-6 border-l-5 pl-4 border-blueberry-700">
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-metal-900">
+              Informações do projeto
+            </h2>
+            <p className="text-sm text-metal-500">
+              Atualize o nome, descrição ou status do projeto.
+            </p>
+          </div>
+
+          {loadingProject ? (
+            <p className="text-sm text-metal-500">Carregando projeto...</p>
+          ) : project ? (
+            <form onSubmit={handleSaveProject} className="space-y-4">
+              <Input
+                label="Nome"
                 {...register("name", { required: true })}
                 disabled={!isAdmin}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:bg-gray-100 disabled:text-gray-500"
+                required
               />
-            </div>
 
-            <div className="space-y-1">
-              <label
-                htmlFor="project-description"
-                className="text-sm font-medium text-gray-700"
-              >
-                Descrição
-              </label>
-              <textarea
-                id="project-description"
-                rows={4}
+              <Input
+                label="Descrição"
                 {...register("description")}
                 disabled={!isAdmin}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:bg-gray-100 disabled:text-gray-500"
+                multiline
+                rows={4}
               />
-            </div>
 
-            <div className="space-y-1">
-              <label
-                htmlFor="project-status"
-                className="text-sm font-medium text-gray-700"
-              >
-                Status
-              </label>
-              <select
-                id="project-status"
+              <Select
+                label="Status"
                 {...register("status", { required: true })}
+                options={STATUS_OPTIONS}
                 disabled={!isAdmin}
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:bg-gray-100 disabled:text-gray-500"
-              >
-                <option value="planning">Planejamento</option>
-                <option value="active">Ativo</option>
-                <option value="completed">Concluído</option>
-                <option value="cancelled">Cancelado</option>
-              </select>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <button
-                type="button"
-                onClick={handleDeleteProject}
-                disabled={deleteLoading || !isAdmin}
-                className="rounded-lg border border-red-200 px-4 py-2 text-sm text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
-              >
-                {deleteLoading ? "Deletando..." : "Excluir projeto"}
-              </button>
-
-              <button
-                type="submit"
-                disabled={isSubmitting || !isAdmin}
-                className="rounded-lg bg-blue-900 px-5 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
-              >
-                {isSubmitting ? "Salvando..." : "Salvar alterações"}
-              </button>
-            </div>
-          </form>
-        ) : null}
-      </section>
-
-      <section className="mx-5 mt-8 rounded-xl bg-white p-6 shadow-sm">
-        <header className="mb-4 flex flex-col gap-1">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">
+                required
+              />
+            </form>
+          ) : null}
+        </div>
+        {/* Seção: Membros do Projeto */}
+        <div className="mb-6 border-l-5 pl-4 border-blueberry-700">
+          <div className="mb-6 ">
+            <h2 className="text-lg font-semibold text-metal-900">
               Membros do projeto
             </h2>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-metal-500">
               Controle quem tem acesso ao projeto e quais permissões cada pessoa
               possui.
             </p>
           </div>
-        </header>
 
-        {loadingMemberships || loadingUsers ? (
-          <p className="text-sm text-gray-500">Carregando membros...</p>
-        ) : (
+          {loadingMemberships || loadingUsers ? (
+            <p className="text-sm text-metal-500">Carregando membros...</p>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-8 items-start">
+              {/* Coluna Esquerda: Formulário para adicionar novo membro */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-metal-900">
+                  Adicionar novo membro
+                </h3>
+
+                <form onSubmit={handleAddMember} className="space-y-4">
+                  <Select
+                    label="Usuário"
+                    value={newMemberId}
+                    onChange={(e) => setNewMemberId(e.target.value)}
+                    options={
+                      loadingUsers
+                        ? [{ value: "", label: "Carregando usuários..." }]
+                        : availableUsers.length === 0
+                        ? [{ value: "", label: "Nenhum usuário disponível" }]
+                        : availableUsers.map((user) => ({
+                            value: user.id.toString(),
+                            label: getUserName(user),
+                          }))
+                    }
+                    placeholder="Selecione um usuário"
+                    disabled={
+                      !isAdmin || loadingUsers || availableUsers.length === 0
+                    }
+                  />
+
+                  <Select
+                    label="Cargo"
+                    value={newMemberRole}
+                    onChange={(e) =>
+                      setNewMemberRole(
+                        e.target.value as ProjectMembershipPayload["role"]
+                      )
+                    }
+                    options={ROLE_OPTIONS}
+                    disabled={!isAdmin}
+                  />
+
+                  <div className="flex justify-end pt-2">
+                    <Button
+                      type="submit"
+                      disabled={!newMemberId || !isAdmin || loadingUsers}
+                      fill={false}
+                    >
+                      Adicionar membro
+                    </Button>
+                  </div>
+                </form>
+              </div>
+
+              {/* Separador */}
+              <div className="hidden lg:block w-px bg-metal-200 self-stretch" />
+
+              {/* Coluna Direita: Lista de membros */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-metal-900">
+                  Membros atuais ({(memberships ?? []).length})
+                </h3>
+
+                <ul className="space-y-2 max-h-96 overflow-y-auto pr-2">
+                  {(memberships ?? []).map((membership) => {
+                    const isCurrentUser = currentUser?.id === membership.user;
+                    const userName = membership.user_detail
+                      ? getUserName(membership.user_detail)
+                      : `Usuário #${membership.user}`;
+
+                    return (
+                      <li
+                        key={membership.id}
+                        className="p-3 rounded-lg hover:bg-metal-50/50 transition-colors"
+                      >
+                        <div className="space-y-2">
+                          <div>
+                            <p className="text-sm font-medium text-metal-900">
+                              {userName}
+                            </p>
+                            <p className="text-xs text-metal-500">
+                              {membership.user_detail?.email ??
+                                "Email não disponível"}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <Select
+                              value={membership.role}
+                              onChange={(e) =>
+                                handleRoleChange(
+                                  membership,
+                                  e.target
+                                    .value as ProjectMembershipPayload["role"]
+                                )
+                              }
+                              options={ROLE_OPTIONS}
+                              disabled={isCurrentUser || !isAdmin}
+                              containerClassName="flex-1"
+                            />
+
+                            <Button
+                              variant="red"
+                              fill={false}
+                              onClick={() => handleRemoveMember(membership)}
+                              disabled={isCurrentUser || !isAdmin}
+                            >
+                              Remover
+                            </Button>
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <ConfirmDeleteModal
+        open={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={() => void handleDeleteProject()}
+        isDeleting={deleteLoading}
+        title="Excluir Projeto"
+        itemName={project?.name || ""}
+        description={
           <>
-            <ul className="space-y-3">
-              {(memberships ?? []).map((membership) => {
-                const isCurrentUser = currentUser?.id === membership.user;
-                return (
-                  <li
-                    key={membership.id}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-gray-100 px-4 py-3 shadow-sm"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        {membership.user_detail
-                          ? `${membership.user_detail.first_name} ${membership.user_detail.last_name}`.trim() ||
-                            membership.user_detail.email
-                          : `Usuário #${membership.user}`}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {membership.user_detail?.email ??
-                          "Email não disponível"}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <select
-                        value={membership.role}
-                        onChange={(event) =>
-                          handleRoleChange(
-                            membership,
-                            event.target
-                              .value as ProjectMembershipPayload["role"]
-                          )
-                        }
-                        disabled={isCurrentUser || !isAdmin}
-                        className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        <option value="owner">Proprietário</option>
-                        <option value="contributor">Colaborador</option>
-                        <option value="viewer">Visualizador</option>
-                      </select>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveMember(membership)}
-                        disabled={isCurrentUser || !isAdmin}
-                        className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
-                      >
-                        Remover
-                      </button>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-
-            <form
-              onSubmit={handleAddMember}
-              className="mt-6 grid gap-3 rounded-lg border border-dashed border-gray-300 p-4"
-            >
-              <p className="text-sm font-medium text-gray-900">
-                Adicionar novo membro
-              </p>
-              <div className="grid gap-3 md:grid-cols-2">
-                <select
-                  value={newMemberId}
-                  onChange={(event) => setNewMemberId(event.target.value)}
-                  disabled={!isAdmin}
-                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:bg-gray-100 disabled:text-gray-500"
-                >
-                  <option value="">Selecione um usuário</option>
-                  {availableUsers.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.first_name || user.last_name
-                        ? `${user.first_name} ${user.last_name}`.trim()
-                        : user.email}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  value={newMemberRole}
-                  onChange={(event) =>
-                    setNewMemberRole(
-                      event.target.value as ProjectMembershipPayload["role"]
-                    )
-                  }
-                  disabled={!isAdmin}
-                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:bg-gray-100 disabled:text-gray-500"
-                >
-                  <option value="owner">Proprietário</option>
-                  <option value="contributor">Colaborador</option>
-                  <option value="viewer">Visualizador</option>
-                </select>
-              </div>
-              <div className="flex justify-end">
-                <button
-                  type="submit"
-                  disabled={!newMemberId || !isAdmin}
-                  className="rounded-lg bg-blue-900 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
-                >
-                  Adicionar membro
-                </button>
-              </div>
-            </form>
+            Você tem <strong>certeza</strong> que deseja excluir este projeto?
+            Todos os <strong>dados relacionados</strong> serão{" "}
+            <strong>perdidos permanentemente</strong>.
           </>
-        )}
-      </section>
-    </>
+        }
+        confirmButtonText="Excluir Projeto"
+        cancelButtonText="Cancelar"
+      />
+    </div>
   );
 }

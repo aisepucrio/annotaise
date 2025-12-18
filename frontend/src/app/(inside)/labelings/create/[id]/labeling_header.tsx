@@ -103,20 +103,18 @@ export default function LabelingHeader({
             fill={false}
             disabled={isSaving || isLoadingLabeling}
             icon={<Save size={20} />}
-            className="font-semibold "
           >
             {isSaving ? "Salvando..." : "Salvar alterações"}
           </Button>
+
           <Button
-            type="button"
-            onClick={onDelete}
-            variant="white"
-            size="icon"
+            variant="red"
             fill={false}
-            aria-label="Excluir rotulação"
+            onClick={onDelete}
             disabled={isDeleting || isLoadingLabeling}
+            icon={<Trash2 size={16} />}
           >
-            <Trash2 size={20} color="red" />
+            {isDeleting ? "Deletando..." : "Excluir Rotulação"}
           </Button>
         </div>
       </div>
