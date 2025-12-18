@@ -32,7 +32,7 @@ import {
 } from "@/lib/services/answer_service";
 import { fetchUsers, type User } from "@/lib/services/user_service";
 import { fetchProject } from "@/lib/services/project_service";
-import EditLabelingModal from "../../edit_labeling_modal";
+import EditLabelingModal from "./edit_labeling_modal";
 import { exportLabelingAnswersCsv } from "@/lib/services/labeling_service";
 import { toast } from "sonner";
 import FormTab from "./form_tab";

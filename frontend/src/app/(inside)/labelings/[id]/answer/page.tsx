@@ -25,7 +25,7 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import Button from "@/components/button/Button";
-import InnerPageHeader from "@/components/inner-page-header/InnerPageHeader";
+import InnerPageHeader from "@/components/InnerPageHeader";
 
 export default function LabelingAnswerPage() {
   const params = useParams<{ id: string }>();
