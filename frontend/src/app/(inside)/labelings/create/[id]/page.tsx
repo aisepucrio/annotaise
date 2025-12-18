@@ -135,6 +135,8 @@ export default function LabelingFormPage() {
   } | null>(null);
   const [actionsClosing, setActionsClosing] = useState(false);
   const toolbarRef = useRef<HTMLDivElement | null>(null);
+  const closeActionsTimeoutRef = useRef<number | null>(null);
+  const lastActionsSectionIdRef = useRef<string | null>(null);
 
   const computeAnchorPosition = useCallback((element: HTMLElement) => {
     const rect = element.getBoundingClientRect();
@@ -148,8 +150,13 @@ export default function LabelingFormPage() {
   const focusActionsAt = useCallback(
     (sectionId: string, element: HTMLElement) => {
       if (typeof window === "undefined") return;
+      if (closeActionsTimeoutRef.current) {
+        window.clearTimeout(closeActionsTimeoutRef.current);
+        closeActionsTimeoutRef.current = null;
+      }
       const { x, y } = computeAnchorPosition(element);
       setActionsClosing(false);
+      lastActionsSectionIdRef.current = sectionId;
       setActionsAnchor({
         sectionId,
         element,
@@ -162,10 +169,14 @@ export default function LabelingFormPage() {
 
   const hideActionsToolbar = useCallback(() => {
     if (!actionsAnchor) return;
+    if (closeActionsTimeoutRef.current) {
+      window.clearTimeout(closeActionsTimeoutRef.current);
+    }
     setActionsClosing(true);
-    setTimeout(() => {
+    closeActionsTimeoutRef.current = window.setTimeout(() => {
       setActionsAnchor(null);
       setActionsClosing(false);
+      closeActionsTimeoutRef.current = null;
     }, 150);
   }, [actionsAnchor]);
 
@@ -174,6 +185,27 @@ export default function LabelingFormPage() {
       hideActionsToolbar();
     }
   }, [activeTab, hideActionsToolbar]);
+
+  useEffect(() => {
+    if (activeTab !== "form") return;
+    if (actionsAnchor) return;
+    if (typeof document === "undefined") return;
+
+    const lastSectionId = lastActionsSectionIdRef.current;
+    const fallbackSectionId =
+      lastSectionId && sections.some((section) => section.id === lastSectionId)
+        ? lastSectionId
+        : sections[0]?.id;
+
+    if (!fallbackSectionId) return;
+
+    const fallbackEl = document.querySelector<HTMLElement>(
+      `[data-section-anchor-id="${fallbackSectionId}"]`
+    );
+    if (!fallbackEl) return;
+
+    focusActionsAt(fallbackSectionId, fallbackEl);
+  }, [activeTab, actionsAnchor, focusActionsAt, sections]);
 
   useEffect(() => {
     if (!actionsAnchor) return;
@@ -190,13 +222,28 @@ export default function LabelingFormPage() {
       });
     };
 
-    window.addEventListener("scroll", handleReposition, true);
+    document.addEventListener("scroll", handleReposition, true);
     window.addEventListener("resize", handleReposition);
     return () => {
-      window.removeEventListener("scroll", handleReposition, true);
+      document.removeEventListener("scroll", handleReposition, true);
       window.removeEventListener("resize", handleReposition);
     };
   }, [actionsAnchor, computeAnchorPosition]);
+
+  useEffect(() => {
+    if (activeTab !== "form") return;
+    if (!actionsAnchor) return;
+    const raf = window.requestAnimationFrame(() => {
+      setActionsAnchor((prev) => {
+        if (!prev) return null;
+        if (!document.body.contains(prev.element)) return null;
+        const { x, y } = computeAnchorPosition(prev.element);
+        if (prev.x === x && prev.y === y) return prev;
+        return { ...prev, x, y };
+      });
+    });
+    return () => window.cancelAnimationFrame(raf);
+  }, [activeTab, actionsAnchor, computeAnchorPosition, sections]);
 
   useEffect(() => {
     if (!actionsAnchor) return;
@@ -207,6 +254,9 @@ export default function LabelingFormPage() {
         target instanceof Element &&
         target.closest('[data-actions-anchor="true"]')
       ) {
+        return;
+      }
+      if (target instanceof Element && target.closest("[data-section-anchor-id]")) {
         return;
       }
       if (toolbarRef.current && toolbarRef.current.contains(target)) return;
@@ -742,9 +792,9 @@ export default function LabelingFormPage() {
       </div>
 
       {/* Conteúdo */}
-      <div className="flex-1 bg-white overflow-hidden">
+      <div className="flex-1 min-h-0 bg-white overflow-hidden">
         {activeTab === "form" ? (
-          <div className="h-full p-4">
+          <div className="h-full overflow-y-auto p-4">
             <FormTab
               columns={columns}
               isLoadingLabeling={isLoadingLabeling}
@@ -763,7 +813,7 @@ export default function LabelingFormPage() {
             />
           </div>
         ) : activeTab === "assign" ? (
-          <div className="h-full p-4">
+          <div className="h-full overflow-y-auto p-4">
             <AssignTab
               memberships={memberships}
               membershipLoading={membershipLoading}
@@ -790,7 +840,7 @@ export default function LabelingFormPage() {
             isSaving={isSaving}
           />
         ) : (
-          <div className="h-full p-4">
+          <div className="h-full overflow-y-auto p-4">
             <AnswersTab
               responderOptions={responderOptions}
               selectedResponder={selectedResponder}
