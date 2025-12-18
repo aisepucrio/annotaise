@@ -112,7 +112,17 @@ export default function SectionForm({
   };
 
   return (
-    <div className="relative border border-blue-800 rounded-xl py-5 pr-5 pl-8">
+    <div
+      className="relative border border-blue-800 rounded-xl py-5 pr-5 pl-8"
+      data-section-anchor-id={data.id}
+      onClick={(event) => {
+        if (!onFocusElement) return;
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+        if (target.closest('[data-actions-anchor="true"]')) return;
+        onFocusElement(data.id, event.currentTarget);
+      }}
+    >
       <div className="flex items-start justify-between">
         <div className="inline-flex -mt-9 mb-3 ml-2">
           <span className="mt-8 px-3 py-1 bg-blue-900 text-white text-xs rounded-t-md rounded-br-md shadow">
