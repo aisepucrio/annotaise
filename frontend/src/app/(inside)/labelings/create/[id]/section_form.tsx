@@ -112,7 +112,7 @@ export default function SectionForm({
   };
 
   return (
-    <div className="relative border border-blue-800 rounded-xl p-5 ">
+    <div className="relative border border-blue-800 rounded-xl py-5 pr-5 pl-8">
       <div className="flex items-start justify-between">
         <div className="inline-flex -mt-9 mb-3 ml-2">
           <span className="mt-8 px-3 py-1 bg-blue-900 text-white text-xs rounded-t-md rounded-br-md shadow">
@@ -191,7 +191,7 @@ function SortableQuestion({ id, children }: SortableQuestionProps) {
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.55 : 1,
+    opacity: isDragging ? 0.92 : 1,
   };
 
   return (
@@ -199,13 +199,13 @@ function SortableQuestion({ id, children }: SortableQuestionProps) {
       <button
         type="button"
         aria-label="Arrastar pergunta"
-        className="absolute -left-5 top-3 flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 shadow-sm hover:bg-gray-100 cursor-pointer"
+        className="absolute -left-7 top-3 flex h-7 w-7 items-center justify-center rounded-md border-2 border-blue-800 bg-blue-50 text-blue-900 hover:bg-blue-100 cursor-grab active:cursor-grabbing"
         {...attributes}
         {...listeners}
       >
-        <GripVertical size={14} />
+        <GripVertical size={12} />
       </button>
-      <div className={isDragging ? "opacity-70" : ""}>{children}</div>
+      <div className={isDragging ? "opacity-95" : ""}>{children}</div>
     </div>
   );
 }
