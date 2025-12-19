@@ -1,3 +1,4 @@
+import type { RefObject } from "react";
 import { ArrowLeft, Save, Edit, Calendar, Trash2 } from "lucide-react";
 import Button from "@/components/button/Button";
 
@@ -17,6 +18,7 @@ interface LabelingHeaderProps {
   onSaveStructure: () => void;
   onDelete: () => void;
   onTabChange: (tab: "form" | "assign" | "answers" | "guide") => void;
+  headerRef?: RefObject<HTMLDivElement>;
 }
 
 function formatDate(dateStr: string | null) {
@@ -40,9 +42,13 @@ export default function LabelingHeader({
   onSaveStructure,
   onDelete,
   onTabChange,
+  headerRef,
 }: LabelingHeaderProps) {
   return (
-    <div className="bg-blueberry-700 text-white px-6 py-3 shadow-md flex-shrink-0">
+    <div
+      ref={headerRef}
+      className="bg-blueberry-700 text-white px-6 py-3 shadow-md flex-shrink-0"
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Button

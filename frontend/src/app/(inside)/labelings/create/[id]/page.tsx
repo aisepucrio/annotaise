@@ -138,15 +138,182 @@ export default function LabelingFormPage() {
   const toolbarRef = useRef<HTMLDivElement | null>(null);
   const closeActionsTimeoutRef = useRef<number | null>(null);
   const lastActionsSectionIdRef = useRef<string | null>(null);
+  const headerRef = useRef<HTMLDivElement | null>(null);
+  const lastAnchorElementRef = useRef<HTMLElement | null>(null);
+  const lastAnchorTopRef = useRef<number | null>(null);
+  const scrollDirectionRef = useRef<"up" | "down" | null>(null);
 
-  const computeAnchorPosition = useCallback((element: HTMLElement) => {
-    const rect = element.getBoundingClientRect();
-    const offset = 12;
-    return {
-      x: rect.right + offset + window.scrollX,
-      y: rect.top + rect.height / 2 + window.scrollY,
-    };
+  const getHeaderBottom = useCallback(() => {
+    if (typeof window === "undefined") return null;
+    const header = headerRef.current;
+    if (!header) return null;
+    const rect = header.getBoundingClientRect();
+    return rect.bottom + window.scrollY;
   }, []);
+
+  const getToolbarHalfHeight = useCallback(() => {
+    if (typeof window === "undefined") return null;
+    const toolbar = toolbarRef.current;
+    if (!toolbar) return null;
+    return toolbar.getBoundingClientRect().height / 2;
+  }, []);
+
+  const updateScrollDirection = useCallback((anchorEl: HTMLElement) => {
+    const rect = anchorEl.getBoundingClientRect();
+    const currentTop = rect.top + window.scrollY;
+    const prevEl = lastAnchorElementRef.current;
+    const prevTop = lastAnchorTopRef.current;
+
+    if (prevEl === anchorEl && prevTop !== null) {
+      if (currentTop > prevTop) {
+        scrollDirectionRef.current = "up";
+      } else if (currentTop < prevTop) {
+        scrollDirectionRef.current = "down";
+      }
+    }
+
+    lastAnchorElementRef.current = anchorEl;
+    lastAnchorTopRef.current = currentTop;
+    return scrollDirectionRef.current;
+  }, []);
+
+  const resolveAnchorElement = useCallback(
+    (element: HTMLElement, sectionId: string) => {
+      const headerBottom = getHeaderBottom();
+      const toolbarHalfHeight = getToolbarHalfHeight();
+      if (headerBottom === null || toolbarHalfHeight === null) return element;
+
+      const rect = element.getBoundingClientRect();
+      const currentY = rect.top + rect.height / 2 + window.scrollY;
+      const topEdge = currentY - toolbarHalfHeight;
+
+      if (topEdge > headerBottom) return element;
+      if (element.hasAttribute("data-section-anchor-id")) return element;
+
+      const sectionEl =
+        element.closest<HTMLElement>("[data-section-anchor-id]") ??
+        document.querySelector<HTMLElement>(
+          `[data-section-anchor-id="${sectionId}"]`
+        );
+      return sectionEl ?? element;
+    },
+    [getHeaderBottom, getToolbarHalfHeight]
+  );
+
+  const resolveSectionByMenuOverlap = useCallback(
+    (
+      sectionId: string,
+      menuTop: number,
+      menuBottom: number,
+      direction: "up" | "down" | null
+    ) => {
+      if (typeof document === "undefined") return null;
+      const sections = Array.from(
+        document.querySelectorAll<HTMLElement>("[data-section-anchor-id]")
+      )
+        .map((el) => {
+          const id = el.dataset.sectionAnchorId;
+          if (!id) return null;
+          const rect = el.getBoundingClientRect();
+          return {
+            id,
+            el,
+            top: rect.top + window.scrollY,
+            bottom: rect.bottom + window.scrollY,
+          };
+        })
+        .filter(
+          (item): item is { id: string; el: HTMLElement; top: number; bottom: number } =>
+            item !== null
+        )
+        .sort((a, b) => a.top - b.top);
+
+      const index = sections.findIndex((section) => section.id === sectionId);
+      if (index === -1) return null;
+
+      const prev = sections[index - 1];
+      const next = sections[index + 1];
+
+      if (direction === "up") {
+        if (prev && menuTop <= prev.bottom) return prev;
+        if (next && menuBottom >= next.top) return next;
+        return sections[index];
+      }
+
+      if (direction === "down") {
+        if (next && menuBottom >= next.top) return next;
+        if (prev && menuTop <= prev.bottom) return prev;
+        return sections[index];
+      }
+
+      const overlap = (section?: { top: number; bottom: number }) =>
+        section
+          ? Math.min(menuBottom, section.bottom) - Math.max(menuTop, section.top)
+          : -Infinity;
+      const nextOverlap = overlap(next);
+      const prevOverlap = overlap(prev);
+      if (nextOverlap > 0 && nextOverlap >= prevOverlap) return next ?? sections[index];
+      if (prevOverlap > 0) return prev ?? sections[index];
+      return sections[index];
+    },
+    []
+  );
+
+  const computeAnchorPosition = useCallback(
+    (element: HTMLElement, sectionId: string) => {
+      const anchorEl = resolveAnchorElement(element, sectionId);
+      const anchorSectionId =
+        anchorEl.dataset.sectionAnchorId ?? sectionId;
+      const rect = anchorEl.getBoundingClientRect();
+      const offset = 12;
+      let x = rect.right + offset + window.scrollX;
+      let y = rect.top + rect.height / 2 + window.scrollY;
+
+      const headerBottom = getHeaderBottom();
+      const toolbarHalfHeight = getToolbarHalfHeight();
+      const minY =
+        headerBottom !== null && toolbarHalfHeight !== null
+          ? headerBottom + toolbarHalfHeight
+          : null;
+      const maxY =
+        toolbarHalfHeight !== null
+          ? window.scrollY + window.innerHeight - toolbarHalfHeight
+          : null;
+      const clampY = (value: number) => {
+        let next = value;
+        if (minY !== null) next = Math.max(next, minY);
+        if (maxY !== null) next = Math.min(next, maxY);
+        return next;
+      };
+      y = clampY(y);
+
+      if (toolbarHalfHeight !== null && anchorEl.hasAttribute("data-section-anchor-id")) {
+        const direction = updateScrollDirection(anchorEl);
+        const menuTop = y - toolbarHalfHeight;
+        const menuBottom = y + toolbarHalfHeight;
+        const target = resolveSectionByMenuOverlap(
+          anchorSectionId,
+          menuTop,
+          menuBottom,
+          direction
+        );
+        if (target && target.id !== anchorSectionId) {
+          const targetRect = target.el.getBoundingClientRect();
+          x = targetRect.right + offset + window.scrollX;
+          y = clampY(targetRect.top + targetRect.height / 2 + window.scrollY);
+          return { x, y, element: target.el, sectionId: target.id };
+        }
+      }
+
+      return { x, y, element: anchorEl, sectionId: anchorSectionId };
+    },
+    [
+      getHeaderBottom,
+      getToolbarHalfHeight,
+      resolveAnchorElement,
+      resolveSectionByMenuOverlap,
+    ]
+  );
 
   const focusActionsAt = useCallback(
     (sectionId: string, element: HTMLElement) => {
@@ -155,12 +322,13 @@ export default function LabelingFormPage() {
         window.clearTimeout(closeActionsTimeoutRef.current);
         closeActionsTimeoutRef.current = null;
       }
-      const { x, y } = computeAnchorPosition(element);
+      const { x, y, element: anchorEl, sectionId: anchorSectionId } =
+        computeAnchorPosition(element, sectionId);
       setActionsClosing(false);
-      lastActionsSectionIdRef.current = sectionId;
+      lastActionsSectionIdRef.current = anchorSectionId;
       setActionsAnchor({
-        sectionId,
-        element,
+        sectionId: anchorSectionId,
+        element: anchorEl,
         x,
         y,
       });
@@ -217,9 +385,19 @@ export default function LabelingFormPage() {
         if (!document.body.contains(prev.element)) {
           return null;
         }
-        const { x, y } = computeAnchorPosition(prev.element);
-        if (prev.x === x && prev.y === y) return prev;
-        return { ...prev, x, y };
+        const next = computeAnchorPosition(prev.element, prev.sectionId);
+        if (
+          prev.x === next.x &&
+          prev.y === next.y &&
+          prev.element === next.element &&
+          prev.sectionId === next.sectionId
+        ) {
+          return prev;
+        }
+        if (prev.sectionId !== next.sectionId) {
+          lastActionsSectionIdRef.current = next.sectionId;
+        }
+        return { ...prev, ...next };
       });
     };
 
@@ -238,9 +416,19 @@ export default function LabelingFormPage() {
       setActionsAnchor((prev) => {
         if (!prev) return null;
         if (!document.body.contains(prev.element)) return null;
-        const { x, y } = computeAnchorPosition(prev.element);
-        if (prev.x === x && prev.y === y) return prev;
-        return { ...prev, x, y };
+        const next = computeAnchorPosition(prev.element, prev.sectionId);
+        if (
+          prev.x === next.x &&
+          prev.y === next.y &&
+          prev.element === next.element &&
+          prev.sectionId === next.sectionId
+        ) {
+          return prev;
+        }
+        if (prev.sectionId !== next.sectionId) {
+          lastActionsSectionIdRef.current = next.sectionId;
+        }
+        return { ...prev, ...next };
       });
     });
     return () => window.cancelAnimationFrame(raf);
@@ -696,6 +884,7 @@ export default function LabelingFormPage() {
         activeTab={activeTab}
         isSaving={isSaving}
         isDeleting={isDeleting}
+        headerRef={headerRef}
         onBack={() => router.push("/labelings/manage")}
         onEditInfo={() => setIsEditInfoOpen(true)}
         onSaveStructure={handleSaveStructure}
