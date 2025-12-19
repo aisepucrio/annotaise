@@ -79,12 +79,38 @@ class AnswerViewset(viewsets.ModelViewSet):
 
             decisive_ids = LabelingElement.objects.filter(labeling=labeling,decisive_question=True).values_list(id,flat=False)
             decision_dict = getattr(item.decision_payload,{})
-
+            '''a ideia e primeiro adicionar tudo no dicionario e depois checar se ja terminou (todas as questoes alvo ja tem decisao)'''
             for question_id, answer in payload.items():
                 
                 if question_id in decisive_ids:
 
-                    pass
+                    if decision_dict.get(question_id,None) == None:
+                        decision_dict[question_id] = {}
+                    if decision_dict[question_id].get(answer,None) == None:
+                        decision_dict[question_id][answer] = 0
+                    decision_dict[question_id][answer] += 1
+
+            item.decision_payload = decision_dict
+            item.save()
+
+
+            #agora checando se terminou (isso futuramente pode ser uma função)
+            for question_id, answer_dict in decision_dict.items():
+                done = False
+                biggest = 0
+                for answer, number_of_appearences in answer_dict.items():
+                    if number_of_appearences >= target_number:
+                        done = True
+                        if biggest != number_of_appearences: # isso aqui é pra ele nao deixar empate de jeito nenhum
+                            done = False
+                        biggest = number_of_appearences
+
+                if done == False: # se alguma decisao nao ta feita, envia denovo...
+                    break
+            
+            return Response(serializer.data, status=201)
+
+                    
         else:
 
             obj = Item.objects.select_related('labeling').get(id=item_id)

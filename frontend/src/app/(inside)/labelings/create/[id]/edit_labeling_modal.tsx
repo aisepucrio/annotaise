@@ -187,6 +187,7 @@ export default function EditLabelingModal({
 
             {/* Campo: Status */}
             <Select
+              disabled
               label="Status"
               value={status}
               onChange={(e) => setStatus(e.target.value as Labeling["status"])}

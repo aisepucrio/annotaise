@@ -137,13 +137,10 @@ export default function LabelingFormPage() {
     y: number;
   } | null>(null);
   const [actionsClosing, setActionsClosing] = useState(false);
-  const toolbarRef = useRef<HTMLDivElement | null>(null);
-<<<<<<< HEAD
-  const handleCreateInvitation = useInvitationCreator();
-=======
   const closeActionsTimeoutRef = useRef<number | null>(null);
   const lastActionsSectionIdRef = useRef<string | null>(null);
->>>>>>> 73ded4f84934fbac68d5b32bbf80232dc32ec8dc
+  const toolbarRef = useRef<HTMLDivElement | null>(null);
+  const handleCreateInvitation = useInvitationCreator();
 
   const computeAnchorPosition = useCallback((element: HTMLElement) => {
     const rect = element.getBoundingClientRect();

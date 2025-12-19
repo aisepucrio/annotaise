@@ -241,9 +241,11 @@ function InspectAnswerModal({
                       <p className="text-xs uppercase tracking-wide text-blue-700">
                         {key}
                       </p>
-                      <p className="mt-1 break-words">
-                        {formatAnswerValue(value)}
-                      </p>
+                      <div className="mt-1 prose prose-sm max-w-none text-gray-800">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {formatAnswerValue(value)}
+                        </ReactMarkdown>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -327,9 +329,13 @@ function InspectAnswerModal({
                                           ? ` • Tipo: ${ctx.context_type}`
                                           : ""}
                                       </p>
-                                      <p className="mt-1 break-words text-sm text-gray-800">
-                                        {formatAnswerValue(value)}
-                                      </p>
+                                      <div className="mt-1 prose prose-sm max-w-none text-gray-800">
+                                        <ReactMarkdown
+                                          remarkPlugins={[remarkGfm]}
+                                        >
+                                          {formatAnswerValue(value)}
+                                        </ReactMarkdown>
+                                      </div>
                                     </div>
                                   );
                                 })}

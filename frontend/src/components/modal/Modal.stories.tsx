@@ -1,10 +1,6 @@
-<<<<<<< HEAD
-import type { Meta, StoryObj } from "@storybook/react";
-import Modal from "./modal";
-=======
+
 import type { Meta, StoryObj } from "@storybook/nextjs";
 import Modal from "./Modal";
->>>>>>> 73ded4f84934fbac68d5b32bbf80232dc32ec8dc
 
 const meta: Meta<typeof Modal> = {
   title: "Modal",

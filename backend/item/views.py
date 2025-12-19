@@ -112,6 +112,8 @@ class NextItemView(RetrieveAPIView):
         2) Novo item livre e elegível
         3) Item de outra pessoa com membership expirado (rouba)
         """
+        if labeling.status == "finished":
+            return Response({'detail':'Essa rotulação já foi finalizada','code':'rotulação finalizada'},status=400)
 
         # 1) Já tem membership ativo?
         membership = (
@@ -156,7 +158,7 @@ class NextItemView(RetrieveAPIView):
             return item_obj
 
         # 3) Rouba membership expirada de outra pessoa
-        STALE_MINUTES = 1  
+        STALE_MINUTES = 1
         stale_limit = timezone.now() - timedelta(minutes=STALE_MINUTES)
 
         membership = (

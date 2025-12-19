@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import useSWR from "swr";
 import { fetchProjects, Project } from "@/lib/services/project_service";
 import { toast } from "sonner";
-import Modal from "@/components/modal/modal";
+import Modal from "@/components/modal/Modal";
 import Input from "@/components/form/Input";
 import Select from "@/components/form/Select";
 import DatePicker from "@/components/form/DatePicker";

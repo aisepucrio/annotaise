@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import type { UpdateUserPayload, User } from "@/lib/services/user_service";
 import { toast } from "sonner";
-import Modal from "@/components/modal/modal";
+import Modal from "@/components/modal/Modal";
 import Input from "@/components/form/Input";
 import Select from "@/components/form/Select";
 import Button from "@/components/button/Button";
