@@ -1,15 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { fetchLabelingById } from "@/lib/services/labeling_create_service";
-import Button from "@/components/button/Button";
 
 export default function LabelingGuidePage() {
   const params = useParams<{ id: string }>();
-  const router = useRouter();
   const labelingId = useMemo(() => {
     const parsed = Number(params?.id);
     return Number.isFinite(parsed) ? parsed : NaN;
