@@ -139,7 +139,9 @@ export default function LabelingFormPage() {
   const toolbarRef = useRef<HTMLDivElement | null>(null);
   const closeActionsTimeoutRef = useRef<number | null>(null);
   const lastActionsSectionIdRef = useRef<string | null>(null);
-  const headerRef = useRef<HTMLDivElement | null>(null);
+  const headerRef = useRef<HTMLDivElement>(
+    null
+  ) as React.RefObject<HTMLDivElement>;
   const lastAnchorElementRef = useRef<HTMLElement | null>(null);
   const lastAnchorTopRef = useRef<number | null>(null);
   const scrollDirectionRef = useRef<"up" | "down" | null>(null);
@@ -229,8 +231,14 @@ export default function LabelingFormPage() {
           };
         })
         .filter(
-          (item): item is { id: string; el: HTMLElement; top: number; bottom: number } =>
-            item !== null
+          (
+            item
+          ): item is {
+            id: string;
+            el: HTMLElement;
+            top: number;
+            bottom: number;
+          } => item !== null
         )
         .sort((a, b) => a.top - b.top);
 
@@ -254,11 +262,13 @@ export default function LabelingFormPage() {
 
       const overlap = (section?: { top: number; bottom: number }) =>
         section
-          ? Math.min(menuBottom, section.bottom) - Math.max(menuTop, section.top)
+          ? Math.min(menuBottom, section.bottom) -
+            Math.max(menuTop, section.top)
           : -Infinity;
       const nextOverlap = overlap(next);
       const prevOverlap = overlap(prev);
-      if (nextOverlap > 0 && nextOverlap >= prevOverlap) return next ?? sections[index];
+      if (nextOverlap > 0 && nextOverlap >= prevOverlap)
+        return next ?? sections[index];
       if (prevOverlap > 0) return prev ?? sections[index];
       return sections[index];
     },
@@ -268,8 +278,7 @@ export default function LabelingFormPage() {
   const computeAnchorPosition = useCallback(
     (element: HTMLElement, sectionId: string) => {
       const anchorEl = resolveAnchorElement(element, sectionId);
-      const anchorSectionId =
-        anchorEl.dataset.sectionAnchorId ?? sectionId;
+      const anchorSectionId = anchorEl.dataset.sectionAnchorId ?? sectionId;
       const rect = anchorEl.getBoundingClientRect();
       const offset = 12;
       let x = rect.right + offset + window.scrollX;
@@ -293,7 +302,10 @@ export default function LabelingFormPage() {
       };
       y = clampY(y);
 
-      if (toolbarHalfHeight !== null && anchorEl.hasAttribute("data-section-anchor-id")) {
+      if (
+        toolbarHalfHeight !== null &&
+        anchorEl.hasAttribute("data-section-anchor-id")
+      ) {
         const direction = updateScrollDirection(anchorEl);
         const menuTop = y - toolbarHalfHeight;
         const menuBottom = y + toolbarHalfHeight;
@@ -328,8 +340,12 @@ export default function LabelingFormPage() {
         window.clearTimeout(closeActionsTimeoutRef.current);
         closeActionsTimeoutRef.current = null;
       }
-      const { x, y, element: anchorEl, sectionId: anchorSectionId } =
-        computeAnchorPosition(element, sectionId);
+      const {
+        x,
+        y,
+        element: anchorEl,
+        sectionId: anchorSectionId,
+      } = computeAnchorPosition(element, sectionId);
       const insertAfterId = resolveInsertAfterId(anchorEl);
       setActionsClosing(false);
       lastActionsSectionIdRef.current = anchorSectionId;
@@ -444,7 +460,13 @@ export default function LabelingFormPage() {
       });
     });
     return () => window.cancelAnimationFrame(raf);
-  }, [activeTab, actionsAnchor, computeAnchorPosition, resolveInsertAfterId, sections]);
+  }, [
+    activeTab,
+    actionsAnchor,
+    computeAnchorPosition,
+    resolveInsertAfterId,
+    sections,
+  ]);
 
   useEffect(() => {
     if (!actionsAnchor) return;
