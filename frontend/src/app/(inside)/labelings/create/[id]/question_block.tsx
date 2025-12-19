@@ -56,6 +56,7 @@ export default function QuestionBlock({ data, onUpdate, onRemove, onActivate }: 
     <div
       className="relative mb-4 rounded-tl-xl rounded-br-xl border-l-4 border-t-4 border-blue-800 p-4 shadow-xl cursor-pointer"
       data-actions-anchor="true"
+      data-section-element-id={data.id}
       onClick={(e) => onActivate?.(e.currentTarget)}
     >
       <div className="mb-3 flex items-center justify-between">

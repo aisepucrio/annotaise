@@ -131,6 +131,7 @@ export default function LabelingFormPage() {
   const [actionsAnchor, setActionsAnchor] = useState<{
     sectionId: string;
     element: HTMLElement;
+    insertAfterId?: string | null;
     x: number;
     y: number;
   } | null>(null);
@@ -157,6 +158,11 @@ export default function LabelingFormPage() {
     if (!toolbar) return null;
     return toolbar.getBoundingClientRect().height / 2;
   }, []);
+
+  const resolveInsertAfterId = useCallback(
+    (element: HTMLElement) => element.dataset.sectionElementId ?? null,
+    []
+  );
 
   const updateScrollDirection = useCallback((anchorEl: HTMLElement) => {
     const rect = anchorEl.getBoundingClientRect();
@@ -324,16 +330,18 @@ export default function LabelingFormPage() {
       }
       const { x, y, element: anchorEl, sectionId: anchorSectionId } =
         computeAnchorPosition(element, sectionId);
+      const insertAfterId = resolveInsertAfterId(anchorEl);
       setActionsClosing(false);
       lastActionsSectionIdRef.current = anchorSectionId;
       setActionsAnchor({
         sectionId: anchorSectionId,
         element: anchorEl,
+        insertAfterId,
         x,
         y,
       });
     },
-    [computeAnchorPosition]
+    [computeAnchorPosition, resolveInsertAfterId]
   );
 
   const hideActionsToolbar = useCallback(() => {
@@ -386,18 +394,20 @@ export default function LabelingFormPage() {
           return null;
         }
         const next = computeAnchorPosition(prev.element, prev.sectionId);
+        const insertAfterId = resolveInsertAfterId(next.element);
         if (
           prev.x === next.x &&
           prev.y === next.y &&
           prev.element === next.element &&
-          prev.sectionId === next.sectionId
+          prev.sectionId === next.sectionId &&
+          prev.insertAfterId === insertAfterId
         ) {
           return prev;
         }
         if (prev.sectionId !== next.sectionId) {
           lastActionsSectionIdRef.current = next.sectionId;
         }
-        return { ...prev, ...next };
+        return { ...prev, ...next, insertAfterId };
       });
     };
 
@@ -407,7 +417,7 @@ export default function LabelingFormPage() {
       document.removeEventListener("scroll", handleReposition, true);
       window.removeEventListener("resize", handleReposition);
     };
-  }, [actionsAnchor, computeAnchorPosition]);
+  }, [actionsAnchor, computeAnchorPosition, resolveInsertAfterId]);
 
   useEffect(() => {
     if (activeTab !== "form") return;
@@ -417,22 +427,24 @@ export default function LabelingFormPage() {
         if (!prev) return null;
         if (!document.body.contains(prev.element)) return null;
         const next = computeAnchorPosition(prev.element, prev.sectionId);
+        const insertAfterId = resolveInsertAfterId(next.element);
         if (
           prev.x === next.x &&
           prev.y === next.y &&
           prev.element === next.element &&
-          prev.sectionId === next.sectionId
+          prev.sectionId === next.sectionId &&
+          prev.insertAfterId === insertAfterId
         ) {
           return prev;
         }
         if (prev.sectionId !== next.sectionId) {
           lastActionsSectionIdRef.current = next.sectionId;
         }
-        return { ...prev, ...next };
+        return { ...prev, ...next, insertAfterId };
       });
     });
     return () => window.cancelAnimationFrame(raf);
-  }, [activeTab, actionsAnchor, computeAnchorPosition, sections]);
+  }, [activeTab, actionsAnchor, computeAnchorPosition, resolveInsertAfterId, sections]);
 
   useEffect(() => {
     if (!actionsAnchor) return;
@@ -617,33 +629,102 @@ export default function LabelingFormPage() {
   }, [labelingId]);
 
   // handlers
-  function addSection() {
-    setSections((prev) => [...prev, createDefaultSection()]);
+  function addSection(insertAfterSectionId?: string | null) {
+    setSections((prev) => {
+      const nextSection = createDefaultSection();
+      if (!insertAfterSectionId) {
+        return [...prev, nextSection].map((section, index) => ({
+          ...section,
+          order: index,
+        }));
+      }
+
+      const afterIndex = prev.findIndex(
+        (section) => section.id === insertAfterSectionId
+      );
+      if (afterIndex === -1) {
+        return [...prev, nextSection].map((section, index) => ({
+          ...section,
+          order: index,
+        }));
+      }
+
+      const insertIndex = afterIndex + 1;
+      const merged = [
+        ...prev.slice(0, insertIndex),
+        nextSection,
+        ...prev.slice(insertIndex),
+      ];
+      return merged.map((section, index) => ({
+        ...section,
+        order: index,
+      }));
+    });
   }
 
-  function addContext(sectionId: string) {
+  function addContext(sectionId: string, insertAfterId?: string | null) {
     setSections((prev) =>
-      prev.map((s) =>
-        s.id === sectionId
-          ? {
-              ...s,
-              elements: [...s.elements, createContextElement(nextOrder(s))],
-            }
-          : s
-      )
+      prev.map((s) => {
+        if (s.id !== sectionId) return s;
+        if (!insertAfterId) {
+          return {
+            ...s,
+            elements: [...s.elements, createContextElement(nextOrder(s))],
+          };
+        }
+
+        const ordered = [...s.elements].sort(
+          (a, b) => (a.order ?? 0) - (b.order ?? 0)
+        );
+        const afterIndex = ordered.findIndex((el) => el.id === insertAfterId);
+        if (afterIndex === -1) {
+          return {
+            ...s,
+            elements: [...s.elements, createContextElement(nextOrder(s))],
+          };
+        }
+
+        const insertIndex = afterIndex + 1;
+        const merged = [
+          ...ordered.slice(0, insertIndex),
+          createContextElement(insertIndex),
+          ...ordered.slice(insertIndex),
+        ].map((el, idx) => ({ ...el, order: idx }));
+        return { ...s, elements: merged };
+      })
     );
   }
 
-  function addQuestion(sectionId: string) {
+  function addQuestion(sectionId: string, insertAfterId?: string | null) {
     setSections((prev) =>
-      prev.map((s) =>
-        s.id === sectionId
-          ? {
-              ...s,
-              elements: [...s.elements, createQuestionElement(nextOrder(s))],
-            }
-          : s
-      )
+      prev.map((s) => {
+        if (s.id !== sectionId) return s;
+        if (!insertAfterId) {
+          return {
+            ...s,
+            elements: [...s.elements, createQuestionElement(nextOrder(s))],
+          };
+        }
+
+        const ordered = [...s.elements].sort(
+          (a, b) => (a.order ?? 0) - (b.order ?? 0)
+        );
+        const afterIndex = ordered.findIndex((el) => el.id === insertAfterId);
+        if (afterIndex === -1) {
+          return {
+            ...s,
+            elements: [...s.elements, createQuestionElement(nextOrder(s))],
+          };
+        }
+
+        const insertIndex = afterIndex + 1;
+        const merged = [
+          ...ordered.slice(0, insertIndex),
+          createQuestionElement(insertIndex),
+          ...ordered.slice(insertIndex),
+        ].map((el, idx) => ({ ...el, order: idx }));
+        return { ...s, elements: merged };
+      })
     );
   }
 

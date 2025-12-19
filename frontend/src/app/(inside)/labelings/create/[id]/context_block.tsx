@@ -38,6 +38,7 @@ export default function ContextBlock({
     <div
       className="border-blue-800 border-l-4 border-t-4 rounded-tl-xl rounded-br-xl p-4 mb-4 relative shadow-xl cursor-pointer"
       data-actions-anchor="true"
+      data-section-element-id={data.id}
       onClick={(e) => onActivate?.(e.currentTarget)}
     >
       <div className="flex justify-between items-center mb-3">

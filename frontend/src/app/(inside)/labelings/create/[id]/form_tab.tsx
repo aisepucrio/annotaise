@@ -31,6 +31,7 @@ import { type SectionData } from "./labeling_types";
 export type ActionsAnchorState = {
   sectionId: string;
   element: HTMLElement;
+  insertAfterId?: string | null;
   x: number;
   y: number;
 };
@@ -42,9 +43,9 @@ type FormTabProps = {
   onUpdateSectionTitle: (sectionId: string, title: string) => void;
   onRemoveSection: (sectionId: string) => void;
   onUpdateSection: (section: SectionData) => void;
-  onAddContext: (sectionId: string) => void;
-  onAddQuestion: (sectionId: string) => void;
-  onAddSection: () => void;
+  onAddContext: (sectionId: string, insertAfterId?: string | null) => void;
+  onAddQuestion: (sectionId: string, insertAfterId?: string | null) => void;
+  onAddSection: (insertAfterSectionId?: string | null) => void;
   actionsAnchor: ActionsAnchorState | null;
   actionsClosing: boolean;
   toolbarRef: MutableRefObject<HTMLDivElement | null>;
@@ -166,13 +167,16 @@ export default function FormTab({
         closing={actionsClosing}
         onAddContext={() => {
           if (!actionsAnchor) return;
-          onAddContext(actionsAnchor.sectionId);
+          onAddContext(actionsAnchor.sectionId, actionsAnchor.insertAfterId);
         }}
         onAddQuestion={() => {
           if (!actionsAnchor) return;
-          onAddQuestion(actionsAnchor.sectionId);
+          onAddQuestion(actionsAnchor.sectionId, actionsAnchor.insertAfterId);
         }}
-        onAddSection={onAddSection}
+        onAddSection={() => {
+          if (!actionsAnchor) return;
+          onAddSection(actionsAnchor.sectionId);
+        }}
       />
     </>
   );
