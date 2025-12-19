@@ -7,7 +7,6 @@ import {
   RangeQuestionConfig,
   MultipleChoiceQuestionConfig,
   RangeQuestionConfig as FrontRangeConfig,
-  QuestionConfig,
 } from "./labeling_types";
 import type { LabelingStructureSection, LabelingStructureElement } from "@/lib/services/labeling_create_service";
 

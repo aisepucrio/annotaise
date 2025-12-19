@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
-import { ArrowLeft, RefreshCw, Send } from "lucide-react";
+import { RefreshCw, Send } from "lucide-react";
 import {
   fetchLabelingById,
   type LabelingStructureSection,

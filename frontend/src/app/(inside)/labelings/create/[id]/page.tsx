@@ -318,6 +318,7 @@ export default function LabelingFormPage() {
       getToolbarHalfHeight,
       resolveAnchorElement,
       resolveSectionByMenuOverlap,
+      updateScrollDirection,
     ]
   );
 
