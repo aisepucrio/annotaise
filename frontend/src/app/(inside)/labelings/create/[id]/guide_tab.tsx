@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import Button from "@/components/button/Button";
@@ -26,7 +26,7 @@ export default function GuideTab({
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Manipula o movimento do mouse durante o arrasto
-  const handleMouseMove = (e: MouseEvent) => {
+  const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!isDragging || !containerRef.current) return;
 
     const containerRect = containerRef.current.getBoundingClientRect();
@@ -37,12 +37,12 @@ export default function GuideTab({
     if (newLeftWidth >= 20 && newLeftWidth <= 80) {
       setLeftWidth(newLeftWidth);
     }
-  };
+  }, [isDragging]);
 
   // Finaliza o arrasto
-  const handleMouseUp = () => {
+  const handleMouseUp = useCallback(() => {
     setIsDragging(false);
-  };
+  }, []);
 
   // Adiciona listeners quando está arrastando
   useEffect(() => {
@@ -59,7 +59,7 @@ export default function GuideTab({
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
     };
-  }, [isDragging]);
+  }, [isDragging, handleMouseMove, handleMouseUp]);
 
   return (
     <div className="h-full w-full flex flex-col ">

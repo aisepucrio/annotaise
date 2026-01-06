@@ -19,7 +19,7 @@ interface LabelingHeaderProps {
   onSaveStructure: () => void;
   onDelete: () => void;
   onTabChange: (tab: "form" | "assign" | "answers" | "guide") => void;
-  headerRef?: RefObject<HTMLDivElement>;
+  headerRef?: RefObject<HTMLDivElement | null>;
 }
 
 function formatDate(dateStr: string | null) {

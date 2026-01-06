@@ -7,7 +7,6 @@ import {
   Users,
   FolderKanban,
   Tags,
-  Settings,
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
