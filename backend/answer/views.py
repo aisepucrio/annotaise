@@ -11,18 +11,27 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.views import APIView
 from user.permissions import IsAdminAccount
 from django.http import HttpResponse
-from user.permissions import IsAdminAccount
+from .permissions import CanAnswerLabelingPermission
 
 import pandas as pd
 
 from rest_framework.generics import ListAPIView
 from django.db.models import Q
+from rest_framework.permissions import IsAuthenticated
 #TODO aqui é melhor usar permission pra ver se o item membership existe!
 class AnswerViewset(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
     serializer_class = AnswerSerializer
     permission_classes = [IsAdminAccount]
 
+    def get_permissions(self):
+
+        if self.action in ['create']:
+            perm = [CanAnswerLabelingPermission()]
+        else:
+            perm = [IsAdminAccount()]
+        return perm
+        
     def get_queryset(self):
         user = getattr(self.request, "user", None)
 
@@ -48,7 +57,7 @@ class AnswerViewset(viewsets.ModelViewSet):
         item_id = data.get('item')
         item = get_object_or_404(Item,pk=item_id)
 
-        # Garante que o usuário tenha membership nesse item
+        # Garante que o usuário tenha membership nesse item TODO isso era pra trr na permission... T-T
         membership = ItemMembership.objects.filter(
             user=user,
             item_id=item_id,
@@ -59,8 +68,13 @@ class AnswerViewset(viewsets.ModelViewSet):
                 {'detail': 'Você não pode responder a esse item da rotulação.'},
                 status=403
         )
+        # TODO eu acho que esse finished era pra tar no enum... 
+        if item.status == 'finished':
+            return Response(
+                {'detail': 'Esse item já foi finalizado e não pode mais receber respostas.'},
+                status=403
+        )
         
-
         serializer = self.get_serializer(data=data, context={'request':request})
         serializer.is_valid(raise_exception=True)
         
@@ -72,45 +86,46 @@ class AnswerViewset(viewsets.ModelViewSet):
         membership.delete()
 
         if labeling.decision == True:
-            #caso a validação seja por decisão, apenas 1 resposta por item existirá, e ela depende da maioria das respostas de questões decisivas. enquanto ela
-            #ainda não existe, vai jogando item pra todo mundo que ainda não respondeu
-            target_number = (labeling.users_per_item // 2) + 1
+
+            #caso a validação seja por decisão, verifica se ja atingiu o numero necessario de respostas para finalizar a rotulação
             payload = data.answer_payload
 
-            decisive_ids = LabelingElement.objects.filter(labeling=labeling,decisive_question=True).values_list(id,flat=False)
+            decisive_ids = LabelingElement.objects.filter(labeling=labeling,decisive_question=True).first().id
             decision_dict = getattr(item.decision_payload,{})
             '''a ideia e primeiro adicionar tudo no dicionario e depois checar se ja terminou (todas as questoes alvo ja tem decisao)'''
-            for question_id, answer in payload.items():
-                
-                if question_id in decisive_ids:
 
-                    if decision_dict.get(question_id,None) == None:
-                        decision_dict[question_id] = {}
-                    if decision_dict[question_id].get(answer,None) == None:
-                        decision_dict[question_id][answer] = 0
-                    decision_dict[question_id][answer] += 1
+            answer = str(payload[decisive_ids])
+
+            if not decision_dict.get(answer,None):
+                decision_dict[answer] = 1
+            else:
+                decision_dict[answer] += 1
 
             item.decision_payload = decision_dict
             item.save()
 
-
-            #agora checando se terminou (isso futuramente pode ser uma função)
-            for question_id, answer_dict in decision_dict.items():
-                done = False
-                biggest = 0
-                for answer, number_of_appearences in answer_dict.items():
-                    if number_of_appearences >= target_number:
-                        done = True
-                        if biggest != number_of_appearences: # isso aqui é pra ele nao deixar empate de jeito nenhum
-                            done = False
-                        biggest = number_of_appearences
-
-                if done == False: # se alguma decisao nao ta feita, envia denovo...
-                    break
+            if labeling.users_per_item <= Answer.objects.filter(item__id=item_id).count():
+                #agora checando se terminou (isso futuramente pode ser uma função)
+                for question_id, answer_dict in decision_dict.items():
+                    done = False
+                    biggest = 0
+                    biggest_answer = None
+                    for answer, number_of_appearences in answer_dict.items():
+                        if number_of_appearences > biggest:
+                            biggest = number_of_appearences
+                            biggest_answer = answer
+                            done = True
+                        elif number_of_appearences == biggest:
+                            done = False # empate, decisao nao tomada ainda
+                    if done == True:
+                        #decisao tomada
+                        item.status = 'finished'
+                        item.save()
+                    else: # se alguma decisao nao ta feita, envia denovo...
+                        break
             
             return Response(serializer.data, status=201)
 
-                    
         else:
 
             obj = Item.objects.select_related('labeling').get(id=item_id)
@@ -122,7 +137,11 @@ class AnswerViewset(viewsets.ModelViewSet):
 
             headers = self.get_success_headers(serializer.data)
 
-            return Response(serializer.data, status=201, headers=headers)
+        if not labeling.items.filter(~Q(status='finished')).exists():
+            labeling.status = 'finished'
+            labeling.save()
+
+        return Response(serializer.data, status=201, headers=headers)
 
     def _assert_owner_or_admin(self, answer):
         user = self.request.user

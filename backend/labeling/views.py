@@ -22,6 +22,7 @@ from datetime import datetime, timedelta
 import json
 
 class LabelingViewSet(viewsets.ModelViewSet):
+    serializer_class = LabelingSerializer
     
     http_method_names = ['get', 'post', 'patch', 'delete']
 

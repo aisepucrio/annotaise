@@ -33,6 +33,7 @@ import {
 import { fetchUsers, type User } from "@/lib/services/user_service";
 import { fetchProject } from "@/lib/services/project_service";
 import EditLabelingModal from "./edit_labeling_modal";
+import ConfirmDeleteModal from "@/components/ConfirmDeleteModal";
 import { exportLabelingAnswersCsv } from "@/lib/services/labeling_service";
 import { toast } from "sonner";
 import NewUserModal from "@/app/(inside)/users/new_user_modal";
@@ -42,6 +43,7 @@ import AssignTab from "./assign_tab";
 import GuideTab from "./guide_tab";
 import AnswersTab from "./answers_tab";
 import LabelingHeader from "./labeling_header";
+import { set } from "react-hook-form";
 
 const createContextElement = (order: number): ContextElement => ({
   id: crypto.randomUUID(),
@@ -94,6 +96,7 @@ export default function LabelingFormPage() {
   const [projectName, setProjectName] = useState<string>("");
   const [projectStatus, setProjectStatus] = useState<string | null>(null);
   const [usersPerItem, setUsersPerItem] = useState<number | null>(null);
+  const [isDecision, setIsDecision] = useState<boolean>(false);
   const [startDateInfo, setStartDateInfo] = useState<string | null>(null);
   const [finalDateInfo, setFinalDateInfo] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<
@@ -133,6 +136,7 @@ export default function LabelingFormPage() {
   const [actionsAnchor, setActionsAnchor] = useState<{
     sectionId: string;
     element: HTMLElement;
+    insertAfterId?: string | null;
     x: number;
     y: number;
   } | null>(null);
@@ -140,16 +144,187 @@ export default function LabelingFormPage() {
   const closeActionsTimeoutRef = useRef<number | null>(null);
   const lastActionsSectionIdRef = useRef<string | null>(null);
   const toolbarRef = useRef<HTMLDivElement | null>(null);
-  const handleCreateInvitation = useInvitationCreator();
+  const headerRef = useRef<HTMLDivElement | null>(null);
+  const lastAnchorElementRef = useRef<HTMLElement | null>(null);
+  const lastAnchorTopRef = useRef<number | null>(null);
+  const scrollDirectionRef = useRef<"up" | "down" | null>(null);
 
-  const computeAnchorPosition = useCallback((element: HTMLElement) => {
-    const rect = element.getBoundingClientRect();
-    const offset = 12;
-    return {
-      x: rect.right + offset + window.scrollX,
-      y: rect.top + rect.height / 2 + window.scrollY,
-    };
+  const getHeaderBottom = useCallback(() => {
+    if (typeof window === "undefined") return null;
+    const header = headerRef.current;
+    if (!header) return null;
+    const rect = header.getBoundingClientRect();
+    return rect.bottom + window.scrollY;
   }, []);
+
+  const getToolbarHalfHeight = useCallback(() => {
+    if (typeof window === "undefined") return null;
+    const toolbar = toolbarRef.current;
+    if (!toolbar) return null;
+    return toolbar.getBoundingClientRect().height / 2;
+  }, []);
+
+  const resolveInsertAfterId = useCallback(
+    (element: HTMLElement) => element.dataset.sectionElementId ?? null,
+    []
+  );
+
+  const updateScrollDirection = useCallback((anchorEl: HTMLElement) => {
+    const rect = anchorEl.getBoundingClientRect();
+    const currentTop = rect.top + window.scrollY;
+    const prevEl = lastAnchorElementRef.current;
+    const prevTop = lastAnchorTopRef.current;
+
+    if (prevEl === anchorEl && prevTop !== null) {
+      if (currentTop > prevTop) {
+        scrollDirectionRef.current = "up";
+      } else if (currentTop < prevTop) {
+        scrollDirectionRef.current = "down";
+      }
+    }
+
+    lastAnchorElementRef.current = anchorEl;
+    lastAnchorTopRef.current = currentTop;
+    return scrollDirectionRef.current;
+  }, []);
+
+  const resolveAnchorElement = useCallback(
+    (element: HTMLElement, sectionId: string) => {
+      const headerBottom = getHeaderBottom();
+      const toolbarHalfHeight = getToolbarHalfHeight();
+      if (headerBottom === null || toolbarHalfHeight === null) return element;
+
+      const rect = element.getBoundingClientRect();
+      const currentY = rect.top + rect.height / 2 + window.scrollY;
+      const topEdge = currentY - toolbarHalfHeight;
+
+      if (topEdge > headerBottom) return element;
+      if (element.hasAttribute("data-section-anchor-id")) return element;
+
+      const sectionEl =
+        element.closest<HTMLElement>("[data-section-anchor-id]") ??
+        document.querySelector<HTMLElement>(
+          `[data-section-anchor-id="${sectionId}"]`
+        );
+      return sectionEl ?? element;
+    },
+    [getHeaderBottom, getToolbarHalfHeight]
+  );
+
+  const resolveSectionByMenuOverlap = useCallback(
+    (
+      sectionId: string,
+      menuTop: number,
+      menuBottom: number,
+      direction: "up" | "down" | null
+    ) => {
+      if (typeof document === "undefined") return null;
+      const sections = Array.from(
+        document.querySelectorAll<HTMLElement>("[data-section-anchor-id]")
+      )
+        .map((el) => {
+          const id = el.dataset.sectionAnchorId;
+          if (!id) return null;
+          const rect = el.getBoundingClientRect();
+          return {
+            id,
+            el,
+            top: rect.top + window.scrollY,
+            bottom: rect.bottom + window.scrollY,
+          };
+        })
+        .filter(
+          (item): item is { id: string; el: HTMLElement; top: number; bottom: number } =>
+            item !== null
+        )
+        .sort((a, b) => a.top - b.top);
+
+      const index = sections.findIndex((section) => section.id === sectionId);
+      if (index === -1) return null;
+
+      const prev = sections[index - 1];
+      const next = sections[index + 1];
+
+      if (direction === "up") {
+        if (prev && menuTop <= prev.bottom) return prev;
+        if (next && menuBottom >= next.top) return next;
+        return sections[index];
+      }
+
+      if (direction === "down") {
+        if (next && menuBottom >= next.top) return next;
+        if (prev && menuTop <= prev.bottom) return prev;
+        return sections[index];
+      }
+
+      const overlap = (section?: { top: number; bottom: number }) =>
+        section
+          ? Math.min(menuBottom, section.bottom) - Math.max(menuTop, section.top)
+          : -Infinity;
+      const nextOverlap = overlap(next);
+      const prevOverlap = overlap(prev);
+      if (nextOverlap > 0 && nextOverlap >= prevOverlap) return next ?? sections[index];
+      if (prevOverlap > 0) return prev ?? sections[index];
+      return sections[index];
+    },
+    []
+  );
+
+  const computeAnchorPosition = useCallback(
+    (element: HTMLElement, sectionId: string) => {
+      const anchorEl = resolveAnchorElement(element, sectionId);
+      const anchorSectionId =
+        anchorEl.dataset.sectionAnchorId ?? sectionId;
+      const rect = anchorEl.getBoundingClientRect();
+      const offset = 12;
+      let x = rect.right + offset + window.scrollX;
+      let y = rect.top + rect.height / 2 + window.scrollY;
+
+      const headerBottom = getHeaderBottom();
+      const toolbarHalfHeight = getToolbarHalfHeight();
+      const minY =
+        headerBottom !== null && toolbarHalfHeight !== null
+          ? headerBottom + toolbarHalfHeight
+          : null;
+      const maxY =
+        toolbarHalfHeight !== null
+          ? window.scrollY + window.innerHeight - toolbarHalfHeight
+          : null;
+      const clampY = (value: number) => {
+        let next = value;
+        if (minY !== null) next = Math.max(next, minY);
+        if (maxY !== null) next = Math.min(next, maxY);
+        return next;
+      };
+      y = clampY(y);
+
+      if (toolbarHalfHeight !== null && anchorEl.hasAttribute("data-section-anchor-id")) {
+        const direction = updateScrollDirection(anchorEl);
+        const menuTop = y - toolbarHalfHeight;
+        const menuBottom = y + toolbarHalfHeight;
+        const target = resolveSectionByMenuOverlap(
+          anchorSectionId,
+          menuTop,
+          menuBottom,
+          direction
+        );
+        if (target && target.id !== anchorSectionId) {
+          const targetRect = target.el.getBoundingClientRect();
+          x = targetRect.right + offset + window.scrollX;
+          y = clampY(targetRect.top + targetRect.height / 2 + window.scrollY);
+          return { x, y, element: target.el, sectionId: target.id };
+        }
+      }
+
+      return { x, y, element: anchorEl, sectionId: anchorSectionId };
+    },
+    [
+      getHeaderBottom,
+      getToolbarHalfHeight,
+      resolveAnchorElement,
+      resolveSectionByMenuOverlap,
+    ]
+  );
 
   const focusActionsAt = useCallback(
     (sectionId: string, element: HTMLElement) => {
@@ -158,17 +333,20 @@ export default function LabelingFormPage() {
         window.clearTimeout(closeActionsTimeoutRef.current);
         closeActionsTimeoutRef.current = null;
       }
-      const { x, y } = computeAnchorPosition(element);
+      const { x, y, element: anchorEl, sectionId: anchorSectionId } =
+        computeAnchorPosition(element, sectionId);
+      const insertAfterId = resolveInsertAfterId(anchorEl);
       setActionsClosing(false);
-      lastActionsSectionIdRef.current = sectionId;
+      lastActionsSectionIdRef.current = anchorSectionId;
       setActionsAnchor({
-        sectionId,
-        element,
+        sectionId: anchorSectionId,
+        element: anchorEl,
+        insertAfterId,
         x,
         y,
       });
     },
-    [computeAnchorPosition]
+    [computeAnchorPosition, resolveInsertAfterId]
   );
 
   const hideActionsToolbar = useCallback(() => {
@@ -220,9 +398,21 @@ export default function LabelingFormPage() {
         if (!document.body.contains(prev.element)) {
           return null;
         }
-        const { x, y } = computeAnchorPosition(prev.element);
-        if (prev.x === x && prev.y === y) return prev;
-        return { ...prev, x, y };
+        const next = computeAnchorPosition(prev.element, prev.sectionId);
+        const insertAfterId = resolveInsertAfterId(next.element);
+        if (
+          prev.x === next.x &&
+          prev.y === next.y &&
+          prev.element === next.element &&
+          prev.sectionId === next.sectionId &&
+          prev.insertAfterId === insertAfterId
+        ) {
+          return prev;
+        }
+        if (prev.sectionId !== next.sectionId) {
+          lastActionsSectionIdRef.current = next.sectionId;
+        }
+        return { ...prev, ...next, insertAfterId };
       });
     };
 
@@ -232,7 +422,7 @@ export default function LabelingFormPage() {
       document.removeEventListener("scroll", handleReposition, true);
       window.removeEventListener("resize", handleReposition);
     };
-  }, [actionsAnchor, computeAnchorPosition]);
+  }, [actionsAnchor, computeAnchorPosition, resolveInsertAfterId]);
 
   useEffect(() => {
     if (activeTab !== "form") return;
@@ -241,13 +431,25 @@ export default function LabelingFormPage() {
       setActionsAnchor((prev) => {
         if (!prev) return null;
         if (!document.body.contains(prev.element)) return null;
-        const { x, y } = computeAnchorPosition(prev.element);
-        if (prev.x === x && prev.y === y) return prev;
-        return { ...prev, x, y };
+        const next = computeAnchorPosition(prev.element, prev.sectionId);
+        const insertAfterId = resolveInsertAfterId(next.element);
+        if (
+          prev.x === next.x &&
+          prev.y === next.y &&
+          prev.element === next.element &&
+          prev.sectionId === next.sectionId &&
+          prev.insertAfterId === insertAfterId
+        ) {
+          return prev;
+        }
+        if (prev.sectionId !== next.sectionId) {
+          lastActionsSectionIdRef.current = next.sectionId;
+        }
+        return { ...prev, ...next, insertAfterId };
       });
     });
     return () => window.cancelAnimationFrame(raf);
-  }, [activeTab, actionsAnchor, computeAnchorPosition, sections]);
+  }, [activeTab, actionsAnchor, computeAnchorPosition, resolveInsertAfterId, sections]);
 
   useEffect(() => {
     if (!actionsAnchor) return;
@@ -322,6 +524,7 @@ export default function LabelingFormPage() {
       setStartDateInfo(labeling.start_date ?? null);
       setFinalDateInfo(labeling.final_date ?? null);
       setUsersPerItem(labeling.users_per_item ?? null);
+      setIsDecision(labeling.decision ?? false);
       setGuideText(labeling.guide ?? "");
 
       const csvColumns = Array.isArray(labeling.column_names)
@@ -432,33 +635,102 @@ export default function LabelingFormPage() {
   }, [labelingId]);
 
   // handlers
-  function addSection() {
-    setSections((prev) => [...prev, createDefaultSection()]);
+  function addSection(insertAfterSectionId?: string | null) {
+    setSections((prev) => {
+      const nextSection = createDefaultSection();
+      if (!insertAfterSectionId) {
+        return [...prev, nextSection].map((section, index) => ({
+          ...section,
+          order: index,
+        }));
+      }
+
+      const afterIndex = prev.findIndex(
+        (section) => section.id === insertAfterSectionId
+      );
+      if (afterIndex === -1) {
+        return [...prev, nextSection].map((section, index) => ({
+          ...section,
+          order: index,
+        }));
+      }
+
+      const insertIndex = afterIndex + 1;
+      const merged = [
+        ...prev.slice(0, insertIndex),
+        nextSection,
+        ...prev.slice(insertIndex),
+      ];
+      return merged.map((section, index) => ({
+        ...section,
+        order: index,
+      }));
+    });
   }
 
-  function addContext(sectionId: string) {
+  function addContext(sectionId: string, insertAfterId?: string | null) {
     setSections((prev) =>
-      prev.map((s) =>
-        s.id === sectionId
-          ? {
-              ...s,
-              elements: [...s.elements, createContextElement(nextOrder(s))],
-            }
-          : s
-      )
+      prev.map((s) => {
+        if (s.id !== sectionId) return s;
+        if (!insertAfterId) {
+          return {
+            ...s,
+            elements: [...s.elements, createContextElement(nextOrder(s))],
+          };
+        }
+
+        const ordered = [...s.elements].sort(
+          (a, b) => (a.order ?? 0) - (b.order ?? 0)
+        );
+        const afterIndex = ordered.findIndex((el) => el.id === insertAfterId);
+        if (afterIndex === -1) {
+          return {
+            ...s,
+            elements: [...s.elements, createContextElement(nextOrder(s))],
+          };
+        }
+
+        const insertIndex = afterIndex + 1;
+        const merged = [
+          ...ordered.slice(0, insertIndex),
+          createContextElement(insertIndex),
+          ...ordered.slice(insertIndex),
+        ].map((el, idx) => ({ ...el, order: idx }));
+        return { ...s, elements: merged };
+      })
     );
   }
 
-  function addQuestion(sectionId: string) {
+  function addQuestion(sectionId: string, insertAfterId?: string | null) {
     setSections((prev) =>
-      prev.map((s) =>
-        s.id === sectionId
-          ? {
-              ...s,
-              elements: [...s.elements, createQuestionElement(nextOrder(s))],
-            }
-          : s
-      )
+      prev.map((s) => {
+        if (s.id !== sectionId) return s;
+        if (!insertAfterId) {
+          return {
+            ...s,
+            elements: [...s.elements, createQuestionElement(nextOrder(s))],
+          };
+        }
+
+        const ordered = [...s.elements].sort(
+          (a, b) => (a.order ?? 0) - (b.order ?? 0)
+        );
+        const afterIndex = ordered.findIndex((el) => el.id === insertAfterId);
+        if (afterIndex === -1) {
+          return {
+            ...s,
+            elements: [...s.elements, createQuestionElement(nextOrder(s))],
+          };
+        }
+
+        const insertIndex = afterIndex + 1;
+        const merged = [
+          ...ordered.slice(0, insertIndex),
+          createQuestionElement(insertIndex),
+          ...ordered.slice(insertIndex),
+        ].map((el, idx) => ({ ...el, order: idx }));
+        return { ...s, elements: merged };
+      })
     );
   }
 
@@ -491,6 +763,7 @@ export default function LabelingFormPage() {
       planning: "PLANEJAMENTO",
       active: "ATIVO",
       completed: "CONCLUIDO",
+      finished: "CONCLUIDO",
       cancelled: "CANCELADO",
     };
     return map[projectStatus] ?? projectStatus.toUpperCase();
@@ -696,9 +969,11 @@ export default function LabelingFormPage() {
         finalDateInfo={finalDateInfo}
         projectStatusLabel={projectStatusLabel}
         usersPerItem={usersPerItem}
+        isDecision={isDecision}
         activeTab={activeTab}
         isSaving={isSaving}
         isDeleting={isDeleting}
+        headerRef={headerRef}
         onBack={() => router.push("/labelings/manage")}
         onEditInfo={() => setIsEditInfoOpen(true)}
         onSaveStructure={handleSaveStructure}
@@ -783,56 +1058,23 @@ export default function LabelingFormPage() {
         onUpdated={() => void loadLabelingAndStructure()}
       />
 
-      <NewUserModal
-        open={isInviteModalOpen}
-        onClose={() => setIsInviteModalOpen(false)}
-        onSubmit={handleCreateInvitation}
+      <ConfirmDeleteModal
+        open={isDeleteOpen}
+        onClose={() => setIsDeleteOpen(false)}
+        onConfirm={() => void handleDeleteLabeling()}
+        isDeleting={isDeleting}
+        title="Excluir Rotulação"
+        itemName={labelingTitle}
+        description={
+          <>
+            Você tem <strong>certeza</strong> que deseja excluir esta rotulação?
+            <strong> Todos os dados </strong> relacionados serão{" "}
+            <strong>perdidos permanentemente</strong>.
+          </>
+        }
+        confirmButtonText="Excluir Rotulação"
+        cancelButtonText="Cancelar"
       />
-
-      {isDeleteOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
-            <div className="flex items-start justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Excluir Rotulação
-              </h2>
-              <button
-                type="button"
-                onClick={() => setIsDeleteOpen(false)}
-                className="text-gray-400 hover:text-gray-600 p-1 cursor-pointer"
-                aria-label="Fechar"
-              >
-                ×
-              </button>
-            </div>
-            <p className="mt-3 text-sm text-gray-700">
-              Você tem <strong>certeza</strong> que deseja excluir esta
-              rotulação?
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              Atenção: Essa ação NÃO pode ser desfeita.
-            </p>
-
-            <div className="mt-5 flex justify-between gap-3">
-              <button
-                type="button"
-                onClick={() => setIsDeleteOpen(false)}
-                className="flex-1 rounded-lg bg-blue-900 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 cursor-pointer"
-              >
-                Voltar
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleDeleteLabeling()}
-                disabled={isDeleting}
-                className="flex-1 rounded-lg bg-red-800 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
-              >
-                {isDeleting ? "Excluindo..." : "Excluir Rotulação"}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }

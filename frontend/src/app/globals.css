@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-@custom-variant dark (&:is(.dark *));
+/* @custom-variant dark (&:is(.dark *)); Temporarily disable dark mode variant until ready */
 @plugin "@tailwindcss/typography";
 
 :root {
@@ -147,6 +147,16 @@
 
 body {
   font-family: var(--font-montserrat), sans-serif;
+}
+
+@-moz-document url-prefix() {
+  [data-date-icon="true"] {
+    display: none;
+  }
+
+  input[data-date-input="true"] {
+    padding-right: 0.75rem;
+  }
 }
 
 .dark {

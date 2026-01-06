@@ -22,6 +22,7 @@ type UploadCsvModalProps = {
     startDate?: string;
     finalDate?: string;
     blockSectionBack?: boolean;
+    decision: boolean;
   }) => Promise<void>;
 };
 
@@ -40,6 +41,7 @@ export default function UploadCsvModal({
   const [startDate, setStartDate] = useState("");
   const [finalDate, setFinalDate] = useState("");
   const [usersPerItem, setUsersPerItem] = useState<string>("1");
+  const [decisionEnabled, setDecisionEnabled] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState<Step>("upload");
   const [hasEmptyFields, setHasEmptyFields] = useState(false);
@@ -65,6 +67,7 @@ export default function UploadCsvModal({
       setStartDate("");
       setFinalDate("");
       setUsersPerItem("1");
+      setDecisionEnabled(false);
       setIsSubmitting(false);
       setHasEmptyFields(false);
       setIsAnalyzingFile(false);
@@ -170,6 +173,7 @@ export default function UploadCsvModal({
         startDate: startDate || undefined,
         finalDate: finalDate || undefined,
         blockSectionBack: true,
+        decision: decisionEnabled,
       });
     } catch (err) {
       const message =
@@ -376,6 +380,31 @@ export default function UploadCsvModal({
                 }
               />
             </div>
+
+            {/* 
+            DESCOMENTAR QUANDO A DECISÃO AUTOMÁTICA ESTIVER IMPLEMENTADA
+            
+            <div className="flex items-center gap-3 rounded-lg border border-blueberry-700/30 bg-blue-50 px-3 py-2">
+              <input
+                id="csv-decision"
+                type="checkbox"
+                checked={decisionEnabled}
+                onChange={(e) => setDecisionEnabled(e.target.checked)}
+                className="h-4 w-4 accent-blueberry-700 cursor-pointer"
+              />
+              <div className="flex flex-col">
+                <label
+                  htmlFor="csv-decision"
+                  className="text-sm font-medium text-gray-800 cursor-pointer"
+                >
+                  Ativar decisão automática
+                </label>
+                <p className="text-xs text-gray-600">
+                  Marca para consolidar respostas automaticamente quando todos os
+                  usuários finalizarem um item.
+                </p>
+              </div>
+            </div> */}
 
             <Input
               id="csv-users-per-item"

@@ -18,6 +18,7 @@ export type QuestionRangeDTO = {
 };
 
 export type ElementDTO = {
+  id?: number;
   order?: number;
   text?: string;
   required?: boolean;
@@ -30,6 +31,7 @@ export type ElementDTO = {
 };
 
 export type SectionDTO = {
+  id?: number;
   title?: string;
   order?: number;
   elements: ElementDTO[];

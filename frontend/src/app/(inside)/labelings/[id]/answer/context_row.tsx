@@ -12,7 +12,13 @@ export default function ContextRow({ element, payload }: ContextRowProps) {
   const value = element.column_name ? payload[element.column_name] : undefined;
   const hasValue = value !== undefined && value !== null;
   const contextLabel = element.text?.trim() ? element.text : element.column_name || "Contexto";
-  const formattedValue = hasValue ? formatPayloadValue(value) : "Valor não encontrado para este item.";
+  const formattedValue = hasValue
+    ? formatPayloadValue(value)
+    : "Valor não encontrado para este item.";
+  const markdownValue =
+    element.context_type === "code"
+      ? `\`\`\`\n${formattedValue}\n\`\`\``
+      : formattedValue;
 
   return (
     <div className="rounded-lg border border-blue-100 bg-white px-3 py-2 shadow-sm">
@@ -24,7 +30,7 @@ export default function ContextRow({ element, payload }: ContextRowProps) {
         {element.context_type ? ` • Tipo: ${element.context_type}` : ""}
       </p>
       <div className="mt-1 prose prose-sm max-w-none text-gray-800">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{formattedValue}</ReactMarkdown>
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdownValue}</ReactMarkdown>
       </div>
     </div>
   );

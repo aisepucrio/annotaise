@@ -1,3 +1,4 @@
+import type { RefObject } from "react";
 import { ArrowLeft, Save, Edit, Calendar, Trash2 } from "lucide-react";
 import Button from "@/components/button/Button";
 
@@ -9,6 +10,7 @@ interface LabelingHeaderProps {
   finalDateInfo: string | null;
   projectStatusLabel: string | null;
   usersPerItem: number | null;
+  isDecision: boolean;
   activeTab: "form" | "assign" | "answers" | "guide";
   isSaving: boolean;
   isDeleting: boolean;
@@ -17,6 +19,7 @@ interface LabelingHeaderProps {
   onSaveStructure: () => void;
   onDelete: () => void;
   onTabChange: (tab: "form" | "assign" | "answers" | "guide") => void;
+  headerRef?: RefObject<HTMLDivElement>;
 }
 
 function formatDate(dateStr: string | null) {
@@ -32,6 +35,7 @@ export default function LabelingHeader({
   finalDateInfo,
   projectStatusLabel,
   usersPerItem,
+  isDecision,
   activeTab,
   isSaving,
   isDeleting,
@@ -40,9 +44,13 @@ export default function LabelingHeader({
   onSaveStructure,
   onDelete,
   onTabChange,
+  headerRef,
 }: LabelingHeaderProps) {
   return (
-    <div className="bg-blueberry-700 text-white px-6 py-3 shadow-md flex-shrink-0">
+    <div
+      ref={headerRef}
+      className="bg-blueberry-700 text-white px-6 py-3 shadow-md flex-shrink-0"
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Button
@@ -84,6 +92,11 @@ export default function LabelingHeader({
                   {`Usuários por Rotulação: ${usersPerItem}`}
                 </span>
               ) : null}
+              {isDecision !== null ? (
+                <span className="px-2 py-1  bg-white/20 text-white text-[11px] font-semibold uppercase tracking-wide">
+                  {`Decisão: ${isDecision ? "Sim" : "Não"}`}
+                </span>
+              ) : null}
             </div>
           </div>
           <button
@@ -103,20 +116,18 @@ export default function LabelingHeader({
             fill={false}
             disabled={isSaving || isLoadingLabeling}
             icon={<Save size={20} />}
-            className="font-semibold "
           >
             {isSaving ? "Salvando..." : "Salvar alterações"}
           </Button>
+
           <Button
-            type="button"
-            onClick={onDelete}
-            variant="white"
-            size="icon"
+            variant="red"
             fill={false}
-            aria-label="Excluir rotulação"
+            onClick={onDelete}
             disabled={isDeleting || isLoadingLabeling}
+            icon={<Trash2 size={16} />}
           >
-            <Trash2 size={20} color="red" />
+            {isDeleting ? "Deletando..." : "Excluir Rotulação"}
           </Button>
         </div>
       </div>

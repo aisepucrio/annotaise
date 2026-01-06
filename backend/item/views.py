@@ -15,7 +15,7 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 from django.shortcuts import get_object_or_404
-from django.db.models import Count, F, Value
+from django.db.models import Count, Exists, F, OuterRef, Value
 from django.db.models.functions import Coalesce
 from django.db import transaction
 from django.utils import timezone
@@ -113,7 +113,10 @@ class NextItemView(RetrieveAPIView):
         3) Item de outra pessoa com membership expirado (rouba)
         """
         if labeling.status == "finished":
-            return Response({'detail':'Essa rotulação já foi finalizada','code':'rotulação finalizada'},status=400)
+            return Response(
+                {"detail": "Essa rotulação já foi finalizada", "code": "ROTULACAO_FINALIZADA"},
+                status=400,
+            )
 
         # 1) Já tem membership ativo?
         membership = (
@@ -131,31 +134,21 @@ class NextItemView(RetrieveAPIView):
             membership.created_at = timezone.now() # TODO esse atributo tem um nome bem enganoso... melhor updated at
             return membership.item
 
-        # 2) Pega um novo item elegível (sem membership prévio do user)
+        # 2) Pega um novo item elegível (sem membership associado)
+        membership_exists = ItemMembership.objects.filter(item=OuterRef("pk"))
         item = (
             Item.objects
+            .select_for_update(skip_locked=True)
             .filter(labeling=labeling, status='pending')
-            .annotate(
-                num_answers=Count('answers'),
-                required_answers=Coalesce('labeling__users_per_item', Value(1)),
-                membership_count=Count('memberships'),
-            )
-            .filter(membership_count__lt=F('required_answers'))
-            .filter(num_answers__lt=F('required_answers'))  # ainda tem "vagas"
             .exclude(answers__answered_by=user)
-            .exclude(memberships__user=user)                        # sem membership prévio
-            .values_list('id', flat=True)
+            .annotate(has_membership=Exists(membership_exists))
+            .filter(has_membership=False)
+            .first()
             )
         
-        '''aqui tem que ser duas queries porque o select_for_update não funciona com annotations '''
-        item_obj = (Item.objects
-            .select_for_update(skip_locked=True)
-            .filter(id__in=item)
-            .first())
-
-        if item_obj:
-            ItemMembership.objects.create(item=item_obj, user=user)
-            return item_obj
+        if item:
+            ItemMembership.objects.create(item=item, user=user)
+            return item
 
         # 3) Rouba membership expirada de outra pessoa
         STALE_MINUTES = 1
@@ -163,29 +156,23 @@ class NextItemView(RetrieveAPIView):
 
         membership = (
             ItemMembership.objects
+            .select_for_update(skip_locked=True)
             .select_related('item', 'item__labeling')
-            .annotate(
-                num_answers=Count('item__answers'),
-                required_answers=Coalesce('item__labeling__users_per_item', Value(1)),
-            )
             .filter(
                 item__labeling=labeling,
                 item__status='pending',
                 created_at__lt=stale_limit,  # membership velho
-                num_answers__lt=F('required_answers'),  # ainda cabe mais gente
             )
             .exclude(user=user)                             # não rouba de si mesmo
             .exclude(item__answers__answered_by=user)
             .order_by('created_at')                         # o mais antigo primeiro
-            .values_list('id', flat=True)
+            .first()
         )
 
-        expired_membership = ItemMembership.objects.select_for_update(skip_locked=True).filter(id__in=membership).first()
-
-        if expired_membership:
-            item = expired_membership.item
+        if membership:
+            item = membership.item
             # remove o lock antigo
-            expired_membership.delete()
+            membership.delete()
             # cria o lock pro usuário atual
             ItemMembership.objects.create(item=item, user=user)
             return item
@@ -205,8 +192,10 @@ class NextItemView(RetrieveAPIView):
             return Response('Você não faz parte dessa rotulação',status=403)
 
         item = self.get_next_item_for_user(labeling, user)
+        if isinstance(item, Response):
+            return item
         if not item:
-            return Response({'detail': 'Você não tem rotulações para responder.','code':'NO_LABELINGS_TO_ANSWER'}, status=400)
+            return Response({'detail': 'Você não tem mais rotulações para responder.','code':'NO_LABELINGS_TO_ANSWER'}, status=400)
 
         return self.serialize_and_return(item)
     

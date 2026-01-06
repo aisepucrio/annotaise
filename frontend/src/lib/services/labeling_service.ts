@@ -7,6 +7,7 @@ export type Labeling = {
   title: string;
   project: number;
   status: LabelingStatus;
+  decision: boolean;
   guide?: string;
   start_date?: string | null;
   final_date?: string | null;
@@ -25,6 +26,7 @@ export type LabelingPayload = {
   final_date?: string;
   status?: LabelingStatus;
   block_section_back?: boolean;
+  decision?: boolean;
   guide?: string;
 };
 

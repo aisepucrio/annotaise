@@ -21,7 +21,7 @@ export default function QuestionBlock({ element, value, onChange }: QuestionBloc
           <div className="prose prose-sm max-w-none">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{questionText}</ReactMarkdown>
           </div>
-          <p className="text-xs capitalize text-gray-500">{labelForQuestion(element.question_type)}</p>
+          <p className="text-xs capitalize text-gray-500">{labelForQuestion(element.question_type)} {element.question_type === "range" ? "de " + element.question_range?.start + " a " + element.question_range?.end : ""}</p>
         </div>
         {element.required ? (
           <span className="rounded-full bg-red-50 px-3 py-1 text-[11px] font-semibold uppercase text-red-700">

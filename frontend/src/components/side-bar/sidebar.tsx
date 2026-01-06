@@ -113,6 +113,7 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
 
         {/* Topo */}
         <ul className="space-y-1 mt-3 w-full">
+          {isAdmin ? (
           <SidebarItem
             icon={<LayoutDashboard size={24} />}
             label="Dashboard"
@@ -120,7 +121,7 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
             alias="/dashboard"
             hover_color="blue"
             collapsed={!isOpen}
-          />
+          />) : null}
           {isAdmin ? (
             <SidebarItem
               icon={<Users size={24} />}
@@ -162,7 +163,9 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
         </ul>
 
         {/* Rodape */}
+        
         <div className="text-sm text-gray-500 mt-auto w-full space-y-1 pl-0">
+          {/*     CONFIGURAÇÕES, REMOVIDA POR ENQUANTO    
           <SidebarItem
             icon={<Settings size={24} />}
             label="Configurações"
@@ -171,6 +174,8 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
             hover_color="gray"
             collapsed={!isOpen}
           />
+          */}
+
           <button
             type="button"
             className="text-sm text-red-400 mt-auto w-full space-y-1"

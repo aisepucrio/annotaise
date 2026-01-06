@@ -27,6 +27,7 @@ type UploadPayload = {
   startDate?: string;
   finalDate?: string;
   blockSectionBack?: boolean;
+  decision: boolean;
 };
 
 export default function LabelingsPage() {
@@ -81,6 +82,7 @@ export default function LabelingsPage() {
     startDate,
     finalDate,
     blockSectionBack,
+    decision,
   }: UploadPayload) {
     if (!isAdmin) {
       toast.error("Apenas administradores podem criar rotulações.");
@@ -94,6 +96,7 @@ export default function LabelingsPage() {
         start_date: startDate || undefined,
         final_date: finalDate || undefined,
         block_section_back: blockSectionBack,
+        decision,
       });
       await importLabelingItemsCsv(labeling.id, file);
       setOpen(false);

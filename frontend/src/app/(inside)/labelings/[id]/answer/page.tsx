@@ -52,9 +52,16 @@ export default function LabelingAnswerPage() {
 
   useEffect(() => {
     if (loadError) {
-      toast.error(loadError);
+      if (
+        loadErrorCode === "NO_LABELINGS_TO_ANSWER" ||
+        loadErrorCode === "ROTULACAO_FINALIZADA"
+      ) {
+        toast.success(loadError);
+      } else {
+        toast.error(loadError);
+      }
     }
-  }, [loadError]);
+  }, [loadError, loadErrorCode]);
 
   useEffect(() => {
     if (submitMessage) {
@@ -91,6 +98,7 @@ export default function LabelingAnswerPage() {
       setPayload({});
       setCurrentItemId(null);
       setRowIndex(null);
+      setSections([]);
       setLoadErrorCode(null);
 
       let message = "Não foi possível carregar um item para responder.";
@@ -361,21 +369,15 @@ function MainContent({
 }: MainContentProps) {
   return (
     <section className="rounded-xl bg-white p-4 h-full overflow-y-auto">
-      {loadError ? (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-          {loadError}
-          {loadErrorCode ? (
-            <span className="ml-2 text-[11px] uppercase tracking-wide text-red-600">
-              ({loadErrorCode})
-            </span>
-          ) : null}
-        </div>
-      ) : null}
+      
       {isLoading ? (
         <p className="text-sm text-gray-600">Carregando item e perguntas...</p>
       ) : orderedSections.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-blue-200 bg-blue-50 px-4 py-6 text-center text-sm text-blue-900">
-          Nenhum item disponível para resposta agora.
+        <div className="rounded-lg border border-dashed border-green-200 bg-green-50 px-4 py-6 text-center text-sm text-green-900 w-1/4 items-center mx-auto">
+          <div className="flex items-center justify-center gap-2">
+            <span>✓</span>
+            <span>{loadErrorCode === "NO_LABELINGS_TO_ANSWER" ? "Obrigado por rotular ! você não tem mais items pra responder nessa rotulação" : "Nenhum item disponível para resposta agora."}</span>
+          </div>
         </div>
       ) : currentSection ? (
         <div className="space-y-6">

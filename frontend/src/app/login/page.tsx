@@ -45,7 +45,7 @@ export default function LoginPage() {
       storeToken(access, "access");
       storeToken(refresh, "refresh");
 
-      router.push("/");
+      router.push("/labelings");
     } catch (err) {
       let message =
         "Nao foi possivel realizar o login. Verifique suas credenciais.";

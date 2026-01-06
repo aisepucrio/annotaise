@@ -1,5 +1,5 @@
 export type QuestionType = "text" | "number" | "range" | "multiple_choice";
-export type ContextType = "text" | "number" | "date" | "category";
+export type ContextType = "text" | "number" | "date" | "category" | "code";
 
 export type MultipleChoiceChoice = {
   id: string;

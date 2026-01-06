@@ -5,6 +5,7 @@ from django.utils import timezone
 
 
 class LabelingSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Labeling
         fields = ['id', 'project', 'title', 'created_at','status','column_names','start_date','final_date','users_per_item','block_section_back','guide','decision']

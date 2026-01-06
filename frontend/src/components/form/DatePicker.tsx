@@ -53,6 +53,7 @@ const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
             ref={ref}
             type="date"
             id={id}
+            data-date-input="true"
             disabled={disabled}
             placeholder={placeholder}
             className={cn(
@@ -66,12 +67,21 @@ const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
               "[&::-webkit-calendar-picker-indicator]:inset-0",
               "[&::-webkit-calendar-picker-indicator]:w-full",
               "[&::-webkit-calendar-picker-indicator]:h-full",
+              "[&::-moz-calendar-picker-indicator]:opacity-0",
+              "[&::-moz-calendar-picker-indicator]:cursor-pointer",
+              "[&::-moz-calendar-picker-indicator]:absolute",
+              "[&::-moz-calendar-picker-indicator]:inset-0",
+              "[&::-moz-calendar-picker-indicator]:w-full",
+              "[&::-moz-calendar-picker-indicator]:h-full",
               className
             )}
             {...props}
           />
 
-          <div className="absolute right-2 top-1/2 -translate-y-1/2 text-metal-200 pointer-events-none">
+          <div
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-metal-200 pointer-events-none"
+            data-date-icon="true"
+          >
             <Calendar className="w-6 h-6" />
           </div>
         </div>

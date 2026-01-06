@@ -21,10 +21,9 @@ class Labeling(models.Model):
     description = models.TextField(blank=True)
     start_date = models.DateField(default=timezone.now)
     final_date = models.DateField(null=False, blank=False)
-    decision = models.BooleanField(default=False)
+    decision = models.BooleanField(default=False, null=False, blank=False)
 
     guide = models.TextField(default="",blank=True)
-    
 
     users_per_item = models.PositiveIntegerField(null=False, blank=False,default=1)
     block_section_back = models.BooleanField(default=False)
@@ -85,6 +84,7 @@ class LabelingElement(models.Model):
         NUMBER = "number", "Número"
         DATE = "date", "Data"
         CATEGORY = "category", "categoria"
+        CODE = "code", "Código"
 
     labeling_section = models.ForeignKey(
         LabelingSection, on_delete=models.CASCADE, related_name="elements"

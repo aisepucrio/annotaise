@@ -333,7 +333,10 @@ function InspectAnswerModal({
                                         <ReactMarkdown
                                           remarkPlugins={[remarkGfm]}
                                         >
-                                          {formatAnswerValue(value)}
+                                          {formatContextValue(
+                                            value,
+                                            ctx.context_type
+                                          )}
                                         </ReactMarkdown>
                                       </div>
                                     </div>
@@ -411,4 +414,12 @@ function formatAnswerValue(value: unknown): string {
     }
   }
   return String(value);
+}
+
+function formatContextValue(value: unknown, contextType?: string | null): string {
+  const text = formatAnswerValue(value);
+  if (contextType === "code") {
+    return `\`\`\`\n${text}\n\`\`\``;
+  }
+  return text;
 }

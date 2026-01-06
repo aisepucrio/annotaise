@@ -41,6 +41,26 @@ export default function QuestionInput({ element, value, onChange }: QuestionInpu
       const step = element.question_range?.step ?? 1;
       const displayValue = value ?? "";
 
+      function rangeHandler(event: React.ChangeEvent<HTMLInputElement>) {
+        if (event.target.value === "") {
+          onChange(null);
+          return;
+        }
+        
+        let nv = Number(event.target.value);
+
+        if (nv < min) {
+          nv = min;
+        } else if (nv > max) {
+          nv = max;
+        }
+        else if (nv%step !== 0) {
+          nv = Math.round(nv/step)*step;
+        }
+
+        onChange(nv);
+      }
+
       return (
         <input
           type="number"
@@ -49,9 +69,7 @@ export default function QuestionInput({ element, value, onChange }: QuestionInpu
           step={step}
           className="w-48 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:border-blue-600 focus:outline-none"
           value={displayValue as number | string}
-          onChange={(event) =>
-            onChange(event.target.value === "" ? "" : Number(event.target.value))
-          }
+          onChange={rangeHandler}
         />
       );
     }

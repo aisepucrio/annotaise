@@ -31,6 +31,7 @@ const mapSectionToDTO = (section: SectionData, sectionIndex: number): SectionDTO
   const safeElements = Array.isArray(section.elements) ? section.elements : [];
 
   return {
+    ...(maybeId ? { id: maybeId } : {}),
     title: section.title,
     order: section.order ?? sectionIndex,
     elements: safeElements.map((element, elementIndex) =>
@@ -54,8 +55,10 @@ const mapElementToDTO = (el: SectionElement, elementIndex: number): ElementDTO =
 
 const mapQuestionElementToDTO = (q: QuestionElement, fallbackOrder: number): ElementDTO => {
   const parsedId = Number(q.id);
+  const maybeId = Number.isFinite(parsedId) ? parsedId : undefined;
   const questionType = q.question_type ?? "text";
   const base: ElementDTO = {
+    ...(maybeId ? { id: maybeId } : {}),
     order: q.order ?? fallbackOrder,
     text: q.text ?? "",
     required: q.required ?? false,
@@ -102,14 +105,19 @@ const mapRangeConfig = (config?: RangeQuestionConfig): QuestionRangeDTO => ({
   step: config?.step ?? 1,
 });
 
-const mapContextElementToDTO = (c: ContextElement, fallbackOrder: number): ElementDTO => ({
-  order: c.order ?? fallbackOrder,
-  text: c.title ?? "",
-  required: false,
-  question_type: "context",
-  column_name: c.column,
-  context_type: c.contextType ?? "text",
-});
+const mapContextElementToDTO = (c: ContextElement, fallbackOrder: number): ElementDTO => {
+  const parsedId = Number(c.id);
+  const maybeId = Number.isFinite(parsedId) ? parsedId : undefined;
+  return {
+    ...(maybeId ? { id: maybeId } : {}),
+    order: c.order ?? fallbackOrder,
+    text: c.title ?? "",
+    required: false,
+    question_type: "context",
+    column_name: c.column,
+    context_type: c.contextType ?? "text",
+  };
+};
 
 const mapElementFromDTO = (element: LabelingStructureElement): SectionElement => {
   if (element.question_type === "context") {
