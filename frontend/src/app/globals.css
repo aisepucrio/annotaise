@@ -140,7 +140,6 @@
 
 @media (prefers-color-scheme: light) {
   :root {
-    --background: #0a0a0a;
     --foreground: #ededed;
   }
 }
