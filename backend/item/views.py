@@ -117,6 +117,8 @@ class NextItemView(RetrieveAPIView):
                 {"detail": "Essa rotulação já foi finalizada", "code": "ROTULACAO_FINALIZADA"},
                 status=400,
             )
+        
+        #TODO Aqui tem que ter uma condicional pra se o decision tiver ligado, senao vai quebrar firme
 
         # 1) Já tem membership ativo?
         membership = (
@@ -136,19 +138,26 @@ class NextItemView(RetrieveAPIView):
 
         # 2) Pega um novo item elegível (sem membership associado)
         membership_exists = ItemMembership.objects.filter(item=OuterRef("pk"))
-        item = (
+        item_id = (
             Item.objects
-            .select_for_update(skip_locked=True)
             .filter(labeling=labeling, status='pending')
             .exclude(answers__answered_by=user)
-            .annotate(has_membership=Exists(membership_exists))
-            .filter(has_membership=False)
+            .annotate(answer_count=Count('answers'),
+                membership_count=Count('memberships'),
+                total_count=F('answer_count') + F('membership_count'),
+            )
+            .filter(total_count__lt=labeling.users_per_item)
+            .order_by('-answer_count') # terminar os que ja tao sendo feitos primeiro
             .first()
             )
         
-        if item:
-            ItemMembership.objects.create(item=item, user=user)
-            return item
+        if item_id is not None:
+            item_id = item_id.id
+            item = Item.objects.filter(id=item_id).select_for_update(skip_locked=True).first()
+
+            if item:
+                ItemMembership.objects.create(item=item, user=user)
+                return item
 
         # 3) Rouba membership expirada de outra pessoa
         STALE_MINUTES = 1

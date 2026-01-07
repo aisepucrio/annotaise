@@ -4,6 +4,7 @@ LabelingSectionsBulkCreateSerializer, LabelingSectionSerializer, LabelingDashboa
 from project.models import ProjectMembership
 from user.permissions import IsAdminAccount
 from .permissions import CanEditLabelingsInProjectPermission
+from item.models import Item
 
 from django.shortcuts import render, get_object_or_404
 from django.db import transaction
@@ -125,8 +126,20 @@ class LabelingViewSet(viewsets.ModelViewSet):
         today = datetime.now().date()
         search = request.query_params.get("search")
         output = []
+
+        items = (
+            Item.objects
+            .filter(
+                status__in=["pending", "in_progress"],
+            )
+            .exclude(answers__answered_by=request.user)
+            .values("labeling_id")
+            .distinct()
+        )
+
         qs = (
-            Labeling.objects.filter(memberships__user=request.user)
+            Labeling.objects
+            .filter(memberships__user=request.user, id__in=items)
             .select_related('project')
             .annotate(
                 total_labelings=Count('items', distinct=True),
@@ -134,7 +147,7 @@ class LabelingViewSet(viewsets.ModelViewSet):
                     'items',
                     filter=Q(items__status='finished'),
                     distinct=True),
-            ).filter(items__status__in=['pending','in_progress'])
+            )
         )
         if search:
             qs = qs.filter(

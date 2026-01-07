@@ -15,7 +15,7 @@ export default function Dashboard() {
       <div className="">
         <h1 className="text-xl text-gray-800 bg-white w-full mt-5 ml-3 p-1 rounded-xl">
           Bem-vindo,{" "}
-          {user ? user.first_name + " " + user.last_name : "Carregando..."}
+          {user ? user.first_name + " " + user.last_name + " ! Essa página ainda está em construção e não aparece para usuários comuns" : "Carregando..."}
         </h1>
       </div>
     </>

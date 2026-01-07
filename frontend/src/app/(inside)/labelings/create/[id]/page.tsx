@@ -95,6 +95,7 @@ export default function LabelingFormPage() {
   const [isLoadingLabeling, setIsLoadingLabeling] = useState(true);
   const [projectName, setProjectName] = useState<string>("");
   const [projectStatus, setProjectStatus] = useState<string | null>(null);
+  const [labelingStatus, setLabelingStatus] = useState<string | null>(null);
   const [usersPerItem, setUsersPerItem] = useState<number | null>(null);
   const [isDecision, setIsDecision] = useState<boolean>(false);
   const [startDateInfo, setStartDateInfo] = useState<string | null>(null);
@@ -549,6 +550,7 @@ export default function LabelingFormPage() {
       setUsersPerItem(labeling.users_per_item ?? null);
       setIsDecision(labeling.decision ?? false);
       setGuideText(labeling.guide ?? "");
+      setLabelingStatus(labeling.status ?? null);
 
       const csvColumns = Array.isArray(labeling.column_names)
         ? labeling.column_names
@@ -781,16 +783,19 @@ export default function LabelingFormPage() {
   );
 
   const projectStatusLabel = useMemo(() => {
-    if (!projectStatus) return null;
+    const status = labelingStatus ?? projectStatus;
+    if (!status) return null;
     const map: Record<string, string> = {
       planning: "PLANEJAMENTO",
       active: "ATIVO",
       completed: "CONCLUIDO",
       finished: "CONCLUIDO",
       cancelled: "CANCELADO",
+      draft: "RASCUNHO",
+      archived: "ARQUIVADA",
     };
-    return map[projectStatus] ?? projectStatus.toUpperCase();
-  }, [projectStatus]);
+    return map[status] ?? status.toUpperCase();
+  }, [labelingStatus, projectStatus]);
 
   const availableUsers = useMemo(() => {
     const currentEmails = new Set(memberships.map((m) => m.email));

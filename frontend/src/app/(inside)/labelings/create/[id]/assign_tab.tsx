@@ -103,14 +103,14 @@ export default function AssignTab({
       <div className="rounded-lg border border-gray-200 p-3 space-y-3">
         <div className="flex items-center justify-between gap-2">
           <p className="text-sm font-medium text-gray-900">Adicionar membro</p>
-          <button
+          {/* <button
             type="button"
             onClick={onOpenInvitationModal}
             className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-medium text-blue-900 hover:bg-blue-50 cursor-pointer"
           >
             <UserPlus size={14} />
             Novo usuário
-          </button>
+          </button> */}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
           <select
