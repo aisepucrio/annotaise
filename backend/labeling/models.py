@@ -35,6 +35,8 @@ class Labeling(models.Model):
     status = models.CharField(max_length=16, choices=Status.choices, default=Status.DRAFT)
     created_at = models.DateTimeField(default=timezone.now)
 
+    decisive_question = models.ForeignKey("LabelingElement", on_delete=models.CASCADE, null=True, blank=True)
+
     class Meta:
         ordering = ["-created_at", "title"] # mais recentes primeiro
 
@@ -96,7 +98,7 @@ class LabelingElement(models.Model):
     context_type = models.CharField(max_length=32, choices=ContextType.choices, blank=True, null=True)
     column_name = models.CharField(max_length=200, blank=True)
     allow_multiple = models.BooleanField(default=False)
-    decisive_question = models.BooleanField(default=False)
+    
 
     class Meta:
         ordering = ["labeling_section_id", "order", "id"]
