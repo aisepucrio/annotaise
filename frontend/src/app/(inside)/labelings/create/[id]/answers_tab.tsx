@@ -267,12 +267,30 @@ function InspectAnswerModal({
               ) : (
                 <div className="space-y-4">
                   {orderedSections.map((section) => {
-                    const contexts = section.elements.filter(
-                      (el) => el.question_type === "context"
+                    const orderedElements = [...section.elements].sort(
+                      (a, b) => (a.order ?? 0) - (b.order ?? 0)
                     );
-                    const questions = section.elements.filter(
+                    const questionCount = orderedElements.filter(
                       (el) => el.question_type && el.question_type !== "context"
-                    );
+                    ).length;
+                    const blocks: Array<{
+                      type: "context" | "question";
+                      elements: typeof orderedElements;
+                    }> = [];
+
+                    orderedElements.forEach((element) => {
+                      const type =
+                        element.question_type === "context"
+                          ? "context"
+                          : "question";
+                      const last = blocks[blocks.length - 1];
+                      if (!last || last.type !== type) {
+                        blocks.push({ type, elements: [element] });
+                        return;
+                      }
+                      last.elements.push(element);
+                    });
+
                     return (
                       <div
                         key={section.id ?? section.order ?? crypto.randomUUID()}
@@ -281,111 +299,126 @@ function InspectAnswerModal({
                         <div className="flex items-center justify-between bg-blue-900 px-4 py-3 text-white rounded-t-xl">
                           <div className="flex flex-col">
                             <span className="text-[11px] uppercase tracking-wide text-blue-100">
-                              Seção {section.order ?? ""}
+                              Se‡ao {section.order ?? ""}
                             </span>
                             <div className="prose prose-sm max-w-none text-white">
                               <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                {section.title?.trim() || "Seção"}
+                                {section.title?.trim() || "Se‡ao"}
                               </ReactMarkdown>
                             </div>
                           </div>
                           <span className="text-xs text-blue-100">
-                            {questions.length} perguntas
+                            {questionCount} perguntas
                           </span>
                         </div>
 
                         <div className="space-y-4 p-4">
-                          {contexts.length > 0 ? (
-                            <div className="rounded-lg border border-blue-100 bg-blue-50 p-3">
-                              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-blue-900">
-                                Contexto do item
-                              </p>
-                              <div className="grid gap-2 md:grid-cols-2">
-                                {contexts.map((ctx, idx) => {
-                                  const payloadKey =
-                                    ctx.column_name ?? ctx.text?.trim();
-                                  const value = payloadKey
-                                    ? itemPayload[payloadKey]
-                                    : undefined;
-                                  const contextLabel =
-                                    ctx.text?.trim() ||
-                                    ctx.column_name ||
-                                    `Contexto ${idx + 1}`;
-                                  return (
-                                    <div
-                                      key={ctx.id ?? `${section.id}-${idx}`}
-                                      className="rounded-md border border-blue-100 bg-white px-3 py-2 text-sm text-gray-800"
-                                    >
-                                      <div className="prose prose-sm max-w-none">
-                                        <ReactMarkdown
-                                          remarkPlugins={[remarkGfm]}
-                                        >
-                                          {contextLabel}
-                                        </ReactMarkdown>
-                                      </div>
-                                      <p className="text-[11px] uppercase tracking-wide text-blue-500">
-                                        Coluna: {ctx.column_name ?? "—"}
-                                        {ctx.context_type
-                                          ? ` • Tipo: ${ctx.context_type}`
-                                          : ""}
-                                      </p>
-                                      <div className="mt-1 prose prose-sm max-w-none text-gray-800">
-                                        <ReactMarkdown
-                                          remarkPlugins={[remarkGfm]}
-                                        >
-                                          {formatContextValue(
-                                            value,
-                                            ctx.context_type
-                                          )}
-                                        </ReactMarkdown>
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          ) : null}
-
-                          {questions.length === 0 ? (
+                          {blocks.length === 0 ? (
                             <p className="text-sm text-gray-600">
-                              Nenhuma pergunta nesta seção.
+                              Nenhuma pergunta nesta se‡ao.
                             </p>
                           ) : (
-                            <div className="space-y-3">
-                              {questions.map((q, idx) => {
-                                const val = answersByQuestion.get(
-                                  String(q.id ?? q.order ?? idx)
-                                );
-                                const label =
-                                  (q.text && q.text.trim().length > 0
-                                    ? q.text
-                                    : "Pergunta") ?? "Pergunta";
-                                return (
+                            <>
+                              {blocks.map((block, blockIndex) =>
+                                block.type === "context" ? (
                                   <div
-                                    key={q.id ?? `${section.id}-q-${idx}`}
-                                    className="rounded-lg border border-gray-100 p-3 shadow-sm"
+                                    key={`context-${blockIndex}`}
+                                    className="rounded-lg border border-blue-100 bg-blue-50 p-3"
                                   >
-                                    <div className="flex items-start justify-between gap-3">
-                                      <div className="prose prose-sm max-w-none">
-                                        <ReactMarkdown
-                                          remarkPlugins={[remarkGfm]}
-                                        >
-                                          {label}
-                                        </ReactMarkdown>
-                                      </div>
-                                      {q.required ? (
-                                        <span className="rounded-full bg-red-50 px-3 py-1 text-[11px] font-semibold uppercase text-red-700">
-                                          Obrigatória
-                                        </span>
-                                      ) : null}
-                                    </div>
-                                    <p className="mt-2 text-sm text-gray-800 break-words">
-                                      {formatAnswerValue(val)}
+                                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-blue-900">
+                                      Contexto do item
                                     </p>
+                                    <div className="grid gap-2 md:grid-cols-2">
+                                      {block.elements.map((ctx, idx) => {
+                                        const payloadKey =
+                                          ctx.column_name ?? ctx.text?.trim();
+                                        const value = payloadKey
+                                          ? itemPayload[payloadKey]
+                                          : undefined;
+                                        const contextLabel =
+                                          ctx.text?.trim() ||
+                                          ctx.column_name ||
+                                          `Contexto ${idx + 1}`;
+                                        return (
+                                          <div
+                                            key={ctx.id ?? `${section.id}-${idx}`}
+                                            className="rounded-md border border-blue-100 bg-white px-3 py-2 text-sm text-gray-800"
+                                          >
+                                            <div className="prose prose-sm max-w-none">
+                                              <ReactMarkdown
+                                                remarkPlugins={[remarkGfm]}
+                                              >
+                                                {contextLabel}
+                                              </ReactMarkdown>
+                                            </div>
+                                            <p className="text-[11px] uppercase tracking-wide text-blue-500">
+                                              Coluna: {ctx.column_name ?? "-"}
+                                              {ctx.context_type
+                                                ? `   Tipo: ${ctx.context_type}`
+                                                : ""}
+                                            </p>
+                                            <div className="mt-1 prose prose-sm max-w-none text-gray-800">
+                                              <ReactMarkdown
+                                                remarkPlugins={[remarkGfm]}
+                                              >
+                                                {formatContextValue(
+                                                  value,
+                                                  ctx.context_type
+                                                )}
+                                              </ReactMarkdown>
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
                                   </div>
-                                );
-                              })}
-                            </div>
+                                ) : (
+                                  <div
+                                    key={`question-${blockIndex}`}
+                                    className="space-y-3"
+                                  >
+                                    {block.elements.map((q, idx) => {
+                                      const val = answersByQuestion.get(
+                                        String(q.id ?? q.order ?? idx)
+                                      );
+                                      const label =
+                                        (q.text && q.text.trim().length > 0
+                                          ? q.text
+                                          : "Pergunta") ?? "Pergunta";
+                                      return (
+                                        <div
+                                          key={q.id ?? `${section.id}-q-${idx}`}
+                                          className="rounded-lg border border-gray-100 p-3 shadow-sm"
+                                        >
+                                          <div className="flex items-start justify-between gap-3">
+                                            <div className="prose prose-sm max-w-none">
+                                              <ReactMarkdown
+                                                remarkPlugins={[remarkGfm]}
+                                              >
+                                                {label}
+                                              </ReactMarkdown>
+                                            </div>
+                                            {q.required ? (
+                                              <span className="rounded-full bg-red-50 px-3 py-1 text-[11px] font-semibold uppercase text-red-700">
+                                                Obrigat¢ria
+                                              </span>
+                                            ) : null}
+                                          </div>
+                                          <p className="mt-2 text-sm text-gray-800 break-words">
+                                            {formatAnswerValue(val)}
+                                          </p>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )
+                              )}
+                              {questionCount === 0 ? (
+                                <p className="text-sm text-gray-600">
+                                  Nenhuma pergunta nesta se‡ao.
+                                </p>
+                              ) : null}
+                            </>
                           )}
                         </div>
                       </div>

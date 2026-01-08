@@ -20,8 +20,27 @@ export default function SectionCard({ section, payload, answers, onChange }: Sec
   );
   const sectionTitle = section.title?.trim() ? section.title : "Seção";
 
-  const contexts = orderedElements.filter((element) => element.question_type === "context");
-  const questions = orderedElements.filter((element) => element.question_type !== "context");
+  const totalQuestions = orderedElements.filter(
+    (element) => element.question_type !== "context"
+  ).length;
+  const blocks = useMemo(() => {
+    const grouped: Array<{
+      type: "context" | "question";
+      elements: typeof orderedElements;
+    }> = [];
+
+    orderedElements.forEach((element) => {
+      const type = element.question_type === "context" ? "context" : "question";
+      const last = grouped[grouped.length - 1];
+      if (!last || last.type !== type) {
+        grouped.push({ type, elements: [element] });
+        return;
+      }
+      last.elements.push(element);
+    });
+
+    return grouped;
+  }, [orderedElements]);
 
   return (
     <article className="overflow-hidden rounded-xl border border-blue-100 shadow-sm">
@@ -32,35 +51,46 @@ export default function SectionCard({ section, payload, answers, onChange }: Sec
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{sectionTitle}</ReactMarkdown>
           </div>
         </div>
-        <span className="text-xs text-blue-100">{questions.length} perguntas</span>
+        <span className="text-xs text-blue-100">{totalQuestions} perguntas</span>
       </header>
 
       <div className="space-y-4 bg-white p-4">
-        {contexts.length > 0 ? (
-          <div className="rounded-lg border border-blue-100 bg-blue-50 p-3">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-blue-900">Contexto do item</p>
-            <div className="grid gap-2 md:grid-cols-2">
-              {contexts.map((context, contextIndex) => (
-                <ContextRow key={context.id ?? contextIndex} element={context} payload={payload} />
-              ))}
-            </div>
-          </div>
-        ) : null}
-
-        {questions.length > 0 ? (
-          <div className="space-y-4">
-            {questions.map((question, questionIndex) => {
-              const value = answers[String(question.id ?? questionIndex)];
-              return (
-                <QuestionBlock
-                  key={question.id ?? questionIndex}
-                  element={question}
-                  value={value}
-                  onChange={(val) => onChange(question.id ?? questionIndex, val)}
-                />
-              );
-            })}
-          </div>
+        {blocks.length > 0 ? (
+          blocks.map((block, blockIndex) =>
+            block.type === "context" ? (
+              <div
+                key={`context-${blockIndex}`}
+                className="rounded-lg border border-blue-100 bg-blue-50 p-3"
+              >
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-blue-900">
+                  Contexto do item
+                </p>
+                <div className="grid gap-2 md:grid-cols-2">
+                  {block.elements.map((context, contextIndex) => (
+                    <ContextRow
+                      key={context.id ?? contextIndex}
+                      element={context}
+                      payload={payload}
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div key={`question-${blockIndex}`} className="space-y-4">
+                {block.elements.map((question, questionIndex) => {
+                  const value = answers[String(question.id ?? questionIndex)];
+                  return (
+                    <QuestionBlock
+                      key={question.id ?? questionIndex}
+                      element={question}
+                      value={value}
+                      onChange={(val) => onChange(question.id ?? questionIndex, val)}
+                    />
+                  );
+                })}
+              </div>
+            )
+          )
         ) : (
           <p className="text-sm text-gray-600">Nenhuma pergunta configurada nesta seção.</p>
         )}
