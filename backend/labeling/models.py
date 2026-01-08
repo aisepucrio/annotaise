@@ -35,10 +35,18 @@ class Labeling(models.Model):
     status = models.CharField(max_length=16, choices=Status.choices, default=Status.DRAFT)
     created_at = models.DateTimeField(default=timezone.now)
 
-    decisive_question = models.ForeignKey("LabelingElement", on_delete=models.CASCADE, null=True, blank=True)
+    decisive_question = models.ForeignKey("LabelingElement", on_delete=models.SET_NULL, null=True, blank=True)
 
     class Meta:
         ordering = ["-created_at", "title"] # mais recentes primeiro
+
+    def clean(self):
+
+        if self.decisive_question and LabelingElement.objects.get(pk=self.decisive_question).question_type != LabelingElement.QuestionType.MULTIPLE_CHOICE:
+            raise ValidationError(
+                " Só questões de múltipla escolha podem ser decisivas.")
+        super().clean()
+        
 
     def __str__(self):
         return f"Rotulação:{self.title} Status:({self.get_status_display()})"
@@ -109,12 +117,7 @@ class LabelingElement(models.Model):
             ),
         ]
 
-    def clean(self):
-        super().clean()
 
-        if self.decisive_question and self.question_type != self.QuestionType.MULTIPLE_CHOICE:
-            raise ValidationError(
-                " Só questões de múltipla escolha podem ser decisivas.")
         
     def save(self, *args, **kwargs):
         self.full_clean()

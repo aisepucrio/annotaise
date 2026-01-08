@@ -10,5 +10,6 @@ router = DefaultRouter()
 router.register(r"labelings", LabelingViewSet, basename="labelings")
 router.register(r"labeling-memberships", LabelingMembershipViewSet, basename="labeling-memberships")
 
+
 urlpatterns += router.urls
 

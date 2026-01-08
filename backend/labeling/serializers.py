@@ -8,7 +8,7 @@ class LabelingSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Labeling
-        fields = ['id', 'project', 'title', 'created_at','status','column_names','start_date','final_date','users_per_item','block_section_back','guide','decision']
+        fields = ['id', 'project', 'title', 'created_at','status','column_names','start_date','final_date','users_per_item','block_section_back','guide','decision','decisive_question']
         read_only_fields = ['id', 'created_at','created_by','column_names','status']
 
     def create(self, validated_data):
@@ -46,7 +46,6 @@ class LabelingElementSerializer(serializers.ModelSerializer):
             "multiple_choice_items",
             "question_range",
             "context_type",
-            "decisive_question"
         ]
 
 class LabelingSectionSerializer(serializers.ModelSerializer):

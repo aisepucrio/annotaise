@@ -5,6 +5,7 @@ from project.models import ProjectMembership
 from user.permissions import IsAdminAccount
 from .permissions import CanEditLabelingsInProjectPermission
 from item.models import Item
+from .serializers import LabelingElementSerializer
 
 from django.shortcuts import render, get_object_or_404
 from django.db import transaction
@@ -180,7 +181,26 @@ class LabelingViewSet(viewsets.ModelViewSet):
         labeling = serializer.save(created_by=user)
 
         return super().perform_create(serializer)
+    
+    @action(methods=["get"], detail=True, url_path="elements")
+    def elements(self, request, pk=None):
 
+        labeling_id = pk
+        if not labeling_id:
+            return Response(status=400, data={"detail":"labeling_id is required"})
+
+        qs = LabelingElement.objects.filter(
+            labeling_section__labeling_id=labeling_id
+        )
+
+        type_qp = request.query_params.get("type")
+        if type_qp:
+            qs = qs.filter(question_type__icontains=type_qp)
+
+        serializer = LabelingElementSerializer(
+            qs, many=True, context=self.get_serializer_context()
+        )
+        return Response(serializer.data)
 
 class LabelingMembershipViewSet(viewsets.ModelViewSet):
     serializer_class = LabelingMembershipSerializer

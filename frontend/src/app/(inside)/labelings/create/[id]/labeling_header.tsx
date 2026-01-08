@@ -2,6 +2,13 @@ import type { RefObject } from "react";
 import { ArrowLeft, Save, Edit, Calendar, Trash2 } from "lucide-react";
 import Button from "@/components/button/Button";
 
+export type LabelingTabKey =
+  | "form"
+  | "assign"
+  | "answers"
+  | "guide"
+  | "decision";
+
 interface LabelingHeaderProps {
   labelingTitle: string;
   isLoadingLabeling: boolean;
@@ -11,14 +18,14 @@ interface LabelingHeaderProps {
   projectStatusLabel: string | null;
   usersPerItem: number | null;
   isDecision: boolean;
-  activeTab: "form" | "assign" | "answers" | "guide";
+  activeTab: LabelingTabKey;
   isSaving: boolean;
   isDeleting: boolean;
   onBack: () => void;
   onEditInfo: () => void;
   onSaveStructure: () => void;
   onDelete: () => void;
-  onTabChange: (tab: "form" | "assign" | "answers" | "guide") => void;
+  onTabChange: (tab: LabelingTabKey) => void;
   headerRef?: RefObject<HTMLDivElement | null>;
 }
 
@@ -46,6 +53,14 @@ export default function LabelingHeader({
   onTabChange,
   headerRef,
 }: LabelingHeaderProps) {
+  const tabs: Array<{ key: LabelingTabKey; label: string }> = [
+    { key: "form", label: "Formulário" },
+    { key: "assign", label: "Atribuir Usuários" },
+    { key: "answers", label: "Respostas" },
+    { key: "guide", label: "Guia" },
+    ...(isDecision ? [{ key: "decision", label: "Decisão" }] : []),
+  ];
+
   return (
     <div
       ref={headerRef}
@@ -137,18 +152,11 @@ export default function LabelingHeader({
 
       {/* Tabs */}
       <div className="flex gap-6 mt-2 text-sm justify-center">
-        {[
-          { key: "form", label: "Formulário" },
-          { key: "assign", label: "Atribuir Usuários" },
-          { key: "answers", label: "Respostas" },
-          { key: "guide", label: "Guia" },
-        ].map((tab) => (
+        {tabs.map((tab) => (
           <button
             key={tab.key}
             type="button"
-            onClick={() =>
-              onTabChange(tab.key as "form" | "assign" | "answers" | "guide")
-            }
+            onClick={() => onTabChange(tab.key)}
             className={`pb-1 border-b-2 transition-colors cursor-pointer ${
               activeTab === tab.key
                 ? "border-white font-semibold text-white "

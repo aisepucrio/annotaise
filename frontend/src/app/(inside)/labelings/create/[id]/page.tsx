@@ -42,7 +42,8 @@ import FormTab from "./form_tab";
 import AssignTab from "./assign_tab";
 import GuideTab from "./guide_tab";
 import AnswersTab from "./answers_tab";
-import LabelingHeader from "./labeling_header";
+import DecisionTab from "./decision_tab";
+import LabelingHeader, { type LabelingTabKey } from "./labeling_header";
 import { set } from "react-hook-form";
 
 const createContextElement = (order: number): ContextElement => ({
@@ -98,11 +99,12 @@ export default function LabelingFormPage() {
   const [labelingStatus, setLabelingStatus] = useState<string | null>(null);
   const [usersPerItem, setUsersPerItem] = useState<number | null>(null);
   const [isDecision, setIsDecision] = useState<boolean>(false);
+  const [decisiveQuestionId, setDecisiveQuestionId] = useState<number | null>(
+    null
+  );
   const [startDateInfo, setStartDateInfo] = useState<string | null>(null);
   const [finalDateInfo, setFinalDateInfo] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<
-    "form" | "assign" | "answers" | "guide"
-  >("form");
+  const [activeTab, setActiveTab] = useState<LabelingTabKey>("form");
   const [isEditInfoOpen, setIsEditInfoOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -549,6 +551,7 @@ export default function LabelingFormPage() {
       setFinalDateInfo(labeling.final_date ?? null);
       setUsersPerItem(labeling.users_per_item ?? null);
       setIsDecision(labeling.decision ?? false);
+      setDecisiveQuestionId(labeling.decisive_question ?? null);
       setGuideText(labeling.guide ?? "");
       setLabelingStatus(labeling.status ?? null);
 
@@ -915,7 +918,7 @@ export default function LabelingFormPage() {
     try {
       const payload = { sections: mapSectionsToDTO(sections) };
       await saveLabelingStructure(labelingId, payload);
-      router.push("/labelings/manage/");
+      toast.success("Formulário da rotulação salvo com sucesso.");
     } catch (error) {
       let message = "Não foi possível salvar a estrutura da rotulação.";
       if (axios.isAxiosError(error)) {
@@ -1058,7 +1061,7 @@ export default function LabelingFormPage() {
             }
             isSaving={isSaving}
           />
-        ) : (
+        ) : activeTab === "answers" ? (
           <div className="h-full overflow-y-auto p-4">
             <AnswersTab
               responderOptions={responderOptions}
@@ -1076,7 +1079,15 @@ export default function LabelingFormPage() {
               structureSections={structureSections}
             />
           </div>
-        )}
+        ) : activeTab === "decision" && isDecision ? (
+          <div className="h-full overflow-y-auto p-4">
+            <DecisionTab
+              labelingId={labelingId}
+              decisiveQuestionId={decisiveQuestionId}
+              onDecisiveQuestionChange={setDecisiveQuestionId}
+            />
+          </div>
+        ) : null}
       </div>
 
       <EditLabelingModal

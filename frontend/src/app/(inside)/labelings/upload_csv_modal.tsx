@@ -380,9 +380,6 @@ export default function UploadCsvModal({
                 }
               />
             </div>
-
-            {/* 
-            DESCOMENTAR QUANDO A DECISÃO AUTOMÁTICA ESTIVER IMPLEMENTADA
             
             <div className="flex items-center gap-3 rounded-lg border border-blueberry-700/30 bg-blue-50 px-3 py-2">
               <input
@@ -404,7 +401,7 @@ export default function UploadCsvModal({
                   usuários finalizarem um item.
                 </p>
               </div>
-            </div> */}
+            </div>
 
             <Input
               id="csv-users-per-item"
