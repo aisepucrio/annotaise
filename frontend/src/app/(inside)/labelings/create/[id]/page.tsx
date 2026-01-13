@@ -1002,12 +1002,10 @@ export default function LabelingFormPage() {
         usersPerItem={usersPerItem}
         isDecision={isDecision}
         activeTab={activeTab}
-        isSaving={isSaving}
         isDeleting={isDeleting}
         headerRef={headerRef}
         onBack={() => router.push("/labelings/manage")}
         onEditInfo={() => setIsEditInfoOpen(true)}
-        onSaveStructure={handleSaveStructure}
         onDelete={() => setIsDeleteOpen(true)}
         onTabChange={setActiveTab}
       />
@@ -1019,6 +1017,7 @@ export default function LabelingFormPage() {
             <FormTab
               columns={columns}
               isLoadingLabeling={isLoadingLabeling}
+              isSaving={isSaving}
               sections={sections}
               onUpdateSectionTitle={updateSectionTitle}
               onRemoveSection={handleRemoveSection}
@@ -1026,6 +1025,7 @@ export default function LabelingFormPage() {
               onAddContext={addContext}
               onAddQuestion={addQuestion}
               onAddSection={addSection}
+              onSaveStructure={handleSaveStructure}
               actionsAnchor={actionsAnchor}
               actionsClosing={actionsClosing}
               toolbarRef={toolbarRef}

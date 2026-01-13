@@ -105,6 +105,17 @@ class NextItemView(RetrieveAPIView):
         serializer = self.get_serializer(item)
         return Response(serializer.data, status=200)
 
+    def ensure_membership(self, item, user):
+        membership = (
+            ItemMembership.objects
+            .select_for_update()
+            .filter(item=item, user=user)
+            .first()
+        )
+        if membership:
+            return membership
+        return ItemMembership.objects.create(item=item, user=user)
+
     def get_next_item_for_user(self, labeling, user):
         """
         Retorna o próximo item para o usuário, seguindo a ordem:
@@ -117,8 +128,7 @@ class NextItemView(RetrieveAPIView):
                 {"detail": "Essa rotulação já foi finalizada", "code": "ROTULACAO_FINALIZADA"},
                 status=400,
             )
-        
-        #TODO Aqui tem que ter uma condicional pra se o decision tiver ligado, senao vai quebrar firme
+
 
         # 1) Já tem membership ativo?
         membership = (
@@ -135,56 +145,108 @@ class NextItemView(RetrieveAPIView):
         if membership:
             membership.created_at = timezone.now() # TODO esse atributo tem um nome bem enganoso... melhor updated at
             return membership.item
-
-        # 2) Pega um novo item elegível (sem membership associado)
-        membership_exists = ItemMembership.objects.filter(item=OuterRef("pk"))
-        item_id = (
-            Item.objects
-            .filter(labeling=labeling, status='pending')
-            .exclude(answers__answered_by=user)
-            .annotate(answer_count=Count('answers'),
-                membership_count=Count('memberships'),
-                total_count=F('answer_count') + F('membership_count'),
-            )
-            .filter(total_count__lt=labeling.users_per_item)
-            .order_by('-answer_count') # terminar os que ja tao sendo feitos primeiro
-            .first()
-            )
         
-        if item_id is not None:
-            item_id = item_id.id
-            item = Item.objects.filter(id=item_id).select_for_update(skip_locked=True).first()
 
-            if item:
-                ItemMembership.objects.create(item=item, user=user)
+        if labeling.decision == True:
+            item = (
+                Item.objects
+                .filter(labeling=labeling, status='pending')
+                .exclude(answers__answered_by=user)
+                .annotate(answer_count=Count('answers'),
+                    membership_count=Count('memberships'),
+                    total_count=F('answer_count') + F('membership_count'),
+                )
+                .order_by('-answer_count') # terminar os que ja tao sendo feitos primeiro
+                .first()
+                )
+            total_count = getattr(item, "total_count", None)
+            if item is not None:
+                item = (
+                    Item.objects
+                    .select_for_update(skip_locked=True)
+                    .filter(pk=item.pk)
+                    .first()
+                )
+            if item is None :return None
+
+            if total_count > labeling.users_per_item:
+                # se for maior é porque só pode ter um item membership e ele deve ser roubado
+                
+                STALE_MINUTES = 1
+                stale_limit = timezone.now() - timedelta(minutes=STALE_MINUTES)
+
+                membership = item.memberships.first()
+
+                if membership:
+                    item = membership.item
+                    # remove o lock antigo
+                    membership.delete()
+                    # cria o lock pro usuário atual
+                    self.ensure_membership(item, user)
+                    return item
+                else:
+                    
+                    ItemMembership.objects.create(item=item, user=user)
+                    return item
+
+            else:
+                self.ensure_membership(item, user)
+
                 return item
 
-        # 3) Rouba membership expirada de outra pessoa
-        STALE_MINUTES = 1
-        stale_limit = timezone.now() - timedelta(minutes=STALE_MINUTES)
+        else:
 
-        membership = (
-            ItemMembership.objects
-            .select_for_update(skip_locked=True)
-            .select_related('item', 'item__labeling')
-            .filter(
-                item__labeling=labeling,
-                item__status='pending',
-                created_at__lt=stale_limit,  # membership velho
+            # 2) Pega um novo item elegível (sem membership associado)
+            item_id = (
+                Item.objects
+                .filter(labeling=labeling, status='pending')
+                .exclude(answers__answered_by=user)
+                .annotate(answer_count=Count('answers'),
+                    membership_count=Count('memberships'),
+                    total_count=F('answer_count') + F('membership_count'),
+                )
+                .filter(total_count__lt=labeling.users_per_item)
+                .order_by('-answer_count') # terminar os que ja tao sendo feitos primeiro
+                .first()
+                )
+            
+            if item_id is not None:
+                item_id = item_id.id
+                item = Item.objects.filter(id=item_id).select_for_update(skip_locked=True).first()
+
+                if item:
+                    self.ensure_membership(item, user)
+                    return item
+
+            # 3) Rouba membership expirada de outra pessoa
+            STALE_MINUTES = 1
+            stale_limit = timezone.now() - timedelta(minutes=STALE_MINUTES)
+
+            membership = (
+                ItemMembership.objects
+                .select_for_update(skip_locked=True)
+                .select_related('item', 'item__labeling')
+                .filter(
+                    item__labeling=labeling,
+                    item__status='pending',
+                    created_at__lt=stale_limit,  # membership velho
+                )
+                .exclude(user=user)                             # não rouba de si mesmo
+                .exclude(item__answers__answered_by=user)
+                .order_by('created_at')                         # o mais antigo primeiro
+                .first()
             )
-            .exclude(user=user)                             # não rouba de si mesmo
-            .exclude(item__answers__answered_by=user)
-            .order_by('created_at')                         # o mais antigo primeiro
-            .first()
-        )
 
-        if membership:
-            item = membership.item
-            # remove o lock antigo
-            membership.delete()
-            # cria o lock pro usuário atual
-            ItemMembership.objects.create(item=item, user=user)
-            return item
+            if membership:
+                item = membership.item
+                item = Item.objects.select_for_update().filter(pk=item.pk).first()
+                if not item:
+                    return None
+                # remove o lock antigo
+                membership.delete()
+                # cria o lock pro usuário atual
+                self.ensure_membership(item, user)
+                return item
 
         # Nenhum item elegível
         return None

@@ -1,5 +1,5 @@
 import type { RefObject } from "react";
-import { ArrowLeft, Save, Edit, Calendar, Trash2 } from "lucide-react";
+import { ArrowLeft, Edit, Calendar, Trash2 } from "lucide-react";
 import Button from "@/components/button/Button";
 
 export type LabelingTabKey =
@@ -19,11 +19,9 @@ interface LabelingHeaderProps {
   usersPerItem: number | null;
   isDecision: boolean;
   activeTab: LabelingTabKey;
-  isSaving: boolean;
   isDeleting: boolean;
   onBack: () => void;
   onEditInfo: () => void;
-  onSaveStructure: () => void;
   onDelete: () => void;
   onTabChange: (tab: LabelingTabKey) => void;
   headerRef?: RefObject<HTMLDivElement | null>;
@@ -44,11 +42,9 @@ export default function LabelingHeader({
   usersPerItem,
   isDecision,
   activeTab,
-  isSaving,
   isDeleting,
   onBack,
   onEditInfo,
-  onSaveStructure,
   onDelete,
   onTabChange,
   headerRef,
@@ -124,17 +120,6 @@ export default function LabelingHeader({
           </button>
         </div>
         <div className="flex items-down gap-3">
-          <Button
-            type="button"
-            onClick={onSaveStructure}
-            variant="white"
-            fill={false}
-            disabled={isSaving || isLoadingLabeling}
-            icon={<Save size={20} />}
-          >
-            {isSaving ? "Salvando..." : "Salvar alterações"}
-          </Button>
-
           <Button
             variant="red"
             fill={false}

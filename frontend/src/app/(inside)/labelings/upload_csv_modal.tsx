@@ -397,8 +397,8 @@ export default function UploadCsvModal({
                   Ativar decisão automática
                 </label>
                 <p className="text-xs text-gray-600">
-                  Marca para consolidar respostas automaticamente quando todos os
-                  usuários finalizarem um item.
+                *EXPERIMENTAL* Marque para decidir respostas finais automaticamente quando todos os
+                  usuários finalizarem um item <br></br>(caso haja empate em algum item a rotulação é continuada).
                 </p>
               </div>
             </div>

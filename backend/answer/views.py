@@ -62,7 +62,6 @@ class AnswerViewset(viewsets.ModelViewSet):
             user=user,
             item_id=item_id,
         ).first()
-
         if not membership:
             return Response(
                 {'detail': 'Você não pode responder a esse item da rotulação.'},
@@ -74,27 +73,46 @@ class AnswerViewset(viewsets.ModelViewSet):
                 {'detail': 'Esse item já foi finalizado e não pode mais receber respostas.'},
                 status=403
         )
-        
+
+        labeling:Labeling = item.labeling
+
+        if labeling.decision == True and labeling.decisive_question is None:
+            return Response(
+                {'detail': 'Rotulação configurada para decisão, mas pergunta decisiva não definida. Contate o dono da rotulação.'},
+                status=400
+        )
+
+
         serializer = self.get_serializer(data=data, context={'request':request})
         serializer.is_valid(raise_exception=True)
         
-        labeling:Labeling = item.labeling
     
         self.perform_create(serializer)
 
         # Remove a reserva do item
         membership.delete()
-
         if labeling.decision == True:
 
             #caso a validação seja por decisão, verifica se ja atingiu o numero necessario de respostas para finalizar a rotulação
-            payload = data.answer_payload
+            payload = data.get('answer_payload', {})
 
-            decisive_id = LabelingElement.objects.filter(id=labeling.decisive_question).first().id
-            decision_dict = getattr(item.decision_payload,{})
+            decisive_element = labeling.decisive_question
+           
+            decisive_id = decisive_element.id
+            decision_dict = item.decision_payload or {}
             '''a ideia e primeiro adicionar tudo no dicionario e depois checar se ja terminou (todas as questoes alvo ja tem decisao)'''
 
-            answer = str(payload[decisive_id])
+            answer_value = None
+            if isinstance(payload, dict):
+                answer_value = payload.get(str(decisive_id))
+                if answer_value is None:
+                    answer_value = payload.get(decisive_id)
+            if answer_value is None:
+                return Response(
+                    {"detail": "Resposta da pergunta decisiva não encontrada."},
+                    status=400,
+                )
+            answer = str(answer_value)
             if not decision_dict.get(answer,None):
                 decision_dict[answer] = 1
             else:
@@ -102,27 +120,26 @@ class AnswerViewset(viewsets.ModelViewSet):
 
             item.decision_payload = decision_dict
             item.save()
-
             if labeling.users_per_item <= Answer.objects.filter(item__id=item_id).count():
                 #agora checando se terminou (isso futuramente pode ser uma função)
-                for question_id, answer_dict in decision_dict.items():
-                    done = False
-                    biggest = 0
-                    biggest_answer = None
-                    for answer, number_of_appearences in answer_dict.items():
-                        if number_of_appearences > biggest:
-                            biggest = number_of_appearences
-                            biggest_answer = answer
-                            done = True
-                        elif number_of_appearences == biggest:
-                            done = False # empate, decisao nao tomada ainda
-                    if done == True:
+                done = False
+                biggest = 0
+                for answer, number_of_appearences in decision_dict.items():
+                    if number_of_appearences > biggest:
+                        biggest = number_of_appearences
+                        biggest_answer = answer
+                        done = True
+                    elif number_of_appearences == biggest:
+                        done = False # empate, decisao nao tomada ainda
+                if done == True:
                         #decisao tomada
-                        item.status = 'finished'
-                        item.save()
-                    else: # se alguma decisao nao ta feita, envia denovo...
-                        break
-            
+                    item.status = 'finished'
+                    item.save()
+                    
+            if not labeling.items.filter(~Q(status='finished')).exists():
+                labeling.status = 'finished'
+                labeling.save()
+
             return Response(serializer.data, status=201)
 
         else:

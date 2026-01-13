@@ -16,7 +16,7 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical } from "lucide-react";
+import { GripVertical, Save } from "lucide-react";
 import {
   useMemo,
   type Dispatch,
@@ -27,6 +27,7 @@ import {
 import ActionsSidebar from "./actions_sidebar";
 import SectionForm from "./section_form";
 import { type SectionData } from "./labeling_types";
+import Button from "@/components/button/Button";
 
 export type ActionsAnchorState = {
   sectionId: string;
@@ -39,6 +40,7 @@ export type ActionsAnchorState = {
 type FormTabProps = {
   columns: string[];
   isLoadingLabeling: boolean;
+  isSaving: boolean;
   sections: SectionData[];
   onUpdateSectionTitle: (sectionId: string, title: string) => void;
   onRemoveSection: (sectionId: string) => void;
@@ -46,6 +48,7 @@ type FormTabProps = {
   onAddContext: (sectionId: string, insertAfterId?: string | null) => void;
   onAddQuestion: (sectionId: string, insertAfterId?: string | null) => void;
   onAddSection: (insertAfterSectionId?: string | null) => void;
+  onSaveStructure: () => void;
   actionsAnchor: ActionsAnchorState | null;
   actionsClosing: boolean;
   toolbarRef: MutableRefObject<HTMLDivElement | null>;
@@ -56,6 +59,7 @@ type FormTabProps = {
 export default function FormTab({
   columns,
   isLoadingLabeling,
+  isSaving,
   sections,
   onUpdateSectionTitle,
   onRemoveSection,
@@ -63,6 +67,7 @@ export default function FormTab({
   onAddContext,
   onAddQuestion,
   onAddSection,
+  onSaveStructure,
   actionsAnchor,
   actionsClosing,
   toolbarRef,
@@ -101,28 +106,41 @@ export default function FormTab({
 
   return (
     <>
-      <div className="mb-4 max-w-[860px] mx-auto">
-        <h2 className="text-sm font-semibold text-blue-900">
-          Colunas importadas do CSV
-        </h2>
-        {columns.length > 0 ? (
-          <div className="mt-2 flex flex-wrap gap-2">
-            {columns.map((c) => (
-              <span
-                key={c}
-                className="rounded-md bg-blue-100 text-blue-800 text-xs px-2 py-1"
-              >
-                {c}
-              </span>
-            ))}
-          </div>
-        ) : (
-          <p className="mt-2 text-sm text-gray-500">
-            {isLoadingLabeling
-              ? "Carregando colunas..."
-              : "Nenhuma coluna detectada para esta rotulação."}
-          </p>
-        )}
+      <div className="mb-4 max-w-[860px] mx-auto flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h2 className="text-sm font-semibold text-blue-900">
+            Colunas importadas do CSV
+          </h2>
+          {columns.length > 0 ? (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {columns.map((c) => (
+                <span
+                  key={c}
+                  className="rounded-md bg-blue-100 text-blue-800 text-xs px-2 py-1"
+                >
+                  {c}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-2 text-sm text-gray-500">
+              {isLoadingLabeling
+                ? "Carregando colunas..."
+                : "Nenhuma coluna detectada para esta rotulação."}
+            </p>
+          )}
+        </div>
+        <Button
+          type="button"
+          onClick={onSaveStructure}
+          variant="normal"
+          fill={false}
+          disabled={isSaving || isLoadingLabeling}
+          icon={<Save size={18} />}
+          className="mt-2"
+        >
+          {isSaving ? "Salvando..." : "Salvar alterações"}
+        </Button>
       </div>
 
       <DndContext
