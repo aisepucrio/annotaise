@@ -1,4 +1,4 @@
-![AnnotAISE logo](frontend/public/Full_Logo_DarkMode.svg)
+![AnnotAISE logo](frontend/public/Full_Logo_Dark.svg)
 
 # ANNOTAISE
 
