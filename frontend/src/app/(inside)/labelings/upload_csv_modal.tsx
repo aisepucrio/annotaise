@@ -10,6 +10,7 @@ import Input from "@/components/form/Input";
 import Select from "@/components/form/Select";
 import DatePicker from "@/components/form/DatePicker";
 import Button from "@/components/button/Button";
+import { useTranslations } from "@/i18n/use-translations";
 
 type UploadCsvModalProps = {
   open: boolean;
@@ -33,6 +34,7 @@ export default function UploadCsvModal({
   onClose,
   onConfirm,
 }: UploadCsvModalProps) {
+  const { t } = useTranslations();
   // Hooks: refs + estado local
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -84,7 +86,7 @@ export default function UploadCsvModal({
 
   function validateFile(file: File) {
     if (!file.name.toLowerCase().endsWith(".csv")) {
-      throw new Error("Por favor, selecione um arquivo .csv");
+      throw new Error(t("labelings.upload.error.invalidFileExtension"));
     }
   }
 
@@ -128,37 +130,38 @@ export default function UploadCsvModal({
     } catch (err) {
       setSelectedFile(null);
       setHasEmptyFields(false);
-      const message = err instanceof Error ? err.message : "Arquivo inválido.";
+      const message =
+        err instanceof Error
+          ? err.message
+          : t("labelings.upload.error.invalidFile");
       toast.error(message);
     }
   }
 
   async function handleConfirm() {
     if (!title.trim()) {
-      toast.error("Informe um título para a rotulação.");
+      toast.error(t("labelings.upload.error.missingTitle"));
       return;
     }
 
     if (!projectId) {
-      toast.error("Selecione um projeto.");
+      toast.error(t("labelings.upload.error.missingProject"));
       return;
     }
 
     if (!selectedFile) {
-      toast.error("Selecione um arquivo .csv para importar.");
+      toast.error(t("labelings.upload.error.missingFile"));
       return;
     }
 
     const parsedUsersPerItem = Number(usersPerItem);
     if (!Number.isInteger(parsedUsersPerItem) || parsedUsersPerItem <= 0) {
-      toast.error(
-        "Defina a quantidade de usuários por item com um número inteiro a partir de 1."
-      );
+      toast.error(t("labelings.upload.error.invalidUsersPerItem"));
       return;
     }
 
     if (startDate && finalDate && startDate > finalDate) {
-      toast.error("A data final deve ser maior ou igual à data inicial.");
+      toast.error(t("labelings.upload.error.invalidDates"));
       return;
     }
 
@@ -179,7 +182,7 @@ export default function UploadCsvModal({
       const message =
         err instanceof Error
           ? err.message
-          : "Não foi possível criar a rotulação.";
+          : t("labelings.upload.error.createFailed");
       toast.error(message);
     } finally {
       setIsSubmitting(false);
@@ -193,7 +196,7 @@ export default function UploadCsvModal({
 
   function handleContinueFromUpload() {
     if (!selectedFile) {
-      toast.error("Selecione um arquivo .csv para continuar.");
+      toast.error(t("labelings.upload.error.continueMissingFile"));
       return;
     }
     setStep("details");
@@ -213,7 +216,10 @@ export default function UploadCsvModal({
       setSelectedFile(file);
       void parseHasEmptyFields(file);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Arquivo inválido.";
+      const message =
+        err instanceof Error
+          ? err.message
+          : t("labelings.upload.error.invalidFile");
       toast.error(message);
     }
   }
@@ -255,21 +261,18 @@ export default function UploadCsvModal({
   const modalDescription =
     step === "upload" ? (
       <p>
-        Faça upload de um arquivo <strong>.CSV</strong>. O arquivo deve conter
-        as colunas referentes ao contexto de rotulação disponível aos usuários.
+        {t("labelings.upload.description.uploadPrefix")} <strong>.CSV</strong>{" "}
+        {t("labelings.upload.description.uploadSuffix")}
       </p>
     ) : (
-      <p>
-        Preencha os campos abaixo (título, projeto, datas e quantidade de
-        usuários por item) antes de criar a rotulação.
-      </p>
+      <p>{t("labelings.upload.description.details")}</p>
     );
 
   return (
     <Modal
       open={open}
       onClose={onClose}
-      title="Nova rotulação"
+      title={t("labelings.upload.title")}
       description={modalDescription}
       maxWidth="lg"
     >
@@ -296,19 +299,21 @@ export default function UploadCsvModal({
               icon={<Upload size={18} />}
               fill={false}
             >
-              Upload
+              {t("labelings.upload.button")}
             </Button>
 
             <p className="text-xs text-gray-600">
               {selectedFile
-                ? `Arquivo selecionado: ${selectedFile.name}`
-                : "Escolha um arquivo ou arraste até aqui."}
+                ? t("labelings.upload.selectedFile", {
+                    name: selectedFile.name,
+                  })
+                : t("labelings.upload.placeholder")}
             </p>
 
             {isAnalyzingFile && (
               <div className="flex items-center gap-2 text-xs text-gray-500">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Analisando campos vazios...
+                {t("labelings.upload.analyzing")}
               </div>
             )}
           </div>
@@ -316,10 +321,17 @@ export default function UploadCsvModal({
           {hasEmptyFields && (
             <div className="mt-4 rounded-lg border border-red-blueberry bg-red-50 px-3 py-2 text-sm text-red-blueberry">
               <TriangleAlert className="inline-block mr-1 mb-0.5 w-4 h-4" />
-              Existem <strong>campos vazios</strong> na tabela. Os usuários que
-              rotularem a linha referente aos contextos faltantes ficarão
-              <strong> sem a informação</strong>; se esse comportamento{" "}
-              <strong>não é esperado</strong>, envie outro arquivo.
+              {t("labelings.upload.emptyFields.textStart")}{" "}
+              <strong>{t("labelings.upload.emptyFields.highlightEmpty")}</strong>{" "}
+              {t("labelings.upload.emptyFields.textMiddle")}{" "}
+              <strong>
+                {t("labelings.upload.emptyFields.highlightMissingInfo")}
+              </strong>
+              ; {t("labelings.upload.emptyFields.textAfter")}{" "}
+              <strong>
+                {t("labelings.upload.emptyFields.highlightUnexpected")}
+              </strong>
+              , {t("labelings.upload.emptyFields.textEnd")}
             </div>
           )}
 
@@ -328,7 +340,7 @@ export default function UploadCsvModal({
               onClick={handleContinueFromUpload}
               disabled={!canContinueUploadStep}
             >
-              Continuar
+              {t("labelings.upload.continue")}
             </Button>
           </div>
         </div>
@@ -338,15 +350,15 @@ export default function UploadCsvModal({
           <div className="space-y-5">
             <Input
               id="csv-title"
-              label="Título"
-              placeholder="Nome da rotulação"
+              label={t("labelings.upload.titleLabel")}
+              placeholder={t("labelings.upload.titlePlaceholder")}
               value={title}
               onChange={(e) => setTitle((e.target as HTMLInputElement).value)}
             />
 
             <Select
               id="csv-project"
-              label="Projeto"
+              label={t("labelings.upload.projectLabel")}
               options={(projects ?? []).map((p) => ({
                 value: String(p.id),
                 label: p.name,
@@ -358,14 +370,14 @@ export default function UploadCsvModal({
             />
             {!isLoadingProjects && !(projects?.length ?? 0) && (
               <p className="mt-1 text-xs text-orange-600">
-                Você precisa ter pelo menos um projeto para criar rotulações.
+                {t("labelings.upload.noProjects")}
               </p>
             )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <DatePicker
                 id="csv-start"
-                label="Data inicial"
+                label={t("labelings.upload.startDateLabel")}
                 value={startDate}
                 onChange={(e) =>
                   setStartDate((e.target as HTMLInputElement).value)
@@ -373,14 +385,14 @@ export default function UploadCsvModal({
               />
               <DatePicker
                 id="csv-final"
-                label="Data final"
+                label={t("labelings.upload.finalDateLabel")}
                 value={finalDate}
                 onChange={(e) =>
                   setFinalDate((e.target as HTMLInputElement).value)
                 }
               />
             </div>
-            
+
             <div className="flex items-center gap-3 rounded-lg border border-blueberry-700/30 bg-blue-50 px-3 py-2">
               <input
                 id="csv-decision"
@@ -394,18 +406,19 @@ export default function UploadCsvModal({
                   htmlFor="csv-decision"
                   className="text-sm font-medium text-gray-800 cursor-pointer"
                 >
-                  Ativar decisão automática
+                  {t("labelings.upload.decisionLabel")}
                 </label>
                 <p className="text-xs text-gray-600">
-                *EXPERIMENTAL* Marque para decidir respostas finais automaticamente quando todos os
-                  usuários finalizarem um item <br></br>(caso haja empate em algum item a rotulação é continuada).
+                  {t("labelings.upload.decisionHelpLine1")}
+                  <br />
+                  {t("labelings.upload.decisionHelpLine2")}
                 </p>
               </div>
             </div>
 
             <Input
               id="csv-users-per-item"
-              label="Usuários por item"
+              label={t("labelings.upload.usersPerItemLabel")}
               type="number"
               min={1}
               value={usersPerItem}
@@ -413,7 +426,7 @@ export default function UploadCsvModal({
                 setUsersPerItem((e.target as HTMLInputElement).value)
               }
               placeholder="1"
-              tooltip="Número de pessoas que devem rotular cada item antes de ser finalizado."
+              tooltip={t("labelings.upload.usersPerItemTooltip")}
             />
           </div>
 
@@ -425,16 +438,16 @@ export default function UploadCsvModal({
               onClick={handleBackToUpload}
               disabled={isSubmitting}
             >
-              Voltar
+              {t("common.back")}
             </Button>
             <Button onClick={handleConfirm} disabled={isSubmitting}>
               {isSubmitting ? (
                 <span className="inline-flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Processando...
+                  {t("labelings.upload.processing")}
                 </span>
               ) : (
-                "Criar rotulação"
+                t("labelings.upload.create")
               )}
             </Button>
           </div>

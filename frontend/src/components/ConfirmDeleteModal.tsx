@@ -1,34 +1,35 @@
 "use client";
 
-import { useState, useEffect, ReactNode } from "react";
+import { useEffect, useState, ReactNode } from "react";
 import Modal from "@/components/modal/Modal";
 import Button from "@/components/button/Button";
 import Input from "@/components/form/Input";
+import { useTranslations } from "@/i18n/use-translations";
 
 interface ConfirmDeleteModalProps {
   /** Controla a visibilidade do modal */
   open: boolean;
-  /** Função chamada ao fechar o modal */
+  /** Funcao chamada ao fechar o modal */
   onClose: () => void;
-  /** Função chamada ao confirmar a exclusão */
+  /** Funcao chamada ao confirmar a exclusao */
   onConfirm: () => void;
-  /** Indica se a operação de exclusão está em andamento */
+  /** Indica se a operacao de exclusao esta em andamento */
   isDeleting: boolean;
-  /** Título do modal */
+  /** Titulo do modal */
   title: string;
-  /** Nome do item que será deletado (usado para validação) */
+  /** Nome do item que sera deletado (usado para validacao) */
   itemName: string;
-  /** Descrição/alerta sobre a exclusão */
+  /** Descricao/alerta sobre a exclusao */
   description?: ReactNode;
-  /** Texto do botão de confirmar (padrão: "Excluir") */
+  /** Texto do botao de confirmar (padrao: "Excluir") */
   confirmButtonText?: string;
-  /** Texto do botão de cancelar (padrão: "Cancelar") */
+  /** Texto do botao de cancelar (padrao: "Cancelar") */
   cancelButtonText?: string;
 }
 
 /**
- * Modal de confirmação de exclusão com input de verificação.
- * Requer que o usuário digite o nome exato do item para habilitar o botão de exclusão.
+ * Modal de confirmacao de exclusao com input de verificacao.
+ * Requer que o usuario digite o nome exato do item para habilitar o botao de exclusao.
  */
 export default function ConfirmDeleteModal({
   open,
@@ -37,11 +38,15 @@ export default function ConfirmDeleteModal({
   isDeleting,
   title,
   itemName,
-  description = "Você tem certeza que deseja excluir este item?",
-  confirmButtonText = "Excluir",
-  cancelButtonText = "Cancelar",
+  description,
+  confirmButtonText,
+  cancelButtonText,
 }: ConfirmDeleteModalProps) {
+  const { t } = useTranslations();
   const [confirmText, setConfirmText] = useState("");
+  const resolvedDescription = description ?? t("confirmDelete.description");
+  const resolvedConfirmText = confirmButtonText ?? t("common.delete");
+  const resolvedCancelText = cancelButtonText ?? t("common.cancel");
 
   // Limpa o input quando o modal fecha
   useEffect(() => {
@@ -62,14 +67,15 @@ export default function ConfirmDeleteModal({
   return (
     <Modal open={open} onClose={onClose} title={title} maxWidth="sm">
       <div className="space-y-4">
-        {/* Descrição */}
-        <div className="text-sm text-metal-700">{description}</div>
+        {/* Descricao */}
+        <div className="text-sm text-metal-700">{resolvedDescription}</div>
 
-        {/* Input de confirmação */}
+        {/* Input de confirmacao */}
         <div className="space-y-2">
           <p className="text-sm text-metal-700">
-            Digite <strong className="text-metal-900">{itemName}</strong> para
-            confirmar:
+            {t("confirmDelete.promptPrefix")} {" "}
+            <strong className="text-metal-900">{itemName}</strong>{" "}
+            {t("confirmDelete.promptSuffix")}
           </p>
           <Input
             value={confirmText}
@@ -80,7 +86,7 @@ export default function ConfirmDeleteModal({
           />
         </div>
 
-        {/* Botões de ação */}
+        {/* Botoes de acao */}
         <div className="flex justify-between gap-3 pt-2">
           <Button
             onClick={onClose}
@@ -88,7 +94,7 @@ export default function ConfirmDeleteModal({
             fill={true}
             variant="white"
           >
-            {cancelButtonText}
+            {resolvedCancelText}
           </Button>
           <Button
             onClick={handleConfirm}
@@ -96,7 +102,7 @@ export default function ConfirmDeleteModal({
             fill={true}
             variant="red"
           >
-            {isDeleting ? "Excluindo..." : confirmButtonText}
+            {isDeleting ? t("common.deleting") : resolvedConfirmText}
           </Button>
         </div>
       </div>

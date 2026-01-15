@@ -1,8 +1,11 @@
+"use client";
+
 import React, { forwardRef, SelectHTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { ChevronDown } from "lucide-react";
 import FormFieldBase from "./base/FormFieldBase";
 import { formFieldClasses } from "./base/formFieldClasses";
+import { useTranslations } from "@/i18n/use-translations";
 
 export type SelectOption = {
   value: string;
@@ -40,7 +43,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
       label,
       error,
       options,
-      placeholder = "Selecionar...",
+      placeholder,
       required = false,
       icon,
       className = "",
@@ -52,6 +55,8 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
     },
     ref
   ) => {
+    const { t } = useTranslations();
+    const resolvedPlaceholder = placeholder ?? t("common.selectPlaceholder");
     return (
       <FormFieldBase
         label={label}
@@ -76,9 +81,9 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
             )}
             {...props}
           >
-            {placeholder && (
+            {resolvedPlaceholder && (
               <option value="" disabled hidden className="text-metal-400">
-                {placeholder}
+                {resolvedPlaceholder}
               </option>
             )}
             {options.map((option) => (
@@ -104,3 +109,4 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
 Select.displayName = "Select";
 
 export default Select;
+

@@ -1,6 +1,7 @@
 import { UserCog } from "lucide-react";
 import StatPill from "@/components/StatPill";
 import Button from "@/components/button/Button";
+import { useTranslations } from "@/i18n/use-translations";
 
 type UserContainerProps = {
   name: string;
@@ -19,6 +20,7 @@ export default function UserContainer({
   labelings_pending,
   onManage,
 }: UserContainerProps) {
+  const { t } = useTranslations();
   return (
     <div className="mt-1 flex justify-between items-end gap-3">
       {/* nome e email */}
@@ -36,9 +38,9 @@ export default function UserContainer({
           icon={<UserCog size={20} strokeWidth={1.75} />}
           onClick={onManage}
           variant="normal"
-          ariaLabel="Gerenciar usuário"
+          ariaLabel={t("users.manageAria")}
         >
-          Gerenciar
+          {t("users.manage")}
         </Button>
       </div>
 
@@ -48,21 +50,21 @@ export default function UserContainer({
       {/* métricas */}
       <div className="-mr-3 grid grid-cols-1 gap-2 flex-1 justify-end items-start min-w-0">
         <StatPill
-          label="Projetos"
+          label={t("users.stats.projects")}
           value={projects}
           textColor="var(--blueberry-700)"
           backgroundColor="var(--blueberry-700-10)"
           cut="left"
         />
         <StatPill
-          label="Rotulações finalizadas"
+          label={t("users.stats.labelingsDone")}
           value={labelings_done}
           textColor="var(--green-blueberry)"
           backgroundColor="var(--green-blueberry-10)"
           cut="left"
         />
         <StatPill
-          label="Rotulações pendentes"
+          label={t("users.stats.labelingsPending")}
           value={labelings_pending}
           textColor="var(--orange-blueberry)"
           backgroundColor="var(--orange-blueberry-10)"

@@ -17,10 +17,12 @@ import type { LabelingStructureSection } from "@/lib/services/labeling_create_se
 import { fetchLabelingStructure } from "@/lib/services/labeling_create_service";
 import type { AnswerMap } from "../answer/answer_types";
 import { toast } from "sonner";
+import { useTranslations } from "@/i18n/use-translations";
 
 export default function MyAnswersPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const { t, locale } = useTranslations();
   const labelingId = useMemo(() => {
     const parsed = Number(params?.id);
     return Number.isFinite(parsed) ? parsed : NaN;
@@ -94,7 +96,7 @@ export default function MyAnswersPage() {
     setError(null);
     try {
       await updateAnswer(editingAnswer.id, { answer_payload: answers });
-      setMessage("Resposta atualizada com sucesso.");
+      setMessage(t("labelings.myAnswers.updateSuccess"));
       setEditingAnswer(null);
       await mutateMyAnswers();
     } catch (err) {
@@ -139,16 +141,16 @@ export default function MyAnswersPage() {
             type="button"
             onClick={() => router.push("/labelings")}
             className="rounded-md p-1 hover:bg-white/10"
-            aria-label="Voltar"
+            aria-label={t("common.back")}
           >
             <ArrowLeft size={22} />
           </button>
           <div>
             <p className="text-xs uppercase tracking-wide text-blue-100">
-              Rotulação
+              {t("labelings.myAnswers.headerLabel")}
             </p>
             <h1 className="text-lg font-semibold leading-tight">
-              {labeling?.title ?? "Minhas respostas"}
+              {labeling?.title ?? t("labelings.myAnswers.titleFallback")}
             </h1>
           </div>
         </div>
@@ -158,19 +160,19 @@ export default function MyAnswersPage() {
         <div className="flex items-center justify-between gap-3">
           <div>
             <h2 className="text-base font-semibold text-gray-900">
-              Minhas respostas enviadas
+              {t("labelings.myAnswers.sectionTitle")}
             </h2>
             <p className="text-sm text-gray-500">
-              Reabra uma resposta que você já enviou para ajustar os valores.
+              {t("labelings.myAnswers.sectionDescription")}
             </p>
           </div>
           {isLoadingMyAnswers ? (
-            <span className="text-sm text-gray-500">Carregando...</span>
+            <span className="text-sm text-gray-500">{t("common.loading")}</span>
           ) : null}
         </div>
         {(myAnswers?.length ?? 0) === 0 ? (
           <p className="mt-2 text-sm text-gray-600">
-            Você ainda não enviou respostas nesta rotulação.
+            {t("labelings.myAnswers.empty")}
           </p>
         ) : (
           <div className="mt-3 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
@@ -185,15 +187,15 @@ export default function MyAnswersPage() {
                   <div className="flex items-center justify-between">
                     <div className="text-sm font-semibold text-blue-900">
                       {row !== undefined && row !== null
-                        ? `Item #${row + 1}`
-                        : "Item"}
+                        ? t("labelings.myAnswers.itemLabel", { index: row + 1 })
+                        : t("labelings.myAnswers.itemFallback")}
                     </div>
                     <span className="text-[11px] text-gray-500">
-                      {createdAt.toLocaleString()}
+                      {createdAt.toLocaleString(locale)}
                     </span>
                   </div>
                   <p className="text-xs text-gray-600 break-words">
-                    ID da resposta: {answer.id}
+                    {t("labelings.myAnswers.answerId", { id: answer.id })}
                   </p>
                   <button
                     type="button"
@@ -202,7 +204,7 @@ export default function MyAnswersPage() {
                     className="inline-flex items-center justify-center gap-2 rounded-md bg-blue-900 px-3 py-2 text-sm font-medium text-white hover:bg-blue-800 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     <Edit3 size={14} />
-                    {editingLocked ? "Edição bloqueada" : "Editar resposta"}
+                    {editingLocked ? t("labelings.myAnswers.editLocked") : t("labelings.myAnswers.edit")}
                   </button>
                 </div>
               );
@@ -216,10 +218,10 @@ export default function MyAnswersPage() {
           <div className="mb-3 flex items-center justify-between">
             <div>
               <h3 className="text-base font-semibold text-gray-900">
-                Editando Item #{(editingAnswer.item_detail?.row_index ?? 0) + 1}
+                {t("labelings.myAnswers.editingTitle", { index: (editingAnswer.item_detail?.row_index ?? 0) + 1 })}
               </h3>
               <p className="text-sm text-gray-500">
-                Ajuste as respostas e salve.
+                {t("labelings.myAnswers.editingDescription")}
               </p>
             </div>
             <button
@@ -227,7 +229,7 @@ export default function MyAnswersPage() {
               onClick={() => setEditingAnswer(null)}
               className="text-sm text-blue-900 hover:underline"
             >
-              Cancelar edição
+              {t("labelings.myAnswers.cancelEdit")}
             </button>
           </div>
 
@@ -250,7 +252,7 @@ export default function MyAnswersPage() {
               disabled={isSaving}
               className="inline-flex items-center gap-2 rounded-lg bg-blue-900 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {isSaving ? "Salvando..." : "Salvar edição"}
+              {isSaving ? t("common.saving") : t("labelings.myAnswers.saveEdit")}
             </button>
           </div>
         </section>

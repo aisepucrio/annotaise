@@ -1,6 +1,11 @@
 export type QuestionType = "text" | "number" | "range" | "multiple_choice";
 export type ContextType = "text" | "number" | "date" | "category" | "code";
 
+export type TranslateFn = (
+  key: string,
+  params?: Record<string, string | number>
+) => string;
+
 export type MultipleChoiceChoice = {
   id: string;
   text: string;
@@ -68,19 +73,40 @@ export type SectionData = {
   elements: SectionElement[];
 };
 
-const createDefaultChoices = (): MultipleChoiceChoice[] => [
-  { id: crypto.randomUUID(), text: "Opção 1" },
-  { id: crypto.randomUUID(), text: "Opção 2" },
+const createDefaultChoices = (t?: TranslateFn): MultipleChoiceChoice[] => [
+  {
+    id: crypto.randomUUID(),
+    text: t
+      ? t("labelings.create.questionType.multipleChoice.optionLabel", {
+          index: 1,
+        })
+      : "Option 1",
+  },
+  {
+    id: crypto.randomUUID(),
+    text: t
+      ? t("labelings.create.questionType.multipleChoice.optionLabel", {
+          index: 2,
+        })
+      : "Option 2",
+  },
 ];
 
-export const getDefaultQuestionConfig = (type: QuestionType): QuestionConfig => {
+export const getDefaultQuestionConfig = (
+  type: QuestionType,
+  t?: TranslateFn
+): QuestionConfig => {
   switch (type) {
     case "number":
       return { type: "number", min: 0, max: 100, step: 1 };
     case "range":
       return { type: "range", min: 0, max: 10, step: 1 };
     case "multiple_choice":
-      return { type: "multiple_choice", allowMultiple: false, choices: createDefaultChoices() };
+      return {
+        type: "multiple_choice",
+        allowMultiple: false,
+        choices: createDefaultChoices(t),
+      };
     case "text":
     default:
       return { type: "text", placeholder: "", maxLength: 255 };

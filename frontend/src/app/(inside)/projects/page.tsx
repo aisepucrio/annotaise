@@ -18,10 +18,12 @@ import {
 } from "@/lib/services/project_service";
 import useCurrent from "@/hooks/current_user_hook";
 import { toast } from "sonner";
+import { useTranslations } from "@/i18n/use-translations";
 
 export default function Projects() {
   const router = useRouter();
   const currentUser = useCurrent();
+  const { t } = useTranslations();
   const userLoading = currentUser === undefined;
   const canSeeProjects = Boolean(
     currentUser &&
@@ -51,13 +53,12 @@ export default function Projects() {
   const loadError =
     error && error instanceof Error
       ? error.message
-      : error
-      ? "Não foi possível carregar os projetos."
+      : error ? t("projects.loadError")
       : null;
 
   const handleCreateProject = async (payload: ProjectPayload) => {
     if (!isAdmin) {
-      toast.error("Apenas administradores podem criar projetos.");
+      toast.error(t("projects.createDenied"));
       return;
     }
     await createProject(payload);
@@ -72,14 +73,14 @@ export default function Projects() {
 
   useEffect(() => {
     if (!userLoading && !canSeeProjects) {
-      toast.error("Seu perfil não possui permissão para visualizar projetos.");
+      toast.error(t("projects.accessDenied"));
     }
   }, [canSeeProjects, userLoading]);
 
   if (userLoading) {
     return (
       <p className="mt-6 text-sm text-gray-500">
-        Carregando informações do usuário...
+        {t("projects.userLoading")}
       </p>
     );
   }
@@ -88,11 +89,11 @@ export default function Projects() {
     return (
       <>
         <PageHeader
-          page_title="Projetos"
-          description="Apenas editores ou administradores podem acessar esta página."
+          page_title={t("projects.title")}
+          description={t("projects.description.restricted")}
         />
         <p className="mt-6 ml-5 text-sm text-gray-600">
-          Seu perfil não possui permissão para visualizar projetos.
+          {t("projects.accessDenied")}
         </p>
       </>
     );
@@ -101,19 +102,16 @@ export default function Projects() {
   return (
     <>
       <PageHeader
-        page_title="Projetos"
-        tooltip={`Crie e gerencie projetos para criar rotulações vinculadas a eles:
-• Cadastre novos projetos e mantenha as informações principais em dia.
-• Adicione membros e gerencie permissões como membros para cada projeto.
-• Esses projetos devem ser criados para iniciar rotulações vinculadas a eles.`}
-        description="Nesta página você pode visualizar todos os projetos criados, assim como suas informações principais. Clique em “Gerenciar” para ver mais informações sobre o projeto."
+        page_title={t("projects.title")}
+        tooltip={t("projects.tooltip")}
+        description={t("projects.description.admin")}
       ></PageHeader>
 
       <div className="flex flex-nowrap items-center mt-5">
         <FilterBar
           value={searchTerm}
           onChange={setSearchTerm}
-          placeholder="Pesquisar projetos..."
+          placeholder={t("projects.searchPlaceholder")}
         />
         <div className="ml-auto mr-6 w-auto">
           <Button
@@ -123,17 +121,17 @@ export default function Projects() {
             variant="normal"
             fill={false}
             className="px-4 py-2 shadow-md text-sm"
-            ariaLabel="Criar novo projeto"
+            ariaLabel={t("projects.createAria")}
           >
-            Novo Projeto
+            {t("projects.createButton")}
           </Button>
         </div>
       </div>
       <div className="ml-5 mr-5 mt-5">
         {isLoading ? (
-          <p className="text-sm text-gray-500">Carregando projetos...</p>
+          <p className="text-sm text-gray-500">{t("projects.loading")}</p>
         ) : projectList.length === 0 ? (
-          <p className="text-sm text-gray-500">Nenhum projeto encontrado.</p>
+          <p className="text-sm text-gray-500">{t("projects.empty")}</p>
         ) : (
           <GridLayout minColumnWidth="480px">
             {projectList.map((project, index) => (

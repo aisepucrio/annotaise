@@ -28,6 +28,7 @@ import ActionsSidebar from "./actions_sidebar";
 import SectionForm from "./section_form";
 import { type SectionData } from "./labeling_types";
 import Button from "@/components/button/Button";
+import { useTranslations } from "@/i18n/use-translations";
 
 export type ActionsAnchorState = {
   sectionId: string;
@@ -74,6 +75,7 @@ export default function FormTab({
   focusActionsAt,
   setSections,
 }: FormTabProps) {
+  const { t } = useTranslations();
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 6 },
@@ -109,7 +111,7 @@ export default function FormTab({
       <div className="mb-4 max-w-[860px] mx-auto flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
           <h2 className="text-sm font-semibold text-blue-900">
-            Colunas importadas do CSV
+            {t("labelings.create.form.importedColumns")}
           </h2>
           {columns.length > 0 ? (
             <div className="mt-2 flex flex-wrap gap-2">
@@ -125,8 +127,8 @@ export default function FormTab({
           ) : (
             <p className="mt-2 text-sm text-gray-500">
               {isLoadingLabeling
-                ? "Carregando colunas..."
-                : "Nenhuma coluna detectada para esta rotulação."}
+                ? t("labelings.create.form.loadingColumns")
+                : t("labelings.create.form.noColumns")}
             </p>
           )}
         </div>
@@ -139,7 +141,7 @@ export default function FormTab({
           icon={<Save size={18} />}
           className="mt-2"
         >
-          {isSaving ? "Salvando..." : "Salvar alterações"}
+          {isSaving ? t("common.saving") : t("common.saveChanges")}
         </Button>
       </div>
 
@@ -206,6 +208,7 @@ type SortableSectionProps = {
 };
 
 function SortableSection({ id, children }: SortableSectionProps) {
+  const { t } = useTranslations();
   const {
     attributes,
     listeners,
@@ -230,7 +233,7 @@ function SortableSection({ id, children }: SortableSectionProps) {
     >
       <button
         type="button"
-        aria-label="Arrastar seção"
+        aria-label={t("labelings.create.form.dragSection")}
         className="absolute -left-12 top-5 flex h-8 w-8 items-center justify-center rounded-md border-2 border-blue-800 bg-blue-50 text-blue-900 hover:bg-blue-100 cursor-grab active:cursor-grabbing"
         {...attributes}
         {...listeners}

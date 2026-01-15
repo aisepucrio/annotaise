@@ -1,5 +1,6 @@
 import type { ChangeEvent, ComponentType } from "react";
 import { Trash2 } from "lucide-react";
+import { useTranslations } from "@/i18n/use-translations";
 import {
   QuestionConfig,
   QuestionElement,
@@ -18,12 +19,18 @@ type QuestionBlockProps = {
   onActivate?: (el: HTMLElement) => void;
 };
 
-export default function QuestionBlock({ data, onUpdate, onRemove, onActivate }: QuestionBlockProps) {
+export default function QuestionBlock({
+  data,
+  onUpdate,
+  onRemove,
+  onActivate,
+}: QuestionBlockProps) {
+  const { t } = useTranslations();
   const handleTypeChange = (e: ChangeEvent<HTMLSelectElement>) => {
     const newType = e.target.value as QuestionType;
     onUpdate({
       question_type: newType,
-      config: getDefaultQuestionConfig(newType),
+      config: getDefaultQuestionConfig(newType, t),
     });
   };
 
@@ -49,7 +56,7 @@ export default function QuestionBlock({ data, onUpdate, onRemove, onActivate }: 
     selectedType && data.config && data.config.type === selectedType
       ? data.config
       : selectedType
-      ? getDefaultQuestionConfig(selectedType)
+      ? getDefaultQuestionConfig(selectedType, t)
       : undefined;
 
   return (
@@ -60,12 +67,14 @@ export default function QuestionBlock({ data, onUpdate, onRemove, onActivate }: 
       onClick={(e) => onActivate?.(e.currentTarget)}
     >
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-blue-900">Pergunta</h3>
+        <h3 className="text-sm font-semibold text-blue-900">
+          {t("labelings.create.question.title")}
+        </h3>
         <button
           type="button"
           className="cursor-pointer text-gray-400 hover:text-red-500"
-          aria-label="Remover pergunta"
-          title="Remover pergunta"
+          aria-label={t("labelings.create.question.removeAria")}
+          title={t("labelings.create.question.removeAria")}
           onClick={onRemove}
         >
           <Trash2 size={18} />
@@ -74,7 +83,7 @@ export default function QuestionBlock({ data, onUpdate, onRemove, onActivate }: 
 
       <div className="mb-3 flex gap-2">
         <textarea
-          placeholder="Texto da pergunta"
+          placeholder={t("labelings.create.question.placeholder")}
           value={data.text || ""}
           onChange={handleTextChange}
           className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none cursor-text"
@@ -86,18 +95,25 @@ export default function QuestionBlock({ data, onUpdate, onRemove, onActivate }: 
           onChange={handleTypeChange}
         >
           <option value="" disabled>
-            Selecione um tipo
+            {t("labelings.create.question.selectType")}
           </option>
-          <option value="text">Texto</option>
-          <option value="number">Número</option>
-          <option value="range">Intervalo Numérico</option>
-          <option value="multiple_choice">Seleção múltipla</option>
+          <option value="text">{t("labelings.create.question.type.text")}</option>
+          <option value="number">
+            {t("labelings.create.question.type.number")}
+          </option>
+          <option value="range">{t("labelings.create.question.type.range")}</option>
+          <option value="multiple_choice">
+            {t("labelings.create.question.type.multipleChoice")}
+          </option>
         </select>
       </div>
 
       <div className="flex items-center gap-2 text-sm">
-        <label htmlFor={`required-${data.id}`} className="text-gray-600 cursor-pointer">
-          Obrigatória
+        <label
+          htmlFor={`required-${data.id}`}
+          className="text-gray-600 cursor-pointer"
+        >
+          {t("labelings.create.question.required")}
         </label>
         <input
           id={`required-${data.id}`}

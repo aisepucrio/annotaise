@@ -1,6 +1,7 @@
 import type { ChangeEvent } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { MultipleChoiceQuestionConfig } from "../labeling_types";
+import { useTranslations } from "@/i18n/use-translations";
 
 type Props = {
   config: MultipleChoiceQuestionConfig;
@@ -11,6 +12,7 @@ export default function QuestionMultipleChoiceEditor({
   config,
   onChange,
 }: Props) {
+  const { t } = useTranslations();
   const handleChoiceTextChange =
     (choiceId: string) => (e: ChangeEvent<HTMLTextAreaElement>) => {
       const updated = config.choices.map((choice) =>
@@ -29,7 +31,12 @@ export default function QuestionMultipleChoiceEditor({
       ...config,
       choices: [
         ...config.choices,
-        { id: crypto.randomUUID(), text: `Opção ${config.choices.length + 1}` },
+        {
+          id: crypto.randomUUID(),
+          text: t("labelings.create.questionType.multipleChoice.optionLabel", {
+            index: config.choices.length + 1,
+          }),
+        },
       ],
     });
   };
@@ -41,13 +48,16 @@ export default function QuestionMultipleChoiceEditor({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-blue-900">Opções</span>
+        <span className="text-xs font-semibold text-blue-900">
+          {t("labelings.create.questionType.multipleChoice.optionsLabel")}
+        </span>
         <button
           type="button"
           onClick={handleAddChoice}
           className="flex items-center gap-1 rounded-md bg-blue-100 px-2 py-1 text-xs cursor-pointer text-blue-800 hover:bg-blue-200"
         >
-          <Plus size={14} /> Adicionar opção
+          <Plus size={14} />
+          {t("labelings.create.questionType.multipleChoice.addOption")}
         </button>
       </div>
 
@@ -78,7 +88,7 @@ export default function QuestionMultipleChoiceEditor({
           checked={config.allowMultiple ?? false}
           onChange={handleAllowMultipleChange}
         />
-        Permitir múltiplas respostas (Checkbox)
+        {t("labelings.create.questionType.multipleChoice.allowMultiple")}
       </label>
     </div>
   );

@@ -8,6 +8,7 @@ import GridLayout from "@/components/grid/grid_layout";
 import Button from "@/components/button/Button";
 import type { AnswerResponse } from "@/lib/services/answer_service";
 import type { LabelingStructureSection } from "@/lib/services/labeling_create_service";
+import { useTranslations } from "@/i18n/use-translations";
 
 type ResponderOption = { id: number; label: string };
 
@@ -27,6 +28,11 @@ type AnswersTabProps = {
   structureSections: LabelingStructureSection[];
 };
 
+type TranslateFn = (
+  key: string,
+  params?: Record<string, string | number>
+) => string;
+
 export default function AnswersTab({
   responderOptions,
   selectedResponder,
@@ -42,13 +48,14 @@ export default function AnswersTab({
   onCloseInspect,
   structureSections,
 }: AnswersTabProps) {
+  const { t, locale } = useTranslations();
   return (
     <>
       <div className="max-w-6xl mx-auto mt-2 space-y-4">
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex flex-col">
             <label className="text-sm font-semibold text-gray-800">
-              Usuário que rotulou
+              {t("labelings.create.answers.responderLabel")}
             </label>
             <select
               value={
@@ -60,7 +67,9 @@ export default function AnswersTab({
               }}
               className="mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200"
             >
-              <option value="all">Todos os usuários</option>
+              <option value="all">
+                {t("labelings.create.answers.responderAll")}
+              </option>
               {responderOptions.map((opt) => (
                 <option key={opt.id} value={opt.id}>
                   {opt.label}
@@ -76,25 +85,31 @@ export default function AnswersTab({
               onClick={() => void onExportCsv()}
               disabled={exporting}
               className="px-4"
-              ariaLabel="Exportar respostas em CSV"
+              ariaLabel={t("labelings.create.answers.exportAria")}
               icon={<Download size={16} />}
             >
-              {exporting ? "Exportando..." : "Exportar CSV"}
+              {exporting
+                ? t("labelings.create.answers.exporting")
+                : t("labelings.create.answers.exportButton")}
             </Button>
             <span className="text-sm text-gray-600">
               {filteredAnswers.length}{" "}
-              {filteredAnswers.length === 1 ? "resposta" : "respostas"}
+              {filteredAnswers.length === 1
+                ? t("labelings.create.answers.countSingle")
+                : t("labelings.create.answers.countPlural")}
             </span>
           </div>
         </div>
 
         {answersLoading ? (
-          <p className="text-sm text-gray-500">Carregando respostas...</p>
+          <p className="text-sm text-gray-500">
+            {t("labelings.create.answers.loading")}
+          </p>
         ) : filteredAnswers.length === 0 ? (
           <p className="text-sm text-gray-600">
             {totalAnswers === 0
-              ? "Nenhuma resposta encontrada para esta rotulação."
-              : "Nenhuma resposta para o usuário selecionado."}
+              ? t("labelings.create.answers.emptyAll")
+              : t("labelings.create.answers.emptyUser")}
           </p>
         ) : (
           <GridLayout minColumnWidth="420px">
@@ -102,11 +117,15 @@ export default function AnswersTab({
               const rowIndex = answer.item_detail?.row_index;
               const itemLabel =
                 rowIndex !== undefined && rowIndex !== null
-                  ? `Item #${rowIndex + 1}`
-                  : `Item ID ${answer.item_detail?.id ?? answer.item}`;
+                  ? t("labelings.create.answers.itemLabel", {
+                      index: rowIndex + 1,
+                    })
+                  : t("labelings.create.answers.itemIdLabel", {
+                      id: answer.item_detail?.id ?? answer.item,
+                    });
               const userLabel = getUserLabel(answer.answered_by);
               const answeredAt = new Date(answer.created_at).toLocaleString(
-                "pt-BR"
+                locale
               );
               const answeredCount = Object.keys(
                 answer.answer_payload ?? {}
@@ -120,7 +139,9 @@ export default function AnswersTab({
                         {itemLabel}
                       </p>
                       <p className="text-sm text-gray-800">
-                        Usuário: {userLabel}
+                        {t("labelings.create.answers.userLabel", {
+                          name: userLabel,
+                        })}
                       </p>
                       <p className="text-xs text-gray-500">{answeredAt}</p>
                     </div>
@@ -128,17 +149,17 @@ export default function AnswersTab({
                       variant="normal"
                       fill={false}
                       onClick={() => onInspectAnswer(answer)}
-                      ariaLabel="Inspecionar respostas"
+                      ariaLabel={t("labelings.create.answers.inspectAria")}
                       className="px-4 py-2"
                     >
-                      Inspecionar
+                      {t("labelings.create.answers.inspectButton")}
                     </Button>
                   </div>
                   <p className="mt-3 text-xs text-gray-600">
                     {answeredCount}{" "}
                     {answeredCount === 1
-                      ? "campo respondido"
-                      : "campos respondidos"}
+                      ? t("labelings.create.answers.answeredFieldSingle")
+                      : t("labelings.create.answers.answeredFieldPlural")}
                   </p>
                 </GridItemCard>
               );
@@ -171,6 +192,7 @@ function InspectAnswerModal({
   sections,
 }: InspectAnswerModalProps) {
   if (!answer) return null;
+  const { t, locale } = useTranslations();
 
   const payloadEntries = Object.entries(
     (answer.item_detail?.payload ?? {}) as Record<string, unknown>
@@ -179,9 +201,13 @@ function InspectAnswerModal({
   const rowIndex = answer.item_detail?.row_index;
   const itemLabel =
     rowIndex !== undefined && rowIndex !== null
-      ? `Item #${rowIndex + 1}`
-      : `Item ID ${answer.item_detail?.id ?? answer.item}`;
-  const answeredAt = new Date(answer.created_at).toLocaleString("pt-BR");
+      ? t("labelings.create.answers.itemLabel", {
+          index: rowIndex + 1,
+        })
+      : t("labelings.create.answers.itemIdLabel", {
+          id: answer.item_detail?.id ?? answer.item,
+        });
+  const answeredAt = new Date(answer.created_at).toLocaleString(locale);
 
   const orderedSections = [...sections].sort(
     (a, b) => (a.order ?? 0) - (b.order ?? 0)
@@ -211,25 +237,27 @@ function InspectAnswerModal({
               <h3 className="text-lg font-semibold text-gray-900">
                 {itemLabel}
               </h3>
-              <p className="text-sm text-gray-700">Usuário: {userLabel}</p>
+              <p className="text-sm text-gray-700">
+                {t("labelings.create.answers.userLabel", { name: userLabel })}
+              </p>
             </div>
             <button
               type="button"
               onClick={onClose}
               className="rounded-md border border-gray-200 px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 cursor-pointer"
             >
-              Fechar
+              {t("labelings.create.answers.modal.close")}
             </button>
           </div>
 
           <div className="mt-5 space-y-4">
             <div className="rounded-lg border border-blue-100 bg-blue-50 p-4">
               <h4 className="text-sm font-semibold text-blue-900 mb-2">
-                Contexto do item
+                {t("labelings.create.answers.modal.contextTitle")}
               </h4>
               {payloadEntries.length === 0 ? (
                 <p className="text-sm text-gray-600">
-                  Nenhum contexto disponível.
+                  {t("labelings.create.answers.modal.contextEmpty")}
                 </p>
               ) : (
                 <div className="grid gap-2 md:grid-cols-2">
@@ -243,7 +271,7 @@ function InspectAnswerModal({
                       </p>
                       <div className="mt-1 prose prose-sm max-w-none text-gray-800">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                          {formatAnswerValue(value)}
+                          {formatAnswerValue(value, t)}
                         </ReactMarkdown>
                       </div>
                     </div>
@@ -254,15 +282,15 @@ function InspectAnswerModal({
 
             <div className="rounded-lg border border-gray-200 bg-white p-4">
               <h4 className="text-sm font-semibold text-gray-900 mb-2">
-                Respostas
+                {t("labelings.create.answers.modal.answersTitle")}
               </h4>
               {answerEntries.length === 0 ? (
                 <p className="text-sm text-gray-600">
-                  Nenhuma resposta registrada.
+                  {t("labelings.create.answers.modal.answersEmpty")}
                 </p>
               ) : orderedSections.length === 0 ? (
                 <p className="text-sm text-gray-600">
-                  Estrutura da rotulação não encontrada para exibir as seções.
+                  {t("labelings.create.answers.modal.structureMissing")}
                 </p>
               ) : (
                 <div className="space-y-4">
@@ -299,23 +327,40 @@ function InspectAnswerModal({
                         <div className="flex items-center justify-between bg-blue-900 px-4 py-3 text-white rounded-t-xl">
                           <div className="flex flex-col">
                             <span className="text-[11px] uppercase tracking-wide text-blue-100">
-                              Se‡ao {section.order ?? ""}
+                              {t("labelings.create.answers.modal.sectionLabel", {
+                                order: section.order ?? "",
+                              })}
                             </span>
                             <div className="prose prose-sm max-w-none text-white">
                               <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                {section.title?.trim() || "Se‡ao"}
+                                {section.title?.trim() ||
+                                  t(
+                                    "labelings.create.answers.modal.sectionFallback"
+                                  )}
                               </ReactMarkdown>
                             </div>
                           </div>
                           <span className="text-xs text-blue-100">
-                            {questionCount} perguntas
+                            {questionCount === 1
+                              ? t(
+                                  "labelings.create.answers.modal.questionsCountSingular",
+                                  {
+                                    count: questionCount,
+                                  }
+                                )
+                              : t(
+                                  "labelings.create.answers.modal.questionsCountPlural",
+                                  {
+                                    count: questionCount,
+                                  }
+                                )}
                           </span>
                         </div>
 
                         <div className="space-y-4 p-4">
                           {blocks.length === 0 ? (
                             <p className="text-sm text-gray-600">
-                              Nenhuma pergunta nesta se‡ao.
+                              {t("labelings.create.answers.modal.noQuestions")}
                             </p>
                           ) : (
                             <>
@@ -326,7 +371,9 @@ function InspectAnswerModal({
                                     className="rounded-lg border border-blue-100 bg-blue-50 p-3"
                                   >
                                     <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-blue-900">
-                                      Contexto do item
+                                      {t(
+                                        "labelings.create.answers.modal.contextTitle"
+                                      )}
                                     </p>
                                     <div className="grid gap-2 md:grid-cols-2">
                                       {block.elements.map((ctx, idx) => {
@@ -338,7 +385,12 @@ function InspectAnswerModal({
                                         const contextLabel =
                                           ctx.text?.trim() ||
                                           ctx.column_name ||
-                                          `Contexto ${idx + 1}`;
+                                          t(
+                                            "labelings.create.answers.modal.contextFallback",
+                                            {
+                                              index: idx + 1,
+                                            }
+                                          );
                                         return (
                                           <div
                                             key={ctx.id ?? `${section.id}-${idx}`}
@@ -352,9 +404,19 @@ function InspectAnswerModal({
                                               </ReactMarkdown>
                                             </div>
                                             <p className="text-[11px] uppercase tracking-wide text-blue-500">
-                                              Coluna: {ctx.column_name ?? "-"}
+                                              {t(
+                                                "labelings.create.answers.modal.columnLabel",
+                                                {
+                                                  name: ctx.column_name ?? "-",
+                                                }
+                                              )}
                                               {ctx.context_type
-                                                ? `   Tipo: ${ctx.context_type}`
+                                                ? ` ${t(
+                                                    "labelings.create.answers.modal.typeLabel",
+                                                    {
+                                                      type: ctx.context_type,
+                                                    }
+                                                  )}`
                                                 : ""}
                                             </p>
                                             <div className="mt-1 prose prose-sm max-w-none text-gray-800">
@@ -363,7 +425,8 @@ function InspectAnswerModal({
                                               >
                                                 {formatContextValue(
                                                   value,
-                                                  ctx.context_type
+                                                  ctx.context_type,
+                                                  t
                                                 )}
                                               </ReactMarkdown>
                                             </div>
@@ -384,7 +447,12 @@ function InspectAnswerModal({
                                       const label =
                                         (q.text && q.text.trim().length > 0
                                           ? q.text
-                                          : "Pergunta") ?? "Pergunta";
+                                          : t(
+                                              "labelings.create.answers.modal.questionFallback"
+                                            )) ??
+                                        t(
+                                          "labelings.create.answers.modal.questionFallback"
+                                        );
                                       return (
                                         <div
                                           key={q.id ?? `${section.id}-q-${idx}`}
@@ -400,12 +468,14 @@ function InspectAnswerModal({
                                             </div>
                                             {q.required ? (
                                               <span className="rounded-full bg-red-50 px-3 py-1 text-[11px] font-semibold uppercase text-red-700">
-                                                Obrigat¢ria
+                                                {t(
+                                                  "labelings.create.answers.modal.required"
+                                                )}
                                               </span>
                                             ) : null}
                                           </div>
                                           <p className="mt-2 text-sm text-gray-800 break-words">
-                                            {formatAnswerValue(val)}
+                                            {formatAnswerValue(val, t)}
                                           </p>
                                         </div>
                                       );
@@ -415,7 +485,9 @@ function InspectAnswerModal({
                               )}
                               {questionCount === 0 ? (
                                 <p className="text-sm text-gray-600">
-                                  Nenhuma pergunta nesta se‡ao.
+                                  {t(
+                                    "labelings.create.answers.modal.noQuestions"
+                                  )}
                                 </p>
                               ) : null}
                             </>
@@ -434,11 +506,11 @@ function InspectAnswerModal({
   );
 }
 
-function formatAnswerValue(value: unknown): string {
-  if (value === null || value === undefined) return "—";
+function formatAnswerValue(value: unknown, t: TranslateFn): string {
+  if (value === null || value === undefined) return "-";
   if (Array.isArray(value))
-    return value.map((v) => formatAnswerValue(v)).join(", ");
-  if (typeof value === "boolean") return value ? "Sim" : "Não";
+    return value.map((v) => formatAnswerValue(v, t)).join(", ");
+  if (typeof value === "boolean") return value ? t("common.yes") : t("common.no");
   if (typeof value === "object") {
     try {
       return JSON.stringify(value);
@@ -449,8 +521,12 @@ function formatAnswerValue(value: unknown): string {
   return String(value);
 }
 
-function formatContextValue(value: unknown, contextType?: string | null): string {
-  const text = formatAnswerValue(value);
+function formatContextValue(
+  value: unknown,
+  contextType: string | null | undefined,
+  t: TranslateFn
+): string {
+  const text = formatAnswerValue(value, t);
   if (contextType === "code") {
     return `\`\`\`\n${text}\n\`\`\``;
   }

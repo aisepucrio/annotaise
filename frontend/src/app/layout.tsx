@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Montserrat } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { LanguageProvider } from "@/i18n/language-context";
 const montserrat = Montserrat({
   variable: "--font-montserrat",
   subsets: ["latin"],
@@ -19,13 +20,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="pt-BR">
       <body
         className={`${montserrat.variable} antialiased`}
         style={{ fontFamily: "var(--font-montserrat)" }}
       >
-        {children}
-        <Toaster />
+        <LanguageProvider>
+          {children}
+          <Toaster />
+        </LanguageProvider>
       </body>
     </html>
   );

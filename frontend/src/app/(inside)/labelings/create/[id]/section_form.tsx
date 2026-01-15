@@ -20,6 +20,7 @@ import { CSS } from "@dnd-kit/utilities";
 import QuestionBlock from "./question_block";
 import ContextBlock from "./context_block";
 import { SectionData, SectionElement } from "./labeling_types";
+import { useTranslations } from "@/i18n/use-translations";
 
 type Props = {
   data: SectionData;
@@ -42,6 +43,7 @@ export default function SectionForm({
   onUpdateSection,
   onFocusElement,
 }: Props) {
+  const { t } = useTranslations();
   const humanIndex = index + 1;
 
   const safeSection = (): SectionData => ({
@@ -67,7 +69,10 @@ export default function SectionForm({
     })
   );
 
-  const handleUpdateElement = (elementId: string, patch: Partial<SectionElement>) => {
+  const handleUpdateElement = (
+    elementId: string,
+    patch: Partial<SectionElement>
+  ) => {
     const current = safeSection();
     const updatedElements = current.elements.map((el) =>
       el.id === elementId ? { ...el, ...patch } : el
@@ -115,14 +120,17 @@ export default function SectionForm({
       <div className="flex items-start justify-between">
         <div className="inline-flex -mt-9 mb-3 ml-2">
           <span className="mt-8 px-3 py-1 bg-blue-900 text-white text-xs rounded-t-md rounded-br-md shadow">
-            Seção {humanIndex} de {total}
+            {t("labelings.create.section.label", {
+              index: humanIndex,
+              total,
+            })}
           </span>
         </div>
         {onRemoveSection ? (
           <button
             type="button"
             onClick={onRemoveSection}
-            title="Apagar Seção"
+            title={t("labelings.create.section.delete")}
             className="p-2 text-red-700 hover:text-red-800 hover:bg-red-50 rounded-md cursor-pointer"
           >
             <Trash2 size={18} />
@@ -133,7 +141,7 @@ export default function SectionForm({
       <div className="flex gap-5 pb-5">
         <textarea
           className="text-sm font-semibold text-blue-900 border border-gray-300 rounded-md px-3 py-1 outline-none focus:border-blue-500 w-full"
-          placeholder="Título da seção"
+          placeholder={t("labelings.create.section.titlePlaceholder")}
           value={data?.title ?? ""}
           onChange={(e) => {
             onChangeTitle(e.target.value);
@@ -156,7 +164,11 @@ export default function SectionForm({
                 <SortableElement
                   key={element.id}
                   id={element.id}
-                  label={isContext ? "Arrastar contexto" : "Arrastar pergunta"}
+                  label={
+                    isContext
+                      ? t("labelings.create.section.dragContext")
+                      : t("labelings.create.section.dragQuestion")
+                  }
                 >
                   {isContext ? (
                     <ContextBlock
@@ -191,9 +203,10 @@ type SortableElementProps = {
 };
 
 function SortableElement({ id, label, children }: SortableElementProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id,
-  });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({
+      id,
+    });
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -201,7 +214,11 @@ function SortableElement({ id, label, children }: SortableElementProps) {
   };
 
   return (
-    <div ref={setNodeRef} style={style} className={`relative ${isDragging ? "z-10" : ""}`}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`relative ${isDragging ? "z-10" : ""}`}
+    >
       <button
         type="button"
         aria-label={label}

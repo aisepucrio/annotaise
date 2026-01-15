@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import Button from "@/components/button/Button";
 import { updateLabeling } from "@/lib/services/labeling_service";
 import { toast } from "sonner";
+import { useTranslations } from "@/i18n/use-translations";
 
 type DecisionTabProps = {
   labelingId: number;
@@ -25,6 +26,7 @@ export default function DecisionTab({
   decisiveQuestionId,
   onDecisiveQuestionChange,
 }: DecisionTabProps) {
+  const { t } = useTranslations();
   const [questions, setQuestions] = useState<DecisionQuestion[]>([]);
   const [selectedQuestion, setSelectedQuestion] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -33,7 +35,7 @@ export default function DecisionTab({
 
   useEffect(() => {
     if (!Number.isFinite(labelingId)) {
-      setLoadError("ID da rotulação inválido.");
+      setLoadError(t("labelings.create.decision.invalidId"));
       setIsLoading(false);
       return;
     }
@@ -54,7 +56,7 @@ export default function DecisionTab({
         setQuestions(sorted);
       } catch (error) {
         if (!isMounted) return;
-        let message = "Não foi possível carregar as perguntas.";
+        let message = t("labelings.create.decision.loadError");
         if (axios.isAxiosError(error)) {
           const detail = (error.response?.data as { detail?: string } | undefined)
             ?.detail;
@@ -72,15 +74,19 @@ export default function DecisionTab({
     return () => {
       isMounted = false;
     };
-  }, [labelingId]);
+  }, [labelingId, t]);
 
   const options = useMemo(
     () =>
       questions.map((question) => ({
         value: String(question.id),
-        label: question.text?.trim() || `Pergunta #${question.id}`,
+        label:
+          question.text?.trim() ||
+          t("labelings.create.decision.questionFallback", {
+            id: question.id,
+          }),
       })),
-    [questions]
+    [questions, t]
   );
 
   useEffect(() => {
@@ -97,9 +103,9 @@ export default function DecisionTab({
         decisive_question: Number(selectedQuestion),
       });
       onDecisiveQuestionChange?.(Number(selectedQuestion));
-      toast.success("Pergunta decisiva atualizada.");
+      toast.success(t("labelings.create.decision.updateSuccess"));
     } catch (error) {
-      let message = "Não foi possível salvar a pergunta decisiva.";
+      let message = t("labelings.create.decision.updateError");
       if (axios.isAxiosError(error)) {
         const detail = (error.response?.data as { detail?: string } | undefined)
           ?.detail;
@@ -117,32 +123,33 @@ export default function DecisionTab({
     <div className="max-w-4xl mx-auto mt-6 space-y-6">
       <div className="rounded-xl border border-blue-100 bg-blue-50 px-6 py-5">
         <h3 className="text-lg font-semibold text-blue-900">
-          Decisão automática
+          {t("labelings.create.decision.title")}
         </h3>
         <p className="mt-2 text-sm text-gray-700">
-          Esta rotulação está configurada para consolidar respostas
-          automaticamente.
+          {t("labelings.create.decision.description")}
         </p>
         <p className="mt-1 text-xs text-gray-600">
-          Selecione a pergunta de múltipla escolha que define a decisão.
+          {t("labelings.create.decision.help")}
         </p>
       </div>
 
       <div className="rounded-xl border border-gray-200 bg-white px-6 py-5">
         {isLoading ? (
-          <p className="text-sm text-gray-600">Carregando perguntas...</p>
+          <p className="text-sm text-gray-600">
+            {t("labelings.create.decision.loading")}
+          </p>
         ) : loadError ? (
           <p className="text-sm text-red-600">{loadError}</p>
         ) : options.length === 0 ? (
           <p className="text-sm text-gray-600">
-            Nenhuma pergunta de múltipla escolha encontrada.
+            {t("labelings.create.decision.empty")}
           </p>
         ) : (
           <div className="flex flex-wrap items-end gap-3">
             <Select
               id="decision-question"
-              label="Pergunta decisiva"
-              placeholder="Selecione uma pergunta"
+              label={t("labelings.create.decision.selectLabel")}
+              placeholder={t("labelings.create.decision.selectPlaceholder")}
               options={options}
               value={selectedQuestion}
               onChange={(event) =>
@@ -158,7 +165,9 @@ export default function DecisionTab({
               disabled={!selectedQuestion || isSaving}
               className="px-4"
             >
-              {isSaving ? "Salvando..." : "Confirmar"}
+              {isSaving
+                ? t("common.saving")
+                : t("labelings.create.decision.confirm")}
             </Button>
           </div>
         )}

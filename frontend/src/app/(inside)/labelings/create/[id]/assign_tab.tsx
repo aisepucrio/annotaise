@@ -1,11 +1,12 @@
 "use client";
 
-import { Users, UserPlus } from "lucide-react";
+import { Users } from "lucide-react";
 import {
   type LabelingMembershipDashboard,
   type LabelingMembershipRole,
 } from "@/lib/services/labeling_service";
 import { type User } from "@/lib/services/user_service";
+import { useTranslations } from "@/i18n/use-translations";
 
 type AssignTabProps = {
   memberships: LabelingMembershipDashboard[];
@@ -41,12 +42,24 @@ export default function AssignTab({
   onRemoveMember,
   onOpenInvitationModal,
 }: AssignTabProps) {
+  const { t } = useTranslations();
+  const roleLabels: Record<string, string> = {
+    annotator: t("roles.annotator"),
+    admin: t("roles.admin"),
+    editor: t("roles.editor"),
+    standard: t("roles.standard"),
+  };
+
   return (
     <div className="max-w-4xl mx-auto mt-2 space-y-4">
       {membershipLoading ? (
-        <p className="text-sm text-gray-500">Carregando membros...</p>
+        <p className="text-sm text-gray-500">
+          {t("labelings.create.assign.loading")}
+        </p>
       ) : memberships.length === 0 ? (
-        <p className="text-sm text-gray-600">Nenhum membro atribuído.</p>
+        <p className="text-sm text-gray-600">
+          {t("labelings.create.assign.empty")}
+        </p>
       ) : (
         <div className="space-y-2">
           {memberships.map((membership) => {
@@ -81,7 +94,7 @@ export default function AssignTab({
                   >
                     {roleOptions.map((opt) => (
                       <option key={opt} value={opt}>
-                        {opt}
+                        {roleLabels[opt] ?? opt}
                       </option>
                     ))}
                   </select>
@@ -91,7 +104,7 @@ export default function AssignTab({
                     disabled={membershipSaving}
                     className="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
                   >
-                    Remover
+                    {t("labelings.create.assign.remove")}
                   </button>
                 </div>
               </div>
@@ -102,14 +115,16 @@ export default function AssignTab({
 
       <div className="rounded-lg border border-gray-200 p-3 space-y-3">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-sm font-medium text-gray-900">Adicionar membro</p>
+          <p className="text-sm font-medium text-gray-900">
+            {t("labelings.create.assign.addTitle")}
+          </p>
           {/* <button
             type="button"
             onClick={onOpenInvitationModal}
             className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-medium text-blue-900 hover:bg-blue-50 cursor-pointer"
           >
             <UserPlus size={14} />
-            Novo usuário
+            Novo usuario
           </button> */}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
@@ -119,7 +134,7 @@ export default function AssignTab({
             disabled={membershipSaving}
             className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200"
           >
-            <option value="">Selecione um usuário</option>
+            <option value="">{t("labelings.create.assign.selectUser")}</option>
             {availableUsers.map((user) => (
               <option key={user.id} value={user.id}>
                 {`${user.first_name || ""} ${user.last_name || ""}`.trim() ||
@@ -137,7 +152,7 @@ export default function AssignTab({
           >
             {roleOptions.map((opt) => (
               <option key={opt} value={opt}>
-                {opt}
+                {roleLabels[opt] ?? opt}
               </option>
             ))}
           </select>
@@ -147,7 +162,9 @@ export default function AssignTab({
             disabled={!newMemberId || membershipSaving}
             className="rounded-lg bg-blue-900 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
           >
-            {membershipSaving ? "Adicionando..." : "Adicionar"}
+            {membershipSaving
+              ? t("labelings.create.assign.adding")
+              : t("labelings.create.assign.add")}
           </button>
         </div>
       </div>

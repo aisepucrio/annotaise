@@ -1,5 +1,6 @@
 import type { ChangeEvent } from "react";
 import { RangeQuestionConfig } from "../labeling_types";
+import { useTranslations } from "@/i18n/use-translations";
 
 type Props = {
   config: RangeQuestionConfig;
@@ -7,6 +8,7 @@ type Props = {
 };
 
 export default function QuestionRangeEditor({ config, onChange }: Props) {
+  const { t } = useTranslations();
   const { min, max, step } = config;
 
   const handleNumericChange =
@@ -23,7 +25,7 @@ export default function QuestionRangeEditor({ config, onChange }: Props) {
     <div className="flex flex-col gap-3">
       <div className="grid grid-cols-3 gap-3">
         <label className="flex flex-col text-xs text-blue-900">
-          Valor mínimo
+          {t("labelings.create.questionType.range.minLabel")}
           <input
             type="number"
             className="mt-1 rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none cursor-text"
@@ -32,7 +34,7 @@ export default function QuestionRangeEditor({ config, onChange }: Props) {
           />
         </label>
         <label className="flex flex-col text-xs text-blue-900">
-          Valor máximo
+          {t("labelings.create.questionType.range.maxLabel")}
           <input
             type="number"
             className="mt-1 rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none cursor-text"
@@ -41,7 +43,7 @@ export default function QuestionRangeEditor({ config, onChange }: Props) {
           />
         </label>
         <label className="flex flex-col text-xs text-blue-900">
-          Passo
+          {t("labelings.create.questionType.range.stepLabel")}
           <input
             type="number"
             className="mt-1 rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none cursor-text"
@@ -54,7 +56,11 @@ export default function QuestionRangeEditor({ config, onChange }: Props) {
       </div>
       {(min !== undefined || max !== undefined || step !== undefined) && (
         <p className="text-xs text-gray-500">
-          Faixa configurada: {min ?? "—"} até {max ?? "—"} (passo {step ?? "—"})
+          {t("labelings.create.questionType.range.summary", {
+            min: min ?? "-",
+            max: max ?? "-",
+            step: step ?? "-",
+          })}
         </p>
       )}
     </div>

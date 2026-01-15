@@ -15,6 +15,8 @@ import { useRouter } from "next/navigation";
 import { AuthActions } from "@/lib/authClient";
 import useCurrent from "@/hooks/current_user_hook";
 import { BookmarkPlus } from "lucide-react";
+import LanguageToggle from "@/components/LanguageToggle";
+import { useTranslations } from "@/i18n/use-translations";
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -25,6 +27,7 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
   const router = useRouter();
   const { removeTokens } = AuthActions();
   const currentUser = useCurrent();
+  const { t } = useTranslations();
   const isAdmin = Boolean(
     currentUser?.is_staff || currentUser?.account_type === "admin"
   );
@@ -83,7 +86,7 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
               <button
                 type="button"
                 onClick={onToggle}
-                aria-label="Expandir menu lateral"
+                aria-label={t("sidebar.expand")}
                 className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 rounded-sm hover:bg-gray-100 transition-all duration-200"
               >
                 <PanelLeftOpen size={24} className="text-gray-600" />
@@ -99,7 +102,7 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
             <button
               type="button"
               onClick={onToggle}
-              aria-label="Minimizar menu lateral"
+              aria-label={t("sidebar.collapse")}
               className="flex items-center justify-center rounded-sm w-9 h-9 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all duration-200"
             >
               <PanelLeftClose size={24} />
@@ -113,9 +116,9 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
         {/* Topo */}
         <ul className="space-y-1 mt-3 w-full">
           {isAdmin ? (
-          <SidebarItem
-            icon={<LayoutDashboard size={24} />}
-            label="Dashboard"
+            <SidebarItem
+              icon={<LayoutDashboard size={24} />}
+              label={t("sidebar.dashboard")}
             href="/dashboard"
             alias="/dashboard"
             hover_color="blue"
@@ -124,7 +127,7 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
           {isAdmin ? (
             <SidebarItem
               icon={<Users size={24} />}
-              label="Usuarios"
+              label={t("sidebar.users")}
               href="/users"
               alias="/users"
               hover_color="blue"
@@ -134,7 +137,7 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
           {canSeeProjects ? (
             <SidebarItem
               icon={<FolderKanban size={24} />}
-              label="Projetos"
+              label={t("sidebar.projects")}
               href="/projects"
               alias="/projects"
               hover_color="blue"
@@ -144,7 +147,7 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
           {isAdmin ? (
             <SidebarItem
               icon={<BookmarkPlus size={24} />}
-              label="Gerenciar Rotulações"
+              label={t("sidebar.manageLabelings")}
               href="/labelings/manage"
               alias="/labelings/manage"
               hover_color="blue"
@@ -153,7 +156,7 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
           ) : null}
           <SidebarItem
             icon={<Tags size={24} />}
-            label="Rotular"
+            label={t("sidebar.labelings")}
             href="/labelings"
             alias="/labelings"
             hover_color="blue"
@@ -162,7 +165,6 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
         </ul>
 
         {/* Rodape */}
-        
         <div className="text-sm text-gray-500 mt-auto w-full space-y-1 pl-0">
           {/*     CONFIGURAÇÕES, REMOVIDA POR ENQUANTO    
           <SidebarItem
@@ -175,6 +177,12 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
           />
           */}
 
+          <div
+            className={`pt-2 ${isOpen ? "px-6" : "flex justify-center"}`}
+          >
+            <LanguageToggle collapsed={!isOpen} />
+          </div>
+
           <button
             type="button"
             className="text-sm text-red-400 mt-auto w-full space-y-1"
@@ -182,7 +190,7 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
           >
             <SidebarItem
               icon={<LogOut size={24} />}
-              label="Logout"
+              label={t("sidebar.logout")}
               href="/login"
               alias="/logout"
               hover_color="red"

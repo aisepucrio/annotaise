@@ -8,6 +8,7 @@ import api from "@/lib/fetcher";
 import { isAxiosError } from "axios";
 import { Clock3, EyeIcon, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "@/i18n/use-translations";
 
 type Invitation = {
   token: string;
@@ -26,17 +27,19 @@ type FormData = {
   password: string;
 };
 
-const roleLabels: Record<Invitation["role"], string> = {
-  admin: "Administrador",
-  editor: "Editor",
-  standard: "Padrão",
-};
 
 export default function AcceptInvitationPage() {
   const router = useRouter();
+  const { t, locale } = useTranslations();
   const params = useParams<{ token: string }>();
   const tokenParam = params?.token;
   const token = Array.isArray(tokenParam) ? tokenParam[0] : tokenParam ?? "";
+  const roleLabels: Record<Invitation["role"], string> = {
+    admin: t("invitation.role.admin"),
+    editor: t("invitation.role.editor"),
+    standard: t("invitation.role.standard"),
+  };
+
 
   const [invitation, setInvitation] = useState<Invitation | null>(null);
   const [loadingInvite, setLoadingInvite] = useState(true);
@@ -50,10 +53,10 @@ export default function AcceptInvitationPage() {
 
   const inviteStatus = useMemo(() => {
     if (!invitation) return null;
-    if (invitation.is_used) return "Convite já utilizado";
-    if (invitation.is_expired) return "Convite expirado";
-    return "Convite válido";
-  }, [invitation]);
+    if (invitation.is_used) return t("invitation.status.used");
+    if (invitation.is_expired) return t("invitation.status.expired");
+    return t("invitation.status.valid");
+  }, [invitation, t]);
 
   const inviteBlocked = Boolean(
     invitation && (invitation.is_expired || invitation.is_used)
@@ -63,7 +66,7 @@ export default function AcceptInvitationPage() {
 
   const formatDateTime = (value?: string) => {
     if (!value) return "-";
-    return new Date(value).toLocaleString("pt-BR", {
+    return new Date(value).toLocaleString(locale, {
       dateStyle: "short",
       timeStyle: "short",
     });
@@ -71,8 +74,8 @@ export default function AcceptInvitationPage() {
 
   useEffect(() => {
     if (!token) {
-      setInviteError("Token do convite ausente ou inválido.");
-      toast.error("Token do convite ausente ou inválido.");
+      setInviteError(t("invitation.error.missingToken"));
+      toast.error(t("invitation.error.missingToken"));
       setLoadingInvite(false);
       return;
     }
@@ -83,32 +86,30 @@ export default function AcceptInvitationPage() {
       .get<Invitation>(`/invitations/${token}/`)
       .then((res) => setInvitation(res.data))
       .catch((err) => {
-        let message = "Não foi possível carregar as informações do convite.";
+        let message = t("invitation.error.load");
         if (isAxiosError(err) && err.response?.status === 404) {
-          message = "Convite não encontrado. Verifique se o link está correto.";
+          message = t("invitation.error.notFound");
         }
         setInvitation(null);
         setInviteError(message);
         toast.error(message);
       })
       .finally(() => setLoadingInvite(false));
-  }, [token]);
+  }, [token, t]);
 
   const onSubmit = async (data: FormData) => {
     if (!token) {
-      toast.error("Convite inválido.");
+      toast.error(t("invitation.error.invalid"));
       return;
     }
 
     setIsSubmitting(true);
     try {
       await api.post(`/invitations/accept/${token}/`, data);
-      toast.success(
-        "Conta criada com sucesso! Use seu email e a senha definida para fazer login."
-      );
+      toast.success(t("invitation.success.accountCreated"));
       setTimeout(() => router.push("/login"), 800);
     } catch (err) {
-      let message = "Não foi possível aceitar o convite.";
+      let message = t("invitation.error.accept");
       if (isAxiosError(err)) {
         const detail = (err.response?.data as { detail?: string })?.detail;
         if (detail) {
@@ -135,18 +136,12 @@ export default function AcceptInvitationPage() {
 
       <div className="mt-10 max-w-md mx-auto bg-white p-8 rounded-lg shadow-2xl">
         <div className="flex flex-col gap-0 items-center font-montserrat">
-          <h2 className="text-2xl font-semibold mb-2 text-center text-blue-950">
-            Aceitar convite
-          </h2>
-          <span className="text-gray-500 text-center text-sm">
-            Revise o convite e cadastre sua nova senha para acessar o sistema.
-          </span>
+          <h2 className="text-2xl font-semibold mb-2 text-center text-blue-950">{t("invitation.title")}</h2>
+          <span className="text-gray-500 text-center text-sm">{t("invitation.subtitle")}</span>
         </div>
 
         {loadingInvite && !inviteError && (
-          <p className="mt-4 text-sm text-gray-600 text-center">
-            Carregando dados do convite...
-          </p>
+          <p className="mt-4 text-sm text-gray-600 text-center">{t("invitation.loading")}</p>
         )}
 
         {invitation && (
@@ -157,12 +152,12 @@ export default function AcceptInvitationPage() {
             </div>
 
             <div className="mt-3 flex justify-between">
-              <div className="text-gray-600 text-xs">Email convidado</div>
+              <div className="text-gray-600 text-xs">{t("invitation.details.email")}</div>
               <div className="font-semibold">{invitation.email}</div>
             </div>
 
             <div className="mt-2 flex justify-between">
-              <div className="text-gray-600 text-xs">Papel</div>
+              <div className="text-gray-600 text-xs">{t("invitation.details.role")}</div>
               <div className="font-semibold">
                 {roleLabels[invitation.role] ?? invitation.role}
               </div>
@@ -170,7 +165,7 @@ export default function AcceptInvitationPage() {
 
             {invitation.invited_by_email && (
               <div className="mt-2 flex justify-between">
-                <div className="text-gray-600 text-xs">Convidado por</div>
+                <div className="text-gray-600 text-xs">{t("invitation.details.invitedBy")}</div>
                 <div className="font-semibold">
                   {invitation.invited_by_email}
                 </div>
@@ -180,7 +175,7 @@ export default function AcceptInvitationPage() {
             <div className="mt-3 flex items-center justify-between">
               <div className="flex items-center gap-2 text-gray-700 text-xs">
                 <Clock3 className="w-4 h-4 text-blue-800" />
-                <span>Expira em</span>
+                <span>{t("invitation.details.expiresAt")}</span>
               </div>
               <div className="font-semibold">
                 {formatDateTime(invitation.expires_at)}
@@ -193,57 +188,50 @@ export default function AcceptInvitationPage() {
           onSubmit={handleSubmit(onSubmit, (formErrors) => {
             const first = Object.values(formErrors)[0];
             const msg =
-              (first as { message?: string } | undefined)?.message ??
-              "Preencha os campos obrigatórios.";
+              (first as { message?: string } | undefined)?.message ?? t("invitation.form.requiredFields");
             toast.error(msg);
           })}
           className="mt-6 flex flex-col items-center"
         >
           <div className="mt-2 relative w-80">
-            <label className="absolute -top-2 left-3 bg-white px-1 text-xs text-gray-600">
-              Primeiro nome
-            </label>
+            <label className="absolute -top-2 left-3 bg-white px-1 text-xs text-gray-600">{t("invitation.form.firstNameLabel")}</label>
 
             <input
               type="text"
-              placeholder="Digite seu primeiro nome..."
+              placeholder={t("invitation.form.firstNamePlaceholder")}
               className="w-full border border-gray-300 rounded-md py-2 px-3 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-blue-500 disabled:bg-gray-100"
               disabled={formDisabled}
               {...register("first_name", {
-                required: "Informe seu primeiro nome.",
+                required: t("invitation.form.firstNameRequired"),
               })}
             />
           </div>
           <div className="mt-4 relative w-80">
-            <label className="absolute -top-2 left-3 bg-white px-1 text-xs text-gray-600">
-              Sobrenome
-            </label>
+            <label className="absolute -top-2 left-3 bg-white px-1 text-xs text-gray-600">{t("invitation.form.lastNameLabel")}</label>
 
             <input
               type="text"
-              placeholder="Digite seu sobrenome..."
+              placeholder={t("invitation.form.lastNamePlaceholder")}
               className="w-full border border-gray-300 rounded-md py-2 px-3 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-blue-500 disabled:bg-gray-100"
               disabled={formDisabled}
               {...register("last_name", {
-                required: "Informe seu sobrenome.",
+                required: t("invitation.form.lastNameRequired"),
               })}
             />
           </div>
           <div className="mt-4 relative w-80">
-            <label className="absolute -top-2 left-3 bg-white px-1 text-xs text-gray-600">
-              Senha
-            </label>
+            <label className="absolute -top-2 left-3 bg-white px-1 text-xs text-gray-600">{t("invitation.form.passwordLabel")}</label>
 
             <input
               type="password"
-              placeholder="Defina sua senha..."
+              placeholder={t("invitation.form.passwordPlaceholder")}
               className="w-full border border-gray-300 rounded-md py-2 px-3 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-blue-500 disabled:bg-gray-100"
               disabled={formDisabled}
               {...register("password", {
-                required: "Crie uma senha.",
+                required: t("invitation.form.passwordRequired"),
                 minLength: {
                   value: 6,
-                  message: "A senha deve ter pelo menos 6 caracteres.",
+                  message: t("invitation.form.passwordMinLength"),
                 },
               })}
             />
@@ -255,7 +243,7 @@ export default function AcceptInvitationPage() {
             disabled={formDisabled}
             className="mt-4 w-80 flex items-center justify-center gap-2 rounded-lg bg-blue-900 hover:bg-blue-800 text-white px-4 py-3 shadow-md text-sm transition-colors disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
           >
-            {isSubmitting ? "Criando conta..." : "Aceitar convite"}
+            {isSubmitting ? t("invitation.form.submitting") : t("invitation.form.submit")}
           </button>
         </form>
       </div>

@@ -8,6 +8,7 @@ import {
   ContextElement,
   QuestionElement,
   getDefaultQuestionConfig,
+  type TranslateFn,
 } from "./labeling_types";
 import { mapSectionsToDTO, mapSectionsFromDTO } from "./labeling_mappers";
 import {
@@ -44,6 +45,7 @@ import GuideTab from "./guide_tab";
 import AnswersTab from "./answers_tab";
 import DecisionTab from "./decision_tab";
 import LabelingHeader, { type LabelingTabKey } from "./labeling_header";
+import { useTranslations } from "@/i18n/use-translations";
 import { set } from "react-hook-form";
 
 const createContextElement = (order: number): ContextElement => ({
@@ -53,19 +55,19 @@ const createContextElement = (order: number): ContextElement => ({
   contextType: "text",
 });
 
-const createQuestionElement = (order: number): QuestionElement => ({
+const createQuestionElement = (order: number, t: TranslateFn): QuestionElement => ({
   id: crypto.randomUUID(),
   kind: "question",
   order,
   question_type: "text",
   required: false,
   text: "",
-  config: getDefaultQuestionConfig("text"),
+  config: getDefaultQuestionConfig("text", t),
 });
 
-const createDefaultSection = (): SectionData => {
+const createDefaultSection = (t: TranslateFn): SectionData => {
   const context = createContextElement(0);
-  const question = createQuestionElement(1);
+  const question = createQuestionElement(1, t);
 
   return {
     id: crypto.randomUUID(),
@@ -82,6 +84,7 @@ const nextOrder = (section: SectionData): number => {
 
 export default function LabelingFormPage() {
   const router = useRouter();
+  const { t } = useTranslations();
   const params = useParams<{ id: string }>();
   const labelingId = useMemo(() => {
     const parsed = Number(params?.id);
@@ -533,7 +536,7 @@ export default function LabelingFormPage() {
 
   const loadLabelingAndStructure = useCallback(async () => {
     if (Number.isNaN(labelingId)) {
-      setLoadError("ID da rotulação inválido.");
+      setLoadError(t("labelings.create.errors.invalidId"));
       setIsLoadingLabeling(false);
       return;
     }
@@ -562,7 +565,7 @@ export default function LabelingFormPage() {
       setColumns(csvColumns.length > 0 ? csvColumns : structureColumns);
       const mappedSections = mapSectionsFromDTO(structure);
       setSections(
-        mappedSections.length > 0 ? mappedSections : [createDefaultSection()]
+        mappedSections.length > 0 ? mappedSections : [createDefaultSection(t)]
       );
       setStructureSections(structure);
 
@@ -577,11 +580,11 @@ export default function LabelingFormPage() {
         }
       }
     } catch {
-      setLoadError("Não foi possível carregar os dados da rotulação.");
+      setLoadError(t("labelings.create.errors.loadData"));
     } finally {
       setIsLoadingLabeling(false);
     }
-  }, [labelingId]);
+  }, [labelingId, t]);
 
   useEffect(() => {
     void loadLabelingAndStructure();
@@ -606,7 +609,7 @@ export default function LabelingFormPage() {
             ?.detail ??
           (err instanceof Error
             ? err.message
-            : "Não foi possível carregar membros.");
+            : t("labelings.create.errors.loadMembers"));
         setMembershipError(detail);
       } finally {
         setMembershipLoading(false);
@@ -614,7 +617,7 @@ export default function LabelingFormPage() {
     };
 
     void loadMemberships();
-  }, [labelingId]);
+  }, [labelingId, t]);
 
   const loadAnswers = useCallback(async () => {
     if (Number.isNaN(labelingId)) return;
@@ -624,7 +627,7 @@ export default function LabelingFormPage() {
       const res = await fetchLabelingAnswers(labelingId);
       setAnswers(res);
     } catch (err) {
-      let message = "Não foi possível carregar as respostas.";
+      let message = t("labelings.create.errors.loadAnswers");
       if (axios.isAxiosError(err)) {
         message =
           (err.response?.data as { detail?: string } | undefined)?.detail ??
@@ -637,7 +640,7 @@ export default function LabelingFormPage() {
     } finally {
       setAnswersLoading(false);
     }
-  }, [labelingId]);
+  }, [labelingId, t]);
 
   useEffect(() => {
     if (activeTab !== "answers") return;
@@ -665,7 +668,7 @@ export default function LabelingFormPage() {
   // handlers
   function addSection(insertAfterSectionId?: string | null) {
     setSections((prev) => {
-      const nextSection = createDefaultSection();
+      const nextSection = createDefaultSection(t);
       if (!insertAfterSectionId) {
         return [...prev, nextSection].map((section, index) => ({
           ...section,
@@ -736,7 +739,10 @@ export default function LabelingFormPage() {
         if (!insertAfterId) {
           return {
             ...s,
-            elements: [...s.elements, createQuestionElement(nextOrder(s))],
+            elements: [
+              ...s.elements,
+              createQuestionElement(nextOrder(s), t),
+            ],
           };
         }
 
@@ -747,14 +753,17 @@ export default function LabelingFormPage() {
         if (afterIndex === -1) {
           return {
             ...s,
-            elements: [...s.elements, createQuestionElement(nextOrder(s))],
+            elements: [
+              ...s.elements,
+              createQuestionElement(nextOrder(s), t),
+            ],
           };
         }
 
         const insertIndex = afterIndex + 1;
         const merged = [
           ...ordered.slice(0, insertIndex),
-          createQuestionElement(insertIndex),
+          createQuestionElement(insertIndex, t),
           ...ordered.slice(insertIndex),
         ].map((el, idx) => ({ ...el, order: idx }));
         return { ...s, elements: merged };
@@ -789,16 +798,16 @@ export default function LabelingFormPage() {
     const status = labelingStatus ?? projectStatus;
     if (!status) return null;
     const map: Record<string, string> = {
-      planning: "PLANEJAMENTO",
-      active: "ATIVO",
-      completed: "CONCLUIDO",
-      finished: "CONCLUIDO",
-      cancelled: "CANCELADO",
-      draft: "RASCUNHO",
-      archived: "ARQUIVADA",
+      planning: t("status.planning"),
+      active: t("status.active"),
+      completed: t("status.completed"),
+      finished: t("status.finished"),
+      cancelled: t("status.cancelled"),
+      draft: t("status.draft"),
+      archived: t("status.archived"),
     };
     return map[status] ?? status.toUpperCase();
-  }, [labelingStatus, projectStatus]);
+  }, [labelingStatus, projectStatus, t]);
 
   const availableUsers = useMemo(() => {
     const currentEmails = new Set(memberships.map((m) => m.email));
@@ -814,11 +823,16 @@ export default function LabelingFormPage() {
   const getUserLabel = useCallback(
     (userId: number) => {
       const user = usersById.get(userId);
-      if (!user) return `Usuário #${userId}`;
+      if (!user)
+        return t("labelings.create.userFallback", { id: userId });
       const name = `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim();
-      return name || user.email || `Usuário #${userId}`;
+      return (
+        name ||
+        user.email ||
+        t("labelings.create.userFallback", { id: userId })
+      );
     },
-    [usersById]
+    [t, usersById]
   );
 
   const responderOptions = useMemo(() => {
@@ -853,7 +867,7 @@ export default function LabelingFormPage() {
           ?.detail ??
         (err instanceof Error
           ? err.message
-          : "Não foi possível adicionar o membro.");
+          : t("labelings.create.errors.addMember"));
       setMembershipError(detail);
     } finally {
       setMembershipSaving(false);
@@ -877,7 +891,7 @@ export default function LabelingFormPage() {
           ?.detail ??
         (err instanceof Error
           ? err.message
-          : "Não foi possível atualizar o membro.");
+          : t("labelings.create.errors.updateMember"));
       setMembershipError(detail);
     } finally {
       setMembershipSaving(false);
@@ -887,7 +901,9 @@ export default function LabelingFormPage() {
   const handleRemoveMember = async (
     membership: LabelingMembershipDashboard
   ) => {
-    const confirmed = window.confirm("Remover este membro da rotulação?");
+    const confirmed = window.confirm(
+      t("labelings.create.confirmRemoveMember")
+    );
     if (!confirmed) return;
     setMembershipSaving(true);
     setMembershipError(null);
@@ -900,7 +916,7 @@ export default function LabelingFormPage() {
           ?.detail ??
         (err instanceof Error
           ? err.message
-          : "Não foi possível remover o membro.");
+          : t("labelings.create.errors.removeMember"));
       setMembershipError(detail);
     } finally {
       setMembershipSaving(false);
@@ -909,7 +925,7 @@ export default function LabelingFormPage() {
 
   async function handleSaveStructure() {
     if (Number.isNaN(labelingId)) {
-      setLoadError("ID da rotulação inválido.");
+      setLoadError(t("labelings.create.errors.invalidId"));
       return;
     }
 
@@ -918,14 +934,14 @@ export default function LabelingFormPage() {
     try {
       const payload = { sections: mapSectionsToDTO(sections) };
       await saveLabelingStructure(labelingId, payload);
-      toast.success("Formulário da rotulação salvo com sucesso.");
+      toast.success(t("labelings.create.success.formSaved"));
     } catch (error) {
-      let message = "Não foi possível salvar a estrutura da rotulação.";
+      let message = t("labelings.create.errors.saveStructure");
       if (axios.isAxiosError(error)) {
         const data = error.response?.data as { code?: string } | undefined;
         const codeMessageMap: Record<string, string> = {
           INVALID_FORM_STRUCTURE:
-            "Estrutura do formulário inválida. Verifique campos vazios ou erros.",
+            t("labelings.create.errors.invalidFormStructure"),
         };
         if (data?.code && codeMessageMap[data.code]) {
           message = codeMessageMap[data.code];
@@ -952,7 +968,7 @@ export default function LabelingFormPage() {
       await deleteLabeling(labelingId);
       router.push("/labelings/manage");
     } catch (error) {
-      let message = "Não foi possível excluir a rotulação.";
+      let message = t("labelings.create.errors.deleteLabeling");
       if (axios.isAxiosError(error)) {
         const data = error.response?.data as { detail?: string } | undefined;
         if (typeof data?.detail === "string") {
@@ -976,9 +992,9 @@ export default function LabelingFormPage() {
     if (Number.isNaN(labelingId)) return;
     try {
       await updateLabeling(labelingId, { guide: guideText });
-      toast.success("Guia atualizado com sucesso.");
+      toast.success(t("labelings.create.success.guideSaved"));
     } catch (error) {
-      let message = "Não foi possível salvar o guia.";
+      let message = t("labelings.create.errors.saveGuide");
       if (axios.isAxiosError(error)) {
         const detail = (error.response?.data as { detail?: string } | undefined)
           ?.detail;
@@ -1102,17 +1118,27 @@ export default function LabelingFormPage() {
         onClose={() => setIsDeleteOpen(false)}
         onConfirm={() => void handleDeleteLabeling()}
         isDeleting={isDeleting}
-        title="Excluir Rotulação"
+        title={t("labelings.create.delete.title")}
         itemName={labelingTitle}
         description={
           <>
-            Você tem <strong>certeza</strong> que deseja excluir esta rotulação?
-            <strong> Todos os dados </strong> relacionados serão{" "}
-            <strong>perdidos permanentemente</strong>.
+            {t("labelings.create.delete.descriptionPrefix")}{" "}
+            <strong>
+              {t("labelings.create.delete.descriptionEmphasis")}
+            </strong>{" "}
+            {t("labelings.create.delete.descriptionSuffix")}{" "}
+            <strong>
+              {t("labelings.create.delete.descriptionDataEmphasis")}
+            </strong>{" "}
+            {t("labelings.create.delete.descriptionDataSuffix")}{" "}
+            <strong>
+              {t("labelings.create.delete.descriptionPermanentEmphasis")}
+            </strong>
+            .
           </>
         }
-        confirmButtonText="Excluir Rotulação"
-        cancelButtonText="Cancelar"
+        confirmButtonText={t("labelings.create.delete.confirm")}
+        cancelButtonText={t("common.cancel")}
       />
     </div>
   );

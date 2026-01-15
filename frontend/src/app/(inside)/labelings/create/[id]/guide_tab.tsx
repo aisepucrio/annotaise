@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import Button from "@/components/button/Button";
 import { Save } from "lucide-react";
+import { useTranslations } from "@/i18n/use-translations";
 
 type GuideTabProps = {
   guideText: string;
@@ -21,30 +22,34 @@ export default function GuideTab({
   disableSave,
   isSaving,
 }: GuideTabProps) {
+  const { t } = useTranslations();
   const [leftWidth, setLeftWidth] = useState(50);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Manipula o movimento do mouse durante o arrasto
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!isDragging || !containerRef.current) return;
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!isDragging || !containerRef.current) return;
 
-    const containerRect = containerRef.current.getBoundingClientRect();
-    const newLeftWidth =
-      ((e.clientX - containerRect.left) / containerRect.width) * 100;
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const newLeftWidth =
+        ((e.clientX - containerRect.left) / containerRect.width) * 100;
 
-    // Limita entre 20% e 80%
-    if (newLeftWidth >= 20 && newLeftWidth <= 80) {
-      setLeftWidth(newLeftWidth);
-    }
-  }, [isDragging]);
+      // Limita entre 20% e 80%
+      if (newLeftWidth >= 20 && newLeftWidth <= 80) {
+        setLeftWidth(newLeftWidth);
+      }
+    },
+    [isDragging]
+  );
 
   // Finaliza o arrasto
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
   }, []);
 
-  // Adiciona listeners quando está arrastando
+  // Adiciona listeners quando est arrastando
   useEffect(() => {
     if (isDragging) {
       document.addEventListener("mousemove", handleMouseMove);
@@ -63,10 +68,10 @@ export default function GuideTab({
 
   return (
     <div className="h-full w-full flex flex-col ">
-      {/* Cabeçalho com descrição e botão */}
+      {/* Cabecalho com descricao e botao */}
       <div className="flex items-center justify-between gap-4 px-6 py-3 bg-gray-50 border-b border-gray-200">
         <p className="text-sm text-gray-700">
-          Escreva orientações gerais para quem vai responder esta rotulação.
+          {t("labelings.create.guide.description")}
         </p>
         <Button
           variant="normal"
@@ -76,12 +81,11 @@ export default function GuideTab({
           className="px-4 py-2 text-sm whitespace-nowrap"
           icon={<Save size={18} />}
         >
-          {" "}
-          {isSaving ? "Salvando..." : "Salvar guia"}
+          {isSaving ? t("common.saving") : t("labelings.create.guide.save")}
         </Button>
       </div>
 
-      {/* Container com divisor redimensionável */}
+      {/* Container com divisor redimensionavel */}
       <div ref={containerRef} className="flex-1 flex overflow-hidden ">
         {/* Painel do editor */}
         <div
@@ -90,7 +94,7 @@ export default function GuideTab({
         >
           <div className="px-4 py-3 border-b border-gray-200 bg-white">
             <h3 className="text-sm font-semibold text-gray-800">
-              Editor (Markdown suportado)
+              {t("labelings.create.guide.editorTitle")}
             </h3>
           </div>
           <div className="flex-1 overflow-hidden bg-white">
@@ -98,25 +102,25 @@ export default function GuideTab({
               value={guideText}
               onChange={(e) => onGuideChange(e.target.value)}
               className="w-full h-full px-4 py-3 text-sm text-gray-800 focus:outline-none resize-none font-mono bg-white"
-              placeholder="Digite suas instruções aqui... Você pode usar Markdown para formatação."
+              placeholder={t("labelings.create.guide.placeholder")}
             />
           </div>
         </div>
 
-        {/* Divisor arrastável */}
+        {/* Divisor arrastavel */}
         <div
           className="w-1 bg-gray-300 hover:bg-blueberry-500 cursor-col-resize transition-colors flex-shrink-0"
           onMouseDown={() => setIsDragging(true)}
         />
 
-        {/* Painel de pré-visualização */}
+        {/* Painel de pre-visualizacao */}
         <div
           className="flex flex-col bg-white h-full"
           style={{ width: `${100 - leftWidth}%` }}
         >
           <div className="px-4 py-3 border-b border-gray-200 bg-white">
             <h3 className="text-sm font-semibold text-gray-800">
-              Pré-visualização
+              {t("labelings.create.guide.previewTitle")}
             </h3>
           </div>
           <div className="flex-1 p-4 overflow-y-auto">
@@ -128,8 +132,7 @@ export default function GuideTab({
               </div>
             ) : (
               <p className="text-sm text-gray-500 italic">
-                A pré-visualização do guia será exibida aqui conforme você
-                digita.
+                {t("labelings.create.guide.previewEmpty")}
               </p>
             )}
           </div>

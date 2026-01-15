@@ -20,9 +20,11 @@ import useCurrent from "@/hooks/current_user_hook";
 import EditUserModal from "./edit_user_modal";
 import { toast } from "sonner";
 import useInvitationCreator from "@/hooks/use_invitation_creator";
+import { useTranslations } from "@/i18n/use-translations";
 
 export default function UsersPage() {
   const currentUser = useCurrent();
+  const { t } = useTranslations();
   const isAdmin = Boolean(
     currentUser?.is_staff || currentUser?.account_type === "admin"
   );
@@ -47,8 +49,7 @@ export default function UsersPage() {
   const loadError =
     error && error instanceof Error
       ? error.message
-      : error
-      ? "Não foi possível carregar os usuários."
+      : error ? t("users.loadError")
       : null;
 
   const handleUpdateUser = async (payload: UpdateUserPayload) => {
@@ -79,25 +80,22 @@ export default function UsersPage() {
 
   useEffect(() => {
     if (!isAdmin && currentUser) {
-      toast.error("Apenas administradores podem acessar a gestão de usuários.");
+      toast.error(t("users.accessDenied"));
     }
   }, [isAdmin, currentUser]);
 
   return (
     <>
       <PageHeader
-        page_title="Usuários"
-        tooltip={`Administre a criação de novos usuários e gerencie o perfil deles:
-   • Crie convites rapidamente e acompanhe quem já ingressou.
-   • Ajuste permissões de acordo com o papel de cada pessoa.
-   • Mantenha perfis atualizados para garantir acesso correto às rotulações e projetos.`}
-        description="Nesta página você pode visualizar todos os usuários cadastrados aos seus projetos assim como informações relevantes sobre eles. Clique em “Gerenciar” para ver mais informações sobre o usuário."
+        page_title={t("users.title")}
+        tooltip={t("users.tooltip")}
+        description={t("users.description")}
       />
       <div className="flex flex-nowrap items-center mt-5">
         <FilterBar
           value={searchTerm}
           onChange={setSearchTerm}
-          placeholder="Pesquisar usuários..."
+          placeholder={t("users.searchPlaceholder")}
         />
         <div className="ml-auto mr-6 w-auto">
           <Button
@@ -107,22 +105,20 @@ export default function UsersPage() {
             variant="normal"
             fill={false}
             className="min-w-[190px] h-10 whitespace-nowrap shadow-md text-sm"
-            ariaLabel="Criar novo usuário"
+            ariaLabel={t("users.createAria")}
           >
-            Novo Usuário
+            {t("users.createButton")}
           </Button>
         </div>
       </div>
 
       <div className="ml-5 mr-5 mt-5">
         {!isAdmin ? (
-          <p className="text-sm text-gray-600">
-            Apenas administradores podem acessar a gestão de usuários.
-          </p>
+          <p className="text-sm text-gray-600">{t("users.accessDenied")}</p>
         ) : isLoading ? (
-          <p className="text-sm text-gray-500">Carregando usuários...</p>
+          <p className="text-sm text-gray-500">{t("users.loading")}</p>
         ) : filteredUsers.length === 0 ? (
-          <p className="text-sm text-gray-500">Nenhum usuário encontrado.</p>
+          <p className="text-sm text-gray-500">{t("users.empty")}</p>
         ) : (
           <GridLayout minColumnWidth="420px">
             {filteredUsers.map((user, index) => (

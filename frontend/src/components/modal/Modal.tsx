@@ -2,6 +2,7 @@
 
 import { X } from "lucide-react";
 import { ReactNode, useEffect } from "react";
+import { useTranslations } from "@/i18n/use-translations";
 
 export type ModalProps = {
   /** Controla a visibilidade do modal*/
@@ -56,6 +57,7 @@ export default function Modal({
   hideCloseButton = false,
   className = "",
 }: ModalProps) {
+  const { t } = useTranslations();
   useEffect(() => {
     if (open) {
       document.body.style.overflow = "hidden";
@@ -109,7 +111,7 @@ export default function Modal({
             {!hideCloseButton && (
               <button
                 onClick={onClose}
-                aria-label="Fechar"
+                aria-label={t("common.close")}
                 className="absolute -right-1 -top-1 w-8 h-8 rounded-full flex items-center justify-center transition-colors"
                 style={{
                   backgroundColor: "rgba(203, 206, 217, 0.2)",

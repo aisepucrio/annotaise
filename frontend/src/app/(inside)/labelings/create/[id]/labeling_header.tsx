@@ -1,6 +1,7 @@
 import type { RefObject } from "react";
 import { ArrowLeft, Edit, Calendar, Trash2 } from "lucide-react";
 import Button from "@/components/button/Button";
+import { useTranslations } from "@/i18n/use-translations";
 
 export type LabelingTabKey =
   | "form"
@@ -27,9 +28,9 @@ interface LabelingHeaderProps {
   headerRef?: RefObject<HTMLDivElement | null>;
 }
 
-function formatDate(dateStr: string | null) {
+function formatDate(dateStr: string | null, locale: string) {
   if (!dateStr) return "--/--/----";
-  return new Date(dateStr).toLocaleDateString("pt-BR");
+  return new Date(dateStr).toLocaleDateString(locale);
 }
 
 export default function LabelingHeader({
@@ -49,12 +50,15 @@ export default function LabelingHeader({
   onTabChange,
   headerRef,
 }: LabelingHeaderProps) {
+  const { t, locale } = useTranslations();
   const tabs: Array<{ key: LabelingTabKey; label: string }> = [
-    { key: "form", label: "Formulário" },
-    { key: "assign", label: "Atribuir Usuários" },
-    { key: "answers", label: "Respostas" },
-    { key: "guide", label: "Guia" },
-    ...(isDecision ? [{ key: "decision", label: "Decisão" }] : []),
+    { key: "form", label: t("labelings.create.tabs.form") },
+    { key: "assign", label: t("labelings.create.tabs.assign") },
+    { key: "answers", label: t("labelings.create.tabs.answers") },
+    { key: "guide", label: t("labelings.create.tabs.guide") },
+    ...(isDecision
+      ? [{ key: "decision", label: t("labelings.create.tabs.decision") }]
+      : []),
   ];
 
   return (
@@ -70,7 +74,7 @@ export default function LabelingHeader({
             size="icon"
             onClick={onBack}
             className="flex items-center justify-center bg-white/20 hover:bg-white/30"
-            aria-label="Voltar"
+            aria-label={t("labelings.create.header.backAria")}
           >
             <ArrowLeft size={22} />
           </Button>
@@ -78,20 +82,27 @@ export default function LabelingHeader({
             <div className="flex items-center gap-2">
               <span className="text-2xl font-semibold leading-tight">
                 {labelingTitle ||
-                  (isLoadingLabeling ? "Carregando..." : "Rotulação")}
+                  (isLoadingLabeling
+                    ? t("labelings.create.header.loadingTitle")
+                    : t("labelings.create.header.titleFallback"))}
               </span>
             </div>
             <div className="flex items-center gap-2 text-md opacity-90 mt-1">
               <span className="font-medium">
                 {projectName
-                  ? `Projeto: ${projectName}`
-                  : "Projeto não informado"}
+                  ? t("labelings.create.header.projectLabel", {
+                      name: projectName,
+                    })
+                  : t("labelings.create.header.projectMissing")}
               </span>
             </div>
             <div className="flex items-center gap-3 text-md mt-1">
               <span className="flex items-center gap-1">
                 <Calendar size={14} />
-                {`${formatDate(startDateInfo)} → ${formatDate(finalDateInfo)}`}
+                {`${formatDate(startDateInfo, locale)} - ${formatDate(
+                  finalDateInfo,
+                  locale
+                )}`}
               </span>
               {projectStatusLabel ? (
                 <span className="px-2 py-1  bg-white/20 text-white text-[11px] font-semibold uppercase tracking-wide">
@@ -100,12 +111,16 @@ export default function LabelingHeader({
               ) : null}
               {usersPerItem !== null ? (
                 <span className="px-2 py-1  bg-white/20 text-white text-[11px] font-semibold uppercase tracking-wide">
-                  {`Usuários por Rotulação: ${usersPerItem}`}
+                  {t("labelings.create.header.usersPerItem", {
+                    count: usersPerItem,
+                  })}
                 </span>
               ) : null}
               {isDecision !== null ? (
                 <span className="px-2 py-1  bg-white/20 text-white text-[11px] font-semibold uppercase tracking-wide">
-                  {`Decisão: ${isDecision ? "Sim" : "Não"}`}
+                  {t("labelings.create.header.decisionLabel", {
+                    value: isDecision ? t("common.yes") : t("common.no"),
+                  })}
                 </span>
               ) : null}
             </div>
@@ -114,7 +129,7 @@ export default function LabelingHeader({
             type="button"
             onClick={onEditInfo}
             className="p-1 rounded-md hover:bg-white/10 cursor-pointer self-center"
-            aria-label="Editar informações da rotulação"
+            aria-label={t("labelings.create.header.editAria")}
           >
             <Edit size={28} />
           </button>
@@ -127,7 +142,9 @@ export default function LabelingHeader({
             disabled={isDeleting || isLoadingLabeling}
             icon={<Trash2 size={16} />}
           >
-            {isDeleting ? "Deletando..." : "Excluir Rotulação"}
+            {isDeleting
+              ? t("labelings.create.header.deleting")
+              : t("labelings.create.header.deleteButton")}
           </Button>
         </div>
       </div>

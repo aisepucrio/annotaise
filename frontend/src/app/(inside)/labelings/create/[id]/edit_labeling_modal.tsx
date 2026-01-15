@@ -13,6 +13,7 @@ import Input from "@/components/form/Input";
 import Select from "@/components/form/Select";
 import DatePicker from "@/components/form/DatePicker";
 import Button from "@/components/button/Button";
+import { useTranslations } from "@/i18n/use-translations";
 
 type EditLabelingModalProps = {
   open: boolean;
@@ -28,7 +29,7 @@ const STATUS_OPTIONS: Labeling["status"][] = [
   "finished",
 ];
 
-// Função auxiliar para extrair mensagem de erro
+// Funcao auxiliar para extrair mensagem de erro
 const getErrorMessage = (err: unknown, fallback: string): string => {
   return (
     (err as { response?: { data?: { detail?: string } } })?.response?.data
@@ -42,7 +43,8 @@ export default function EditLabelingModal({
   onClose,
   onUpdated,
 }: EditLabelingModalProps) {
-  // Estados do formulário
+  const { t } = useTranslations();
+  // Estados do formulario
   const [labeling, setLabeling] = useState<Labeling | null>(null);
   const [title, setTitle] = useState("");
   const [status, setStatus] = useState<Labeling["status"]>("draft");
@@ -82,7 +84,7 @@ export default function EditLabelingModal({
       } catch (err) {
         if (!isMounted) return;
         toast.error(
-          getErrorMessage(err, "Não foi possível carregar a rotulação.")
+          getErrorMessage(err, t("labelings.create.edit.loadError"))
         );
       } finally {
         if (isMounted) setLoading(false);
@@ -93,9 +95,9 @@ export default function EditLabelingModal({
     return () => {
       isMounted = false;
     };
-  }, [open, labelingId]);
+  }, [open, labelingId, t]);
 
-  // Salvamento da rotulação
+  // Salvamento da rotulacao
   const handleSave = async () => {
     if (!labeling) return;
 
@@ -112,18 +114,18 @@ export default function EditLabelingModal({
       });
 
       await onUpdated?.();
-      toast.success("Rotulação atualizada com sucesso.");
+      toast.success(t("labelings.create.edit.updateSuccess"));
       onClose();
     } catch (err) {
       toast.error(
-        getErrorMessage(err, "Não foi possível atualizar a rotulação.")
+        getErrorMessage(err, t("labelings.create.edit.updateError"))
       );
     } finally {
       setSaving(false);
     }
   };
 
-  // Preparação de opções para os selects
+  // Preparacao de opcoes para os selects
   const projectOptions = projects.map((p) => ({
     value: String(p.id),
     label: p.name,
@@ -131,55 +133,57 @@ export default function EditLabelingModal({
 
   const statusOptions = STATUS_OPTIONS.map((s) => ({
     value: s,
-    label: s,
+    label: t(`status.${s}`),
   }));
 
   return (
     <Modal
       open={open}
       onClose={onClose}
-      title="Edição de informações"
-      description="Edite os campos abaixo para mudar as informações relativas à sua rotulação."
+      title={t("labelings.create.edit.title")}
+      description={t("labelings.create.edit.description")}
       maxWidth="md"
     >
       {/* Estado de carregamento */}
       {loading ? (
-        <p className="text-sm text-metal-500">Carregando rotulação...</p>
+        <p className="text-sm text-metal-500">
+          {t("labelings.create.edit.loading")}
+        </p>
       ) : !labeling ? (
         <p className="text-sm text-metal-600">
-          Não foi possível carregar esta rotulação.
+          {t("labelings.create.edit.loadError")}
         </p>
       ) : (
         <>
-          {/* Formulário de edição */}
+          {/* Formulario de edicao */}
           <div className="space-y-6">
-            {/* Campo: Título */}
+            {/* Campo: Titulo */}
             <Input
-              label="Título"
+              label={t("labelings.create.edit.labelTitle")}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Digite o título da rotulação"
+              placeholder={t("labelings.create.edit.placeholderTitle")}
             />
 
             {/* Campo: Projeto */}
             <Select
-              label="Projeto"
+              label={t("labelings.create.edit.labelProject")}
               value={String(projectId ?? "")}
               onChange={(e) => setProjectId(Number(e.target.value))}
               options={projectOptions}
-              placeholder="Selecione um projeto"
+              placeholder={t("labelings.create.edit.placeholderProject")}
               disabled={projects.length === 0}
             />
 
             {/* Campos: Datas */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <DatePicker
-                label="Data Inicial"
+                label={t("labelings.create.edit.labelStartDate")}
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
               />
               <DatePicker
-                label="Data Final"
+                label={t("labelings.create.edit.labelFinalDate")}
                 value={finalDate}
                 onChange={(e) => setFinalDate(e.target.value)}
               />
@@ -188,21 +192,21 @@ export default function EditLabelingModal({
             {/* Campo: Status */}
             <Select
               disabled
-              label="Status"
+              label={t("labelings.create.edit.labelStatus")}
               value={status}
               onChange={(e) => setStatus(e.target.value as Labeling["status"])}
               options={statusOptions}
             />
           </div>
 
-          {/* Botão de salvar */}
+          {/* Botao de salvar */}
           <div className="mt-6">
             <Button
               onClick={handleSave}
               disabled={saving || loading}
               variant="normal"
             >
-              {saving ? "Salvando..." : "Salvar"}
+              {saving ? t("common.saving") : t("common.save")}
             </Button>
           </div>
         </>

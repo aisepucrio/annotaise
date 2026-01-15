@@ -1,4 +1,5 @@
 import { TextQuestionConfig } from "../labeling_types";
+import { useTranslations } from "@/i18n/use-translations";
 
 type Props = {
   config: TextQuestionConfig;
@@ -6,9 +7,10 @@ type Props = {
 };
 
 export default function QuestionTextEditor({}: Props) {
+  const { t } = useTranslations();
   return (
     <div className="text-xs text-gray-600">
-      Perguntas de texto não possuem configurações adicionais.
+      {t("labelings.create.questionType.text.noConfig")}
     </div>
   );
 }

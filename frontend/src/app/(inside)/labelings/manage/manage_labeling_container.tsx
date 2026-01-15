@@ -1,6 +1,7 @@
 import { Pen } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/button/Button";
+import { useTranslations } from "@/i18n/use-translations";
 
 type LabelingContainerProps = {
   id: number;
@@ -22,6 +23,7 @@ export default function LabelingContainer({
   days_total,
 }: LabelingContainerProps) {
   const router = useRouter();
+  const { t } = useTranslations();
 
   function handleManageLabelingButton() {
     router.push(`/labelings/create/${id}`);
@@ -53,16 +55,18 @@ export default function LabelingContainer({
         {/* métricas */}
 
         <ProgressBar
-          progress_label="Dias Passados"
-          late_label="Dias Atrasados"
+          progress_label={t("labelings.progress.daysPassed")}
+          late_label={t("labelings.progress.daysLate")}
           passed={days_passed}
           total={days_total}
+          doneLabel={t("labelings.progress.completed")}
         />
         <ProgressBar
-          progress_label="Rotulações Feitas"
-          late_label="Rotulações Atrasadas"
+          progress_label={t("labelings.progress.labelingsDone")}
+          late_label={t("labelings.progress.labelingsLate")}
           passed={labelings_done}
           total={labelings_done + labelings_pending}
+          doneLabel={t("labelings.progress.completed")}
         />
 
         {/* ações */}
@@ -73,9 +77,9 @@ export default function LabelingContainer({
             variant="normal"
             fill={true}
             className="px-4"
-            ariaLabel="Gerenciar rotulação"
+            ariaLabel={t("labelings.manage.action.manageAria")}
           >
-            Gerenciar
+            {t("labelings.manage.action.manage")}
           </Button>
         </div>
       </div>
@@ -88,6 +92,7 @@ type ProgressBarProps = {
   late_label?: string;
   passed: number;
   total: number;
+  doneLabel: string;
 };
 
 function ProgressBar({
@@ -95,6 +100,7 @@ function ProgressBar({
   late_label,
   passed,
   total,
+  doneLabel,
 }: ProgressBarProps) {
   let percent = total > 0 ? Math.round((passed / total) * 100) : 0;
 
@@ -106,7 +112,7 @@ function ProgressBar({
   if (total === -1) {
     finished = true;
     percent = 100;
-    progress_label = "Concluído";
+    progress_label = doneLabel;
   }
 
   if (passed < 0) {

@@ -10,6 +10,7 @@ import { EyeIcon, EyeOff, Mail, LogIn } from "lucide-react";
 import { toast } from "sonner";
 import Button from "@/components/button/Button";
 import Input from "@/components/form/Input";
+import { useTranslations } from "@/i18n/use-translations";
 
 // === Tipos ===
 type FormData = {
@@ -30,6 +31,7 @@ export default function LoginPage() {
 
   const router = useRouter();
   const { login, storeToken } = AuthActions();
+  const { t } = useTranslations();
 
   // --- Handlers / Ações ---
   const onSubmit = async (data: FormData) => {
@@ -39,7 +41,7 @@ export default function LoginPage() {
       const { access, refresh } = response.data ?? {};
 
       if (!access || !refresh) {
-        throw new Error("Resposta invalida do servidor.");
+        throw new Error(t("login.error.invalidResponse"));
       }
 
       storeToken(access, "access");
@@ -47,8 +49,7 @@ export default function LoginPage() {
 
       router.push("/labelings");
     } catch (err) {
-      let message =
-        "Nao foi possivel realizar o login. Verifique suas credenciais.";
+      let message = t("login.error.invalidCredentials");
 
       if (isAxiosError(err)) {
         const detail = (err.response?.data as { detail?: string })?.detail;
@@ -83,7 +84,7 @@ export default function LoginPage() {
           const first = Object.values(formErrors)[0];
           const msg =
             (first as { message?: string } | undefined)?.message ??
-            "Preencha os campos obrigatórios.";
+            t("login.error.requiredFields");
           toast.error(msg);
         })}
         className="mt-16 w-[90%] sm:w-[60%] md:w-[45%] lg:w-[25%] mx-auto bg-white p-8 sm:p-8 rounded-xl shadow-[0_4px_10px_rgba(0,0,0,0.12),0_10px_30px_rgba(0,0,0,0.08)]"
@@ -91,26 +92,26 @@ export default function LoginPage() {
         {/* -- Formulário de login -- */}
         <div className="flex flex-col gap-0 items-center font-montserrat">
           <h2 className="text-3xl sm:text-3xl font-semibold mb-3 text-center text-blueberry-900">
-            Login
+            {t("login.title")}
           </h2>
           <span className="text-gray-600 text-center text-base sm:text-md">
-            Faca o login para acessar e rotular seus dados
+            {t("login.subtitle")}
           </span>
         </div>
 
         {/* Campo: Email */}
         <div className="mt-8">
           <Input
-            label="Email"
+            label={t("login.emailLabel")}
             type="email"
-            placeholder="Digite seu email..."
+            placeholder={t("login.emailPlaceholder")}
             icon={<Mail className="w-8 h-8" />}
             error={errors.email?.message}
             {...register("email", {
-              required: "Informe um email.",
+              required: t("login.emailRequired"),
               pattern: {
                 value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                message: "Email invalido.",
+                message: t("login.emailInvalid"),
               },
             })}
           />
@@ -118,17 +119,19 @@ export default function LoginPage() {
         {/* Campo: Senha */}
         <div className="mt-6 relative">
           <Input
-            label="Senha"
+            label={t("login.passwordLabel")}
             type={showPassword ? "text" : "password"}
-            placeholder="Digite sua senha..."
+            placeholder={t("login.passwordPlaceholder")}
             error={errors.password?.message}
             {...register("password", {
-              required: "Informe sua senha.",
+              required: t("login.passwordRequired"),
             })}
           />
           <button
             type="button"
-            aria-label={showPassword ? "Esconder senha" : "Mostrar senha"}
+            aria-label={
+              showPassword ? t("login.hidePassword") : t("login.showPassword")
+            }
             onClick={() => setShowPassword((s) => !s)}
             className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded focus:outline-none text-metal-200 hover:text-metal-500 transition-colors z-20"
           >
@@ -142,7 +145,7 @@ export default function LoginPage() {
         {/* Ação: Esqueceu senha */}
         <div className="flex w-full justify-end mt-3">
           <a className="text-sm sm:text-md text-blueberry-900 underline cursor-pointer hover:text-blueberry-700">
-            Esqueceu a senha?
+            {t("login.forgotPassword")}
           </a>
         </div>
 
@@ -153,7 +156,7 @@ export default function LoginPage() {
           disabled={isLoading}
           className="mt-8 text-[1rem] py-3"
         >
-          {isLoading ? "Entrando..." : "Login"}
+          {isLoading ? t("login.loading") : t("login.button")}
         </Button>
       </form>
     </div>

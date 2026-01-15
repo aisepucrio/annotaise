@@ -10,9 +10,11 @@ import useSWR from "swr";
 import { fetchLabelingDashboard } from "@/lib/services/labeling_service";
 import useCurrent from "@/hooks/current_user_hook";
 import { toast } from "sonner";
+import { useTranslations } from "@/i18n/use-translations";
 
 export default function LabelingsPage() {
   const currentUser = useCurrent();
+  const { t } = useTranslations();
   const isAdmin = Boolean(
     currentUser?.is_staff || currentUser?.account_type === "admin"
   );
@@ -34,8 +36,7 @@ export default function LabelingsPage() {
   const loadError =
     error && error instanceof Error
       ? error.message
-      : error
-      ? "Não foi possível carregar as rotulações."
+      : error ? t("labelings.loadError")
       : null;
 
   useEffect(() => {
@@ -47,19 +48,16 @@ export default function LabelingsPage() {
   return (
     <>
       <PageHeader
-        page_title="Rotulações"
-        tooltip={`Acompanhe todas as rotulações que você pode responder:
-- Veja progresso geral e pendências.
-- Use filtros para localizar rapidamente o que precisa ser feito.
-- Entre nos itens para registrar respostas com segurança e padronização.`}
-        description="Nessa página você pode ver estatísticas e responder as rotulações das quais faz parte."
+        page_title={t("labelings.title")}
+        tooltip={t("labelings.tooltip")}
+        description={t("labelings.description")}
       />
 
       <div className="flex flex-nowrap items-center mt-5">
         <FilterBar
           value={searchTerm}
           onChange={setSearchTerm}
-          placeholder="Pesquisar rotulações..."
+          placeholder={t("labelings.searchPlaceholder")}
         />
       </div>
 
@@ -91,10 +89,10 @@ export default function LabelingsPage() {
       </div>
       {!isAdmin && (
         <div className="ml-5 mr-5 mt-4 text-sm text-gray-600">
-          Você pode visualizar e responder às rotulações em que participa, mas
-          somente administradores podem criar novas.
+          {t("labelings.nonAdminNote")}
         </div>
       )}
     </>
   );
 }
+

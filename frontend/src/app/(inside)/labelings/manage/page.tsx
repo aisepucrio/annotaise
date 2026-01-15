@@ -18,6 +18,7 @@ import {
 import useCurrent from "@/hooks/current_user_hook";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
+import { useTranslations } from "@/i18n/use-translations";
 
 type UploadPayload = {
   file: File;
@@ -32,6 +33,7 @@ type UploadPayload = {
 
 export default function LabelingsPage() {
   const currentUser = useCurrent();
+  const { t } = useTranslations();
   const isAdmin = Boolean(
     currentUser?.is_staff || currentUser?.account_type === "admin"
   );
@@ -64,8 +66,7 @@ export default function LabelingsPage() {
   const loadError =
     error && error instanceof Error
       ? error.message
-      : error
-      ? "Não foi possível carregar as rotulações."
+      : error ? t("labelings.manage.loadError")
       : null;
 
   useEffect(() => {
@@ -85,7 +86,7 @@ export default function LabelingsPage() {
     decision,
   }: UploadPayload) {
     if (!isAdmin) {
-      toast.error("Apenas administradores podem criar rotulações.");
+      toast.error(t("labelings.manage.createDenied"));
       return;
     }
     try {
@@ -105,13 +106,12 @@ export default function LabelingsPage() {
       if (axios.isAxiosError(err)) {
         const detail =
           (err.response?.data as { detail?: string })?.detail ||
-          err.message ||
-          "Não foi possível criar a rotulação.";
+          err.message || t("labelings.manage.createError");
         toast.error(detail);
         return;
       }
       toast.error(
-        err instanceof Error ? err.message : "Erro ao criar rotulação."
+        err instanceof Error ? err.message : t("labelings.manage.createErrorGeneric")
       );
       return;
     }
@@ -120,24 +120,16 @@ export default function LabelingsPage() {
   return (
     <>
       <PageHeader
-        page_title="Gerenciar Rotulações"
-        tooltip={`Crie rotulações com o fluxo:
-            
-1. Importar CSV para mapeamento de colunas.
-2. Dar um título para a rotulação, vincular a um projeto inicial, definir data inicial e final, e quantos usuários precisam rotular cada item antes de finalizar.
-3. Gerencie sua nova rotulação podendo:
-   • Criar um formulário usando colunas mapeadas como contextos, com perguntas relacionadas a cada contexto e seções organizadas.
-   • Atribuir usuários para responder a rotulação.
-   • Inspecionar respostas em um dashboard.
-   • Exportar um CSV com respostas de todos os usuários para cada linha mapeada.`}
-        description="Gerencie e visualize rotulações. Clique em 'Nova Rotulação' para importar um CSV e iniciar a configuração."
+        page_title={t("labelings.manage.title")}
+        tooltip={t("labelings.manage.tooltip")}
+        description={t("labelings.manage.description")}
       />
 
       <div className="flex flex-nowrap items-center mt-5">
         <FilterBar
           value={searchTerm}
           onChange={setSearchTerm}
-          placeholder="Pesquisar rotulações..."
+          placeholder={t("labelings.manage.searchPlaceholder")}
         />
         <div className="ml-auto mr-6 w-auto">
           <Button
@@ -147,9 +139,9 @@ export default function LabelingsPage() {
             variant="normal"
             fill={false}
             className="px-4 py-2 shadow-md text-sm"
-            ariaLabel="Abrir nova rotulação"
+            ariaLabel={t("labelings.manage.newAria")}
           >
-            Nova Rotulação
+            {t("labelings.manage.newButton")}
           </Button>
         </div>
       </div>
@@ -179,8 +171,7 @@ export default function LabelingsPage() {
       </div>
       {!isAdmin && (
         <div className="ml-5 mr-5 mt-4 text-sm text-gray-600">
-          Você pode visualizar e responder às rotulações em que participa, mas
-          somente administradores podem criar novas.
+          {t("labelings.nonAdminNote")}
         </div>
       )}
 

@@ -3,6 +3,7 @@
 import { createPortal } from "react-dom";
 import { PlusCircle, PlusSquare, CircleQuestionMark } from "lucide-react";
 import { useEffect, useState, type MutableRefObject } from "react";
+import { useTranslations } from "@/i18n/use-translations";
 
 type ActionsSidebarProps = {
   anchor:
@@ -26,6 +27,7 @@ export default function ActionsSidebar({
   onAddQuestion,
   onAddSection,
 }: ActionsSidebarProps) {
+  const { t } = useTranslations();
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
@@ -53,7 +55,7 @@ export default function ActionsSidebar({
         <button
           type="button"
           onClick={onAddQuestion}
-          title="Adicionar pergunta"
+          title={t("labelings.create.actions.addQuestion")}
           className="w-10 h-10 bg-blue-900 hover:bg-blue-800 text-white rounded-md shadow flex items-center justify-center cursor-pointer"
         >
           <PlusCircle size={20} />
@@ -61,7 +63,7 @@ export default function ActionsSidebar({
         <button
           type="button"
           onClick={onAddContext}
-          title="Adicionar contexto"
+          title={t("labelings.create.actions.addContext")}
           className="w-10 h-10 bg-blue-900 hover:bg-blue-800 text-white rounded-md shadow flex items-center justify-center cursor-pointer"
         >
           <CircleQuestionMark size={20} />
@@ -69,7 +71,7 @@ export default function ActionsSidebar({
         <button
           type="button"
           onClick={onAddSection}
-          title="Adicionar seção"
+          title={t("labelings.create.actions.addSection")}
           className="w-10 h-10 bg-blue-900 hover:bg-blue-800 text-white rounded-md shadow flex items-center justify-center cursor-pointer"
         >
           <PlusSquare size={20} />

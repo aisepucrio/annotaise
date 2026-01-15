@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import StatPill from "@/components/StatPill";
 import Button from "@/components/button/Button";
 import { ArrowUpRight } from "lucide-react";
+import { useTranslations } from "@/i18n/use-translations";
 
 type ProjectContainerProps = {
   title: string;
@@ -26,6 +27,7 @@ export default function ProjectContainer({
   canManage = true,
 }: ProjectContainerProps) {
   const router = useRouter();
+  const { t } = useTranslations();
 
   const handle = () => {
     const params = new URLSearchParams({ project: title });
@@ -56,21 +58,21 @@ export default function ProjectContainer({
         {/* métricas (coluna esquerda) */}
         <div className="flex flex-col gap-2 ">
           <StatPill
-            label="Usuários rotulando"
+            label={t("projects.stats.usersLabeling")}
             value={user_count}
             textColor="var(--blueberry-700)"
             backgroundColor="var(--blueberry-700-10)"
             cut="right"
           />
           <StatPill
-            label="Rotulações finalizadas"
+            label={t("projects.stats.labelingsDone")}
             value={labelings_done}
             textColor="var(--green-blueberry)"
             backgroundColor="var(--green-blueberry-10)"
             cut="right"
           />
           <StatPill
-            label="Rotulações pendentes"
+            label={t("projects.stats.labelingsPending")}
             value={labelings_pending}
             textColor="var(--orange-blueberry)"
             backgroundColor="var(--orange-blueberry-10)"
@@ -83,14 +85,18 @@ export default function ProjectContainer({
           {labelings_late > 0 ? (
             <StatusBadge
               type="warning"
-              text={`Há ${labelings_late} ${
-                labelings_late > 1
-                  ? "rotulações atrasadas"
-                  : "rotulação atrasada"
-              }`}
+              text={
+                labelings_late === 1
+                  ? t("projects.status.lateCountSingular", {
+                      count: labelings_late,
+                    })
+                  : t("projects.status.lateCountPlural", {
+                      count: labelings_late,
+                    })
+              }
             />
           ) : (
-            <StatusBadge type="ok" text="Todas as rotulações estão em dia" />
+            <StatusBadge type="ok" text={t("projects.status.onTrack")} />
           )}
 
           {canManage ? (
@@ -98,9 +104,9 @@ export default function ProjectContainer({
               icon={<NotebookPen size={20} strokeWidth={1.75} />}
               onClick={onManage}
               variant="normal"
-              ariaLabel="Gerenciar projeto"
+              ariaLabel={t("projects.manageAria")}
             >
-              Gerenciar
+              {t("projects.manage")}
             </Button>
           ) : null}
         </div>
