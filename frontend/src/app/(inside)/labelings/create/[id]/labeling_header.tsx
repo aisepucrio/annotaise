@@ -7,6 +7,7 @@ export type LabelingTabKey =
   | "form"
   | "assign"
   | "answers"
+  | "summary"
   | "guide"
   | "decision";
 
@@ -55,6 +56,7 @@ export default function LabelingHeader({
     { key: "form", label: t("labelings.create.tabs.form") },
     { key: "assign", label: t("labelings.create.tabs.assign") },
     { key: "answers", label: t("labelings.create.tabs.answers") },
+    { key: "summary", label: t("labelings.create.tabs.summary") },
     { key: "guide", label: t("labelings.create.tabs.guide") },
     ...(isDecision
       ? [{ key: "decision", label: t("labelings.create.tabs.decision") }]

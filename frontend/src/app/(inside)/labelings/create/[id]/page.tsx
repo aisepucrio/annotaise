@@ -44,6 +44,7 @@ import AssignTab from "./assign_tab";
 import GuideTab from "./guide_tab";
 import AnswersTab from "./answers_tab";
 import DecisionTab from "./decision_tab";
+import SummaryTab from "./summary_tab";
 import LabelingHeader, { type LabelingTabKey } from "./labeling_header";
 import { useTranslations } from "@/i18n/use-translations";
 import { set } from "react-hook-form";
@@ -643,7 +644,7 @@ export default function LabelingFormPage() {
   }, [labelingId, t]);
 
   useEffect(() => {
-    if (activeTab !== "answers") return;
+    if (activeTab !== "answers" && activeTab !== "summary") return;
     void loadAnswers();
   }, [activeTab, loadAnswers]);
 
@@ -1092,6 +1093,14 @@ export default function LabelingFormPage() {
               onInspectAnswer={setInspectAnswer}
               inspectAnswer={inspectAnswer}
               onCloseInspect={() => setInspectAnswer(null)}
+              structureSections={structureSections}
+            />
+          </div>
+        ) : activeTab === "summary" ? (
+          <div className="h-full overflow-y-auto p-4">
+            <SummaryTab
+              answers={answers}
+              answersLoading={answersLoading}
               structureSections={structureSections}
             />
           </div>
