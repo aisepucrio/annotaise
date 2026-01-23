@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
 import { RefreshCw, Send } from "lucide-react";
+import { useTranslations } from "@/i18n/use-translations";
 import {
   fetchLabelingById,
   type LabelingStructureSection,
@@ -30,7 +31,7 @@ import InnerPageHeader from "@/components/InnerPageHeader";
 export default function LabelingAnswerPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const labelingId = useMemo(() => {
+  const { t } = useTranslations();  const labelingId = useMemo(() => {
     const parsed = Number(params?.id);
     return Number.isFinite(parsed) ? parsed : NaN;
   }, [params]);
@@ -71,7 +72,7 @@ export default function LabelingAnswerPage() {
 
   const loadItem = useCallback(async () => {
     if (Number.isNaN(labelingId)) {
-      setLoadError("ID da rotulação inválido.");
+      setLoadError(t("answer.invalidId"));
       setIsLoading(false);
       return;
     }
@@ -101,13 +102,13 @@ export default function LabelingAnswerPage() {
       setSections([]);
       setLoadErrorCode(null);
 
-      let message = "Não foi possível carregar um item para responder.";
+      let message = t("answer.loadError");
       if (axios.isAxiosError(error)) {
         const data = error.response?.data as
           | { detail?: string; code?: string }
           | undefined;
         if (data?.code === "NO_LABELINGS_TO_ANSWER") {
-          message = data.detail ?? "Você não tem rotulações para responder.";
+          message = data.detail ?? t("answer.noLabelings");
         } else if (data?.detail) {
           message = data.detail;
         } else if (error.message) {
@@ -122,7 +123,7 @@ export default function LabelingAnswerPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [labelingId]);
+  }, [labelingId, t]);
 
   useEffect(() => {
     void loadItem();
@@ -145,23 +146,23 @@ export default function LabelingAnswerPage() {
 
   const handleSubmit = async () => {
     if (Number.isNaN(labelingId)) {
-      setLoadError("ID da rotulação inválido.");
+      setLoadError(t("answer.invalidId"));
       return;
     }
     if (!currentItemId) {
-      setLoadError("Nenhum item disponível para responder.");
+      setLoadError(t("answer.noItemAvailable"));
       return;
     }
 
     if (currentSection) {
-      const sectionError = validateSectionRequired(currentSection, answers);
+      const sectionError = validateSectionRequired(currentSection, answers, t);
       if (sectionError) {
         setLoadError(sectionError);
         return;
       }
     }
 
-    const validationError = validateRequired(sections, answers);
+    const validationError = validateRequired(sections, answers, t);
     if (validationError) {
       setLoadError(validationError);
       return;
@@ -177,10 +178,10 @@ export default function LabelingAnswerPage() {
         item: currentItemId,
         answer_payload: answers,
       });
-      setSubmitMessage("Resposta enviada! Buscando próximo item...");
+      setSubmitMessage(t("answer.answerSent"));
       await loadItem();
     } catch (error) {
-      let message = "Não foi possível enviar a resposta.";
+      let message = t("answer.sendError");
       if (axios.isAxiosError(error)) {
         const detail = (error.response?.data as { detail?: string } | undefined)
           ?.detail;
@@ -200,7 +201,7 @@ export default function LabelingAnswerPage() {
 
   const goToNextSection = () => {
     if (!currentSection) return;
-    const error = validateSectionRequired(currentSection, answers);
+    const error = validateSectionRequired(currentSection, answers, t);
     if (error) {
       setLoadError(error);
       return;
@@ -226,6 +227,7 @@ export default function LabelingAnswerPage() {
       isSubmitting={isSubmitting}
       currentItemId={currentItemId}
       isLastSection={isLastSection}
+      t={t}
     />
   );
 
@@ -235,18 +237,18 @@ export default function LabelingAnswerPage() {
         <div>
           <h1 className="text-lg font-semibold leading-tight">
             {labelingTitle ||
-              (isLoading ? "Carregando rotulação..." : "Responder rotulação")}
+              (isLoading ? t("answer.loadingLabeling") : t("answer.answerLabeling"))}
           </h1>
         </div>
         <div className="flex flex-1 flex-wrap items-center justify-end gap-3">
           {rowIndex !== null ? (
             <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-blue-50">
-              Item #{rowIndex + 1}
+              {t("answer.itemNumber", { number: rowIndex + 1 })}
             </span>
           ) : null}
           {totalSections > 0 ? (
             <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-blue-50">
-              Seção {currentSectionIdx + 1} de {totalSections}
+              {t("answer.sectionProgress", { current: currentSectionIdx + 1, total: totalSections })}
             </span>
           ) : null}
           <Button
@@ -257,7 +259,7 @@ export default function LabelingAnswerPage() {
             }`}
             onClick={() => setShowGuide((prev) => !prev)}
           >
-            {showGuide ? "Ocultar guia" : "Guia"}
+            {showGuide ? t("answer.hideGuide") : t("answer.showGuide")}
           </Button>
           <button
             type="button"
@@ -266,7 +268,7 @@ export default function LabelingAnswerPage() {
             className="inline-flex items-center gap-2 rounded-lg border border-white/30 px-4 py-2 text-sm font-medium text-white cursor-pointer hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <RefreshCw size={16} />
-            Recarregar item
+            {t("answer.reloadItem")}
           </button>
         </div>
       </InnerPageHeader>
@@ -287,10 +289,10 @@ export default function LabelingAnswerPage() {
                 <div className="flex items-center justify-between gap-2">
                   <div>
                     <h3 className="text-sm font-semibold text-gray-900">
-                      Guia
+                      {t("answer.guideTitle")}
                     </h3>
                     <p className="text-xs text-gray-500">
-                      Informações adicionais para responder os itens.
+                      {t("answer.guideDescription")}
                     </p>
                   </div>
                   <Button
@@ -307,7 +309,7 @@ export default function LabelingAnswerPage() {
                       );
                     }}
                   >
-                    Abrir em nova aba
+                    {t("answer.openNewTab")}
                   </Button>
                 </div>
                 <div className="mt-1 space-y-4">
@@ -319,7 +321,7 @@ export default function LabelingAnswerPage() {
                     </div>
                   ) : (
                     <p className="text-sm text-gray-600">
-                      Nenhum guia foi fornecido para esta rotulação.
+                      {t("answer.noGuide")}
                     </p>
                   )}
                 </div>
@@ -349,6 +351,7 @@ type MainContentProps = {
   isSubmitting: boolean;
   currentItemId: number | null;
   isLastSection: boolean;
+  t: (key: string, params?: Record<string, string | number>) => string;
 };
 
 function MainContent({
@@ -366,17 +369,18 @@ function MainContent({
   isSubmitting,
   currentItemId,
   isLastSection,
+  t,
 }: MainContentProps) {
   return (
     <section className="rounded-xl bg-white p-4 h-full overflow-y-auto">
       
       {isLoading ? (
-        <p className="text-sm text-gray-600">Carregando item e perguntas...</p>
+        <p className="text-sm text-gray-600">{t("answer.loadingItem")}</p>
       ) : orderedSections.length === 0 ? (
         <div className="rounded-lg border border-dashed border-green-200 bg-green-50 px-4 py-6 text-center text-sm text-green-900 w-1/4 items-center mx-auto">
           <div className="flex items-center justify-center gap-2">
             <span>✓</span>
-            <span>{loadErrorCode === "NO_LABELINGS_TO_ANSWER" ? "Obrigado por rotular ! você não tem mais items pra responder nessa rotulação" : "Nenhum item disponível para resposta agora."}</span>
+            <span>{loadErrorCode === "NO_LABELINGS_TO_ANSWER" ? t("answer.thankYou") : t("answer.noItemsNow")}</span>
           </div>
         </div>
       ) : currentSection ? (
@@ -387,6 +391,7 @@ function MainContent({
             payload={payload}
             answers={answers}
             onChange={handleAnswerChange}
+            t={t}
           />
           <div className="flex justify-between items-center pt-2">
             <div />
@@ -398,7 +403,7 @@ function MainContent({
                   disabled={isLoading || isSubmitting}
                   className="cursor-pointer inline-flex items-center gap-2 rounded-lg bg-blue-900 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Avançar
+                  {t("answer.advance")}
                 </button>
               ) : (
                 <button
@@ -413,7 +418,7 @@ function MainContent({
                   className="inline-flex items-center gap-2 rounded-lg bg-blue-900 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
                 >
                   <Send size={16} />
-                  {isSubmitting ? "Enviando..." : "Enviar resposta"}
+                  {isSubmitting ? t("answer.sending") : t("answer.sendAnswer")}
                 </button>
               )}
             </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "@/i18n/use-translations";
 import Modal from "@/components/modal/Modal";
 import Input from "@/components/form/Input";
 import Select from "@/components/form/Select";
@@ -18,21 +19,22 @@ type NewUserModalProps = {
   onSubmit: (payload: Payload) => Promise<string>;
 };
 
-const ACCOUNT_OPTIONS = [
-  { value: "standard", label: "Padrão" },
-  { value: "admin", label: "Administrador" },
-];
-
 export default function NewUserModal({
   open,
   onClose,
   onSubmit,
 }: NewUserModalProps) {
   // Hooks: estado local
+  const { t } = useTranslations();
   const [email, setEmail] = useState("");
   const [accountType, setAccountType] =
     useState<Payload["account_type"]>("standard");
   const [submitting, setSubmitting] = useState(false);
+
+  const ACCOUNT_OPTIONS = [
+    { value: "standard", label: t("users.new.accountType.standard") },
+    { value: "admin", label: t("users.new.accountType.admin") },
+  ];
 
   // Efeitos: resetar estado quando o modal fecha
   useEffect(() => {
@@ -48,7 +50,7 @@ export default function NewUserModal({
     e.preventDefault();
     const trimmed = email.trim();
     if (!trimmed) {
-      toast.error("Informe o e-mail do usuário.");
+      toast.error(t("users.new.emailRequired"));
       return;
     }
 
@@ -58,10 +60,10 @@ export default function NewUserModal({
         email: trimmed,
         account_type: accountType,
       });
-      toast.success("Convite gerado", {
+      toast.success(t("users.new.success"), {
         description: link,
         action: {
-          label: "Copiar link",
+          label: t("users.new.copyLink"),
           onClick: () =>
             navigator?.clipboard?.writeText?.(link).catch(() => undefined),
         },
@@ -73,7 +75,7 @@ export default function NewUserModal({
           ?.detail ??
         (err instanceof Error
           ? err.message
-          : "Não foi possível criar o convite.");
+          : t("users.new.error"));
       toast.error(message);
     } finally {
       setSubmitting(false);
@@ -84,17 +86,17 @@ export default function NewUserModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="Novo Usuário"
-      description="Envie um convite para criar uma nova conta."
+      title={t("users.new.title")}
+      description={t("users.new.description")}
       maxWidth="md"
     >
       {/* Render: UI do formulário */}
       <form onSubmit={handleSubmit} className="space-y-5">
         <Input
           id="invite-email"
-          label="E-mail"
+          label={t("users.new.emailLabel")}
           type="email"
-          placeholder="usuario@exemplo.com"
+          placeholder={t("users.new.emailPlaceholder")}
           value={email}
           onChange={(e) => setEmail((e.target as HTMLInputElement).value)}
           required
@@ -103,7 +105,7 @@ export default function NewUserModal({
         <div>
           <Select
             id="invite-account"
-            label="Tipo de conta"
+            label={t("users.new.accountTypeLabel")}
             options={ACCOUNT_OPTIONS}
             value={accountType}
             onChange={(e) =>
@@ -116,7 +118,7 @@ export default function NewUserModal({
 
         <div className="flex items-center justify-end gap-3 pt-2 w-[70%] mx-auto">
           <Button type="submit" disabled={submitting}>
-            {submitting ? "Enviando..." : "Enviar convite"}
+            {submitting ? t("users.new.submitting") : t("users.new.submit")}
           </Button>
         </div>
       </form>

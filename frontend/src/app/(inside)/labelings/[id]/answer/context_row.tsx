@@ -6,15 +6,16 @@ import remarkGfm from "remark-gfm";
 type ContextRowProps = {
   element: LabelingStructureElement;
   payload: Record<string, unknown>;
+  t: (key: string, params?: Record<string, string | number>) => string;
 };
 
-export default function ContextRow({ element, payload }: ContextRowProps) {
+export default function ContextRow({ element, payload, t }: ContextRowProps) {
   const value = element.column_name ? payload[element.column_name] : undefined;
   const hasValue = value !== undefined && value !== null;
-  const contextLabel = element.text?.trim() ? element.text : element.column_name || "Contexto";
+  const contextLabel = element.text?.trim() ? element.text : element.column_name || t("answer.context.title");
   const formattedValue = hasValue
     ? formatPayloadValue(value)
-    : "Valor não encontrado para este item.";
+    : t("answer.context.noValue");
   const markdownValue =
     element.context_type === "code"
       ? `\`\`\`\n${formattedValue}\n\`\`\``
@@ -26,8 +27,8 @@ export default function ContextRow({ element, payload }: ContextRowProps) {
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{contextLabel}</ReactMarkdown>
       </div>
       <p className="text-[11px] uppercase tracking-wide text-blue-500">
-        Coluna: {element.column_name ?? "—"}
-        {element.context_type ? ` • Tipo: ${element.context_type}` : ""}
+        {t("answer.context.column")} {element.column_name ?? "—"}
+        {element.context_type ? ` • ${t("answer.context.type")} ${element.context_type}` : ""}
       </p>
       <div className="mt-1 prose prose-sm max-w-none text-gray-800">
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdownValue}</ReactMarkdown>

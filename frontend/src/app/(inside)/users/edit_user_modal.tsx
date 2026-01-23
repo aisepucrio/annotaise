@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { UpdateUserPayload, User } from "@/lib/services/user_service";
 import { toast } from "sonner";
+import { useTranslations } from "@/i18n/use-translations";
 import Modal from "@/components/modal/Modal";
 import Input from "@/components/form/Input";
 import Select from "@/components/form/Select";
@@ -15,11 +16,6 @@ type EditUserModalProps = {
   onSubmit: (payload: UpdateUserPayload) => Promise<void>;
 };
 
-const ACCOUNT_OPTIONS = [
-  { value: "standard", label: "Padrão" },
-  { value: "admin", label: "Administrador" },
-];
-
 export default function EditUserModal({
   open,
   user,
@@ -27,6 +23,7 @@ export default function EditUserModal({
   onSubmit,
 }: EditUserModalProps) {
   // Hooks: estado local
+  const { t } = useTranslations();
   const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -35,6 +32,11 @@ export default function EditUserModal({
     "standard" | "editor" | "admin"
   >("standard");
   const [submitting, setSubmitting] = useState(false);
+
+  const ACCOUNT_OPTIONS = [
+    { value: "standard", label: t("users.new.accountType.standard") },
+    { value: "admin", label: t("users.new.accountType.admin") },
+  ];
 
   // Efeitos: atualizar/resetar estado quando usuário/modal mudam
   useEffect(() => {
@@ -60,7 +62,7 @@ export default function EditUserModal({
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!email.trim()) {
-      toast.error("Informe o e-mail do usuário.");
+      toast.error(t("users.edit.emailRequired"));
       return;
     }
 
@@ -75,7 +77,7 @@ export default function EditUserModal({
       if (password.trim()) payload.password = password;
 
       await onSubmit(payload);
-      toast.success("Usuário atualizado com sucesso.");
+      toast.success(t("users.edit.success"));
       onClose();
     } catch (err) {
       const message =
@@ -83,7 +85,7 @@ export default function EditUserModal({
           ?.detail ??
         (err instanceof Error
           ? err.message
-          : "Não foi possível atualizar o usuário.");
+          : t("users.edit.error"));
       toast.error(message);
     } finally {
       setSubmitting(false);
@@ -98,16 +100,16 @@ export default function EditUserModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="Editar usuário"
-      description="Atualize as informações deste usuário."
+      title={t("users.edit.title")}
+      description={t("users.edit.description")}
       maxWidth="lg"
     >
       <form onSubmit={handleSubmit} className="space-y-5">
         <Input
           id="edit-email"
-          label="E-mail"
+          label={t("users.edit.emailLabel")}
           type="email"
-          placeholder="usuario@exemplo.com"
+          placeholder={t("users.edit.emailPlaceholder")}
           value={email}
           onChange={(e) => setEmail((e.target as HTMLInputElement).value)}
           required
@@ -116,15 +118,15 @@ export default function EditUserModal({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <Input
             id="edit-first"
-            label="Nome"
-            placeholder="Nome"
+            label={t("users.edit.firstNameLabel")}
+            placeholder={t("users.edit.firstNamePlaceholder")}
             value={firstName}
             onChange={(e) => setFirstName((e.target as HTMLInputElement).value)}
           />
           <Input
             id="edit-last"
-            label="Sobrenome"
-            placeholder="Sobrenome"
+            label={t("users.edit.lastNameLabel")}
+            placeholder={t("users.edit.lastNamePlaceholder")}
             value={lastName}
             onChange={(e) => setLastName((e.target as HTMLInputElement).value)}
           />
@@ -133,9 +135,9 @@ export default function EditUserModal({
         <div>
           <Input
             id="edit-password"
-            label="Nova senha"
+            label={t("users.edit.passwordLabel")}
             type="password"
-            placeholder="Deixe em branco para manter"
+            placeholder={t("users.edit.passwordPlaceholder")}
             value={password}
             onChange={(e) => setPassword((e.target as HTMLInputElement).value)}
           />
@@ -143,7 +145,7 @@ export default function EditUserModal({
 
         <Select
           id="edit-account"
-          label="Tipo de conta"
+          label={t("users.edit.accountTypeLabel")}
           options={ACCOUNT_OPTIONS}
           value={accountType}
           onChange={(e) =>
@@ -158,7 +160,7 @@ export default function EditUserModal({
 
         <div className="flex items-center justify-end gap-3 pt-2 w-[70%] mx-auto">
           <Button type="submit" disabled={submitting}>
-            {submitting ? "Salvando..." : "Salvar alterações"}
+            {submitting ? t("users.edit.submitting") : t("users.edit.submit")}
           </Button>
         </div>
       </form>

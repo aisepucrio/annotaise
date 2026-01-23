@@ -7,6 +7,7 @@ import type {
   ProjectStatus,
 } from "@/lib/services/project_service";
 import { toast } from "sonner";
+import { useTranslations } from "@/i18n/use-translations";
 import Modal from "@/components/modal/Modal";
 import Input from "@/components/form/Input";
 import Select from "@/components/form/Select";
@@ -18,23 +19,24 @@ type NewProjectModalProps = {
   onSubmit: (payload: ProjectPayload) => Promise<void>;
 };
 
-const STATUS_OPTIONS: { value: ProjectStatus; label: string }[] = [
-  { value: "planning", label: "Planejamento" },
-  { value: "active", label: "Ativo" },
-  { value: "completed", label: "Concluído" },
-  { value: "cancelled", label: "Cancelado" },
-];
-
 export default function NewProjectModal({
   open,
   onClose,
   onSubmit,
 }: NewProjectModalProps) {
   // Hooks: formulário e estado local
+  const { t } = useTranslations();
   const { register, handleSubmit, reset } = useForm<ProjectPayload>({
     defaultValues: { name: "", description: "", status: "planning" },
   });
   const [submitting, setSubmitting] = useState(false);
+
+  const STATUS_OPTIONS: { value: ProjectStatus; label: string }[] = [
+    { value: "planning", label: t("projects.new.status.planning") },
+    { value: "active", label: t("projects.new.status.active") },
+    { value: "completed", label: t("projects.new.status.completed") },
+    { value: "cancelled", label: t("projects.new.status.cancelled") },
+  ];
 
   // Efeitos: resetar formulário quando o modal fechar
   useEffect(() => {
@@ -52,11 +54,11 @@ export default function NewProjectModal({
         await onSubmit(values);
         reset({ name: "", description: "", status: "planning" });
         onClose();
-        toast.success("Projeto criado com sucesso.");
+        toast.success(t("projects.new.success"));
       } catch (err) {
         const message =
           (err as { response?: { data?: { detail?: string } } })?.response?.data
-            ?.detail ?? "Não foi possível salvar o projeto.";
+            ?.detail ?? t("projects.new.error");
         toast.error(message);
       } finally {
         setSubmitting(false);
@@ -66,7 +68,7 @@ export default function NewProjectModal({
       const firstError = Object.values(formErrors)[0];
       const message =
         (firstError as { message?: string } | undefined)?.message ??
-        "Preencha os campos obrigatórios.";
+        t("projects.new.errorRequired");
       toast.error(message);
     }
   );
@@ -75,24 +77,24 @@ export default function NewProjectModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="Novo Projeto"
-      description="Preencha as informações abaixo para criar um novo projeto."
+      title={t("projects.new.title")}
+      description={t("projects.new.description")}
       maxWidth="lg"
     >
       {/* Render: UI do formulário */}
       <form onSubmit={submitForm} className="space-y-5">
         <Input
           id="project-name"
-          label="Nome"
-          placeholder="Nome do projeto"
+          label={t("projects.new.nameLabel")}
+          placeholder={t("projects.new.namePlaceholder")}
           required
-          {...register("name", { required: "O nome é obrigatório." })}
+          {...register("name", { required: t("projects.new.nameRequired") })}
         />
 
         <Input
           id="project-description"
-          label="Descrição"
-          placeholder="Descreva o objetivo do projeto"
+          label={t("projects.new.descriptionLabel")}
+          placeholder={t("projects.new.descriptionPlaceholder")}
           multiline
           rows={4}
           resizable={true}
@@ -101,14 +103,14 @@ export default function NewProjectModal({
 
         <Select
           id="project-status"
-          label="Status inicial"
+          label={t("projects.new.statusLabel")}
           options={STATUS_OPTIONS}
           {...register("status")}
         />
 
         <div className="flex items-center justify-center gap-3 pt-2 w-1/2 mx-auto">
           <Button type="submit" disabled={submitting} fill={true}>
-            {submitting ? "Salvando..." : "Criar projeto"}
+            {submitting ? t("projects.new.submitting") : t("projects.new.submit")}
           </Button>
         </div>
       </form>

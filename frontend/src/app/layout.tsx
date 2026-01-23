@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { LanguageProvider } from "@/i18n/language-context";
 const montserrat = Montserrat({
   variable: "--font-montserrat",
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext"],
   weight: ["300", "400", "500", "600", "700", "800"],
 });
 

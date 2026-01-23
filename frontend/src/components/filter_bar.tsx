@@ -1,5 +1,6 @@
 import { Search, Filter } from "lucide-react";
 import Button from "./button/Button";
+import { useTranslations } from "@/i18n/use-translations";
 
 type FilterBarProps = {
   value: string;
@@ -11,16 +12,18 @@ type FilterBarProps = {
 export default function FilterBar({
   value,
   onChange,
-  placeholder = "Pesquisar...",
+  placeholder,
   disabled,
 }: FilterBarProps) {
+  const { t } = useTranslations();
+  
   return (
     <div className="flex items-center justify-start gap-3 ml-5">
       {/* Campo de busca */}
       <div className="relative w-[420px]">
         <input
           type="text"
-          placeholder={placeholder}
+          placeholder={placeholder || t("filterBar.searchPlaceholder")}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           className="
@@ -32,7 +35,7 @@ export default function FilterBar({
             border-b-blueberry-700
             disabled:bg-gray-100 disabled:text-gray-500
           "
-          aria-label="Buscar projeto"
+          aria-label={t("filterBar.searchAria")}
           disabled={disabled}
         />
         {/* Ícone de lupa */}
@@ -47,9 +50,9 @@ export default function FilterBar({
         icon={<Filter size={16} className="opacity-90" />}
         fill={false}
         className="px-4 py-2 shadow-md text-sm"
-        ariaLabel="Abrir filtros"
+        ariaLabel={t("filterBar.filterAria")}
       >
-        Filtrar
+        {t("filterBar.filterButton")}
       </Button>
     </div>
   );

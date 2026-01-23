@@ -11,14 +11,15 @@ type SectionCardProps = {
   payload: Record<string, unknown>;
   answers: AnswerMap;
   onChange: (questionId: string | number, value: unknown) => void;
+  t: (key: string, params?: Record<string, string | number>) => string;
 };
 
-export default function SectionCard({ section, payload, answers, onChange }: SectionCardProps) {
+export default function SectionCard({ section, payload, answers, onChange, t }: SectionCardProps) {
   const orderedElements = useMemo(
     () => [...section.elements].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
     [section.elements]
   );
-  const sectionTitle = section.title?.trim() ? section.title : "Seção";
+  const sectionTitle = section.title?.trim() ? section.title : t("answer.section.title");
 
   const totalQuestions = orderedElements.filter(
     (element) => element.question_type !== "context"
@@ -46,12 +47,12 @@ export default function SectionCard({ section, payload, answers, onChange }: Sec
     <article className="overflow-hidden rounded-xl border border-blue-100 shadow-sm">
       <header className="flex items-center justify-between bg-blue-900 px-4 py-3 text-white">
         <div>
-          <p className="text-[11px] uppercase tracking-wide text-blue-100">Seção {section.order ?? ""}</p>
+          <p className="text-[11px] uppercase tracking-wide text-blue-100">{t("answer.section.title")} {section.order ?? ""}</p>
           <div className="prose prose-sm max-w-none text-white">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{sectionTitle}</ReactMarkdown>
           </div>
         </div>
-        <span className="text-xs text-blue-100">{totalQuestions} perguntas</span>
+        <span className="text-xs text-blue-100">{t("answer.section.questionsCount", { count: totalQuestions })}</span>
       </header>
 
       <div className="space-y-4 bg-white p-4">
@@ -63,7 +64,7 @@ export default function SectionCard({ section, payload, answers, onChange }: Sec
                 className="rounded-lg border border-blue-100 bg-blue-50 p-3"
               >
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-blue-900">
-                  Contexto do item
+                  {t("answer.section.contextTitle")}
                 </p>
                 <div className="grid gap-2 md:grid-cols-2">
                   {block.elements.map((context, contextIndex) => (
@@ -71,6 +72,7 @@ export default function SectionCard({ section, payload, answers, onChange }: Sec
                       key={context.id ?? contextIndex}
                       element={context}
                       payload={payload}
+                      t={t}
                     />
                   ))}
                 </div>
@@ -85,6 +87,7 @@ export default function SectionCard({ section, payload, answers, onChange }: Sec
                       element={question}
                       value={value}
                       onChange={(val) => onChange(question.id ?? questionIndex, val)}
+                      t={t}
                     />
                   );
                 })}
@@ -92,7 +95,7 @@ export default function SectionCard({ section, payload, answers, onChange }: Sec
             )
           )
         ) : (
-          <p className="text-sm text-gray-600">Nenhuma pergunta configurada nesta seção.</p>
+          <p className="text-sm text-gray-600">{t("answer.section.noQuestions")}</p>
         )}
       </div>
     </article>

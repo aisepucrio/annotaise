@@ -6,6 +6,7 @@ import useSWR from "swr";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Save, Trash2 } from "lucide-react";
+import { useTranslations } from "@/i18n/use-translations";
 import InnerPageHeader from "@/components/InnerPageHeader";
 import Button from "@/components/button/Button";
 import ConfirmDeleteModal from "@/components/ConfirmDeleteModal";
@@ -31,25 +32,11 @@ type Params = {
   projectId: string;
 };
 
-// Opções de status do projeto
-const STATUS_OPTIONS = [
-  { value: "planning", label: "Planejamento" },
-  { value: "active", label: "Ativo" },
-  { value: "completed", label: "Concluído" },
-  { value: "cancelled", label: "Cancelado" },
-];
-
-// Opções de papel/permissão de membro
-const ROLE_OPTIONS = [
-  { value: "owner", label: "Proprietário" },
-  { value: "contributor", label: "Colaborador" },
-  { value: "viewer", label: "Visualizador" },
-];
-
 export default function ProjectDetailsPage() {
   const router = useRouter();
   const params = useParams<Params>();
   const currentUser = useCurrent();
+  const { t } = useTranslations();
   const projectId = Number(params?.projectId);
 
   // Estados locais
@@ -58,6 +45,21 @@ export default function ProjectDetailsPage() {
   const [newMemberId, setNewMemberId] = useState<string>("");
   const [newMemberRole, setNewMemberRole] =
     useState<ProjectMembershipPayload["role"]>("viewer");
+
+  // Opções de status do projeto
+  const STATUS_OPTIONS = [
+    { value: "planning", label: t("projects.new.status.planning") },
+    { value: "active", label: t("projects.new.status.active") },
+    { value: "completed", label: t("projects.new.status.completed") },
+    { value: "cancelled", label: t("projects.new.status.cancelled") },
+  ];
+
+  // Opções de papel/permissão de membro
+  const ROLE_OPTIONS = [
+    { value: "owner", label: t("projects.detail.role.owner") },
+    { value: "contributor", label: t("projects.detail.role.contributor") },
+    { value: "viewer", label: t("projects.detail.role.viewer") },
+  ];
 
   // Verificações de permissão
   const userLoading = currentUser === undefined;
@@ -133,10 +135,10 @@ export default function ProjectDetailsPage() {
       toast.error(
         projectError instanceof Error
           ? projectError.message
-          : "Erro ao carregar o projeto."
+          : t("projects.detail.updateError")
       );
     }
-  }, [projectError]);
+  }, [projectError, t]);
 
   useEffect(() => {
     if (membershipsError || usersError) {
@@ -144,18 +146,16 @@ export default function ProjectDetailsPage() {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Erro ao carregar os dados de membros."
+          : t("projects.detail.updateError")
       );
     }
-  }, [membershipsError, usersError]);
+  }, [membershipsError, usersError, t]);
 
   useEffect(() => {
     if (!userLoading && !canSeeProjects) {
-      toast.error(
-        "Seu perfil não possui permissão para visualizar este projeto."
-      );
+      toast.error(t("projects.detail.accessDenied"));
     }
-  }, [canSeeProjects, userLoading]);
+  }, [canSeeProjects, userLoading, t]);
 
   useEffect(() => {
     if (project) {
@@ -172,7 +172,7 @@ export default function ProjectDetailsPage() {
   // ===============================
   const handleSaveProject = handleSubmit(async (values) => {
     if (!isAdmin) {
-      toast.error("Apenas administradores podem editar projetos.");
+      toast.error(t("projects.detail.adminOnlyEdit"));
       return;
     }
     if (!projectId) return;
@@ -180,18 +180,18 @@ export default function ProjectDetailsPage() {
     try {
       await updateProject(projectId, values);
       await mutateProject();
-      toast.success("Projeto atualizado com sucesso.");
+      toast.success(t("projects.detail.updateSuccess"));
     } catch (error) {
       const message =
         (error as { response?: { data?: { detail?: string } } })?.response?.data
-          ?.detail ?? "Não foi possível salvar as alterações.";
+          ?.detail ?? t("projects.detail.updateError");
       toast.error(message);
     }
   });
 
   const handleDeleteProject = async () => {
     if (!isAdmin) {
-      toast.error("Apenas administradores podem deletar projetos.");
+      toast.error(t("projects.detail.adminOnlyDelete"));
       return;
     }
     if (!projectId) return;
@@ -204,7 +204,7 @@ export default function ProjectDetailsPage() {
     } catch (error) {
       const message =
         (error as { response?: { data?: { detail?: string } } })?.response?.data
-          ?.detail ?? "Não foi possível deletar o projeto.";
+          ?.detail ?? t("projects.detail.deleteError");
       toast.error(message);
     } finally {
       setDeleteLoading(false);
@@ -214,7 +214,7 @@ export default function ProjectDetailsPage() {
   const handleAddMember = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!isAdmin) {
-      toast.error("Apenas administradores podem adicionar membros.");
+      toast.error(t("projects.detail.adminOnlyAddMember"));
       return;
     }
     if (!projectId || !newMemberId) return;
@@ -228,11 +228,11 @@ export default function ProjectDetailsPage() {
       setNewMemberId("");
       setNewMemberRole("viewer");
       await mutateMemberships();
-      toast.success("Membro adicionado com sucesso.");
+      toast.success(t("projects.detail.addMemberSuccess"));
     } catch (error) {
       const message =
         (error as { response?: { data?: { detail?: string } } })?.response?.data
-          ?.detail ?? "Não foi possível adicionar o membro.";
+          ?.detail ?? t("projects.detail.addMemberError");
       toast.error(message);
     }
   };
@@ -242,7 +242,7 @@ export default function ProjectDetailsPage() {
     nextRole: ProjectMembershipPayload["role"]
   ) => {
     if (!isAdmin) {
-      toast.error("Apenas administradores podem alterar permissões.");
+      toast.error(t("projects.detail.adminOnlyChangeRole"));
       return;
     }
     if (membership.role === nextRole) return;
@@ -250,29 +250,29 @@ export default function ProjectDetailsPage() {
     try {
       await updateProjectMembership(membership.id, { role: nextRole });
       await mutateMemberships();
-      toast.success("Permissão atualizada.");
+      toast.success(t("projects.detail.roleUpdateSuccess"));
     } catch (error) {
       const message =
         (error as { response?: { data?: { detail?: string } } })?.response?.data
-          ?.detail ?? "Não foi possível atualizar o membro.";
+          ?.detail ?? t("projects.detail.roleUpdateError");
       toast.error(message);
     }
   };
 
   const handleRemoveMember = async (membership: ProjectMembership) => {
     if (!isAdmin) {
-      toast.error("Apenas administradores podem remover membros.");
+      toast.error(t("projects.detail.adminOnlyRemoveMember"));
       return;
     }
 
     try {
       await deleteProjectMembership(membership.id);
       await mutateMemberships();
-      toast.success("Membro removido.");
+      toast.success(t("projects.detail.removeMemberSuccess"));
     } catch (error) {
       const message =
         (error as { response?: { data?: { detail?: string } } })?.response?.data
-          ?.detail ?? "Não foi possível remover o membro.";
+          ?.detail ?? t("projects.detail.removeMemberError");
       toast.error(message);
     }
   };
@@ -286,7 +286,7 @@ export default function ProjectDetailsPage() {
     return (
       <SidebarLayout>
         <p className="mt-6 text-sm text-metal-500">
-          Carregando informações do usuário...
+          {t("projects.detail.loadingUser")}
         </p>
       </SidebarLayout>
     );
@@ -296,11 +296,11 @@ export default function ProjectDetailsPage() {
     return (
       <div className="flex flex-col h-screen">
         <InnerPageHeader onBack={() => router.push("/projects")}>
-          <h1 className="text-xl font-semibold">Projeto</h1>
+          <h1 className="text-xl font-semibold">{t("projects.detail.title")}</h1>
         </InnerPageHeader>
         <div className="flex-1 p-6">
           <p className="text-sm text-metal-700">
-            Seu perfil não possui permissão para visualizar este projeto.
+            {t("projects.detail.accessDenied")}
           </p>
         </div>
       </div>
@@ -313,7 +313,7 @@ export default function ProjectDetailsPage() {
       <InnerPageHeader onBack={() => router.push("/projects")}>
         <>
           <h1 className="text-xl font-semibold">
-            {project ? project.name : "Carregando..."}
+            {project ? project.name : t("projects.detail.loading")}
           </h1>
           <div className="flex items-center gap-3">
             <Button
@@ -323,7 +323,7 @@ export default function ProjectDetailsPage() {
               fill={false}
               icon={<Save size={20} />}
             >
-              {isSubmitting ? "Salvando..." : "Salvar alterações"}
+              {isSubmitting ? t("projects.detail.saving") : t("projects.detail.saveButton")}
             </Button>
 
             <Button
@@ -333,7 +333,7 @@ export default function ProjectDetailsPage() {
               disabled={deleteLoading || !isAdmin}
               icon={<Trash2 size={16} />}
             >
-              Excluir projeto
+              {t("projects.detail.deleteButton")}
             </Button>
           </div>
         </>
@@ -345,26 +345,26 @@ export default function ProjectDetailsPage() {
         <div className="mb-6 border-l-5 pl-4 border-blueberry-700">
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-metal-900">
-              Informações do projeto
+              {t("projects.detail.infoTitle")}
             </h2>
             <p className="text-sm text-metal-500">
-              Atualize o nome, descrição ou status do projeto.
+              {t("projects.detail.infoDescription")}
             </p>
           </div>
 
           {loadingProject ? (
-            <p className="text-sm text-metal-500">Carregando projeto...</p>
+            <p className="text-sm text-metal-500">{t("projects.detail.loadingProject")}</p>
           ) : project ? (
             <form onSubmit={handleSaveProject} className="space-y-4">
               <Input
-                label="Nome"
+                label={t("projects.detail.nameLabel")}
                 {...register("name", { required: true })}
                 disabled={!isAdmin}
                 required
               />
 
               <Input
-                label="Descrição"
+                label={t("projects.detail.descriptionLabel")}
                 {...register("description")}
                 disabled={!isAdmin}
                 multiline
@@ -372,7 +372,7 @@ export default function ProjectDetailsPage() {
               />
 
               <Select
-                label="Status"
+                label={t("projects.detail.statusLabel")}
                 {...register("status", { required: true })}
                 options={STATUS_OPTIONS}
                 disabled={!isAdmin}
@@ -385,47 +385,46 @@ export default function ProjectDetailsPage() {
         <div className="mb-6 border-l-5 pl-4 border-blueberry-700">
           <div className="mb-6 ">
             <h2 className="text-lg font-semibold text-metal-900">
-              Membros do projeto
+              {t("projects.detail.membersTitle")}
             </h2>
             <p className="text-sm text-metal-500">
-              Controle quem tem acesso ao projeto e quais permissões cada pessoa
-              possui.
+              {t("projects.detail.membersDescription")}
             </p>
           </div>
 
           {loadingMemberships || loadingUsers ? (
-            <p className="text-sm text-metal-500">Carregando membros...</p>
+            <p className="text-sm text-metal-500">{t("projects.detail.loadingMembers")}</p>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-8 items-start">
               {/* Coluna Esquerda: Formulário para adicionar novo membro */}
               <div className="space-y-4">
                 <h3 className="text-sm font-semibold text-metal-900">
-                  Adicionar novo membro
+                  {t("projects.detail.addMemberTitle")}
                 </h3>
 
                 <form onSubmit={handleAddMember} className="space-y-4">
                   <Select
-                    label="Usuário"
+                    label={t("projects.detail.userLabel")}
                     value={newMemberId}
                     onChange={(e) => setNewMemberId(e.target.value)}
                     options={
                       loadingUsers
-                        ? [{ value: "", label: "Carregando usuários..." }]
+                        ? [{ value: "", label: t("projects.detail.loadingUsers") }]
                         : availableUsers.length === 0
-                        ? [{ value: "", label: "Nenhum usuário disponível" }]
+                        ? [{ value: "", label: t("projects.detail.noUsersAvailable") }]
                         : availableUsers.map((user) => ({
                             value: user.id.toString(),
                             label: getUserName(user),
                           }))
                     }
-                    placeholder="Selecione um usuário"
+                    placeholder={t("projects.detail.userPlaceholder")}
                     disabled={
                       !isAdmin || loadingUsers || availableUsers.length === 0
                     }
                   />
 
                   <Select
-                    label="Cargo"
+                    label={t("projects.detail.roleLabel")}
                     value={newMemberRole}
                     onChange={(e) =>
                       setNewMemberRole(
@@ -442,7 +441,7 @@ export default function ProjectDetailsPage() {
                       disabled={!newMemberId || !isAdmin || loadingUsers}
                       fill={false}
                     >
-                      Adicionar membro
+                      {t("projects.detail.addMemberButton")}
                     </Button>
                   </div>
                 </form>
@@ -454,7 +453,7 @@ export default function ProjectDetailsPage() {
               {/* Coluna Direita: Lista de membros */}
               <div className="space-y-4">
                 <h3 className="text-sm font-semibold text-metal-900">
-                  Membros atuais ({(memberships ?? []).length})
+                  {t("projects.detail.currentMembersTitle")} ({(memberships ?? []).length})
                 </h3>
 
                 <ul className="space-y-2 max-h-96 overflow-y-auto pr-2">
@@ -476,7 +475,7 @@ export default function ProjectDetailsPage() {
                             </p>
                             <p className="text-xs text-metal-500">
                               {membership.user_detail?.email ??
-                                "Email não disponível"}
+                                t("projects.detail.emailNotAvailable")}
                             </p>
                           </div>
 
@@ -501,7 +500,7 @@ export default function ProjectDetailsPage() {
                               onClick={() => handleRemoveMember(membership)}
                               disabled={isCurrentUser || !isAdmin}
                             >
-                              Remover
+                              {t("projects.detail.removeButton")}
                             </Button>
                           </div>
                         </div>
@@ -520,17 +519,11 @@ export default function ProjectDetailsPage() {
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={() => void handleDeleteProject()}
         isDeleting={deleteLoading}
-        title="Excluir Projeto"
+        title={t("projects.detail.deleteTitle")}
         itemName={project?.name || ""}
-        description={
-          <>
-            Você tem <strong>certeza</strong> que deseja excluir este projeto?
-            Todos os <strong>dados relacionados</strong> serão{" "}
-            <strong>perdidos permanentemente</strong>.
-          </>
-        }
-        confirmButtonText="Excluir Projeto"
-        cancelButtonText="Cancelar"
+        description={t("projects.detail.deleteDescription")}
+        confirmButtonText={t("projects.detail.deleteConfirm")}
+        cancelButtonText={t("projects.detail.deleteCancel")}
       />
     </div>
   );

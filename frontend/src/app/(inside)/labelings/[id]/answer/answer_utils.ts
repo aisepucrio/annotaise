@@ -27,7 +27,8 @@ export function buildInitialAnswers(sections: LabelingStructureSection[]): Answe
 
 export function validateRequired(
   sections: LabelingStructureSection[],
-  answers: AnswerMap
+  answers: AnswerMap,
+  t: (key: string) => string
 ): string | null {
   const missing: Array<string | number> = [];
 
@@ -50,7 +51,7 @@ export function validateRequired(
   });
 
   if (missing.length > 0) {
-    return "Preencha todas as perguntas obrigatórias antes de enviar.";
+    return t("answer.fillRequired");
   }
 
   return null;
@@ -58,7 +59,8 @@ export function validateRequired(
 
 export function validateSectionRequired(
   section: LabelingStructureSection,
-  answers: AnswerMap
+  answers: AnswerMap,
+  t: (key: string) => string
 ): string | null {
   const missing: Array<string | number> = [];
 
@@ -79,7 +81,7 @@ export function validateSectionRequired(
   });
 
   if (missing.length > 0) {
-    return "Preencha todas as perguntas obrigatórias antes de avançar.";
+    return t("answer.fillRequiredSection");
   }
 
   return null;
@@ -98,18 +100,19 @@ export function formatPayloadValue(value: unknown): string {
 }
 
 export function labelForQuestion(
-  questionType: LabelingStructureElement["question_type"]
+  questionType: LabelingStructureElement["question_type"],
+  t: (key: string) => string
 ): string {
   switch (questionType) {
     case "text":
-      return "Texto";
+      return t("answer.question.type.text");
     case "number":
-      return "Número";
+      return t("answer.question.type.number");
     case "range":
-      return "Intervalo";
+      return t("answer.question.type.range");
     case "multiple_choice":
-      return "Seleção múltipla";
+      return t("answer.question.type.multipleChoice");
     default:
-      return "Pergunta";
+      return t("answer.question.title");
   }
 }

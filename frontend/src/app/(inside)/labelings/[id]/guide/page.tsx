@@ -5,8 +5,10 @@ import { useParams } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { fetchLabelingById } from "@/lib/services/labeling_create_service";
+import { useTranslations } from "@/i18n/use-translations";
 
 export default function LabelingGuidePage() {
+  const { t } = useTranslations();
   const params = useParams<{ id: string }>();
   const labelingId = useMemo(() => {
     const parsed = Number(params?.id);
@@ -21,7 +23,7 @@ export default function LabelingGuidePage() {
   useEffect(() => {
     const loadGuide = async () => {
       if (Number.isNaN(labelingId)) {
-        setError("ID da rotulação inválido.");
+        setError(t("guide.invalidId"));
         setLoading(false);
         return;
       }
@@ -30,16 +32,16 @@ export default function LabelingGuidePage() {
       try {
         const labeling = await fetchLabelingById(labelingId);
         setGuideText(labeling.guide ?? "");
-        setTitle(labeling.title ?? "Guia");
+        setTitle(labeling.title ?? t("guide.title"));
       } catch {
-        setError("Não foi possível carregar o guia desta rotulação.");
+        setError(t("guide.loadError"));
       } finally {
         setLoading(false);
       }
     };
 
     void loadGuide();
-  }, [labelingId]);
+  }, [labelingId, t]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -47,17 +49,17 @@ export default function LabelingGuidePage() {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs uppercase tracking-wide text-blue-700">
-              Guia da rotulação
+              {t("guide.pageTitle")}
             </p>
             <h1 className="text-2xl font-semibold text-blue-900">
-              {title || "Guia"}
+              {title || t("guide.title")}
             </h1>
           </div>
         </div>
 
         <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
           {loading ? (
-            <p className="text-sm text-gray-600">Carregando guia...</p>
+            <p className="text-sm text-gray-600">{t("guide.loading")}</p>
           ) : error ? (
             <p className="text-sm text-red-700">{error}</p>
           ) : guideText ? (
@@ -68,7 +70,7 @@ export default function LabelingGuidePage() {
             </div>
           ) : (
             <p className="text-sm text-gray-600">
-              Nenhum guia foi fornecido para esta rotulação.
+              {t("guide.noGuide")}
             </p>
           )}
         </div>
