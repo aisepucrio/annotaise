@@ -92,6 +92,7 @@ class LabelingElement(models.Model):
     class ContextType(models.TextChoices):
         TEXT = "text", "Texto"
         NUMBER = "number", "Número"
+        IMAGE = "image", "Imagem"
         DATE = "date", "Data"
         CATEGORY = "category", "categoria"
         CODE = "code", "Código"

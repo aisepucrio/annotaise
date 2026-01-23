@@ -100,6 +100,7 @@ export default function ContextBlock({
             {t("labelings.create.context.type.category")}
           </option>
           <option value="code">{t("labelings.create.context.type.code")}</option>
+          <option value="image">{t("labelings.create.context.type.image")}</option>
         </select>
       </div>
     </div>
