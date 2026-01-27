@@ -112,19 +112,21 @@ cd annotaise
 - **Step 2 - Create the .env file**
   Create a file named .env in the project root with:
 ```bash
-POSTGRES_DB=annotaise
-POSTGRES_USER=annotaise
-POSTGRES_PASSWORD=annotaise
-POSTGRES_PORT=5432
-
-DJANGO_SECRET_KEY=change-me
-DJANGO_DEBUG=1
-DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
-CORS_ALLOWED_ORIGINS=http://localhost:3000
-
-DJANGO_SUPERUSER_USERNAME=admin
-DJANGO_SUPERUSER_EMAIL=admin@example.com
-DJANGO_SUPERUSER_PASSWORD=admin
+DJANGO_DB_NAME=postgres
+DJANGO_DB_USER=postgres
+DJANGO_DB_PASS=postgres
+DJANGO_SUPERUSER_USER=admin
+DJANGO_SUPERUSER_PASSWORD=123
+DJANGO_SUPERUSER_EMAIL=a@g.com
+EMAIL_HOST_PASSWORD= my-password
+EMAIL_PORT= my-email-port
+EMAIL_HOST= my-email-host
+EMAIL_HOST_USER= my-email-adress
+DEFAULT_FROM_EMAIL=my-name my-email-adress
+FRONTEND_URL=http://localhost:3000
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+DEBUG=true
+DEBUG_NEXT=true
 
 ```
 - **Step 3 - Start containers(recomended)**
@@ -145,7 +147,7 @@ docker compose up --build
   - Backend
   ```bash
   python -m venv .venv && source .venv/bin/activate
-  pip install -r requirements.txt
+  uv sync
   python manage.py migrate
   python manage.py runserver 0.0.0.0:8000
   ```
