@@ -191,8 +191,8 @@ function InspectAnswerModal({
   userLabel,
   sections,
 }: InspectAnswerModalProps) {
-  if (!answer) return null;
   const { t, locale } = useTranslations();
+  if (!answer) return null;
 
   const payloadEntries = Object.entries(
     (answer.item_detail?.payload ?? {}) as Record<string, unknown>

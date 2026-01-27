@@ -241,6 +241,7 @@ export default function MyAnswersPage() {
                 payload={editingAnswer.item_detail?.payload ?? {}}
                 answers={answers}
                 onChange={handleAnswerChange}
+                t={t}
               />
             ))}
           </div>

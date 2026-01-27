@@ -5,11 +5,13 @@ import SidebarItem from "./sidebar_item";
 import {
   LayoutDashboard,
   Users,
+  User,
   FolderKanban,
   Tags,
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
+  Users2Icon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { AuthActions } from "@/lib/authClient";
@@ -112,9 +114,10 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
         ) : (
           <div className="w-full bg-gray-300 h-0.5 rounded-2xl mb-4" />
         )}
-
-        {/* Topo */}
+              
+        
         <ul className="space-y-1 mt-3 w-full">
+          {/* 
           {isAdmin ? (
             <SidebarItem
               icon={<LayoutDashboard size={24} />}
@@ -123,10 +126,10 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
             alias="/dashboard"
             hover_color="blue"
             collapsed={!isOpen}
-          />) : null}
+          />) : null} */}
           {isAdmin ? (
             <SidebarItem
-              icon={<Users size={24} />}
+              icon={<User size={24} />}
               label={t("sidebar.users")}
               href="/users"
               alias="/users"
@@ -134,6 +137,16 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
               collapsed={!isOpen}
             />
           ) : null}
+          {/* {isAdmin ? (
+            <SidebarItem
+              icon={<Users size={24} />}
+              label={t("sidebar.groups")}
+              href="/groups"
+              alias="/groups"
+              hover_color="blue"
+              collapsed={!isOpen}
+            />
+          ) : null} */}
           {canSeeProjects ? (
             <SidebarItem
               icon={<FolderKanban size={24} />}

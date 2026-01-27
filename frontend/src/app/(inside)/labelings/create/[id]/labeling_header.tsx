@@ -59,7 +59,7 @@ export default function LabelingHeader({
     { key: "summary", label: t("labelings.create.tabs.summary") },
     { key: "guide", label: t("labelings.create.tabs.guide") },
     ...(isDecision
-      ? [{ key: "decision", label: t("labelings.create.tabs.decision") }]
+      ? [{ key: "decision" as const, label: t("labelings.create.tabs.decision") }]
       : []),
   ];
 

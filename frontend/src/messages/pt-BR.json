@@ -63,7 +63,8 @@
     "settings": "Configurações",
     "logout": "Sair",
     "expandMenu": "Expandir menu lateral",
-    "collapseMenu": "Minimizar menu lateral"
+    "collapseMenu": "Minimizar menu lateral",
+    "groups": "Grupos"
   },
   "dashboard": {
     "title": "Dashboard",

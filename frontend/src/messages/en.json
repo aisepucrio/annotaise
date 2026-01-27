@@ -63,7 +63,8 @@
     "settings": "Settings",
     "logout": "Logout",
     "expandMenu": "Expand sidebar",
-    "collapseMenu": "Collapse sidebar"
+    "collapseMenu": "Collapse sidebar",
+    "groups" : "Groups"
   },
   "dashboard": {
     "title": "Dashboard",
