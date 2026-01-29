@@ -141,7 +141,7 @@ docker compose exec api python manage.py createsuperuser
 ### Run AnnotAISE
 - **With Docker**
 ```bash
-docker compose up --build
+docker compose start
 ```
 - **Manual**
   - Backend
