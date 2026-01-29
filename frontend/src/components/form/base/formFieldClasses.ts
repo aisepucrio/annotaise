@@ -8,14 +8,14 @@ export const formFieldClasses = {
   base: cn(
     "w-full border-[0.12rem] rounded-md py-2 px-3",
     "text-metal-700 text-md",
-    "focus:outline-none"
+    "focus:outline-none",
   ),
 
   /** Classes para placeholder */
   placeholder: "placeholder-metal-400 placeholder:text-sm",
 
   /** Classes para estado normal */
-  normal: "border-metal-700 focus:border-blueberry-500",
+  normal: "border-metal-500 focus:border-blueberry-500",
 
   /** Classes para estado de erro */
   error: "border-red-400 focus:border-red-400",
