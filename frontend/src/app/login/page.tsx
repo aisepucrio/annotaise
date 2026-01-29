@@ -117,30 +117,24 @@ export default function LoginPage() {
           />
         </div>
         {/* Campo: Senha */}
-        <div className="mt-6 relative">
+        <div className="mt-6">
           <Input
             label={t("login.passwordLabel")}
             type={showPassword ? "text" : "password"}
             placeholder={t("login.passwordPlaceholder")}
             error={errors.password?.message}
+            icon={
+              showPassword ? (
+                <EyeOff className="w-8 h-8 translate-y-1/8" />
+              ) : (
+                <EyeIcon className="w-8 h-8 translate-y-1/8" />
+              )
+            }
+            onIconClick={() => setShowPassword((s) => !s)}
             {...register("password", {
               required: t("login.passwordRequired"),
             })}
           />
-          <button
-            type="button"
-            aria-label={
-              showPassword ? t("login.hidePassword") : t("login.showPassword")
-            }
-            onClick={() => setShowPassword((s) => !s)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded focus:outline-none text-metal-200 hover:text-metal-500 transition-colors z-20"
-          >
-            {showPassword ? (
-              <EyeOff className="w-8 h-8" />
-            ) : (
-              <EyeIcon className="w-8 h-8" />
-            )}
-          </button>
         </div>
         {/* Ação: Esqueceu senha */}
         <div className="flex w-full justify-end mt-3">

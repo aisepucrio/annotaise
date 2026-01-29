@@ -10,6 +10,8 @@ export type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "size"> & {
   error?: string;
   /** Ícone à direita do input */
   icon?: ReactNode;
+  /** Ação de clique no ícone à direita */
+  onIconClick?: () => void;
   /** Ícone à esquerda do input */
   leftIcon?: ReactNode;
   /** Se o campo é obrigatório */
@@ -36,6 +38,7 @@ const Input = forwardRef<HTMLInputElement | HTMLTextAreaElement, InputProps>(
       label,
       error,
       icon,
+      onIconClick,
       leftIcon,
       required = false,
       className = "",
@@ -48,7 +51,7 @@ const Input = forwardRef<HTMLInputElement | HTMLTextAreaElement, InputProps>(
       tooltip,
       ...props
     },
-    ref
+    ref,
   ) => {
     const baseClasses = cn(
       formFieldClasses.base,
@@ -58,7 +61,7 @@ const Input = forwardRef<HTMLInputElement | HTMLTextAreaElement, InputProps>(
       leftIcon && "pl-11",
       icon && "pr-11",
       !resizable && multiline && "resize-none",
-      className
+      className,
     );
 
     return (
@@ -98,13 +101,23 @@ const Input = forwardRef<HTMLInputElement | HTMLTextAreaElement, InputProps>(
 
           {icon && !multiline && (
             <div className="absolute right-2 top-1/2 -translate-y-1/2 text-metal-200">
-              {icon}
+              {onIconClick ? (
+                <button
+                  type="button"
+                  onClick={onIconClick}
+                  className="focus:outline-none hover:text-metal-500 transition-colors"
+                >
+                  {icon}
+                </button>
+              ) : (
+                icon
+              )}
             </div>
           )}
         </div>
       </FormFieldBase>
     );
-  }
+  },
 );
 
 Input.displayName = "Input";
