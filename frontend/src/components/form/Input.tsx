@@ -10,7 +10,7 @@ export type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "size"> & {
   error?: string;
   /** Ícone à direita do input */
   icon?: ReactNode;
-  /** Ação de clique no ícone à direita */
+  /** Ação de clique no ícone à direita (quando definido, o ícone vira botão) */
   onIconClick?: () => void;
   /** Ícone à esquerda do input */
   leftIcon?: ReactNode;

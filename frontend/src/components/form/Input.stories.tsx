@@ -265,25 +265,20 @@ export const PasswordWithToggle: StoryObj<typeof Input> = {
 
     return (
       <div className="w-96">
-        <div className="relative">
-          <Input
-            label="Senha"
-            type={showPassword ? "text" : "password"}
-            placeholder="Digite sua senha..."
-            required
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded focus:outline-none text-metal-200 hover:text-metal-500 transition-colors"
-          >
-            {showPassword ? (
+        <Input
+          label="Senha"
+          type={showPassword ? "text" : "password"}
+          placeholder="Digite sua senha..."
+          required
+          icon={
+            showPassword ? (
               <EyeOff className="w-6 h-6" />
             ) : (
               <EyeIcon className="w-6 h-6" />
-            )}
-          </button>
-        </div>
+            )
+          }
+          onIconClick={() => setShowPassword(!showPassword)}
+        />
       </div>
     );
   },
@@ -291,7 +286,7 @@ export const PasswordWithToggle: StoryObj<typeof Input> = {
     docs: {
       description: {
         story:
-          "Exemplo de input de senha com botão para mostrar/esconder o texto.",
+          "Exemplo de input de senha com ícone clicável para mostrar/esconder o texto.",
       },
     },
   },
