@@ -31,11 +31,11 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
   const currentUser = useCurrent();
   const { t } = useTranslations();
   const isAdmin = Boolean(
-    currentUser?.is_staff || currentUser?.account_type === "admin"
+    currentUser?.is_staff || currentUser?.account_type === "admin",
   );
   const canSeeProjects = Boolean(
     currentUser &&
-      (currentUser.is_staff || currentUser.account_type !== "standard")
+    (currentUser.is_staff || currentUser.account_type !== "standard"),
   );
 
   const handleLogout = () => {
@@ -114,8 +114,7 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
         ) : (
           <div className="w-full bg-gray-300 h-0.5 rounded-2xl mb-4" />
         )}
-              
-        
+
         <ul className="space-y-1 mt-3 w-full">
           {/* 
           {isAdmin ? (
@@ -190,12 +189,6 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
           />
           */}
 
-          <div
-            className={`pt-2 ${isOpen ? "px-6" : "flex justify-center"}`}
-          >
-            <LanguageToggle collapsed={!isOpen} />
-          </div>
-
           <button
             type="button"
             className="text-sm text-red-400 mt-auto w-full space-y-1"
@@ -210,6 +203,14 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
               collapsed={!isOpen}
             />
           </button>
+
+          <div className={`${isOpen ? "pl-6 pt-6" : "pt-6"}`}>
+            <div className=" w-full bg-gray-300 h-0.5 rounded-2xl" />
+          </div>
+
+          <div className={` ${isOpen ? "pl-6" : "flex justify-center"}`}>
+            <LanguageToggle collapsed={!isOpen} />
+          </div>
         </div>
       </aside>
     </div>

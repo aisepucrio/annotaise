@@ -21,12 +21,13 @@ export default function LanguageToggle({
   return (
     <div
       className={cn(
-        "flex gap-2",
-        collapsed ? "flex-col items-center" : "flex-row"
+        "flex w-full pt-6 px-2",
+        collapsed ? "flex-col items-center gap-2" : "flex-row justify-between",
       )}
     >
       {OPTIONS.map(({ code, label, Flag }) => {
         const isActive = language === code;
+
         return (
           <button
             key={code}
@@ -35,14 +36,19 @@ export default function LanguageToggle({
             aria-pressed={isActive}
             aria-label={`Change language to ${label}`}
             className={cn(
-              "rounded-md border p-1 transition",
+              "relative flex flex-col items-center rounded-md transition",
               "bg-white hover:bg-gray-100",
-              isActive
-                ? "border-blueberry-700 ring-2 ring-blueberry-700"
-                : "border-transparent"
+              "leading-none",
+              isActive ? "border-blueberry-700" : "border-transparent",
+              isActive &&
+                "after:content-[''] after:absolute after:inset-0 after:rounded-xs after:border after:ring-4  after:ring-blueberry-700 after:pointer-events-none",
             )}
           >
-            <Flag className="h-6 w-8" title={label} />
+            <span className="block leading-none">
+              <Flag
+                className={cn(collapsed ? "h-4 w-6" : "h-8 w-12", "rounded-xs")}
+              />
+            </span>
           </button>
         );
       })}
