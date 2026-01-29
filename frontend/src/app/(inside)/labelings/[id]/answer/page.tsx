@@ -3,110 +3,141 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
-import { RefreshCw, Send } from "lucide-react";
+import { RefreshCw, Send, Info } from "lucide-react";
+import { toast } from "sonner";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { ExternalLink } from "lucide-react";
+
 import { useTranslations } from "@/i18n/use-translations";
 import {
   fetchLabelingById,
   type LabelingStructureSection,
 } from "@/lib/services/labeling_create_service";
 import { fetchNextAnswer, submitAnswer } from "@/lib/services/answer_service";
-import SectionCard from "./section_card";
 import {
   buildInitialAnswers,
   validateRequired,
   validateSectionRequired,
 } from "./answer_utils";
 import type { AnswerMap } from "./answer_types";
-import { toast } from "sonner";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+
+import SectionCard from "./section_card";
+import InnerPageHeader from "@/components/InnerPageHeader";
+import Button from "@/components/button/Button";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import Button from "@/components/button/Button";
-import InnerPageHeader from "@/components/InnerPageHeader";
 
 export default function LabelingAnswerPage() {
-  const params = useParams<{ id: string }>();
+  const { t } = useTranslations();
   const router = useRouter();
-  const { t } = useTranslations();  const labelingId = useMemo(() => {
+  const params = useParams<{ id: string }>();
+
+  // ====== Derivados de rota ======
+  const labelingId = useMemo(() => {
     const parsed = Number(params?.id);
     return Number.isFinite(parsed) ? parsed : NaN;
   }, [params]);
 
-  const [labelingTitle, setLabelingTitle] = useState<string>("");
+  // ====== Estado "dados" ======
+  const [labelingTitle, setLabelingTitle] = useState("");
+  const [guideText, setGuideText] = useState("");
   const [sections, setSections] = useState<LabelingStructureSection[]>([]);
-  const [answers, setAnswers] = useState<AnswerMap>({});
   const [payload, setPayload] = useState<Record<string, unknown>>({});
+  const [answers, setAnswers] = useState<AnswerMap>({});
   const [currentItemId, setCurrentItemId] = useState<number | null>(null);
   const [rowIndex, setRowIndex] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+  // ====== Estado "UI/fluxo" ======
+  const [currentSectionIdx, setCurrentSectionIdx] = useState(0);
+  const [showGuide, setShowGuide] = useState(false);
+
+  // ====== Estado "loading/erros" ======
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loadErrorCode, setLoadErrorCode] = useState<string | null>(null);
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
-  const [currentSectionIdx, setCurrentSectionIdx] = useState<number>(0);
-  const [guideText, setGuideText] = useState<string>("");
-  const [showGuide, setShowGuide] = useState<boolean>(false);
 
+  // ====== Ordenação/derivados de seções ======
+  const orderedSections = useMemo(
+    () => [...sections].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+    [sections],
+  );
+
+  const totalSections = orderedSections.length;
+  const currentSection =
+    currentSectionIdx >= 0 && currentSectionIdx < totalSections
+      ? orderedSections[currentSectionIdx]
+      : null;
+
+  const isLastSection = currentSectionIdx === totalSections - 1;
+
+  // ====== Toasts (feedback global) ======
   useEffect(() => {
-    if (loadError) {
-      if (
-        loadErrorCode === "NO_LABELINGS_TO_ANSWER" ||
-        loadErrorCode === "ROTULACAO_FINALIZADA"
-      ) {
-        toast.success(loadError);
-      } else {
-        toast.error(loadError);
-      }
-    }
+    if (!loadError) return;
+
+    const isOkCode =
+      loadErrorCode === "NO_LABELINGS_TO_ANSWER" ||
+      loadErrorCode === "ROTULACAO_FINALIZADA";
+
+    (isOkCode ? toast.success : toast.error)(loadError);
   }, [loadError, loadErrorCode]);
 
   useEffect(() => {
-    if (submitMessage) {
-      toast.success(submitMessage);
-    }
+    if (submitMessage) toast.success(submitMessage);
   }, [submitMessage]);
 
+  // ====== Carregamento do próximo item ======
   const loadItem = useCallback(async () => {
+    // [EDIT: validação de id]
     if (Number.isNaN(labelingId)) {
       setLoadError(t("answer.invalidId"));
       setIsLoading(false);
       return;
     }
 
+    // [EDIT: reset de estados transitórios antes de buscar]
     setIsLoading(true);
     setLoadError(null);
     setLoadErrorCode(null);
     setSubmitMessage(null);
 
     try {
+      // [UI: header] título + guia (texto do markdown)
       const labeling = await fetchLabelingById(labelingId);
       setLabelingTitle(labeling.title);
       setGuideText(labeling.guide ?? "");
 
+      // [UI: formulário] próximo item + estrutura de seções
       const nextAnswer = await fetchNextAnswer(labelingId);
-      const sectionsResponse = nextAnswer.sections ?? [];
-      setSections(sectionsResponse);
+      const nextSections = nextAnswer.sections ?? [];
+
+      setSections(nextSections);
       setPayload((nextAnswer.item?.payload as Record<string, unknown>) ?? {});
       setCurrentItemId(nextAnswer.item?.id ?? null);
       setRowIndex(nextAnswer.item?.row_index ?? null);
-      setAnswers(buildInitialAnswers(sectionsResponse));
+      setAnswers(buildInitialAnswers(nextSections));
       setCurrentSectionIdx(0);
     } catch (error) {
+      // [EDIT: fallback consistente quando falha]
       setPayload({});
       setCurrentItemId(null);
       setRowIndex(null);
       setSections([]);
       setLoadErrorCode(null);
 
+      // [UI: mensagem amigável] tenta extrair do backend
       let message = t("answer.loadError");
+
       if (axios.isAxiosError(error)) {
         const data = error.response?.data as
           | { detail?: string; code?: string }
           | undefined;
+
         if (data?.code === "NO_LABELINGS_TO_ANSWER") {
           message = data.detail ?? t("answer.noLabelings");
         } else if (data?.detail) {
@@ -114,11 +145,12 @@ export default function LabelingAnswerPage() {
         } else if (error.message) {
           message = error.message;
         }
+
         setLoadErrorCode(data?.code ?? null);
       } else if (error instanceof Error) {
         message = error.message;
-        setLoadErrorCode(null);
       }
+
       setLoadError(message);
     } finally {
       setIsLoading(false);
@@ -129,22 +161,32 @@ export default function LabelingAnswerPage() {
     void loadItem();
   }, [loadItem]);
 
-  const orderedSections = useMemo(
-    () => [...sections].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
-    [sections]
+  // ====== Handlers de interação ======
+  const handleAnswerChange = useCallback(
+    (questionId: number | string, value: unknown) => {
+      // [UI: formulário] update do mapa de respostas
+      setAnswers((prev) => ({ ...prev, [String(questionId)]: value }));
+    },
+    [],
   );
-  const totalSections = orderedSections.length;
-  const currentSection =
-    currentSectionIdx >= 0 && currentSectionIdx < totalSections
-      ? orderedSections[currentSectionIdx]
-      : null;
-  const isLastSection = currentSectionIdx === totalSections - 1;
 
-  const handleAnswerChange = (questionId: number | string, value: unknown) => {
-    setAnswers((prev) => ({ ...prev, [String(questionId)]: value }));
-  };
+  const goToNextSection = useCallback(() => {
+    // [UI: navegação] valida apenas a seção atual antes de avançar
+    if (!currentSection) return;
 
-  const handleSubmit = async () => {
+    const sectionError = validateSectionRequired(currentSection, answers, t);
+    if (sectionError) {
+      setLoadError(sectionError);
+      return;
+    }
+
+    setLoadError(null);
+    setSubmitMessage(null);
+    setCurrentSectionIdx((idx) => Math.min(idx + 1, totalSections - 1));
+  }, [answers, currentSection, t, totalSections]);
+
+  const handleSubmit = useCallback(async () => {
+    // [EDIT: validações de segurança]
     if (Number.isNaN(labelingId)) {
       setLoadError(t("answer.invalidId"));
       return;
@@ -154,6 +196,7 @@ export default function LabelingAnswerPage() {
       return;
     }
 
+    // [UI: validação por seção] impede avançar/enviar com faltas
     if (currentSection) {
       const sectionError = validateSectionRequired(currentSection, answers, t);
       if (sectionError) {
@@ -162,6 +205,7 @@ export default function LabelingAnswerPage() {
       }
     }
 
+    // [UI: validação global] garante required de todas as seções
     const validationError = validateRequired(sections, answers, t);
     if (validationError) {
       setLoadError(validationError);
@@ -173,218 +217,131 @@ export default function LabelingAnswerPage() {
     setSubmitMessage(null);
 
     try {
+      // [UI: submit] envia respostas do item atual
       await submitAnswer({
         labeling: labelingId,
         item: currentItemId,
         answer_payload: answers,
       });
+
       setSubmitMessage(t("answer.answerSent"));
+
+      // [UI: fluxo] ao enviar, já carrega o próximo item
       await loadItem();
     } catch (error) {
       let message = t("answer.sendError");
+
       if (axios.isAxiosError(error)) {
         const detail = (error.response?.data as { detail?: string } | undefined)
           ?.detail;
-        if (detail) {
-          message = detail;
-        } else if (error.message) {
-          message = error.message;
-        }
+
+        if (detail) message = detail;
+        else if (error.message) message = error.message;
       } else if (error instanceof Error) {
         message = error.message;
       }
+
       setLoadError(message);
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [
+    answers,
+    currentItemId,
+    currentSection,
+    labelingId,
+    loadItem,
+    sections,
+    t,
+  ]);
 
-  const goToNextSection = () => {
-    if (!currentSection) return;
-    const error = validateSectionRequired(currentSection, answers, t);
-    if (error) {
-      setLoadError(error);
-      return;
-    }
-    setLoadError(null);
-    setSubmitMessage(null);
-    setCurrentSectionIdx((idx) => Math.min(idx + 1, totalSections - 1));
-  };
-
-  const mainContent = (
-    <MainContent
-      loadError={loadError}
-      loadErrorCode={loadErrorCode}
-      isLoading={isLoading}
-      orderedSections={orderedSections}
-      currentSection={currentSection}
-      currentSectionIdx={currentSectionIdx}
-      payload={payload}
-      answers={answers}
-      handleAnswerChange={handleAnswerChange}
-      goToNextSection={goToNextSection}
-      handleSubmit={handleSubmit}
-      isSubmitting={isSubmitting}
-      currentItemId={currentItemId}
-      isLastSection={isLastSection}
-      t={t}
-    />
+  // ====== UI: header do item ======
+  const HeaderBadges = (
+    <div className="flex flex-1 flex-wrap items-center justify-end gap-3">
+      {rowIndex !== null ? (
+        <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-blue-50">
+          {t("answer.itemNumber", { number: rowIndex + 1 })}
+        </span>
+      ) : null}
+      {totalSections > 0 ? (
+        <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-blue-50">
+          {t("answer.sectionProgress", {
+            current: currentSectionIdx + 1,
+            total: totalSections,
+          })}
+        </span>
+      ) : null}
+      {/* [UI: toggle] abre/fecha painel de guia */}
+      <Button
+        fill={false}
+        variant="white"
+        onClick={() => setShowGuide((prev) => !prev)}
+        icon={<Info size={16} />}
+      >
+        {showGuide ? t("answer.hideGuide") : t("answer.showGuide")}
+      </Button>
+      {/* [UI: debug] recarrega item atual */}
+    </div>
   );
 
-  return (
-    <>
-      <InnerPageHeader onBack={() => router.push("/labelings")}>
-        <div>
-          <h1 className="text-lg font-semibold leading-tight">
-            {labelingTitle ||
-              (isLoading ? t("answer.loadingLabeling") : t("answer.answerLabeling"))}
-          </h1>
-        </div>
-        <div className="flex flex-1 flex-wrap items-center justify-end gap-3">
-          {rowIndex !== null ? (
-            <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-blue-50">
-              {t("answer.itemNumber", { number: rowIndex + 1 })}
-            </span>
-          ) : null}
-          {totalSections > 0 ? (
-            <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-blue-50">
-              {t("answer.sectionProgress", { current: currentSectionIdx + 1, total: totalSections })}
-            </span>
-          ) : null}
-          <Button
-            fill={false}
-            variant="light"
-            className={`border border-white/30 ${
-              showGuide ? "bg-white/10" : ""
-            }`}
-            onClick={() => setShowGuide((prev) => !prev)}
-          >
-            {showGuide ? t("answer.hideGuide") : t("answer.showGuide")}
-          </Button>
-          <button
-            type="button"
-            onClick={() => void loadItem()} // TODO esse botao é debug... mais pro futuro pode tirar
-            disabled={isLoading || isSubmitting}
-            className="inline-flex items-center gap-2 rounded-lg border border-white/30 px-4 py-2 text-sm font-medium text-white cursor-pointer hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <RefreshCw size={16} />
-            {t("answer.reloadItem")}
-          </button>
-        </div>
-      </InnerPageHeader>
+  // ====== UI: guia lateral (markdown) ======
+  const GuidePanel = (
+    <div className="h-full rounded-xl  bg-white p-4 overflow-auto space-y-3">
+      <div className="flex items-center justify-end gap-2">
+        {/* [UI: ação] abre a página de guia em nova aba */}
+        <span
+          role="button"
+          tabIndex={0}
+          className="inline-flex items-center gap-1 text-sm text-primary underline underline-offset-2 cursor-pointer hover:opacity-80"
+          onClick={() => {
+            if (Number.isNaN(labelingId)) return;
+            window.open(
+              `/labelings/${labelingId}/guide`,
+              "_blank",
+              "noopener,noreferrer",
+            );
+          }}
+        >
+          {t("answer.openNewTab")}
+          <ExternalLink className="h-3 w-3" />
+        </span>
+      </div>
 
-      <div
-        className={`mt-4 ${
-          showGuide ? "h-[calc(100vh-170px)]" : "min-h-[calc(100vh-170px)]"
-        }`}
-      >
-        {showGuide ? (
-          <ResizablePanelGroup direction="horizontal" className="h-full gap-3">
-            <ResizablePanel defaultSize={70} minSize={30}>
-              <div className="h-full">{mainContent}</div>
-            </ResizablePanel>
-            <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={30} minSize={25}>
-              <div className="h-full rounded-xl border border-gray-200 bg-white p-4 shadow-sm overflow-auto space-y-3">
-                <div className="flex items-center justify-between gap-2">
-                  <div>
-                    <h3 className="text-sm font-semibold text-gray-900">
-                      {t("answer.guideTitle")}
-                    </h3>
-                    <p className="text-xs text-gray-500">
-                      {t("answer.guideDescription")}
-                    </p>
-                  </div>
-                  <Button
-                    variant="light"
-                    fill={false}
-                    size="icon"
-                    className="text-xs"
-                    onClick={() => {
-                      if (Number.isNaN(labelingId)) return;
-                      window.open(
-                        `/labelings/${labelingId}/guide`,
-                        "_blank",
-                        "noopener,noreferrer"
-                      );
-                    }}
-                  >
-                    {t("answer.openNewTab")}
-                  </Button>
-                </div>
-                <div className="mt-1 space-y-4">
-                  {guideText ? (
-                    <div className="prose prose-sm max-w-none text-gray-900">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {guideText}
-                      </ReactMarkdown>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-gray-600">
-                      {t("answer.noGuide")}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </ResizablePanel>
-          </ResizablePanelGroup>
+      <div className="mt-1 space-y-4">
+        {guideText ? (
+          <div className="prose prose-sm max-w-none text-gray-900">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {guideText}
+            </ReactMarkdown>
+          </div>
         ) : (
-          mainContent
+          <p className="text-sm text-gray-600">{t("answer.noGuide")}</p>
         )}
       </div>
-    </>
+    </div>
   );
-}
 
-type MainContentProps = {
-  loadError: string | null;
-  loadErrorCode: string | null;
-  isLoading: boolean;
-  orderedSections: LabelingStructureSection[];
-  currentSection: LabelingStructureSection | null;
-  currentSectionIdx: number;
-  payload: Record<string, unknown>;
-  answers: AnswerMap;
-  handleAnswerChange: (questionId: number | string, value: unknown) => void;
-  goToNextSection: () => void;
-  handleSubmit: () => void | Promise<void>;
-  isSubmitting: boolean;
-  currentItemId: number | null;
-  isLastSection: boolean;
-  t: (key: string, params?: Record<string, string | number>) => string;
-};
-
-function MainContent({
-  loadError,
-  loadErrorCode,
-  isLoading,
-  orderedSections,
-  currentSection,
-  currentSectionIdx,
-  payload,
-  answers,
-  handleAnswerChange,
-  goToNextSection,
-  handleSubmit,
-  isSubmitting,
-  currentItemId,
-  isLastSection,
-  t,
-}: MainContentProps) {
-  return (
-    <section className="rounded-xl bg-white p-4 h-full overflow-y-auto">
-      
+  // ====== UI: formulário principal (seções + botões) ======
+  const MainPanel = (
+    <section className="rounded-xl bg-white p-4 h-full overflow-y-auto ">
+      {/* [UI: loading] */}
       {isLoading ? (
         <p className="text-sm text-gray-600">{t("answer.loadingItem")}</p>
       ) : orderedSections.length === 0 ? (
+        // [UI: estado vazio] sem itens para responder
         <div className="rounded-lg border border-dashed border-green-200 bg-green-50 px-4 py-6 text-center text-sm text-green-900 w-1/4 items-center mx-auto">
           <div className="flex items-center justify-center gap-2">
             <span>✓</span>
-            <span>{loadErrorCode === "NO_LABELINGS_TO_ANSWER" ? t("answer.thankYou") : t("answer.noItemsNow")}</span>
+            <span>
+              {loadErrorCode === "NO_LABELINGS_TO_ANSWER"
+                ? t("answer.thankYou")
+                : t("answer.noItemsNow")}
+            </span>
           </div>
         </div>
       ) : currentSection ? (
         <div className="space-y-6">
+          {/* [UI: seção atual] */}
           <SectionCard
             key={currentSection.id ?? currentSectionIdx}
             section={currentSection}
@@ -393,20 +350,22 @@ function MainContent({
             onChange={handleAnswerChange}
             t={t}
           />
-          <div className="flex justify-between items-center pt-2">
+
+          {/* [UI: ações] avançar ou enviar */}
+          <div className="flex justify-center items-center pt-2">
             <div />
             <div className="flex gap-3">
               {!isLastSection ? (
-                <button
+                <Button
                   type="button"
                   onClick={goToNextSection}
                   disabled={isLoading || isSubmitting}
-                  className="cursor-pointer inline-flex items-center gap-2 rounded-lg bg-blue-900 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  fill={false}
                 >
                   {t("answer.advance")}
-                </button>
+                </Button>
               ) : (
-                <button
+                <Button
                   type="button"
                   onClick={() => void handleSubmit()}
                   disabled={
@@ -415,16 +374,56 @@ function MainContent({
                     !currentItemId ||
                     orderedSections.length === 0
                   }
-                  className="inline-flex items-center gap-2 rounded-lg bg-blue-900 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+                  icon={<Send size={16} />}
+                  fill={false}
                 >
-                  <Send size={16} />
                   {isSubmitting ? t("answer.sending") : t("answer.sendAnswer")}
-                </button>
+                </Button>
               )}
             </div>
           </div>
         </div>
       ) : null}
     </section>
+  );
+
+  // ====== UI: layout (com/sem guia) ======
+  return (
+    <>
+      <InnerPageHeader onBack={() => router.push("/labelings")}>
+        {/* [UI: título da página] */}
+        <div>
+          <h1 className="text-lg font-semibold leading-tight">
+            {labelingTitle ||
+              (isLoading
+                ? t("answer.loadingLabeling")
+                : t("answer.answerLabeling"))}
+          </h1>
+        </div>
+
+        {/* [UI: badges + botões do topo] */}
+        {HeaderBadges}
+      </InnerPageHeader>
+
+      <div
+        className={`mt-4 ${
+          showGuide ? "h-[calc(100vh-10vh)]" : "min-h-[calc(100vh-10vh)]"
+        }`}
+      >
+        {showGuide ? (
+          <ResizablePanelGroup direction="horizontal" className="h-full gap-3">
+            <ResizablePanel defaultSize={70} minSize={30}>
+              <div className="h-full">{MainPanel}</div>
+            </ResizablePanel>
+            <ResizableHandle withHandle />
+            <ResizablePanel defaultSize={30} minSize={25}>
+              {GuidePanel}
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        ) : (
+          MainPanel
+        )}
+      </div>
+    </>
   );
 }

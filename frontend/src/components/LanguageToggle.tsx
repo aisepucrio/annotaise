@@ -41,7 +41,7 @@ export default function LanguageToggle({
               "leading-none",
               isActive ? "border-blueberry-700" : "border-transparent",
               isActive &&
-                "after:content-[''] after:absolute after:inset-0 after:rounded-xs after:border after:ring-4  after:ring-blueberry-700 after:pointer-events-none",
+                "after:content-[''] after:absolute after:inset-0 after:rounded-xs after:border after:ring-3  after:ring-blueberry-700 after:pointer-events-none",
             )}
           >
             <span className="block leading-none">

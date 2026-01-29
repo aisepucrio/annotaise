@@ -11,29 +11,43 @@ type QuestionBlockProps = {
   t: (key: string, params?: Record<string, string | number>) => string;
 };
 
-export default function QuestionBlock({ element, value, onChange, t }: QuestionBlockProps) {
-  const questionText = element.text?.trim() ? element.text : t("answer.question.title");
+export default function QuestionBlock({
+  element,
+  value,
+  onChange,
+  t,
+}: QuestionBlockProps) {
+  const questionText = element.text?.trim()
+    ? element.text
+    : t("answer.question.title");
   console.log("QUESTION TEXT:", JSON.stringify(questionText));
 
   return (
-    <div className="rounded-lg border border-gray-200 p-4 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1">
-          <div className="prose prose-sm max-w-none">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{questionText}</ReactMarkdown>
+    <>
+      <div className="text-left mt-12 mb-0">
+        <div className=" inline-block text-metal-900 text-sm font-normal border-b-3 border-blueberry-700">
+          <div className="p-1 flex items-center gap-1">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {questionText}
+            </ReactMarkdown>
+            {element.required && <span className="text-red-400">*</span>}
           </div>
-          <p className="text-xs capitalize text-gray-500">{labelForQuestion(element.question_type, t)} {element.question_type === "range" ? t("answer.question.rangeLabel", { start: element.question_range?.start ?? 0, end: element.question_range?.end ?? 10 }) : ""}</p>
         </div>
-        {element.required ? (
-          <span className="rounded-full bg-red-50 px-3 py-1 text-[11px] font-semibold uppercase text-red-700">
-            {t("answer.question.required")}
-          </span>
-        ) : null}
       </div>
 
-      <div className="mt-3">
+      {/* <p className="text-xs capitalize text-gray-500"> */}
+      {/*   {labelForQuestion(element.question_type, t)}{" "} */}
+      {/*  {element.question_type === "range" */}
+      {/*    ? t("answer.question.rangeLabel", { */}
+      {/*        start: element.question_range?.start ?? 0, */}
+      {/*       end: element.question_range?.end ?? 10, */}
+      {/*     }) */}
+      {/*    : ""} */}
+      {/*  </p> */}
+
+      <div className=" border-b-3 border-l-3 border-blueberry-700 p-5">
         <QuestionInput element={element} value={value} onChange={onChange} />
       </div>
-    </div>
+    </>
   );
 }

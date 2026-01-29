@@ -1,3 +1,4 @@
+import Input from "@/components/form/Input";
 import type { LabelingStructureElement } from "@/lib/services/labeling_create_service";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -8,16 +9,21 @@ type QuestionInputProps = {
   onChange: (value: unknown) => void;
 };
 
-export default function QuestionInput({ element, value, onChange }: QuestionInputProps) {
+export default function QuestionInput({
+  element,
+  value,
+  onChange,
+}: QuestionInputProps) {
   switch (element.question_type) {
     case "text":
       return (
-        <textarea
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:border-blue-600 focus:outline-none"
-          placeholder="Digite sua resposta"
-          value={(value as string | undefined) ?? ""}
-          onChange={(event) => onChange(event.target.value)}
-          rows={3}
+        <Input
+          placeholder="Resposta..."
+          multiline
+          rows={4}
+          resizable
+          value={(value as string) ?? ""}
+          onChange={(e) => onChange(e.target.value)}
         />
       );
 
@@ -26,10 +32,12 @@ export default function QuestionInput({ element, value, onChange }: QuestionInpu
       return (
         <input
           type="number"
-          className="w-48 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:border-blue-600 focus:outline-none"
+          className="w-48 rounded-lg border border-metal-700 px-3 py-2 text-sm text-metal-900 focus:border-blueberry-700 focus:outline-none"
           value={displayValue as number | string}
           onChange={(event) =>
-            onChange(event.target.value === "" ? "" : Number(event.target.value))
+            onChange(
+              event.target.value === "" ? "" : Number(event.target.value),
+            )
           }
         />
       );
@@ -46,16 +54,15 @@ export default function QuestionInput({ element, value, onChange }: QuestionInpu
           onChange(null);
           return;
         }
-        
+
         let nv = Number(event.target.value);
 
         if (nv < min) {
           nv = min;
         } else if (nv > max) {
           nv = max;
-        }
-        else if (nv%step !== 0) {
-          nv = Math.round(nv/step)*step;
+        } else if (nv % step !== 0) {
+          nv = Math.round(nv / step) * step;
         }
 
         onChange(nv);
@@ -67,7 +74,7 @@ export default function QuestionInput({ element, value, onChange }: QuestionInpu
           min={min}
           max={max}
           step={step}
-          className="w-48 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:border-blue-600 focus:outline-none"
+          className="w-48 rounded-lg border border-metal-700 px-3 py-2 text-sm text-metal-900 focus:border-blueberry-700 focus:outline-none"
           value={displayValue as number | string}
           onChange={rangeHandler}
         />
@@ -76,7 +83,7 @@ export default function QuestionInput({ element, value, onChange }: QuestionInpu
 
     case "multiple_choice": {
       const items = [...(element.multiple_choice_items ?? [])].sort(
-        (a, b) => (a.order ?? 0) - (b.order ?? 0)
+        (a, b) => (a.order ?? 0) - (b.order ?? 0),
       );
       const allowMultiple = element.allow_multiple ?? false;
       const selectedList =
@@ -97,7 +104,7 @@ export default function QuestionInput({ element, value, onChange }: QuestionInpu
               return (
                 <label
                   key={item.id ?? index}
-                  className="flex items-center gap-2 text-sm text-gray-800"
+                  className="flex items-center gap-2 text-sm text-metal-900"
                 >
                   <input
                     type="checkbox"
@@ -109,10 +116,12 @@ export default function QuestionInput({ element, value, onChange }: QuestionInpu
                         : [...selectedList, optionValue];
                       onChange(next);
                     }}
-                    className="h-4 w-4 accent-blue-900"
+                    className="h-4 w-4 text-blueberry-700"
                   />
                   <span className="prose prose-sm max-w-none">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{optionValue}</ReactMarkdown>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {optionValue}
+                    </ReactMarkdown>
                   </span>
                 </label>
               );
@@ -121,7 +130,7 @@ export default function QuestionInput({ element, value, onChange }: QuestionInpu
             return (
               <label
                 key={item.id ?? index}
-                className="flex items-center gap-2 text-sm text-gray-800"
+                className="flex items-center gap-2 text-sm text-metal-900"
               >
                 <input
                   type="radio"
@@ -129,16 +138,18 @@ export default function QuestionInput({ element, value, onChange }: QuestionInpu
                   value={optionValue}
                   checked={selected === optionValue}
                   onChange={() => onChange(optionValue)}
-                  className="h-4 w-4 text-blue-900"
+                  className="h-4 w-4 text-blueberry-900"
                 />
                 <span className="prose prose-sm max-w-none">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{optionValue}</ReactMarkdown>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {optionValue}
+                  </ReactMarkdown>
                 </span>
               </label>
             );
           })}
           {items.length === 0 ? (
-            <p className="text-xs text-gray-500">Nenhuma opção disponível.</p>
+            <p className="text-xs text-metal-700">Nenhuma opção disponível.</p>
           ) : null}
         </div>
       );
@@ -146,8 +157,9 @@ export default function QuestionInput({ element, value, onChange }: QuestionInpu
 
     default:
       return (
-        <p className="text-xs text-gray-500">
-          Tipo de pergunta não suportado: {element.question_type ?? "desconhecido"}
+        <p className="text-xs text-metal-700">
+          Tipo de pergunta não suportado:{" "}
+          {element.question_type ?? "desconhecido"}
         </p>
       );
   }

@@ -44,20 +44,11 @@ export default function LabelingGuidePage() {
   }, [labelingId, t]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-wide text-blue-700">
-              {t("guide.pageTitle")}
-            </p>
-            <h1 className="text-2xl font-semibold text-blue-900">
-              {title || t("guide.title")}
-            </h1>
-          </div>
-        </div>
+        <div className="flex items-center justify-between"></div>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div className=" bg-white p-4 ">
           {loading ? (
             <p className="text-sm text-gray-600">{t("guide.loading")}</p>
           ) : error ? (
@@ -69,9 +60,7 @@ export default function LabelingGuidePage() {
               </ReactMarkdown>
             </div>
           ) : (
-            <p className="text-sm text-gray-600">
-              {t("guide.noGuide")}
-            </p>
+            <p className="text-sm text-gray-600">{t("guide.noGuide")}</p>
           )}
         </div>
       </div>

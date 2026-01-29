@@ -55,7 +55,9 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
           justify-between
           transition-all duration-300
           ${
-            isOpen ? "w-[14vw] pt-6 pr-6 pb-6 pl-0" : "w-[4vw] p-4 items-center"
+            isOpen
+              ? "w-[15vw] pt-6 pr-6 pb-6 pl-0"
+              : "w-[5vw]  p-4 items-center"
           }
         `}
       >

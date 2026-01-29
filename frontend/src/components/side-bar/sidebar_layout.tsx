@@ -21,7 +21,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
       <div
         className={`
           bg-white transition-all duration-300
-          ${isOpen ? "ml-[14vw]" : "ml-[4vw]"}
+          ${isOpen ? "ml-[15vw] min-ml-42 max-ml-84" : "ml-[5vw] min-ml-16 max-ml-64"}
         `}
       >
         {children}

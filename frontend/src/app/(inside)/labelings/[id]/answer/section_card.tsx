@@ -14,15 +14,23 @@ type SectionCardProps = {
   t: (key: string, params?: Record<string, string | number>) => string;
 };
 
-export default function SectionCard({ section, payload, answers, onChange, t }: SectionCardProps) {
+export default function SectionCard({
+  section,
+  payload,
+  answers,
+  onChange,
+  t,
+}: SectionCardProps) {
   const orderedElements = useMemo(
     () => [...section.elements].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
-    [section.elements]
+    [section.elements],
   );
-  const sectionTitle = section.title?.trim() ? section.title : t("answer.section.title");
+  const sectionTitle = section.title?.trim()
+    ? section.title
+    : t("answer.section.title");
 
   const totalQuestions = orderedElements.filter(
-    (element) => element.question_type !== "context"
+    (element) => element.question_type !== "context",
   ).length;
   const blocks = useMemo(() => {
     const grouped: Array<{
@@ -44,38 +52,41 @@ export default function SectionCard({ section, payload, answers, onChange, t }: 
   }, [orderedElements]);
 
   return (
-    <article className="overflow-hidden rounded-xl border border-blue-100 shadow-sm">
-      <header className="flex items-center justify-between bg-blue-900 px-4 py-3 text-white">
-        <div>
-          <p className="text-[11px] uppercase tracking-wide text-blue-100">{t("answer.section.title")} {section.order ?? ""}</p>
-          <div className="prose prose-sm max-w-none text-white">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{sectionTitle}</ReactMarkdown>
-          </div>
-        </div>
-        <span className="text-xs text-blue-100">{t("answer.section.questionsCount", { count: totalQuestions })}</span>
-      </header>
+    <article className="overflow-hidden ">
+      {/* Título */}
 
-      <div className="space-y-4 bg-white p-4">
+      <div className="text-center">
+        <div className="relative inline-block text-metal-900 text-lg font-normal border-b-3 border-blueberry-700 mb-4 p-1">
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              p: ({ children }) => <span>{children}</span>,
+            }}
+          >
+            {sectionTitle}
+          </ReactMarkdown>
+        </div>
+      </div>
+
+      {/* "perguntas" */}
+      {/*  <span className="text-xs text-blue-900">*/}
+      {/* {t("answer.section.questionsCount", { count: totalQuestions })}*/}
+      {/*   </span>*/}
+
+      {/*  */}
+      <div className="space-y-4 bg-white p-4 px-[10%]">
         {blocks.length > 0 ? (
           blocks.map((block, blockIndex) =>
             block.type === "context" ? (
-              <div
-                key={`context-${blockIndex}`}
-                className="rounded-lg border border-blue-100 bg-blue-50 p-3"
-              >
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-blue-900">
-                  {t("answer.section.contextTitle")}
-                </p>
-                <div className="grid gap-2 md:grid-cols-2">
-                  {block.elements.map((context, contextIndex) => (
-                    <ContextRow
-                      key={context.id ?? contextIndex}
-                      element={context}
-                      payload={payload}
-                      t={t}
-                    />
-                  ))}
-                </div>
+              <div key={`context-${blockIndex}`} className="space-y-2">
+                {block.elements.map((context, contextIndex) => (
+                  <ContextRow
+                    key={context.id ?? contextIndex}
+                    element={context}
+                    payload={payload}
+                    t={t}
+                  />
+                ))}
               </div>
             ) : (
               <div key={`question-${blockIndex}`} className="space-y-4">
@@ -86,16 +97,20 @@ export default function SectionCard({ section, payload, answers, onChange, t }: 
                       key={question.id ?? questionIndex}
                       element={question}
                       value={value}
-                      onChange={(val) => onChange(question.id ?? questionIndex, val)}
+                      onChange={(val) =>
+                        onChange(question.id ?? questionIndex, val)
+                      }
                       t={t}
                     />
                   );
                 })}
               </div>
-            )
+            ),
           )
         ) : (
-          <p className="text-sm text-gray-600">{t("answer.section.noQuestions")}</p>
+          <p className="text-sm text-gray-600">
+            {t("answer.section.noQuestions")}
+          </p>
         )}
       </div>
     </article>

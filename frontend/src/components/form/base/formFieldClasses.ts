@@ -7,7 +7,7 @@ export const formFieldClasses = {
   /** Classes base para inputs, selects e date pickers */
   base: cn(
     "w-full border-[0.12rem] rounded-md py-2 px-3",
-    "text-metal-700 text-md",
+    "text-metal-700 text-sm",
     "focus:outline-none",
   ),
 

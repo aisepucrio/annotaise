@@ -59,7 +59,13 @@ function isValidImageSource(value: string): boolean {
   return isValidImageUrl(value) || isValidBase64Image(value);
 }
 
-function ImageContext({ value, errorMessage }: { value: string; errorMessage: string }) {
+function ImageContext({
+  value,
+  errorMessage,
+}: {
+  value: string;
+  errorMessage: string;
+}) {
   const [hasError, setHasError] = useState(false);
 
   if (hasError) {
@@ -83,7 +89,7 @@ function ImageContext({ value, errorMessage }: { value: string; errorMessage: st
     <img
       src={getImageSrc(value)}
       alt="Context image"
-      className="max-w-full h-auto rounded-lg"
+      className="max-w-full h-auto max-h-[50vh] mx-auto"
       onError={() => setHasError(true)}
     />
   );
@@ -92,7 +98,9 @@ function ImageContext({ value, errorMessage }: { value: string; errorMessage: st
 export default function ContextRow({ element, payload, t }: ContextRowProps) {
   const value = element.column_name ? payload[element.column_name] : undefined;
   const hasValue = value !== undefined && value !== null;
-  const contextLabel = element.text?.trim() ? element.text : element.column_name || t("answer.context.title");
+  const contextLabel = element.text?.trim()
+    ? element.text
+    : element.column_name || t("answer.context.title");
   const formattedValue = hasValue
     ? formatPayloadValue(value)
     : t("answer.context.noValue");
@@ -114,23 +122,33 @@ export default function ContextRow({ element, payload, t }: ContextRowProps) {
 
     return (
       <div className="prose prose-sm max-w-none text-gray-800">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdownValue}</ReactMarkdown>
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+          {markdownValue}
+        </ReactMarkdown>
       </div>
     );
   };
 
   return (
-    <div className="rounded-lg border border-blue-100 bg-white px-3 py-2 shadow-sm">
-      <div className="prose prose-sm max-w-none">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{contextLabel}</ReactMarkdown>
+    <>
+      <div className="text-right mt-12 mb-0">
+        <div className=" inline-block text-metal-900 text-sm font-normal border-b-3 border-blueberry-700">
+          <div className="p-1">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {contextLabel}
+            </ReactMarkdown>
+          </div>
+        </div>
       </div>
-      <p className="text-[11px] uppercase tracking-wide text-blue-500">
-        {t("answer.context.column")} {element.column_name ?? "—"}
-        {element.context_type ? ` • ${t("answer.context.type")} ${element.context_type}` : ""}
-      </p>
-      <div className="mt-1">
+      {/*   <p className="text-[11px] uppercase tracking-wide text-blue-500"> */}
+      {/*     {t("answer.context.column")} {element.column_name ?? "—"} */}
+      {/*    {element.context_type */}
+      {/*      ? ` • ${t("answer.context.type")} ${element.context_type}` */}
+      {/*      : ""} */}
+      {/*    </p>  */}
+      <div className=" border-b-3 border-r-3 border-blueberry-700 p-5">
         {renderContent()}
       </div>
-    </div>
+    </>
   );
 }
