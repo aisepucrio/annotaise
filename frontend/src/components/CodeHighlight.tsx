@@ -1,11 +1,18 @@
-import hljs from "highlightjs";
+type HLJS = {
+  highlightAuto: (
+    code: string,
+    languages?: string[],
+  ) => { value: string; language?: string; relevance?: number };
+};
+
+declare const hljs: HLJS;
 
 type CodeHighlightProps = {
   code: string;
   className?: string;
 };
 
-export default function CodeHighlight({ code, className = "" }: CodeHighlightProps) {
+function CodeHighlight({ code, className = "" }: CodeHighlightProps) {
   const highlighted = hljs.highlightAuto(code ?? "");
   const classes = [
     "overflow-x-auto rounded-md bg-slate-50 p-3 text-xs font-mono leading-relaxed text-gray-800",
@@ -16,7 +23,10 @@ export default function CodeHighlight({ code, className = "" }: CodeHighlightPro
 
   return (
     <pre className={classes}>
-      <code className="hljs" dangerouslySetInnerHTML={{ __html: highlighted.value }} />
+      <code
+        className="hljs"
+        dangerouslySetInnerHTML={{ __html: highlighted.value }}
+      />
     </pre>
   );
 }
