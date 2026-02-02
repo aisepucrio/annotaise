@@ -2,12 +2,13 @@
 import { useEffect, useState } from "react";
 import PageHeader from "@/components/PageHeader";
 import FilterBar from "@/components/filter_bar";
-import LabelingContainer from "./manage_labeling_container";
-import { Plus } from "lucide-react";
+import IndividualLabelingCard from "../IndividualLabelingCard";
+import { Plus, Pen } from "lucide-react";
 import UploadCsvModal from "../upload_csv_modal";
 import GridLayout from "@/components/grid/grid_layout";
 import GridItemCard from "@/components/grid/grid_item_card";
 import Button from "@/components/button/Button";
+import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import axios from "axios";
 import {
@@ -34,8 +35,9 @@ type UploadPayload = {
 export default function LabelingsPage() {
   const currentUser = useCurrent();
   const { t } = useTranslations();
+  const router = useRouter();
   const isAdmin = Boolean(
-    currentUser?.is_staff || currentUser?.account_type === "admin"
+    currentUser?.is_staff || currentUser?.account_type === "admin",
   );
   const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
@@ -59,15 +61,16 @@ export default function LabelingsPage() {
     error,
     mutate,
   } = useSWR(["labelings-dashboard-edit", debouncedSearch], () =>
-    fetchLabelingDashboardEdit(debouncedSearch)
+    fetchLabelingDashboardEdit(debouncedSearch),
   );
 
   const labelingsList = labelings ?? [];
   const loadError =
     error && error instanceof Error
       ? error.message
-      : error ? t("labelings.manage.loadError")
-      : null;
+      : error
+        ? t("labelings.manage.loadError")
+        : null;
 
   useEffect(() => {
     if (loadError) {
@@ -106,12 +109,15 @@ export default function LabelingsPage() {
       if (axios.isAxiosError(err)) {
         const detail =
           (err.response?.data as { detail?: string })?.detail ||
-          err.message || t("labelings.manage.createError");
+          err.message ||
+          t("labelings.manage.createError");
         toast.error(detail);
         return;
       }
       toast.error(
-        err instanceof Error ? err.message : t("labelings.manage.createErrorGeneric")
+        err instanceof Error
+          ? err.message
+          : t("labelings.manage.createErrorGeneric"),
       );
       return;
     }
@@ -151,18 +157,29 @@ export default function LabelingsPage() {
           {labelingsList.map((l, index) => {
             const pending = Math.max(
               (l.total_items ?? 0) - (l.items_done ?? 0),
-              0
+              0,
             );
             return (
               <GridItemCard key={l.id} index={index}>
-                <LabelingContainer
-                  id={l.id}
+                <IndividualLabelingCard
                   title={l.labeling_name}
                   project={l.project_name}
-                  days_passed={l.days_passed}
-                  days_total={l.total_days}
-                  labelings_done={l.items_done}
-                  labelings_pending={pending}
+                  daysPassed={l.days_passed}
+                  daysTotal={l.total_days}
+                  labelingsDone={l.items_done}
+                  labelingsPending={pending}
+                  actionButton={
+                    <Button
+                      icon={<Pen size={18} strokeWidth={1.75} />}
+                      onClick={() => router.push(`/labelings/create/${l.id}`)}
+                      variant="normal"
+                      fill={true}
+                      className="px-4"
+                      ariaLabel={t("labelings.manage.action.manageAria")}
+                    >
+                      {t("labelings.manage.action.manage")}
+                    </Button>
+                  }
                 />
               </GridItemCard>
             );

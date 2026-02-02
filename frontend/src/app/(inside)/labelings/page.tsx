@@ -3,9 +3,13 @@
 import { useEffect, useState } from "react";
 import PageHeader from "@/components/PageHeader";
 import FilterBar from "@/components/filter_bar";
-import LabelingContainer from "./labeling_container";
+import IndividualLabelingCard from "./IndividualLabelingCard";
+import EditLabelingModal from "./create/[id]/edit_labeling_modal";
 import GridLayout from "@/components/grid/grid_layout";
 import GridItemCard from "@/components/grid/grid_item_card";
+import Button from "@/components/button/Button";
+import { Tag } from "lucide-react";
+import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import { fetchLabelingDashboard } from "@/lib/services/labeling_service";
 import useCurrent from "@/hooks/current_user_hook";
@@ -15,11 +19,16 @@ import { useTranslations } from "@/i18n/use-translations";
 export default function LabelingsPage() {
   const currentUser = useCurrent();
   const { t } = useTranslations();
+  const router = useRouter();
   const isAdmin = Boolean(
-    currentUser?.is_staff || currentUser?.account_type === "admin"
+    currentUser?.is_staff || currentUser?.account_type === "admin",
   );
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [editOpen, setEditOpen] = useState(false);
+  const [selectedLabelingId, setSelectedLabelingId] = useState<number | null>(
+    null,
+  );
   useEffect(() => {
     const handle = setTimeout(() => setDebouncedSearch(searchTerm), 300);
     return () => clearTimeout(handle);
@@ -29,15 +38,16 @@ export default function LabelingsPage() {
     error,
     mutate,
   } = useSWR(["labelings-dashboard", debouncedSearch], () =>
-    fetchLabelingDashboard(debouncedSearch)
+    fetchLabelingDashboard(debouncedSearch),
   );
 
   const labelingsList = labelings ?? [];
   const loadError =
     error && error instanceof Error
       ? error.message
-      : error ? t("labelings.loadError")
-      : null;
+      : error
+        ? t("labelings.loadError")
+        : null;
 
   useEffect(() => {
     if (loadError) {
@@ -66,21 +76,27 @@ export default function LabelingsPage() {
           {labelingsList.map((l, index) => {
             const pending = Math.max(
               (l.total_items ?? 0) - (l.items_done ?? 0),
-              0
+              0,
             );
             return (
               <GridItemCard key={l.id} index={index}>
-                <LabelingContainer
-                  id={l.id}
+                <IndividualLabelingCard
                   title={l.labeling_name}
                   project={l.project_name}
-                  days_passed={l.days_passed}
-                  days_total={l.total_days}
-                  labelings_done={l.items_done}
-                  labelings_pending={pending}
-                  onUpdated={async () => {
-                    await mutate();
-                  }}
+                  daysPassed={l.days_passed}
+                  daysTotal={l.total_days}
+                  labelingsDone={l.items_done}
+                  labelingsPending={pending}
+                  actionButton={
+                    <Button
+                      icon={<Tag size={20} strokeWidth={1.75} />}
+                      onClick={() => router.push(`/labelings/${l.id}/answer`)}
+                      variant="normal"
+                      ariaLabel={t("labelings.action.answerAria")}
+                    >
+                      {t("labelings.action.answer")}
+                    </Button>
+                  }
                 />
               </GridItemCard>
             );
@@ -92,7 +108,17 @@ export default function LabelingsPage() {
           {t("labelings.nonAdminNote")}
         </div>
       )}
+      <EditLabelingModal
+        open={editOpen}
+        labelingId={selectedLabelingId ?? 0}
+        onClose={() => {
+          setEditOpen(false);
+          setSelectedLabelingId(null);
+        }}
+        onUpdated={async () => {
+          await mutate();
+        }}
+      />
     </>
   );
 }
-

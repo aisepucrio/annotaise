@@ -3,15 +3,12 @@
 import Image from "next/image"; // mantem para o LOGO
 import SidebarItem from "./sidebar_item";
 import {
-  LayoutDashboard,
-  Users,
   User,
   FolderKanban,
   Tags,
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
-  Users2Icon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { AuthActions } from "@/lib/authClient";
