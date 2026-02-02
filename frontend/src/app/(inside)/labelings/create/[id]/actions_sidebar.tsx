@@ -1,17 +1,15 @@
 "use client";
 
 import { createPortal } from "react-dom";
-import { PlusCircle, PlusSquare, CircleQuestionMark } from "lucide-react";
+import { PlusCircle, PlusSquare, Info } from "lucide-react";
 import { useEffect, useState, type MutableRefObject } from "react";
 import { useTranslations } from "@/i18n/use-translations";
 
 type ActionsSidebarProps = {
-  anchor:
-    | {
-        x: number;
-        y: number;
-      }
-    | null;
+  anchor: {
+    x: number;
+    y: number;
+  } | null;
   toolbarRef: MutableRefObject<HTMLDivElement | null>;
   closing?: boolean;
   onAddQuestion: () => void;
@@ -36,7 +34,9 @@ export default function ActionsSidebar({
   if (!anchor || !mounted || typeof document === "undefined") return null;
 
   const animatedState =
-    mounted && !closing ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2";
+    mounted && !closing
+      ? "opacity-100 translate-x-0"
+      : "opacity-0 translate-x-2";
 
   return createPortal(
     <div
@@ -54,19 +54,19 @@ export default function ActionsSidebar({
       >
         <button
           type="button"
+          onClick={onAddContext}
+          title={t("labelings.create.actions.addContext")}
+          className="w-10 h-10 bg-blue-900 hover:bg-blue-800 text-white rounded-md shadow flex items-center justify-center cursor-pointer"
+        >
+          <Info size={20} />
+        </button>
+        <button
+          type="button"
           onClick={onAddQuestion}
           title={t("labelings.create.actions.addQuestion")}
           className="w-10 h-10 bg-blue-900 hover:bg-blue-800 text-white rounded-md shadow flex items-center justify-center cursor-pointer"
         >
           <PlusCircle size={20} />
-        </button>
-        <button
-          type="button"
-          onClick={onAddContext}
-          title={t("labelings.create.actions.addContext")}
-          className="w-10 h-10 bg-blue-900 hover:bg-blue-800 text-white rounded-md shadow flex items-center justify-center cursor-pointer"
-        >
-          <CircleQuestionMark size={20} />
         </button>
         <button
           type="button"
@@ -78,6 +78,6 @@ export default function ActionsSidebar({
         </button>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }

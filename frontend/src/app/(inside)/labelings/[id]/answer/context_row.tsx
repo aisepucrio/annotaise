@@ -131,8 +131,8 @@ export default function ContextRow({ element, payload, t }: ContextRowProps) {
 
   return (
     <>
-      <div className="text-right mt-12 mb-0">
-        <div className=" inline-block text-metal-900 text-sm font-normal border-b-3 border-blueberry-700">
+      <div className="text-left mt-12 mb-0">
+        <div className=" inline-block text-metal-900 text-sm font-normal  border-blueberry-700">
           <div className="p-1">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {contextLabel}
@@ -141,7 +141,7 @@ export default function ContextRow({ element, payload, t }: ContextRowProps) {
         </div>
       </div>
 
-      <div className=" border-b-3 border-r-3 border-blueberry-700 p-5">
+      <div className=" border-3 border-blueberry-700 p-5 shadow-md rounded-2xl bg-blueberry-700-15">
         {renderContent()}
       </div>
     </>
