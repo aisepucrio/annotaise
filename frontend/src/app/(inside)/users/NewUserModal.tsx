@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+
 import { useTranslations } from "@/i18n/use-translations";
 import Modal from "@/components/modal/Modal";
 import Input from "@/components/form/Input";
@@ -24,30 +25,36 @@ export default function NewUserModal({
   onClose,
   onSubmit,
 }: NewUserModalProps) {
-  // Hooks: estado local
+  // i18n
   const { t } = useTranslations();
+
+  // Estado local
   const [email, setEmail] = useState("");
   const [accountType, setAccountType] =
     useState<Payload["account_type"]>("standard");
   const [submitting, setSubmitting] = useState(false);
 
-  const ACCOUNT_OPTIONS = [
-    { value: "standard", label: t("users.new.accountType.standard") },
-    { value: "admin", label: t("users.new.accountType.admin") },
-  ];
+  // Opções do select (memo pra não recriar a cada render)
+  const accountOptions = useMemo(
+    () => [
+      { value: "standard", label: t("users.new.accountType.standard") },
+      { value: "admin", label: t("users.new.accountType.admin") },
+    ],
+    [t],
+  );
 
-  // Efeitos: resetar estado quando o modal fecha
+  // Reset do estado quando o modal fecha
   useEffect(() => {
-    if (!open) {
-      setEmail("");
-      setAccountType("standard");
-      setSubmitting(false);
-    }
+    if (open) return;
+    setEmail("");
+    setAccountType("standard");
+    setSubmitting(false);
   }, [open]);
 
-  // Manipuladores: submissão do formulário
+  // Submissão do formulário
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     const trimmed = email.trim();
     if (!trimmed) {
       toast.error(t("users.new.emailRequired"));
@@ -60,6 +67,7 @@ export default function NewUserModal({
         email: trimmed,
         account_type: accountType,
       });
+
       toast.success(t("users.new.success"), {
         description: link,
         action: {
@@ -68,14 +76,14 @@ export default function NewUserModal({
             navigator?.clipboard?.writeText?.(link).catch(() => undefined),
         },
       });
+
       onClose();
     } catch (err) {
       const message =
         (err as { response?: { data?: { detail?: string } } })?.response?.data
           ?.detail ??
-        (err instanceof Error
-          ? err.message
-          : t("users.new.error"));
+        (err instanceof Error ? err.message : t("users.new.error"));
+
       toast.error(message);
     } finally {
       setSubmitting(false);
@@ -90,8 +98,9 @@ export default function NewUserModal({
       description={t("users.new.description")}
       maxWidth="md"
     >
-      {/* Render: UI do formulário */}
+      {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Email */}
         <Input
           id="invite-email"
           label={t("users.new.emailLabel")}
@@ -102,20 +111,23 @@ export default function NewUserModal({
           required
         />
 
+        {/* Tipo de conta */}
         <div>
           <Select
             id="invite-account"
             label={t("users.new.accountTypeLabel")}
-            options={ACCOUNT_OPTIONS}
+            options={accountOptions}
             value={accountType}
             onChange={(e) =>
               setAccountType(
-                (e.target as HTMLSelectElement).value as Payload["account_type"]
+                (e.target as HTMLSelectElement)
+                  .value as Payload["account_type"],
               )
             }
           />
         </div>
 
+        {/* Ação */}
         <div className="flex items-center justify-end gap-3 pt-2 w-[70%] mx-auto">
           <Button type="submit" disabled={submitting}>
             {submitting ? t("users.new.submitting") : t("users.new.submit")}

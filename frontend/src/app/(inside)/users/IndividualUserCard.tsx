@@ -1,9 +1,10 @@
 import { UserCog } from "lucide-react";
+
 import StatPill from "@/components/stat-pill/StatPill";
 import Button from "@/components/button/Button";
 import { useTranslations } from "@/i18n/use-translations";
 
-type UserContainerProps = {
+type IndividualUserCardProps = {
   name: string;
   email: string;
   projects: number;
@@ -12,28 +13,32 @@ type UserContainerProps = {
   onManage?: () => void;
 };
 
-export default function UserContainer({
+export default function IndividualUserCard({
   name,
   email,
   projects,
   labelings_done,
   labelings_pending,
   onManage,
-}: UserContainerProps) {
+}: IndividualUserCardProps) {
   const { t } = useTranslations();
+
   return (
     <div className="mt-1 flex justify-between items-end gap-3">
-      {/* nome e email */}
+      {/* Identificação */}
       <div className="flex flex-col">
-        <div className="flex-col flex mb-12">
-          <span className="text-black font-semibold leading-tight max-w-40 wrap-break-word whitespace-norma truncate">
+        {/* Nome e email */}
+        <div className="flex flex-col mb-12">
+          <span className="text-black font-semibold leading-tight max-w-40 break-words truncate">
             {name}
           </span>
 
-          <span className="text-gray-500 font-semibold wrap-break-word leading-tight truncate min-w-40 max-w-40">
+          <span className="text-gray-500 font-semibold leading-tight min-w-40 max-w-40 break-words truncate">
             {email}
           </span>
         </div>
+
+        {/* Ação */}
         <Button
           icon={<UserCog size={20} strokeWidth={1.75} />}
           onClick={onManage}
@@ -44,10 +49,10 @@ export default function UserContainer({
         </Button>
       </div>
 
-      {/* separador vertical */}
-      <div className="w-0.75 rounded-full bg-metal-50 self-stretch " />
+      {/* Separador */}
+      <div className="w-0.75 rounded-full bg-metal-50 self-stretch" />
 
-      {/* métricas */}
+      {/* Métricas */}
       <div className="-mr-3 grid grid-cols-1 gap-2 flex-1 justify-end items-start min-w-0">
         <StatPill
           label={t("users.stats.projects")}

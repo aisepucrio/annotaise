@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { UpdateUserPayload, User } from "@/lib/services/user_service";
 import { toast } from "sonner";
+
 import { useTranslations } from "@/i18n/use-translations";
 import Modal from "@/components/modal/Modal";
 import Input from "@/components/form/Input";
@@ -22,8 +23,10 @@ export default function EditUserModal({
   onClose,
   onSubmit,
 }: EditUserModalProps) {
-  // Hooks: estado local
+  // i18n
   const { t } = useTranslations();
+
+  // Estado local
   const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -33,12 +36,16 @@ export default function EditUserModal({
   >("standard");
   const [submitting, setSubmitting] = useState(false);
 
-  const ACCOUNT_OPTIONS = [
-    { value: "standard", label: t("users.new.accountType.standard") },
-    { value: "admin", label: t("users.new.accountType.admin") },
-  ];
+  // Opções do select
+  const accountOptions = useMemo(
+    () => [
+      { value: "standard", label: t("users.new.accountType.standard") },
+      { value: "admin", label: t("users.new.accountType.admin") },
+    ],
+    [t],
+  );
 
-  // Efeitos: atualizar/resetar estado quando usuário/modal mudam
+  // Atualiza/reset do estado quando modal/usuário mudam
   useEffect(() => {
     if (!open || !user) {
       setEmail("");
@@ -58,23 +65,29 @@ export default function EditUserModal({
     setSubmitting(false);
   }, [open, user]);
 
-  // Manipuladores: submissão do formulário
+  // Submissão do formulário
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!email.trim()) {
+
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
       toast.error(t("users.edit.emailRequired"));
       return;
     }
 
     setSubmitting(true);
     try {
+      const trimmedFirst = firstName.trim();
+      const trimmedLast = lastName.trim();
+      const trimmedPass = password.trim();
+
       const payload: UpdateUserPayload = {
-        email: email.trim(),
-        first_name: firstName.trim() || undefined,
-        last_name: lastName.trim() || undefined,
+        email: trimmedEmail,
+        first_name: trimmedFirst || undefined,
+        last_name: trimmedLast || undefined,
         account_type: accountType,
+        ...(trimmedPass ? { password: trimmedPass } : {}),
       };
-      if (password.trim()) payload.password = password;
 
       await onSubmit(payload);
       toast.success(t("users.edit.success"));
@@ -83,19 +96,16 @@ export default function EditUserModal({
       const message =
         (err as { response?: { data?: { detail?: string } } })?.response?.data
           ?.detail ??
-        (err instanceof Error
-          ? err.message
-          : t("users.edit.error"));
+        (err instanceof Error ? err.message : t("users.edit.error"));
+
       toast.error(message);
     } finally {
       setSubmitting(false);
     }
   };
 
-  // Se modal fechado ou usuário não carregado, não renderiza
   if (!open || !user) return null;
 
-  // Render: UI do formulário usando componentes reutilizáveis
   return (
     <Modal
       open={open}
@@ -104,7 +114,9 @@ export default function EditUserModal({
       description={t("users.edit.description")}
       maxWidth="lg"
     >
+      {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Email */}
         <Input
           id="edit-email"
           label={t("users.edit.emailLabel")}
@@ -115,6 +127,7 @@ export default function EditUserModal({
           required
         />
 
+        {/* Nome */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <Input
             id="edit-first"
@@ -132,6 +145,7 @@ export default function EditUserModal({
           />
         </div>
 
+        {/* Senha */}
         <div>
           <Input
             id="edit-password"
@@ -143,21 +157,23 @@ export default function EditUserModal({
           />
         </div>
 
+        {/* Tipo de conta */}
         <Select
           id="edit-account"
           label={t("users.edit.accountTypeLabel")}
-          options={ACCOUNT_OPTIONS}
+          options={accountOptions}
           value={accountType}
           onChange={(e) =>
             setAccountType(
               (e.target as HTMLSelectElement).value as
                 | "standard"
                 | "editor"
-                | "admin"
+                | "admin",
             )
           }
         />
 
+        {/* Ação */}
         <div className="flex items-center justify-end gap-3 pt-2 w-[70%] mx-auto">
           <Button type="submit" disabled={submitting}>
             {submitting ? t("users.edit.submitting") : t("users.edit.submit")}
