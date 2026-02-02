@@ -5,7 +5,6 @@ import { cn } from "@/lib/utils";
 import { ChevronDown } from "lucide-react";
 import FormFieldBase from "./base/FormFieldBase";
 import { formFieldClasses } from "./base/formFieldClasses";
-import { useTranslations } from "@/i18n/use-translations";
 
 export type SelectOption = {
   value: string;
@@ -53,10 +52,8 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
       tooltip,
       ...props
     },
-    ref
+    ref,
   ) => {
-    const { t } = useTranslations();
-    const resolvedPlaceholder = placeholder ?? t("common.selectPlaceholder");
     return (
       <FormFieldBase
         label={label}
@@ -77,13 +74,13 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
               formFieldClasses.disabled,
               "pr-10 appearance-none cursor-pointer",
               "[&>option:first-child]:text-metal-400",
-              className
+              className,
             )}
             {...props}
           >
-            {resolvedPlaceholder && (
+            {placeholder && (
               <option value="" disabled hidden className="text-metal-400">
-                {resolvedPlaceholder}
+                {placeholder}
               </option>
             )}
             {options.map((option) => (
@@ -103,10 +100,9 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
         </div>
       </FormFieldBase>
     );
-  }
+  },
 );
 
 Select.displayName = "Select";
 
 export default Select;
-
