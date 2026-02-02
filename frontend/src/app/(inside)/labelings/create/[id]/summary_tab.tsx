@@ -3,8 +3,8 @@
 import { useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import GridItemCard from "@/components/grid/grid_item_card";
-import GridLayout from "@/components/grid/grid_layout";
+import GridItemCard from "@/components/grid/GridItemCard";
+import GridLayout from "@/components/grid/GridLayout";
 import type { AnswerResponse } from "@/lib/services/answer_service";
 import type {
   LabelingStructureElement,
@@ -55,7 +55,7 @@ export default function SummaryTab({
   const { t, locale } = useTranslations();
   const numberFormatter = useMemo(
     () => new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }),
-    [locale]
+    [locale],
   );
 
   const summaries = useMemo(
@@ -66,7 +66,7 @@ export default function SummaryTab({
         t,
         numberFormatter,
       }),
-    [answers, numberFormatter, structureSections, t]
+    [answers, numberFormatter, structureSections, t],
   );
 
   return (
@@ -110,21 +110,23 @@ export default function SummaryTab({
                     </span>
                     <span className="text-gray-300">•</span>
                     <span>
-                      {summary.responseCount} {t("labelings.create.summary.responsesCount")}
+                      {summary.responseCount}{" "}
+                      {t("labelings.create.summary.responsesCount")}
                     </span>
                   </div>
                 </div>
 
                 {summary.chart.kind === "none" ? (
-                  <p className="text-sm text-gray-500">
-                    {summary.chart.title}
-                  </p>
+                  <p className="text-sm text-gray-500">{summary.chart.title}</p>
                 ) : summary.chart.kind === "hist" ? (
                   <div className="space-y-3">
                     <div className="text-xs font-semibold text-gray-600">
                       {summary.chart.title}
                     </div>
-                    <BarChart items={summary.chart.items} total={summary.chart.total} />
+                    <BarChart
+                      items={summary.chart.items}
+                      total={summary.chart.total}
+                    />
                     <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
                       <StatLine
                         label={t("labelings.create.summary.stats.min")}
@@ -140,7 +142,9 @@ export default function SummaryTab({
                       />
                       <StatLine
                         label={t("labelings.create.summary.stats.median")}
-                        value={numberFormatter.format(summary.chart.stats.median)}
+                        value={numberFormatter.format(
+                          summary.chart.stats.median,
+                        )}
                       />
                     </div>
                   </div>
@@ -149,7 +153,10 @@ export default function SummaryTab({
                     <div className="text-xs font-semibold text-gray-600">
                       {summary.chart.title}
                     </div>
-                    <BarChart items={summary.chart.items} total={summary.chart.total} />
+                    <BarChart
+                      items={summary.chart.items}
+                      total={summary.chart.total}
+                    />
                   </div>
                 )}
               </div>
@@ -164,7 +171,9 @@ export default function SummaryTab({
 function StatLine({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-md border border-gray-200 px-2 py-2">
-      <p className="text-[11px] uppercase tracking-wide text-gray-400">{label}</p>
+      <p className="text-[11px] uppercase tracking-wide text-gray-400">
+        {label}
+      </p>
       <p className="text-sm font-semibold text-gray-700">{value}</p>
     </div>
   );
@@ -178,7 +187,8 @@ function BarChart({ items, total }: { items: BarItem[]; total: number }) {
     <div className="space-y-2">
       {items.map((item) => {
         const percentOfMax = (item.count / max) * 100;
-        const percentOfTotal = total > 0 ? Math.round((item.count / total) * 100) : 0;
+        const percentOfTotal =
+          total > 0 ? Math.round((item.count / total) * 100) : 0;
         return (
           <div key={item.label} className="space-y-1">
             <div className="flex items-center justify-between text-xs text-gray-600">
@@ -214,14 +224,14 @@ function buildSummaries({
   numberFormatter: Intl.NumberFormat;
 }): QuestionSummary[] {
   const orderedSections = [...structureSections].sort(
-    (a, b) => (a.order ?? 0) - (b.order ?? 0)
+    (a, b) => (a.order ?? 0) - (b.order ?? 0),
   );
 
   const summaries: QuestionSummary[] = [];
 
   orderedSections.forEach((section, sectionIndex) => {
     const orderedElements = [...(section.elements ?? [])].sort(
-      (a, b) => (a.order ?? 0) - (b.order ?? 0)
+      (a, b) => (a.order ?? 0) - (b.order ?? 0),
     );
 
     orderedElements
@@ -238,7 +248,7 @@ function buildSummaries({
           ? `${baseSectionLabel} - ${sectionTitle}`
           : baseSectionLabel;
         const key = String(
-          element.id ?? `${section.order ?? sectionIndex}-${elementIndex}`
+          element.id ?? `${section.order ?? sectionIndex}-${elementIndex}`,
         );
 
         const answerKey = element.id ? String(element.id) : null;
@@ -363,10 +373,7 @@ function hasValue(value: unknown) {
   return true;
 }
 
-function resolveTypeLabel(
-  type: string,
-  t: (key: string) => string
-): string {
+function resolveTypeLabel(type: string, t: (key: string) => string): string {
   const labelKey = QUESTION_TYPE_LABELS[type];
   if (labelKey) {
     return t(labelKey);
@@ -376,10 +383,11 @@ function resolveTypeLabel(
 
 function normalizeChoiceValue(
   value: unknown,
-  t: (key: string) => string
+  t: (key: string) => string,
 ): string | null {
   if (value === null || value === undefined) return null;
-  if (typeof value === "boolean") return value ? t("common.yes") : t("common.no");
+  if (typeof value === "boolean")
+    return value ? t("common.yes") : t("common.no");
   if (typeof value === "string") {
     const trimmed = value.trim();
     if (!trimmed) return null;
@@ -395,7 +403,7 @@ function normalizeChoiceValue(
 function buildChoiceCounts(
   element: LabelingStructureElement,
   values: unknown[],
-  t: (key: string) => string
+  t: (key: string) => string,
 ): BarItem[] {
   const options = [...(element.multiple_choice_items ?? [])]
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
@@ -435,7 +443,10 @@ function buildChoiceCounts(
   return items.filter((item) => item.count > 0);
 }
 
-function buildTextCounts(values: unknown[], t: (key: string) => string): BarItem[] {
+function buildTextCounts(
+  values: unknown[],
+  t: (key: string) => string,
+): BarItem[] {
   const counts = new Map<string, number>();
   values.forEach((value) => {
     const normalized = normalizeChoiceValue(value, t);
@@ -468,9 +479,7 @@ function computeStats(values: number[]) {
   const avg = total / sorted.length;
   const mid = Math.floor(sorted.length / 2);
   const median =
-    sorted.length % 2 === 0
-      ? (sorted[mid - 1] + sorted[mid]) / 2
-      : sorted[mid];
+    sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
 
   return {
     min: sorted[0],
@@ -503,7 +512,10 @@ function buildHistogram({
     ];
   }
 
-  const binCount = Math.min(6, Math.max(3, Math.ceil(Math.sqrt(values.length))));
+  const binCount = Math.min(
+    6,
+    Math.max(3, Math.ceil(Math.sqrt(values.length))),
+  );
   const width = (maxRange - minRange) / binCount;
 
   const bins = Array.from({ length: binCount }, () => 0);
@@ -511,7 +523,7 @@ function buildHistogram({
   values.forEach((value) => {
     const idx = Math.min(
       binCount - 1,
-      Math.max(0, Math.floor((value - minRange) / width))
+      Math.max(0, Math.floor((value - minRange) / width)),
     );
     bins[idx] += 1;
   });

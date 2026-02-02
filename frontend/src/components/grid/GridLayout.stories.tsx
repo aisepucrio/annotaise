@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/nextjs";
-import GridLayout from "./grid_layout";
-import GridItemCard from "./grid_item_card";
+import GridLayout from "./GridLayout";
+import GridItemCard from "./GridItemCard";
 
 const meta = {
+  title: "GridLayout",
   component: GridLayout,
   tags: ["autodocs"],
   parameters: {
@@ -96,7 +97,8 @@ export const DifferentCounts: StoryObj<typeof GridLayout> = {
             <div className="p-4">
               <h4 className="font-semibold">Único item</h4>
               <p className="text-gray-600 text-sm">
-                Quando há apenas um item, ele não se expande para preencher toda a largura
+                Quando há apenas um item, ele não se expande para preencher toda
+                a largura
               </p>
             </div>
           </GridItemCard>
@@ -337,9 +339,7 @@ export const ColorPattern: StoryObj<typeof GridLayout> = {
             <GridItemCard key={i} index={i}>
               <div className="p-4">
                 <h4 className="font-semibold">Item {i + 1}</h4>
-                <p className="text-gray-500 text-xs mt-1">
-                  Índice: {i}
-                </p>
+                <p className="text-gray-500 text-xs mt-1">Índice: {i}</p>
               </div>
             </GridItemCard>
           ))}

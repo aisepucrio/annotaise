@@ -16,7 +16,7 @@ export default function FilterBar({
   disabled,
 }: FilterBarProps) {
   const { t } = useTranslations();
-  
+
   return (
     <div className="flex items-center justify-start gap-3 ml-5">
       {/* Campo de busca */}
@@ -35,7 +35,6 @@ export default function FilterBar({
             border-b-blueberry-700
             disabled:bg-gray-100 disabled:text-gray-500
           "
-          aria-label={t("filterBar.searchAria")}
           disabled={disabled}
         />
         {/* Ícone de lupa */}
@@ -50,7 +49,6 @@ export default function FilterBar({
         icon={<Filter size={16} className="opacity-90" />}
         fill={false}
         className="px-4 py-2 shadow-md text-sm"
-        ariaLabel={t("filterBar.filterAria")}
       >
         {t("filterBar.filterButton")}
       </Button>

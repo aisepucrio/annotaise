@@ -3,8 +3,8 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Download } from "lucide-react";
-import GridItemCard from "@/components/grid/grid_item_card";
-import GridLayout from "@/components/grid/grid_layout";
+import GridItemCard from "@/components/grid/GridItemCard";
+import GridLayout from "@/components/grid/GridLayout";
 import Button from "@/components/button/Button";
 import type { AnswerResponse } from "@/lib/services/answer_service";
 import type { LabelingStructureSection } from "@/lib/services/labeling_create_service";
@@ -30,7 +30,7 @@ type AnswersTabProps = {
 
 type TranslateFn = (
   key: string,
-  params?: Record<string, string | number>
+  params?: Record<string, string | number>,
 ) => string;
 
 export default function AnswersTab({
@@ -125,10 +125,10 @@ export default function AnswersTab({
                     });
               const userLabel = getUserLabel(answer.answered_by);
               const answeredAt = new Date(answer.created_at).toLocaleString(
-                locale
+                locale,
               );
               const answeredCount = Object.keys(
-                answer.answer_payload ?? {}
+                answer.answer_payload ?? {},
               ).length;
 
               return (
@@ -195,7 +195,7 @@ function InspectAnswerModal({
   if (!answer) return null;
 
   const payloadEntries = Object.entries(
-    (answer.item_detail?.payload ?? {}) as Record<string, unknown>
+    (answer.item_detail?.payload ?? {}) as Record<string, unknown>,
   );
   const answerEntries = Object.entries(answer.answer_payload ?? {});
   const rowIndex = answer.item_detail?.row_index;
@@ -210,11 +210,11 @@ function InspectAnswerModal({
   const answeredAt = new Date(answer.created_at).toLocaleString(locale);
 
   const orderedSections = [...sections].sort(
-    (a, b) => (a.order ?? 0) - (b.order ?? 0)
+    (a, b) => (a.order ?? 0) - (b.order ?? 0),
   );
   const answersByQuestion = new Map<string, unknown>();
   answerEntries.forEach(([key, value]) =>
-    answersByQuestion.set(String(key), value)
+    answersByQuestion.set(String(key), value),
   );
   const itemPayload = (answer.item_detail?.payload ?? {}) as Record<
     string,
@@ -296,10 +296,11 @@ function InspectAnswerModal({
                 <div className="space-y-4">
                   {orderedSections.map((section) => {
                     const orderedElements = [...section.elements].sort(
-                      (a, b) => (a.order ?? 0) - (b.order ?? 0)
+                      (a, b) => (a.order ?? 0) - (b.order ?? 0),
                     );
                     const questionCount = orderedElements.filter(
-                      (el) => el.question_type && el.question_type !== "context"
+                      (el) =>
+                        el.question_type && el.question_type !== "context",
                     ).length;
                     const blocks: Array<{
                       type: "context" | "question";
@@ -327,15 +328,18 @@ function InspectAnswerModal({
                         <div className="flex items-center justify-between bg-blue-900 px-4 py-3 text-white rounded-t-xl">
                           <div className="flex flex-col">
                             <span className="text-[11px] uppercase tracking-wide text-blue-100">
-                              {t("labelings.create.answers.modal.sectionLabel", {
-                                order: section.order ?? "",
-                              })}
+                              {t(
+                                "labelings.create.answers.modal.sectionLabel",
+                                {
+                                  order: section.order ?? "",
+                                },
+                              )}
                             </span>
                             <div className="prose prose-sm max-w-none text-white">
                               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                 {section.title?.trim() ||
                                   t(
-                                    "labelings.create.answers.modal.sectionFallback"
+                                    "labelings.create.answers.modal.sectionFallback",
                                   )}
                               </ReactMarkdown>
                             </div>
@@ -346,13 +350,13 @@ function InspectAnswerModal({
                                   "labelings.create.answers.modal.questionsCountSingular",
                                   {
                                     count: questionCount,
-                                  }
+                                  },
                                 )
                               : t(
                                   "labelings.create.answers.modal.questionsCountPlural",
                                   {
                                     count: questionCount,
-                                  }
+                                  },
                                 )}
                           </span>
                         </div>
@@ -372,7 +376,7 @@ function InspectAnswerModal({
                                   >
                                     <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-blue-900">
                                       {t(
-                                        "labelings.create.answers.modal.contextTitle"
+                                        "labelings.create.answers.modal.contextTitle",
                                       )}
                                     </p>
                                     <div className="grid gap-2 md:grid-cols-2">
@@ -389,11 +393,13 @@ function InspectAnswerModal({
                                             "labelings.create.answers.modal.contextFallback",
                                             {
                                               index: idx + 1,
-                                            }
+                                            },
                                           );
                                         return (
                                           <div
-                                            key={ctx.id ?? `${section.id}-${idx}`}
+                                            key={
+                                              ctx.id ?? `${section.id}-${idx}`
+                                            }
                                             className="rounded-md border border-blue-100 bg-white px-3 py-2 text-sm text-gray-800"
                                           >
                                             <div className="prose prose-sm max-w-none">
@@ -408,14 +414,14 @@ function InspectAnswerModal({
                                                 "labelings.create.answers.modal.columnLabel",
                                                 {
                                                   name: ctx.column_name ?? "-",
-                                                }
+                                                },
                                               )}
                                               {ctx.context_type
                                                 ? ` ${t(
                                                     "labelings.create.answers.modal.typeLabel",
                                                     {
                                                       type: ctx.context_type,
-                                                    }
+                                                    },
                                                   )}`
                                                 : ""}
                                             </p>
@@ -426,7 +432,7 @@ function InspectAnswerModal({
                                                 {formatContextValue(
                                                   value,
                                                   ctx.context_type,
-                                                  t
+                                                  t,
                                                 )}
                                               </ReactMarkdown>
                                             </div>
@@ -442,16 +448,16 @@ function InspectAnswerModal({
                                   >
                                     {block.elements.map((q, idx) => {
                                       const val = answersByQuestion.get(
-                                        String(q.id ?? q.order ?? idx)
+                                        String(q.id ?? q.order ?? idx),
                                       );
                                       const label =
                                         (q.text && q.text.trim().length > 0
                                           ? q.text
                                           : t(
-                                              "labelings.create.answers.modal.questionFallback"
+                                              "labelings.create.answers.modal.questionFallback",
                                             )) ??
                                         t(
-                                          "labelings.create.answers.modal.questionFallback"
+                                          "labelings.create.answers.modal.questionFallback",
                                         );
                                       return (
                                         <div
@@ -469,7 +475,7 @@ function InspectAnswerModal({
                                             {q.required ? (
                                               <span className="rounded-full bg-red-50 px-3 py-1 text-[11px] font-semibold uppercase text-red-700">
                                                 {t(
-                                                  "labelings.create.answers.modal.required"
+                                                  "labelings.create.answers.modal.required",
                                                 )}
                                               </span>
                                             ) : null}
@@ -481,12 +487,12 @@ function InspectAnswerModal({
                                       );
                                     })}
                                   </div>
-                                )
+                                ),
                               )}
                               {questionCount === 0 ? (
                                 <p className="text-sm text-gray-600">
                                   {t(
-                                    "labelings.create.answers.modal.noQuestions"
+                                    "labelings.create.answers.modal.noQuestions",
                                   )}
                                 </p>
                               ) : null}
@@ -510,7 +516,8 @@ function formatAnswerValue(value: unknown, t: TranslateFn): string {
   if (value === null || value === undefined) return "-";
   if (Array.isArray(value))
     return value.map((v) => formatAnswerValue(v, t)).join(", ");
-  if (typeof value === "boolean") return value ? t("common.yes") : t("common.no");
+  if (typeof value === "boolean")
+    return value ? t("common.yes") : t("common.no");
   if (typeof value === "object") {
     try {
       return JSON.stringify(value);
@@ -524,7 +531,7 @@ function formatAnswerValue(value: unknown, t: TranslateFn): string {
 function formatContextValue(
   value: unknown,
   contextType: string | null | undefined,
-  t: TranslateFn
+  t: TranslateFn,
 ): string {
   const text = formatAnswerValue(value, t);
   if (contextType === "code") {

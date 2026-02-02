@@ -1,12 +1,12 @@
 "use client";
 import { useEffect, useState } from "react";
-import PageHeader from "@/components/PageHeader";
-import FilterBar from "@/components/filter_bar";
+import PageHeader from "@/components/page-header/PageHeader";
+import FilterBar from "@/components/FilterBar";
 import IndividualLabelingCard from "../IndividualLabelingCard";
 import { Plus, Pen } from "lucide-react";
 import UploadCsvModal from "../upload_csv_modal";
-import GridLayout from "@/components/grid/grid_layout";
-import GridItemCard from "@/components/grid/grid_item_card";
+import GridLayout from "@/components/grid/GridLayout";
+import GridItemCard from "@/components/grid/GridItemCard";
 import Button from "@/components/button/Button";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";

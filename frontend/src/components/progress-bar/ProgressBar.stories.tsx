@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/nextjs";
 import ProgressBar from "./ProgressBar";
 
 const meta = {
+  title: "ProgressBar",
   component: ProgressBar,
   tags: ["autodocs"],
   args: {

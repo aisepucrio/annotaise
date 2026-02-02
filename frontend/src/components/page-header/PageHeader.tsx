@@ -1,5 +1,5 @@
 // PageHeader.tsx
-import Tooltip from "./tooltip/Tooltip";
+import Tooltip from "../tooltip/Tooltip";
 
 type PageHeaderProps = {
   page_title: string;

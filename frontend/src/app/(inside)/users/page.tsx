@@ -2,12 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
-import PageHeader from "@/components/PageHeader";
+import PageHeader from "@/components/page-header/PageHeader";
 import UserContainer from "./user_container";
-import FilterBar from "@/components/filter_bar";
+import FilterBar from "@/components/FilterBar";
 import { UserPlus } from "lucide-react";
-import GridLayout from "@/components/grid/grid_layout";
-import GridItemCard from "@/components/grid/grid_item_card";
+import GridLayout from "@/components/grid/GridLayout";
+import GridItemCard from "@/components/grid/GridItemCard";
 import Button from "@/components/button/Button";
 import {
   fetchUsers,
@@ -26,7 +26,7 @@ export default function UsersPage() {
   const currentUser = useCurrent();
   const { t } = useTranslations();
   const isAdmin = Boolean(
-    currentUser?.is_staff || currentUser?.account_type === "admin"
+    currentUser?.is_staff || currentUser?.account_type === "admin",
   );
   const handleCreateInvitation = useInvitationCreator();
   const [searchTerm, setSearchTerm] = useState("");
@@ -41,7 +41,7 @@ export default function UsersPage() {
     isLoading,
     mutate,
   } = useSWR<User[]>(isAdmin ? ["users", debouncedSearch] : null, () =>
-    fetchUsers(debouncedSearch)
+    fetchUsers(debouncedSearch),
   );
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -49,8 +49,9 @@ export default function UsersPage() {
   const loadError =
     error && error instanceof Error
       ? error.message
-      : error ? t("users.loadError")
-      : null;
+      : error
+        ? t("users.loadError")
+        : null;
 
   const handleUpdateUser = async (payload: UpdateUserPayload) => {
     if (!editingUser) return;

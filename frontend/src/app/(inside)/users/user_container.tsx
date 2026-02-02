@@ -1,5 +1,5 @@
 import { UserCog } from "lucide-react";
-import StatPill from "@/components/StatPill";
+import StatPill from "@/components/stat-pill/StatPill";
 import Button from "@/components/button/Button";
 import { useTranslations } from "@/i18n/use-translations";
 

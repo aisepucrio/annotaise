@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import PageHeader from "@/components/PageHeader";
-import FilterBar from "@/components/filter_bar";
+import PageHeader from "@/components/page-header/PageHeader";
+import FilterBar from "@/components/FilterBar";
 import IndividualLabelingCard from "./IndividualLabelingCard";
 import EditLabelingModal from "./create/[id]/edit_labeling_modal";
-import GridLayout from "@/components/grid/grid_layout";
-import GridItemCard from "@/components/grid/grid_item_card";
+import GridLayout from "@/components/grid/GridLayout";
+import GridItemCard from "@/components/grid/GridItemCard";
 import Button from "@/components/button/Button";
 import { Tag } from "lucide-react";
 import { useRouter } from "next/navigation";

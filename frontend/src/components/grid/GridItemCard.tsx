@@ -1,5 +1,5 @@
 import React from "react";
-import { useGridColumns } from "./grid_layout";
+import { useGridColumns } from "./GridLayout";
 
 type GridItemCardProps = {
   /** Elementos filhos a serem renderizados dentro do card */

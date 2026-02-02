@@ -3,13 +3,13 @@
 import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { useRouter } from "next/navigation";
-import PageHeader from "@/components/PageHeader";
+import PageHeader from "@/components/page-header/PageHeader";
 import ProjectContainer from "./project_container";
-import FilterBar from "@/components/filter_bar";
+import FilterBar from "@/components/FilterBar";
 import { Plus } from "lucide-react";
 import NewProjectModal from "./new_project_modal";
-import GridLayout from "@/components/grid/grid_layout";
-import GridItemCard from "@/components/grid/grid_item_card";
+import GridLayout from "@/components/grid/GridLayout";
+import GridItemCard from "@/components/grid/GridItemCard";
 import Button from "@/components/button/Button";
 import {
   createProject,
@@ -27,10 +27,10 @@ export default function Projects() {
   const userLoading = currentUser === undefined;
   const canSeeProjects = Boolean(
     currentUser &&
-      (currentUser.is_staff || currentUser.account_type !== "standard")
+    (currentUser.is_staff || currentUser.account_type !== "standard"),
   );
   const isAdmin = Boolean(
-    currentUser?.is_staff || currentUser?.account_type === "admin"
+    currentUser?.is_staff || currentUser?.account_type === "admin",
   );
   const [modalOpen, setModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -46,15 +46,16 @@ export default function Projects() {
     mutate,
   } = useSWR(
     canSeeProjects ? ["projects-dashboard", debouncedSearch] : null,
-    () => fetchProjectDashboard(debouncedSearch)
+    () => fetchProjectDashboard(debouncedSearch),
   );
 
   const projectList = projects ?? [];
   const loadError =
     error && error instanceof Error
       ? error.message
-      : error ? t("projects.loadError")
-      : null;
+      : error
+        ? t("projects.loadError")
+        : null;
 
   const handleCreateProject = async (payload: ProjectPayload) => {
     if (!isAdmin) {
@@ -79,9 +80,7 @@ export default function Projects() {
 
   if (userLoading) {
     return (
-      <p className="mt-6 text-sm text-gray-500">
-        {t("projects.userLoading")}
-      </p>
+      <p className="mt-6 text-sm text-gray-500">{t("projects.userLoading")}</p>
     );
   }
 
@@ -105,7 +104,7 @@ export default function Projects() {
         page_title={t("projects.title")}
         tooltip={t("projects.tooltip")}
         description={t("projects.description.admin")}
-      ></PageHeader>
+      />
 
       <div className="flex flex-nowrap items-center mt-5">
         <FilterBar

@@ -3,7 +3,7 @@
 import { useTransition } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import PageHeader from "@/components/PageHeader";
+import PageHeader from "@/components/page-header/PageHeader";
 import Select from "@/components/form/Select";
 import { setUserLocale } from "@/lib/locale";
 import { locales, localeNames, type Locale } from "@/i18n/config";
@@ -31,10 +31,7 @@ export default function SettingsPage() {
 
   return (
     <>
-      <PageHeader
-        page_title={t("title")}
-        description={t("description")}
-      />
+      <PageHeader page_title={t("title")} description={t("description")} />
 
       <div className="p-6 max-w-2xl">
         <div className="bg-white rounded-xl shadow-md p-6 space-y-6">
@@ -43,9 +40,7 @@ export default function SettingsPage() {
             <h2 className="text-lg font-semibold text-gray-800">
               {t("language")}
             </h2>
-            <p className="text-sm text-gray-600">
-              {t("languageDescription")}
-            </p>
+            <p className="text-sm text-gray-600">{t("languageDescription")}</p>
             <div className="max-w-xs">
               <Select
                 id="locale-select"
