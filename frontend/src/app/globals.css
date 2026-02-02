@@ -12,6 +12,8 @@
 
   --blueberry-500: #4561db;
   --blueberry-700: #1e2f93;
+  --blueberry-700-15: #1e2f9315;
+  --blueberry-700-25: #1e2f9325;
   --blueberry-900: #0e1862;
 
   --metal-900: #1f2129;
@@ -89,6 +91,8 @@
   --color-blueberry-500: var(--blueberry-500);
   --color-blueberry-700: var(--blueberry-700);
   --color-blueberry-900: var(--blueberry-900);
+  --color-blueberry-700-15: var(--blueberry-700-15);
+  --color-blueberry-700-25: var(--blueberry-700-25);
 
   --color-red-400: var(--red-400);
   --color-orange-blueberry: var(--orange-blueberry);
