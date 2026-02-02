@@ -16,16 +16,22 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
   const toggle = sidebar?.toggle ?? (() => setLocalOpen((prev) => !prev));
 
   return (
-    <>
-      <Sidebar isOpen={isOpen} onToggle={toggle} />
-      <div
-        className={`
-          bg-white transition-all duration-300
-          ${isOpen ? "ml-[15vw] min-ml-42 max-ml-84" : "ml-[5vw] min-ml-16 max-ml-64"}
-        `}
-      >
-        {children}
+    <div
+      className={`
+      grid h-screen bg-white
+      transition-[grid-template-columns] duration-300
+      ${
+        isOpen
+          ? "grid-cols-[clamp(10.5rem,15vw,21rem)_1fr]" // 42..84
+          : "grid-cols-[clamp(3.5rem,5vw,4.5rem)_1fr]" // 14..18
+      }
+    `}
+    >
+      <div className="h-screen sticky top-0">
+        <Sidebar isOpen={isOpen} onToggle={toggle} />
       </div>
-    </>
+
+      <main className="min-w-0">{children}</main>
+    </div>
   );
 }

@@ -56,8 +56,8 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
           transition-all duration-300
           ${
             isOpen
-              ? "w-[15vw] pt-6 pr-6 pb-6 pl-0"
-              : "w-[5vw]  p-4 items-center"
+              ? "w-[15vw] min-w-42 max-w-84 pt-6 pr-6 pb-6 pl-0"
+              : "w-[5vw]  min-w-14 max-w-18 p-4 items-center"
           }
         `}
       >
