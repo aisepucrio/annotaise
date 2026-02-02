@@ -1,6 +1,5 @@
 import type { LabelingStructureElement } from "@/lib/services/labeling_create_service";
 import QuestionInput from "./question_input";
-import { labelForQuestion } from "./answer_utils";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -34,16 +33,6 @@ export default function QuestionBlock({
           </div>
         </div>
       </div>
-
-      {/* <p className="text-xs capitalize text-gray-500"> */}
-      {/*   {labelForQuestion(element.question_type, t)}{" "} */}
-      {/*  {element.question_type === "range" */}
-      {/*    ? t("answer.question.rangeLabel", { */}
-      {/*        start: element.question_range?.start ?? 0, */}
-      {/*       end: element.question_range?.end ?? 10, */}
-      {/*     }) */}
-      {/*    : ""} */}
-      {/*  </p> */}
 
       <div className=" border-b-3 border-l-3 border-blueberry-700 p-5">
         <QuestionInput element={element} value={value} onChange={onChange} />

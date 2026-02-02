@@ -140,12 +140,7 @@ export default function ContextRow({ element, payload, t }: ContextRowProps) {
           </div>
         </div>
       </div>
-      {/*   <p className="text-[11px] uppercase tracking-wide text-blue-500"> */}
-      {/*     {t("answer.context.column")} {element.column_name ?? "—"} */}
-      {/*    {element.context_type */}
-      {/*      ? ` • ${t("answer.context.type")} ${element.context_type}` */}
-      {/*      : ""} */}
-      {/*    </p>  */}
+
       <div className=" border-b-3 border-r-3 border-blueberry-700 p-5">
         {renderContent()}
       </div>

@@ -68,12 +68,6 @@ export default function SectionCard({
         </div>
       </div>
 
-      {/* "perguntas" */}
-      {/*  <span className="text-xs text-blue-900">*/}
-      {/* {t("answer.section.questionsCount", { count: totalQuestions })}*/}
-      {/*   </span>*/}
-
-      {/*  */}
       <div className="space-y-4 bg-white p-4 px-[10%]">
         {blocks.length > 0 ? (
           blocks.map((block, blockIndex) =>

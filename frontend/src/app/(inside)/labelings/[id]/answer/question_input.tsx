@@ -1,4 +1,5 @@
 import Input from "@/components/form/Input";
+import NumberInput from "@/components/form/NumberInput";
 import type { LabelingStructureElement } from "@/lib/services/labeling_create_service";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -30,15 +31,11 @@ export default function QuestionInput({
     case "number": {
       const displayValue = value ?? "";
       return (
-        <input
-          type="number"
-          className="w-48 rounded-lg border border-metal-700 px-3 py-2 text-sm text-metal-900 focus:border-blueberry-700 focus:outline-none"
+        <NumberInput
+          placeholder="Digite um número..."
           value={displayValue as number | string}
-          onChange={(event) =>
-            onChange(
-              event.target.value === "" ? "" : Number(event.target.value),
-            )
-          }
+          onChange={onChange}
+          containerClassName="w-48"
         />
       );
     }
@@ -49,34 +46,18 @@ export default function QuestionInput({
       const step = element.question_range?.step ?? 1;
       const displayValue = value ?? "";
 
-      function rangeHandler(event: React.ChangeEvent<HTMLInputElement>) {
-        if (event.target.value === "") {
-          onChange(null);
-          return;
-        }
-
-        let nv = Number(event.target.value);
-
-        if (nv < min) {
-          nv = min;
-        } else if (nv > max) {
-          nv = max;
-        } else if (nv % step !== 0) {
-          nv = Math.round(nv / step) * step;
-        }
-
-        onChange(nv);
-      }
-
       return (
-        <input
-          type="number"
+        <NumberInput
+          placeholder={`Entre ${min} e ${max}`}
           min={min}
           max={max}
           step={step}
-          className="w-48 rounded-lg border border-metal-700 px-3 py-2 text-sm text-metal-900 focus:border-blueberry-700 focus:outline-none"
           value={displayValue as number | string}
-          onChange={rangeHandler}
+          onChange={(newValue) => {
+            onChange(newValue === "" ? null : newValue);
+          }}
+          autoValidate
+          containerClassName="w-[25%]"
         />
       );
     }
@@ -116,7 +97,7 @@ export default function QuestionInput({
                         : [...selectedList, optionValue];
                       onChange(next);
                     }}
-                    className="h-4 w-4 text-blueberry-700"
+                    className="h-4 w-4 text-blueberry-700 hover:text-blueberry-900"
                   />
                   <span className="prose prose-sm max-w-none">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
