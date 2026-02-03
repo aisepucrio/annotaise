@@ -220,7 +220,7 @@ class LabelingMembershipViewSet(viewsets.ModelViewSet):
         return (
             self.queryset.filter(
                 labeling__memberships__user=user,
-                labeling__memberships__role__in=[ProjectMembership.RoleChoices.OWNER, ProjectMembership.RoleChoices.COLLABORATOR],
+                labeling__memberships__role__in=[ProjectMembership.RoleChoices.OWNER, ProjectMembership.RoleChoices.CONTRIBUTOR],
             )
             .distinct()
         )
