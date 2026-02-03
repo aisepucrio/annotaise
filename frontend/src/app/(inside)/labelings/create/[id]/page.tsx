@@ -37,7 +37,7 @@ import EditLabelingModal from "./edit_labeling_modal";
 import ConfirmDeleteModal from "@/components/ConfirmDeleteModal";
 import { exportLabelingAnswersCsv } from "@/lib/services/labeling_service";
 import { toast } from "sonner";
-import NewUserModal from "@/app/(inside)/users/new_user_modal";
+import NewUserModal from "@/app/(inside)/users/NewUserModal";
 import useInvitationCreator from "@/hooks/use_invitation_creator";
 import FormTab from "./form_tab";
 import AssignTab from "./assign_tab";
