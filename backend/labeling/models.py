@@ -13,7 +13,7 @@ class Labeling(models.Model):
         FINISHED = "finished", "Finalizada"
     
     status = models.CharField(choices=Status.choices,default="draft")
-    project = models.ForeignKey("project.Project", on_delete=models.CASCADE, related_name="labelings")
+    project = models.ForeignKey("project.Project", on_delete=models.CASCADE, related_name="labelings", db_index=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING, related_name="labelings_created"
     )
@@ -130,7 +130,7 @@ class LabelingElement(models.Model):
 
 class MultipleChoiceItem(models.Model):
     labeling_element = models.ForeignKey(
-        LabelingElement, on_delete=models.CASCADE, related_name="multiple_choice_items"
+        LabelingElement, on_delete=models.CASCADE, related_name="multiple_choice_items", db_index=True
     )
     text = models.CharField(max_length=300)
     value = models.BooleanField(default=False)
@@ -150,7 +150,7 @@ class MultipleChoiceItem(models.Model):
 
 class QuestionRange(models.Model):
     labeling_element = models.OneToOneField(
-        LabelingElement, on_delete=models.CASCADE, related_name="question_range"
+        LabelingElement, on_delete=models.CASCADE, related_name="question_range", db_index=True
     )
     start = models.FloatField()
     end = models.FloatField()
@@ -182,6 +182,9 @@ class LabelingMembership(models.Model):
     class Meta:
         unique_together = [("user", "labeling")]
         ordering = ["-joined_at"]
+        indexes = [
+            models.Index(fields=['user', 'labeling'], name='user_labeling_idx'),
+        ]
 
     def __str__(self):
         return f"{self.user} {self.labeling} {self.role} {self.items_done}"

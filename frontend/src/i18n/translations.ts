@@ -211,6 +211,7 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.upload.emptyFields.highlightEmpty": "campos vazios",
     "labelings.upload.emptyFields.textMiddle":
       "na tabela. Os usuários que rotularem a linha referente aos contextos faltantes ficarão",
+    "labelings.upload.error.missingFinalDate": "Preencha a data final.",
     "labelings.upload.emptyFields.highlightMissingInfo": "sem a informação",
     "labelings.upload.emptyFields.textAfter": "se esse comportamento",
     "labelings.upload.emptyFields.highlightUnexpected": "não é esperado",
@@ -794,6 +795,7 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.upload.description.details":
       "Fill in the fields below (title, project, dates, and users per item) before creating the labeling.",
     "labelings.upload.button": "Upload",
+    "labelings.upload.error.missingFinalDate": "Fill the end date.",
     "labelings.upload.selectedFile": "Selected file: {{name}}",
     "labelings.upload.placeholder": "Choose a file or drag it here.",
     "labelings.upload.analyzing": "Analyzing empty fields...",

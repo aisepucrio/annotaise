@@ -41,6 +41,10 @@ class ProjectMembership(models.Model):
     class Meta:
         unique_together = ("project", "user")
         ordering = ["-joined_at"]
+        indexes = [
+            # Índice composto para encontrar memberships por usuário e item
+            models.Index(fields=['project', 'user'], name='membership_project_user_idx'),
+        ]
 
     def __str__(self):
         return f"{self.user} in {self.project}"

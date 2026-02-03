@@ -154,6 +154,11 @@ export default function UploadCsvModal({
       return;
     }
 
+    if (!finalDate.trim()) {
+      toast.error(t("labelings.upload.error.missingFinalDate"));
+      return;
+    }
+
     const parsedUsersPerItem = Number(usersPerItem);
     if (!Number.isInteger(parsedUsersPerItem) || parsedUsersPerItem <= 0) {
       toast.error(t("labelings.upload.error.invalidUsersPerItem"));

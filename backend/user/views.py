@@ -1,6 +1,6 @@
+from item.models import ItemMembership
 from annotaise.settings import FRONTEND_URL
 from.utils import send_invitation_email
-
 
 from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
@@ -13,6 +13,9 @@ from django.contrib.auth import get_user_model
 from django.db.models import Count, F, Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.db.models import Count, OuterRef, Subquery, IntegerField
+
+from django.db import connection, reset_queries
 
 from .models import Invitation
 from .permissions import IsAdminAccount, IsMasterAdminAccount
@@ -70,28 +73,34 @@ class AdminUserViewSet(viewsets.ModelViewSet):
         if self.action in ("create", "update", "partial_update"):
             return AdminUserWriteSerializer
         elif self.action == "dashboard":
-            return 
+            return AdminUserReadSerializer
         return AdminUserReadSerializer
 
-    def get_queryset(self):
-        qs = super().get_queryset()
-        # estatísticas agregadas para admins
-        qs = qs.annotate(
+    @action(detail=False, methods=["get"], url_path="dashboard")
+    def user_dashboard(self, request, pk=None):
+        # Cada subquery é executada de forma independente e otimizada
+        
+        pending_items_sq = ItemMembership.objects.filter(
+            item__labeling__memberships__user_id=OuterRef('id'),
+            user_id=OuterRef('id')  # memberships do próprio usuário
+        ).values('user_id').annotate(
+            count=Count('id', distinct=True)
+        ).values('count')
+        
+        qs = self.get_queryset().annotate(
             projects_count=Count("project_memberships", distinct=True),
             labelings_total=Count("labeling_memberships", distinct=True),
             answers_count=Count("answers_given", distinct=True),
-            pending_items_count=Count(
-                "labeling_memberships__labeling__items__memberships",
-                filter=Q(
-                    labeling_memberships__labeling__items__status="pending",
-                    labeling_memberships__labeling__items__memberships__user_id=F("id")
-
-                )
-                & ~Q(labeling_memberships__labeling__items__answers__answered_by_id=F("id")),
-                distinct=True,
-            ),
+            pending_items_count=Subquery(
+                pending_items_sq,
+                output_field=IntegerField()
+            )
         )
-        return qs
+        
+        qs = self.filter_queryset(qs)
+        serializer = self.get_serializer(qs, many=True)
+        return Response(serializer.data)
+            
     
 
 class InvitationViewSet(viewsets.ModelViewSet):
