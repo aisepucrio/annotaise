@@ -432,8 +432,8 @@ class LabelingMembershipViewSetTest(TestCase):
         response = self.client.get(self.memberships_url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_staff_sees_all_memberships(self):
-        self.client.force_authenticate(self.staff)
+    def test_owner_sees_all_memberships(self):
+        self.client.force_authenticate(self.owner)
         response = self.client.get(self.memberships_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), LabelingMembership.objects.count())
