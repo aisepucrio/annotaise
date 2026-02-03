@@ -10,9 +10,13 @@ class Answer(models.Model):
     )
     answer_payload = models.JSONField()
     created_at = models.DateTimeField(auto_now_add=True)
-
+    
     class Meta:
         ordering = ["-created_at"]
+        indexes = [
+            # Índice composto para verificar se usuário já respondeu um item
+            models.Index(fields=['answered_by', 'item'], name='answer_user_item_idx'),
+        ]
 
     def __str__(self):
         return f"Questão respondida por {self.answered_by} para {self.item.id} da rotulação {self.labeling.title}"

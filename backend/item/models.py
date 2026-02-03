@@ -8,7 +8,7 @@ class Item(models.Model):
         PENDING = "pending", "Pendente"
         LABELED = "labeled", "Rotulado"
         SKIPPED = "skipped", "Ignorado"
-    labeling = models.ForeignKey("labeling.Labeling", on_delete=models.CASCADE, related_name="items",null=False,blank=False)
+    labeling = models.ForeignKey("labeling.Labeling", on_delete=models.CASCADE, related_name="items",null=False,blank=False,db_index=True)
     assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, related_name="assignments", null=True, blank=True)
     assignment_date = models.DateField(null=True, blank=True)
     payload = models.JSONField()

@@ -45,6 +45,13 @@ export async function fetchUsers(search?: string): Promise<User[]> {
   return data;
 }
 
+export async function fetchUsersDashboard(search?: string): Promise<User[]> {
+  const { data } = await api.get<User[]>("/users/dashboard/", {
+    params: search ? { search } : undefined,
+  });
+  return data;
+}
+
 export async function createUser(payload: CreateUserPayload): Promise<User> {
   const { data } = await api.post<User>("/users/", {
     ...payload,

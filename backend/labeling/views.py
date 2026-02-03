@@ -203,6 +203,7 @@ class LabelingViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 class LabelingMembershipViewSet(viewsets.ModelViewSet):
+    '''Só o owner/colaborator pode mexer nisso'''
     serializer_class = LabelingMembershipSerializer
     permission_classes = [IsAdminAccount, CanEditLabelingsInProjectPermission]
     queryset = LabelingMembership.objects.select_related('labeling', 'user')
@@ -216,13 +217,10 @@ class LabelingMembershipViewSet(viewsets.ModelViewSet):
         if not user or not getattr(user, "is_authenticated", False):
             return self.queryset.none()
 
-        if user.is_staff:
-            return self.queryset
-
         return (
             self.queryset.filter(
                 labeling__memberships__user=user,
-                labeling__memberships__role=ProjectMembership.RoleChoices.OWNER,
+                labeling__memberships__role__in=[ProjectMembership.RoleChoices.OWNER, ProjectMembership.RoleChoices.COLLABORATOR],
             )
             .distinct()
         )

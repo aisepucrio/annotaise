@@ -12,7 +12,7 @@ import GridItemCard from "@/components/grid/GridItemCard";
 import Button from "@/components/button/Button";
 
 import {
-  fetchUsers,
+  fetchUsersDashboard,
   updateUser,
   type UpdateUserPayload,
   type User,
@@ -64,7 +64,7 @@ export default function UsersPage() {
     isLoading,
     mutate,
   } = useSWR<User[]>(isAdmin ? ["users", debouncedSearch] : null, () =>
-    fetchUsers(debouncedSearch),
+    fetchUsersDashboard(debouncedSearch),
   );
 
   // Erro normalizado
