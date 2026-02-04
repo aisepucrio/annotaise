@@ -1,11 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import PageHeader from "@/components/page-header/PageHeader";
-import FilterBar from "@/components/FilterBar";
+import PageLayout from "@/components/inside-pages-layout/PageLayout";
 import IndividualLabelingCard from "./IndividualLabelingCard";
 import EditLabelingModal from "./create/[id]/edit_labeling_modal";
-import GridLayout from "@/components/grid/GridLayout";
 import GridItemCard from "@/components/grid/GridItemCard";
 import Button from "@/components/button/Button";
 import { Tag } from "lucide-react";
@@ -23,102 +21,85 @@ export default function LabelingsPage() {
   const isAdmin = Boolean(
     currentUser?.is_staff || currentUser?.account_type === "admin",
   );
-  const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [editOpen, setEditOpen] = useState(false);
   const [selectedLabelingId, setSelectedLabelingId] = useState<number | null>(
     null,
   );
-  useEffect(() => {
-    const handle = setTimeout(() => setDebouncedSearch(searchTerm), 300);
-    return () => clearTimeout(handle);
-  }, [searchTerm]);
+
   const {
     data: labelings,
     error,
+    isLoading,
     mutate,
   } = useSWR(["labelings-dashboard", debouncedSearch], () =>
     fetchLabelingDashboard(debouncedSearch),
   );
 
   const labelingsList = labelings ?? [];
-  const loadError =
-    error && error instanceof Error
-      ? error.message
-      : error
-        ? t("labelings.loadError")
-        : null;
 
   useEffect(() => {
-    if (loadError) {
-      toast.error(loadError);
+    if (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : t("labelings.loadError");
+      toast.error(errorMessage);
     }
-  }, [loadError]);
+  }, [error, t]);
 
   return (
-    <>
-      <PageHeader
-        page_title={t("labelings.title")}
-        tooltip={t("labelings.tooltip")}
-        description={t("labelings.description")}
-      />
-
-      <div className="flex flex-nowrap items-center mt-5">
-        <FilterBar
-          value={searchTerm}
-          onChange={setSearchTerm}
-          placeholder={t("labelings.searchPlaceholder")}
+    <PageLayout
+      pageTitle={t("labelings.title")}
+      tooltip={t("labelings.tooltip")}
+      description={t("labelings.description")}
+      searchPlaceholder={t("labelings.searchPlaceholder")}
+      onSearch={setDebouncedSearch}
+      filterButtonText={t("filterBar.filterButton")}
+      isLoading={isLoading}
+      message={
+        !isLoading && labelingsList.length === 0
+          ? t("labelings.empty")
+          : undefined
+      }
+      minColumnWidth="420px"
+      modal={
+        <EditLabelingModal
+          open={editOpen}
+          labelingId={selectedLabelingId ?? 0}
+          onClose={() => {
+            setEditOpen(false);
+            setSelectedLabelingId(null);
+          }}
+          onUpdated={async () => {
+            await mutate();
+          }}
         />
-      </div>
-
-      <div className="mt-5 ml-5 w-97/100">
-        <GridLayout minColumnWidth="420px">
-          {labelingsList.map((l, index) => {
-            const pending = Math.max(
-              (l.total_items ?? 0) - (l.items_done ?? 0),
-              0,
-            );
-            return (
-              <GridItemCard key={l.id} index={index}>
-                <IndividualLabelingCard
-                  title={l.labeling_name}
-                  project={l.project_name}
-                  daysPassed={l.days_passed}
-                  daysTotal={l.total_days}
-                  labelingsDone={l.items_done}
-                  labelingsPending={pending}
-                  actionButton={
-                    <Button
-                      icon={<Tag size={20} strokeWidth={1.75} />}
-                      onClick={() => router.push(`/labelings/${l.id}/answer`)}
-                      variant="normal"
-                      ariaLabel={t("labelings.action.answerAria")}
-                    >
-                      {t("labelings.action.answer")}
-                    </Button>
-                  }
-                />
-              </GridItemCard>
-            );
-          })}
-        </GridLayout>
-      </div>
-      {!isAdmin && (
-        <div className="ml-5 mr-5 mt-4 text-sm text-gray-600">
-          {t("labelings.nonAdminNote")}
-        </div>
-      )}
-      <EditLabelingModal
-        open={editOpen}
-        labelingId={selectedLabelingId ?? 0}
-        onClose={() => {
-          setEditOpen(false);
-          setSelectedLabelingId(null);
-        }}
-        onUpdated={async () => {
-          await mutate();
-        }}
-      />
-    </>
+      }
+    >
+      {labelingsList.map((l, index) => {
+        const pending = Math.max((l.total_items ?? 0) - (l.items_done ?? 0), 0);
+        return (
+          <GridItemCard key={l.id} index={index}>
+            <IndividualLabelingCard
+              title={l.labeling_name}
+              project={l.project_name}
+              daysPassed={l.days_passed}
+              daysTotal={l.total_days}
+              labelingsDone={l.items_done}
+              labelingsPending={pending}
+              actionButton={
+                <Button
+                  icon={<Tag size={20} strokeWidth={1.75} />}
+                  onClick={() => router.push(`/labelings/${l.id}/answer`)}
+                  variant="normal"
+                  ariaLabel={t("labelings.action.answerAria")}
+                >
+                  {t("labelings.action.answer")}
+                </Button>
+              }
+            />
+          </GridItemCard>
+        );
+      })}
+    </PageLayout>
   );
 }

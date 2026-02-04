@@ -5,11 +5,8 @@ import useSWR from "swr";
 import { UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
-import PageHeader from "@/components/page-header/PageHeader";
-import FilterBar from "@/components/FilterBar";
-import GridLayout from "@/components/grid/GridLayout";
+import PageLayout from "@/components/inside-pages-layout/PageLayout";
 import GridItemCard from "@/components/grid/GridItemCard";
-import Button from "@/components/button/Button";
 
 import {
   fetchUsersDashboard,
@@ -38,15 +35,8 @@ export default function UsersPage() {
 
   // Estado de UI
   const [searchTerm, setSearchTerm] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-
-  // Debounce de busca
-  useEffect(() => {
-    const handle = setTimeout(() => setDebouncedSearch(searchTerm), 300);
-    return () => clearTimeout(handle);
-  }, [searchTerm]);
 
   // Ações
   const handleCreateInvitation = useInvitationCreator();
@@ -61,18 +51,14 @@ export default function UsersPage() {
   const {
     data: users,
     error,
-    isLoading,
+    isLoading: dataLoading,
     mutate,
-  } = useSWR<User[]>(isAdmin ? ["users", debouncedSearch] : null, () =>
-    fetchUsersDashboard(debouncedSearch),
+  } = useSWR<User[]>(isAdmin ? ["users", searchTerm] : null, () =>
+    fetchUsersDashboard(searchTerm),
   );
 
-  // Erro normalizado
-  const loadError = useMemo(() => {
-    if (!error) return null;
-    if (error instanceof Error) return error.message;
-    return t("users.loadError");
-  }, [error, t]);
+  const isLoading = currentUser === undefined || (isAdmin && dataLoading);
+  const showAccessDenied = currentUser !== undefined && !isAdmin;
 
   // Filtro local
   const filteredUsers = useMemo(() => {
@@ -92,94 +78,69 @@ export default function UsersPage() {
     });
   }, [users, searchTerm]);
 
-  // Toast de erro de carregamento
   useEffect(() => {
-    if (loadError) toast.error(loadError);
-  }, [loadError]);
-
-  // Toast de acesso negado
-  useEffect(() => {
-    if (!isAdmin && currentUser) toast.error(t("users.accessDenied"));
-  }, [isAdmin, currentUser, t]);
+    if (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : t("users.loadError");
+      toast.error(errorMessage);
+    }
+  }, [error, t]);
 
   return (
-    <>
-      {/* Cabeçalho da página */}
-      <PageHeader
-        page_title={t("users.title")}
-        tooltip={t("users.tooltip")}
-        description={t("users.description")}
-      />
+    <PageLayout
+      pageTitle={t("users.title")}
+      tooltip={t("users.tooltip")}
+      description={t("users.description")}
+      searchPlaceholder={t("users.searchPlaceholder")}
+      onSearch={setSearchTerm}
+      filterButtonText={t("filterBar.filterButton")}
+      hasButton
+      buttonText={t("users.createButton")}
+      onButtonClick={() => setModalOpen(true)}
+      buttonDisabled={!isAdmin}
+      isLoading={isLoading}
+      message={
+        !isLoading && showAccessDenied
+          ? t("users.accessDenied")
+          : !isLoading && filteredUsers.length === 0
+            ? t("users.empty")
+            : undefined
+      }
+      minColumnWidth="420px"
+      modal={
+        <>
+          <NewUserModal
+            open={modalOpen}
+            onClose={() => setModalOpen(false)}
+            onSubmit={handleCreateInvitation}
+          />
+          <EditUserModal
+            open={Boolean(editingUser)}
+            user={editingUser}
+            onClose={() => setEditingUser(null)}
+            onSubmit={handleUpdateUser}
+          />
+        </>
+      }
+    >
+      {filteredUsers.map((user, index) => {
+        const name =
+          `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() ||
+          user.username;
 
-      {/* Barra de busca e ação principal */}
-      <div className="flex flex-nowrap items-center mt-5">
-        <FilterBar
-          value={searchTerm}
-          onChange={setSearchTerm}
-          placeholder={t("users.searchPlaceholder")}
-        />
-
-        <div className="ml-auto mr-6 w-auto">
-          <Button
-            icon={<UserPlus size={16} strokeWidth={3} />}
-            onClick={() => setModalOpen(true)}
-            disabled={!isAdmin}
-            variant="normal"
-            fill={false}
-            className="min-w-[190px] h-10 whitespace-nowrap shadow-md text-sm"
-            ariaLabel={t("users.createAria")}
-          >
-            {t("users.createButton")}
-          </Button>
-        </div>
-      </div>
-
-      {/* Conteúdo principal */}
-      <div className="ml-5 mr-5 mt-5">
-        {!isAdmin ? (
-          <p className="text-sm text-gray-600">{t("users.accessDenied")}</p>
-        ) : isLoading ? (
-          <p className="text-sm text-gray-500">{t("users.loading")}</p>
-        ) : filteredUsers.length === 0 ? (
-          <p className="text-sm text-gray-500">{t("users.empty")}</p>
-        ) : (
-          <GridLayout minColumnWidth="420px">
-            {filteredUsers.map((user, index) => {
-              const name =
-                `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() ||
-                user.username;
-
-              return (
-                <GridItemCard key={user.id} index={index}>
-                  <IndividualUserCard
-                    name={name}
-                    email={user.email}
-                    projects={user.projects_count ?? 0}
-                    labelings_done={user.answers_count ?? 0}
-                    labelings_pending={user.pending_items_count ?? 0}
-                    onManage={() => setEditingUser(user)}
-                  />
-                </GridItemCard>
-              );
-            })}
-          </GridLayout>
-        )}
-      </div>
-
-      {/* Modal: novo usuário */}
-      <NewUserModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onSubmit={handleCreateInvitation}
-      />
-
-      {/* Modal: editar usuário */}
-      <EditUserModal
-        open={Boolean(editingUser)}
-        user={editingUser}
-        onClose={() => setEditingUser(null)}
-        onSubmit={handleUpdateUser}
-      />
-    </>
+        return (
+          <GridItemCard key={user.id} index={index}>
+            <IndividualUserCard
+              name={name}
+              email={user.email}
+              projects={user.projects_count ?? 0}
+              labelings_done={user.answers_count ?? 0}
+              labelings_pending={user.pending_items_count ?? 0}
+              onManage={() => setEditingUser(user)}
+            />
+          </GridItemCard>
+        );
+      })}
+    </PageLayout>
   );
 }

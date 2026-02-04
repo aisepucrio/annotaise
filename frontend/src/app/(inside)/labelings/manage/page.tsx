@@ -1,11 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
-import PageHeader from "@/components/page-header/PageHeader";
-import FilterBar from "@/components/FilterBar";
+import PageLayout from "@/components/inside-pages-layout/PageLayout";
 import IndividualLabelingCard from "../IndividualLabelingCard";
 import { Plus, Pen } from "lucide-react";
 import NewLabelingModal from "./NewLabelingModal";
-import GridLayout from "@/components/grid/GridLayout";
 import GridItemCard from "@/components/grid/GridItemCard";
 import Button from "@/components/button/Button";
 import { useRouter } from "next/navigation";
@@ -41,42 +39,35 @@ export default function LabelingsPage() {
   );
   const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
   useEffect(() => {
     const projectQuery = searchParams.get("project");
     if (projectQuery) {
-      setSearchTerm(projectQuery);
       setDebouncedSearch(projectQuery);
     }
   }, [searchParams]);
 
-  useEffect(() => {
-    const handle = setTimeout(() => setDebouncedSearch(searchTerm), 300);
-    return () => clearTimeout(handle);
-  }, [searchTerm]);
   const {
     data: labelings,
     error,
+    isLoading,
     mutate,
   } = useSWR(["labelings-dashboard-edit", debouncedSearch], () =>
     fetchLabelingDashboardEdit(debouncedSearch),
   );
 
   const labelingsList = labelings ?? [];
-  const loadError =
-    error && error instanceof Error
-      ? error.message
-      : error
-        ? t("labelings.manage.loadError")
-        : null;
 
   useEffect(() => {
-    if (loadError) {
-      toast.error(loadError);
+    if (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : t("labelings.manage.loadError");
+      toast.error(errorMessage);
     }
-  }, [loadError]);
+  }, [error, t]);
 
   async function handleConfirm({
     file,
@@ -124,80 +115,59 @@ export default function LabelingsPage() {
   }
 
   return (
-    <>
-      <PageHeader
-        page_title={t("labelings.manage.title")}
-        tooltip={t("labelings.manage.tooltip")}
-        description={t("labelings.manage.description")}
-      />
-
-      <div className="flex flex-nowrap items-center mt-5">
-        <FilterBar
-          value={searchTerm}
-          onChange={setSearchTerm}
-          placeholder={t("labelings.manage.searchPlaceholder")}
+    <PageLayout
+      pageTitle={t("labelings.manage.title")}
+      tooltip={t("labelings.manage.tooltip")}
+      description={t("labelings.manage.description")}
+      searchPlaceholder={t("labelings.manage.searchPlaceholder")}
+      onSearch={setDebouncedSearch}
+      filterButtonText={t("filterBar.filterButton")}
+      hasButton
+      buttonText={t("labelings.manage.newButton")}
+      onButtonClick={() => setOpen(true)}
+      buttonDisabled={!isAdmin}
+      isLoading={isLoading}
+      message={
+        !isLoading && labelingsList.length === 0
+          ? t("labelings.manage.empty")
+          : undefined
+      }
+      minColumnWidth="420px"
+      modal={
+        <NewLabelingModal
+          open={open}
+          onClose={() => setOpen(false)}
+          onConfirm={handleConfirm}
         />
-        <div className="ml-auto mr-6 w-auto">
-          <Button
-            icon={<Plus size={16} strokeWidth={3} />}
-            onClick={() => setOpen(true)}
-            disabled={!isAdmin}
-            variant="normal"
-            fill={false}
-            className="px-4 py-2 shadow-md text-sm"
-            ariaLabel={t("labelings.manage.newAria")}
-          >
-            {t("labelings.manage.newButton")}
-          </Button>
-        </div>
-      </div>
-
-      <div className="mt-5 ml-5 w-97/100">
-        <GridLayout minColumnWidth="420px">
-          {labelingsList.map((l, index) => {
-            const pending = Math.max(
-              (l.total_items ?? 0) - (l.items_done ?? 0),
-              0,
-            );
-            return (
-              <GridItemCard key={l.id} index={index}>
-                <IndividualLabelingCard
-                  title={l.labeling_name}
-                  project={l.project_name}
-                  daysPassed={l.days_passed}
-                  daysTotal={l.total_days}
-                  labelingsDone={l.items_done}
-                  labelingsPending={pending}
-                  actionButton={
-                    <Button
-                      icon={<Pen size={18} strokeWidth={1.75} />}
-                      onClick={() => router.push(`/labelings/create/${l.id}`)}
-                      variant="normal"
-                      fill={true}
-                      className="px-4"
-                      ariaLabel={t("labelings.manage.action.manageAria")}
-                    >
-                      {t("labelings.manage.action.manage")}
-                    </Button>
-                  }
-                />
-              </GridItemCard>
-            );
-          })}
-        </GridLayout>
-      </div>
-      {!isAdmin && (
-        <div className="ml-5 mr-5 mt-4 text-sm text-gray-600">
-          {t("labelings.nonAdminNote")}
-        </div>
-      )}
-
-      {/* Modal */}
-      <NewLabelingModal
-        open={open}
-        onClose={() => setOpen(false)}
-        onConfirm={handleConfirm}
-      />
-    </>
+      }
+    >
+      {labelingsList.map((l, index) => {
+        const pending = Math.max((l.total_items ?? 0) - (l.items_done ?? 0), 0);
+        return (
+          <GridItemCard key={l.id} index={index}>
+            <IndividualLabelingCard
+              title={l.labeling_name}
+              project={l.project_name}
+              daysPassed={l.days_passed}
+              daysTotal={l.total_days}
+              labelingsDone={l.items_done}
+              labelingsPending={pending}
+              actionButton={
+                <Button
+                  icon={<Pen size={18} strokeWidth={1.75} />}
+                  onClick={() => router.push(`/labelings/create/${l.id}`)}
+                  variant="normal"
+                  fill={true}
+                  className="px-4"
+                  ariaLabel={t("labelings.manage.action.manageAria")}
+                >
+                  {t("labelings.manage.action.manage")}
+                </Button>
+              }
+            />
+          </GridItemCard>
+        );
+      })}
+    </PageLayout>
   );
 }

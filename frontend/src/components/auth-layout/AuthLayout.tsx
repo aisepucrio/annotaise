@@ -1,5 +1,3 @@
-//* Este componente é a base usada para layouts de autenticação (login, registro, etc) */
-
 "use client";
 
 import Image from "next/image";

@@ -1,12 +1,14 @@
 import { Search, Filter } from "lucide-react";
-import Button from "./button/Button";
-import { useTranslations } from "@/i18n/use-translations";
+import Button from "@/components/button/Button";
 
 type FilterBarProps = {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   disabled?: boolean;
+  filterButtonText?: string;
+  onFilterClick?: () => void;
+  showFilterButton?: boolean;
 };
 
 export default function FilterBar({
@@ -14,16 +16,17 @@ export default function FilterBar({
   onChange,
   placeholder,
   disabled,
+  filterButtonText,
+  onFilterClick,
+  showFilterButton = true,
 }: FilterBarProps) {
-  const { t } = useTranslations();
-
   return (
     <div className="flex items-center justify-start gap-3 ml-5">
       {/* Campo de busca */}
       <div className="relative w-[420px]">
         <input
           type="text"
-          placeholder={placeholder || t("filterBar.searchPlaceholder")}
+          placeholder={placeholder}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           className="
@@ -44,14 +47,17 @@ export default function FilterBar({
       </div>
 
       {/* Botão Filtrar */}
-      <Button
-        variant="normal"
-        icon={<Filter size={16} className="opacity-90" />}
-        fill={false}
-        className="px-4 py-2 shadow-md text-sm"
-      >
-        {t("filterBar.filterButton")}
-      </Button>
+      {showFilterButton && (
+        <Button
+          variant="normal"
+          icon={<Filter size={16} className="opacity-90" />}
+          fill={false}
+          className="px-4 py-2 shadow-md text-sm"
+          onClick={onFilterClick}
+        >
+          {filterButtonText}
+        </Button>
+      )}
     </div>
   );
 }

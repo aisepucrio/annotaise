@@ -3,14 +3,11 @@
 import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { useRouter } from "next/navigation";
-import PageHeader from "@/components/page-header/PageHeader";
+import PageLayout from "@/components/inside-pages-layout/PageLayout";
 import IndividualProjectCard from "./IndividualProjectCard";
-import FilterBar from "@/components/FilterBar";
 import { Plus } from "lucide-react";
 import NewProjectModal from "./NewProjectModal";
-import GridLayout from "@/components/grid/GridLayout";
 import GridItemCard from "@/components/grid/GridItemCard";
-import Button from "@/components/button/Button";
 import {
   createProject,
   fetchProjectDashboard,
@@ -24,7 +21,6 @@ export default function Projects() {
   const router = useRouter();
   const currentUser = useCurrent();
   const { t } = useTranslations();
-  const userLoading = currentUser === undefined;
   const canSeeProjects = Boolean(
     currentUser &&
     (currentUser.is_staff || currentUser.account_type !== "standard"),
@@ -33,16 +29,12 @@ export default function Projects() {
     currentUser?.is_staff || currentUser?.account_type === "admin",
   );
   const [modalOpen, setModalOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  useEffect(() => {
-    const handle = setTimeout(() => setDebouncedSearch(searchTerm), 300);
-    return () => clearTimeout(handle);
-  }, [searchTerm]);
+
   const {
     data: projects,
     error,
-    isLoading,
+    isLoading: dataLoading,
     mutate,
   } = useSWR(
     canSeeProjects ? ["projects-dashboard", debouncedSearch] : null,
@@ -50,12 +42,9 @@ export default function Projects() {
   );
 
   const projectList = projects ?? [];
-  const loadError =
-    error && error instanceof Error
-      ? error.message
-      : error
-        ? t("projects.loadError")
-        : null;
+  const isLoading =
+    currentUser === undefined || (canSeeProjects && dataLoading);
+  const showAccessDenied = currentUser !== undefined && !canSeeProjects;
 
   const handleCreateProject = async (payload: ProjectPayload) => {
     if (!isAdmin) {
@@ -67,97 +56,57 @@ export default function Projects() {
   };
 
   useEffect(() => {
-    if (loadError) {
-      toast.error(loadError);
+    if (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : t("projects.loadError");
+      toast.error(errorMessage);
     }
-  }, [loadError]);
-
-  useEffect(() => {
-    if (!userLoading && !canSeeProjects) {
-      toast.error(t("projects.accessDenied"));
-    }
-  }, [canSeeProjects, userLoading]);
-
-  if (userLoading) {
-    return (
-      <p className="mt-6 text-sm text-gray-500">{t("projects.userLoading")}</p>
-    );
-  }
-
-  if (!canSeeProjects) {
-    return (
-      <>
-        <PageHeader
-          page_title={t("projects.title")}
-          description={t("projects.description.restricted")}
-        />
-        <p className="mt-6 ml-5 text-sm text-gray-600">
-          {t("projects.accessDenied")}
-        </p>
-      </>
-    );
-  }
+  }, [error, t]);
 
   return (
-    <>
-      <PageHeader
-        page_title={t("projects.title")}
-        tooltip={t("projects.tooltip")}
-        description={t("projects.description.admin")}
-      />
-
-      <div className="flex flex-nowrap items-center mt-5">
-        <FilterBar
-          value={searchTerm}
-          onChange={setSearchTerm}
-          placeholder={t("projects.searchPlaceholder")}
+    <PageLayout
+      pageTitle={t("projects.title")}
+      tooltip={t("projects.tooltip")}
+      description={t("projects.description.admin")}
+      searchPlaceholder={t("projects.searchPlaceholder")}
+      onSearch={setDebouncedSearch}
+      filterButtonText={t("filterBar.filterButton")}
+      hasButton
+      buttonText={t("projects.createButton")}
+      onButtonClick={() => setModalOpen(true)}
+      buttonDisabled={!isAdmin}
+      isLoading={isLoading}
+      message={
+        !isLoading && showAccessDenied
+          ? t("projects.accessDenied")
+          : !isLoading && projectList.length === 0
+            ? t("projects.empty")
+            : undefined
+      }
+      minColumnWidth="480px"
+      modal={
+        <NewProjectModal
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+          onSubmit={handleCreateProject}
         />
-        <div className="ml-auto mr-6 w-auto">
-          <Button
-            icon={<Plus size={16} strokeWidth={3} />}
-            onClick={() => setModalOpen(true)}
-            disabled={!isAdmin}
-            variant="normal"
-            fill={false}
-            className="px-4 py-2 shadow-md text-sm"
-            ariaLabel={t("projects.createAria")}
-          >
-            {t("projects.createButton")}
-          </Button>
-        </div>
-      </div>
-      <div className="ml-5 mr-5 mt-5">
-        {isLoading ? (
-          <p className="text-sm text-gray-500">{t("projects.loading")}</p>
-        ) : projectList.length === 0 ? (
-          <p className="text-sm text-gray-500">{t("projects.empty")}</p>
-        ) : (
-          <GridLayout minColumnWidth="480px">
-            {projectList.map((project, index) => (
-              <GridItemCard key={project.id} index={index}>
-                <IndividualProjectCard
-                  title={project.name}
-                  user_count={project.labeling_users}
-                  labelings_done={project.finished_labelings}
-                  labelings_pending={project.pending_labelings}
-                  labelings_late={project.late_labelings}
-                  onManage={
-                    isAdmin
-                      ? () => router.push(`/projects/${project.id}`)
-                      : undefined
-                  }
-                  canManage={isAdmin}
-                />
-              </GridItemCard>
-            ))}
-          </GridLayout>
-        )}
-      </div>
-      <NewProjectModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onSubmit={handleCreateProject}
-      />
-    </>
+      }
+    >
+      {projectList.map((project, index) => (
+        <GridItemCard key={project.id} index={index}>
+          <IndividualProjectCard
+            title={project.name}
+            user_count={project.labeling_users}
+            labelings_done={project.finished_labelings}
+            labelings_pending={project.pending_labelings}
+            labelings_late={project.late_labelings}
+            onManage={
+              isAdmin ? () => router.push(`/projects/${project.id}`) : undefined
+            }
+            canManage={isAdmin}
+          />
+        </GridItemCard>
+      ))}
+    </PageLayout>
   );
 }

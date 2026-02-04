@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/nextjs";
 import PageHeader from "./PageHeader";
 
 const meta = {
-  title: "PageHeader",
+  title: "InsidePages/PageHeader",
   component: PageHeader,
   tags: ["autodocs"],
   args: {

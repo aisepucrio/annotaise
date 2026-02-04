@@ -11,7 +11,7 @@ export default function Loader({ variant = "blue" }: LoaderProps) {
 
   return (
     <div className="flex items-center justify-center w-full h-full min-h-[100px]">
-      <div className="relative w-[5%] aspect-square min-w-[40px] max-w-[80px]">
+      <div className="relative w-[2%] aspect-square min-w-10 max-w-20">
         {/* Trilho */}
         <div
           className={`absolute inset-0 rounded-full border-4 ${colorClass} opacity-20`}
