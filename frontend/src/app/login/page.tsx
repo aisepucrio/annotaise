@@ -107,7 +107,7 @@ export default function LoginPage() {
 
         {/* Ação: Enviar formulário */}
         <AuthFormButton
-          icon={<LogIn className="w-65 h-6 mr-2" />}
+          icon={<LogIn className="w-6 h-6 mr-2" />}
           text={isLoading ? t("login.loading") : t("login.button")}
         />
       </form>

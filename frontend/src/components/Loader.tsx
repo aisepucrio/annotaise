@@ -7,7 +7,6 @@ type LoaderProps = {
 export default function Loader({ variant = "blue" }: LoaderProps) {
   const colorClass =
     variant === "white" ? "border-metal-50" : "border-blueberry-700";
-  const dotClass = variant === "white" ? "bg-metal-50" : "bg-blueberry-700";
 
   return (
     <div className="flex items-center justify-center w-full h-full min-h-[100px]">
