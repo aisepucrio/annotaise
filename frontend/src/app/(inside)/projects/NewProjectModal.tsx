@@ -70,7 +70,7 @@ export default function NewProjectModal({
         (firstError as { message?: string } | undefined)?.message ??
         t("projects.new.errorRequired");
       toast.error(message);
-    }
+    },
   );
 
   return (
@@ -110,7 +110,9 @@ export default function NewProjectModal({
 
         <div className="flex items-center justify-center gap-3 pt-2 w-1/2 mx-auto">
           <Button type="submit" disabled={submitting} fill={true}>
-            {submitting ? t("projects.new.submitting") : t("projects.new.submit")}
+            {submitting
+              ? t("projects.new.submitting")
+              : t("projects.new.submit")}
           </Button>
         </div>
       </form>

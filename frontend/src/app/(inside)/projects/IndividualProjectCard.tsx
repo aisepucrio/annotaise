@@ -17,7 +17,7 @@ type ProjectContainerProps = {
   canManage?: boolean;
 };
 
-export default function ProjectContainer({
+export default function IndividualProjectCard({
   title,
   user_count,
   labelings_done,

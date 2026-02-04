@@ -4,10 +4,10 @@ import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { useRouter } from "next/navigation";
 import PageHeader from "@/components/page-header/PageHeader";
-import ProjectContainer from "./project_container";
+import IndividualProjectCard from "./IndividualProjectCard";
 import FilterBar from "@/components/FilterBar";
 import { Plus } from "lucide-react";
-import NewProjectModal from "./new_project_modal";
+import NewProjectModal from "./NewProjectModal";
 import GridLayout from "@/components/grid/GridLayout";
 import GridItemCard from "@/components/grid/GridItemCard";
 import Button from "@/components/button/Button";
@@ -135,7 +135,7 @@ export default function Projects() {
           <GridLayout minColumnWidth="480px">
             {projectList.map((project, index) => (
               <GridItemCard key={project.id} index={index}>
-                <ProjectContainer
+                <IndividualProjectCard
                   title={project.name}
                   user_count={project.labeling_users}
                   labelings_done={project.finished_labelings}
