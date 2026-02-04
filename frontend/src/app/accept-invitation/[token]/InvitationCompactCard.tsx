@@ -20,7 +20,7 @@ function InvitationCompactCard({
 }: InvitationCompactCardProps) {
   return (
     <div className="mt-5 w-full rounded-lg bg-blueberry-700-15 p-4 ring-1 ring-black/5 shadow-sm">
-      <div className="flex items-baseline justify-between gap-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
         <div className="min-w-0">
           <span className="text-[0.75rem] font-medium tracking-wide text-slate-600">
             {labels.email}:
@@ -30,7 +30,7 @@ function InvitationCompactCard({
           </span>
         </div>
 
-        <div className="shrink-0 text-right">
+        <div className="w-full text-left sm:w-auto sm:shrink-0 sm:text-right">
           <span className="text-[0.75rem] font-medium tracking-wide text-slate-600">
             {labels.role}:
           </span>{" "}
@@ -41,7 +41,7 @@ function InvitationCompactCard({
       </div>
 
       {(invitedByEmail || expiresAtText) && (
-        <div className="mt-2 flex items-baseline justify-between gap-3">
+        <div className="mt-2 flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
           <div className="min-w-0">
             {invitedByEmail && (
               <>
@@ -55,7 +55,7 @@ function InvitationCompactCard({
             )}
           </div>
 
-          <div className="shrink-0 text-right text-[0.70rem] font-medium tracking-wide text-slate-600">
+          <div className="w-full text-left text-[0.70rem] font-medium tracking-wide text-slate-600 sm:w-auto sm:shrink-0 sm:text-right">
             {labels.expiresAt}:{" "}
             <span className="text-[0.85rem] font-medium tabular-nums text-slate-800">
               {expiresAtText}

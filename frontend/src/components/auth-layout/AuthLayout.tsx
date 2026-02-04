@@ -29,7 +29,7 @@ export default function AuthLayout({
       </div>
 
       {/* Card responsivo */}
-      <div className="mt-[2vh] w-[90%] sm:w-[70%] md:w-[60%] lg:w-[40%] xl:w-[30%] mx-auto bg-white p-8 sm:p-8 rounded-xl shadow-[0_4px_10px_rgba(0,0,0,0.12),0_10px_30px_rgba(0,0,0,0.08)]">
+      <div className="mt-[2vh] w-[90%] sm:w-[70%] md:w-[60%] lg:w-[45%] xl:w-[35%] mx-auto bg-white p-8 sm:p-8 rounded-xl shadow-[0_4px_10px_rgba(0,0,0,0.12),0_10px_30px_rgba(0,0,0,0.08)]">
         {/* Cabeçalho: título + descrição */}
         <div className="flex flex-col gap-0 items-center font-montserrat">
           <h2 className="text-3xl sm:text-3xl font-semibold mb-3 text-center text-blueberry-900">
