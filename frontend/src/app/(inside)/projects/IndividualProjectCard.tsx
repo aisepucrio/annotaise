@@ -7,7 +7,7 @@ import Button from "@/components/button/Button";
 import { ArrowUpRight } from "lucide-react";
 import { useTranslations } from "@/i18n/use-translations";
 
-type ProjectContainerProps = {
+type IndividualProjectCardProps = {
   title: string;
   user_count: number;
   labelings_done: number;
@@ -25,7 +25,7 @@ export default function IndividualProjectCard({
   labelings_late,
   onManage,
   canManage = true,
-}: ProjectContainerProps) {
+}: IndividualProjectCardProps) {
   const router = useRouter();
   const { t } = useTranslations();
 

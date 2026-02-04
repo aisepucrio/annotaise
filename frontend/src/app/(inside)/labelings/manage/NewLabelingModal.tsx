@@ -12,7 +12,7 @@ import DatePicker from "@/components/form/DatePicker";
 import Button from "@/components/button/Button";
 import { useTranslations } from "@/i18n/use-translations";
 
-type UploadCsvModalProps = {
+type NewLabelingModalProps = {
   open: boolean;
   onClose: () => void;
   onConfirm: (payload: {
@@ -29,11 +29,11 @@ type UploadCsvModalProps = {
 
 type Step = "upload" | "details";
 
-export default function UploadCsvModal({
+export default function NewLabelingModal({
   open,
   onClose,
   onConfirm,
-}: UploadCsvModalProps) {
+}: NewLabelingModalProps) {
   const { t } = useTranslations();
   // Hooks: refs + estado local
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -52,7 +52,7 @@ export default function UploadCsvModal({
   const shouldFetchProjects = open;
   const { data: projects, isLoading: isLoadingProjects } = useSWR<Project[]>(
     shouldFetchProjects ? "projects:list" : null,
-    fetchProjects
+    fetchProjects,
   );
 
   // Efeitos: selecionar primeiro projeto e resetar estado quando modal fecha
@@ -196,7 +196,7 @@ export default function UploadCsvModal({
 
   const canContinueUploadStep = useMemo(
     () => Boolean(selectedFile) && !isAnalyzingFile,
-    [selectedFile, isAnalyzingFile]
+    [selectedFile, isAnalyzingFile],
   );
 
   function handleContinueFromUpload() {
@@ -327,7 +327,9 @@ export default function UploadCsvModal({
             <div className="mt-4 rounded-lg border border-red-blueberry bg-red-50 px-3 py-2 text-sm text-red-blueberry">
               <TriangleAlert className="inline-block mr-1 mb-0.5 w-4 h-4" />
               {t("labelings.upload.emptyFields.textStart")}{" "}
-              <strong>{t("labelings.upload.emptyFields.highlightEmpty")}</strong>{" "}
+              <strong>
+                {t("labelings.upload.emptyFields.highlightEmpty")}
+              </strong>{" "}
               {t("labelings.upload.emptyFields.textMiddle")}{" "}
               <strong>
                 {t("labelings.upload.emptyFields.highlightMissingInfo")}

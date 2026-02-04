@@ -4,7 +4,7 @@ import PageHeader from "@/components/page-header/PageHeader";
 import FilterBar from "@/components/FilterBar";
 import IndividualLabelingCard from "../IndividualLabelingCard";
 import { Plus, Pen } from "lucide-react";
-import UploadCsvModal from "../upload_csv_modal";
+import NewLabelingModal from "./NewLabelingModal";
 import GridLayout from "@/components/grid/GridLayout";
 import GridItemCard from "@/components/grid/GridItemCard";
 import Button from "@/components/button/Button";
@@ -193,7 +193,7 @@ export default function LabelingsPage() {
       )}
 
       {/* Modal */}
-      <UploadCsvModal
+      <NewLabelingModal
         open={open}
         onClose={() => setOpen(false)}
         onConfirm={handleConfirm}
