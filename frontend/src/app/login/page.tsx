@@ -1,15 +1,16 @@
 "use client";
 
 import { isAxiosError } from "axios";
-import Image from "next/image";
+import AuthLayout from "@/components/auth-layout/AuthLayout";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { AuthActions } from "@/lib/authClient";
-import { EyeIcon, EyeOff, Mail, LogIn } from "lucide-react";
+import { Mail, LogIn } from "lucide-react";
 import { toast } from "sonner";
-import Button from "@/components/button/Button";
+import AuthFormButton from "@/components/auth-layout/AuthFormButton";
 import Input from "@/components/form/Input";
+import PasswordInput from "@/components/form/PasswordInput";
 import { useTranslations } from "@/i18n/use-translations";
 
 // === Tipos ===
@@ -22,7 +23,6 @@ type FormData = {
 export default function LoginPage() {
   // --- Estado e hooks ---
   const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const {
     register,
     handleSubmit,
@@ -68,37 +68,8 @@ export default function LoginPage() {
 
   // --- Render (JSX) ---
   return (
-    <div className="bg-metal-50 p-4 min-h-screen text-base sm:text-lg">
-      {/* -- Logo (Marca) -- */}
-      <div className="relative mx-auto mt-10 w-[80%] sm:w-[60%] md:w-[40%] aspect-49/10">
-        <Image
-          src="/Full_Logo_Light.svg"
-          alt="Logo"
-          fill
-          className="object-contain drop-shadow-[0_6px_3px_rgba(0,0,0,0.25)]"
-        />
-      </div>
-
-      <form
-        onSubmit={handleSubmit(onSubmit, (formErrors) => {
-          const first = Object.values(formErrors)[0];
-          const msg =
-            (first as { message?: string } | undefined)?.message ??
-            t("login.error.requiredFields");
-          toast.error(msg);
-        })}
-        className="mt-16 w-[90%] sm:w-[60%] md:w-[45%] lg:w-[25%] mx-auto bg-white p-8 sm:p-8 rounded-xl shadow-[0_4px_10px_rgba(0,0,0,0.12),0_10px_30px_rgba(0,0,0,0.08)]"
-      >
-        {/* -- Formulário de login -- */}
-        <div className="flex flex-col gap-0 items-center font-montserrat">
-          <h2 className="text-3xl sm:text-3xl font-semibold mb-3 text-center text-blueberry-900">
-            {t("login.title")}
-          </h2>
-          <span className="text-gray-600 text-center text-base sm:text-md">
-            {t("login.subtitle")}
-          </span>
-        </div>
-
+    <AuthLayout title={t("login.title")} subtitle={t("login.subtitle")}>
+      <form onSubmit={handleSubmit(onSubmit)}>
         {/* Campo: Email */}
         <div className="mt-8">
           <Input
@@ -118,19 +89,10 @@ export default function LoginPage() {
         </div>
         {/* Campo: Senha */}
         <div className="mt-6">
-          <Input
+          <PasswordInput
             label={t("login.passwordLabel")}
-            type={showPassword ? "text" : "password"}
             placeholder={t("login.passwordPlaceholder")}
             error={errors.password?.message}
-            icon={
-              showPassword ? (
-                <EyeOff className="w-8 h-8 translate-y-1/8" />
-              ) : (
-                <EyeIcon className="w-8 h-8 translate-y-1/8" />
-              )
-            }
-            onIconClick={() => setShowPassword((s) => !s)}
             {...register("password", {
               required: t("login.passwordRequired"),
             })}
@@ -144,15 +106,11 @@ export default function LoginPage() {
         </div>
 
         {/* Ação: Enviar formulário */}
-        <Button
-          icon={<LogIn className="w-6 h-6 mr-2" />}
-          type="submit"
-          disabled={isLoading}
-          className="mt-8 text-[1rem] py-3"
-        >
-          {isLoading ? t("login.loading") : t("login.button")}
-        </Button>
+        <AuthFormButton
+          icon={<LogIn className="w-65 h-6 mr-2" />}
+          text={isLoading ? t("login.loading") : t("login.button")}
+        />
       </form>
-    </div>
+    </AuthLayout>
   );
 }

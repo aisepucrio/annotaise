@@ -38,8 +38,8 @@ export const translations: Record<Language, TranslationMap> = {
     "invitation.status.used": "Convite já utilizado",
     "invitation.status.expired": "Convite expirado",
     "invitation.status.valid": "Convite válido",
-    "invitation.details.email": "Email convidado",
-    "invitation.details.role": "Papel",
+    "invitation.details.email": "Seu email",
+    "invitation.details.role": "Tipo de conta",
     "invitation.details.invitedBy": "Convidado por",
     "invitation.details.expiresAt": "Expira em",
     "invitation.role.admin": "Administrador",
@@ -82,7 +82,8 @@ export const translations: Record<Language, TranslationMap> = {
     "common.yes": "Sim",
     "common.no": "Não",
     "common.selectPlaceholder": "Selecionar...",
-    "confirmDelete.description": "Você tem certeza que deseja excluir este item?",
+    "confirmDelete.description":
+      "Você tem certeza que deseja excluir este item?",
     "confirmDelete.promptPrefix": "Digite",
     "confirmDelete.promptSuffix": "para confirmar:",
     "dashboard.title": "Dashboard",
@@ -135,8 +136,7 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.myAnswers.editLocked": "Edição bloqueada",
     "labelings.myAnswers.edit": "Editar resposta",
     "labelings.myAnswers.editingTitle": "Editando Item #{{index}}",
-    "labelings.myAnswers.editingDescription":
-      "Ajuste as respostas e salve.",
+    "labelings.myAnswers.editingDescription": "Ajuste as respostas e salve.",
     "labelings.myAnswers.cancelEdit": "Cancelar edição",
     "labelings.myAnswers.saveEdit": "Salvar edição",
     "labelings.myAnswers.updateSuccess": "Resposta atualizada com sucesso.",
@@ -246,7 +246,8 @@ export const translations: Record<Language, TranslationMap> = {
       "Defina a quantidade de usuários por item com um número inteiro a partir de 1.",
     "labelings.upload.error.invalidDates":
       "A data final deve ser maior ou igual à data inicial.",
-    "labelings.upload.error.createFailed": "Não foi possível criar a rotulação.",
+    "labelings.upload.error.createFailed":
+      "Não foi possível criar a rotulação.",
     "labelings.upload.error.continueMissingFile":
       "Selecione um arquivo .csv para continuar.",
     "labelings.create.tabs.form": "Formulário",
@@ -279,8 +280,7 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.header.titleFallback": "Rotulação",
     "labelings.create.header.projectLabel": "Projeto: {{name}}",
     "labelings.create.header.projectMissing": "Projeto não informado",
-    "labelings.create.header.usersPerItem":
-      "Usuários por Rotulação: {{count}}",
+    "labelings.create.header.usersPerItem": "Usuários por Rotulação: {{count}}",
     "labelings.create.header.decisionLabel": "Decisão: {{value}}",
     "labelings.create.header.editAria": "Editar informações da rotulação",
     "labelings.create.header.deleting": "Deletando...",
@@ -323,9 +323,9 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.questionType.number.noConfig":
       "Perguntas numéricas não possuem configurações adicionais.",
     "labelings.create.questionType.multipleChoice.optionsLabel": "Opções",
-    "labelings.create.questionType.multipleChoice.addOption":
-      "Adicionar opção",
-    "labelings.create.questionType.multipleChoice.optionLabel": "Opção {{index}}",
+    "labelings.create.questionType.multipleChoice.addOption": "Adicionar opção",
+    "labelings.create.questionType.multipleChoice.optionLabel":
+      "Opção {{index}}",
     "labelings.create.questionType.multipleChoice.allowMultiple":
       "Permitir múltiplas respostas (Checkbox)",
     "labelings.create.questionType.range.minLabel": "Valor mínimo",
@@ -350,7 +350,8 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.guide.previewEmpty":
       "A pré-visualização do guia será exibida aqui conforme você digita.",
     "labelings.create.decision.invalidId": "ID da rotulação inválido.",
-    "labelings.create.decision.loadError": "Não foi possível carregar as perguntas.",
+    "labelings.create.decision.loadError":
+      "Não foi possível carregar as perguntas.",
     "labelings.create.decision.questionFallback": "Pergunta #{{id}}",
     "labelings.create.decision.updateSuccess": "Pergunta decisiva atualizada.",
     "labelings.create.decision.updateError":
@@ -370,7 +371,8 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.edit.description":
       "Edite os campos abaixo para mudar as informações relativas à sua rotulação.",
     "labelings.create.edit.loading": "Carregando rotulação...",
-    "labelings.create.edit.loadError": "Não foi possível carregar esta rotulação.",
+    "labelings.create.edit.loadError":
+      "Não foi possível carregar esta rotulação.",
     "labelings.create.edit.labelTitle": "Título",
     "labelings.create.edit.placeholderTitle": "Digite o título da rotulação",
     "labelings.create.edit.labelProject": "Projeto",
@@ -387,8 +389,7 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.errors.loadMembers": "Não foi possível carregar membros.",
     "labelings.create.errors.loadAnswers":
       "Não foi possível carregar as respostas.",
-    "labelings.create.errors.addMember":
-      "Não foi possível adicionar o membro.",
+    "labelings.create.errors.addMember": "Não foi possível adicionar o membro.",
     "labelings.create.errors.updateMember":
       "Não foi possível atualizar o membro.",
     "labelings.create.errors.removeMember":
@@ -403,8 +404,7 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.success.formSaved":
       "Formulário da rotulação salvo com sucesso.",
     "labelings.create.success.guideSaved": "Guia atualizado com sucesso.",
-    "labelings.create.confirmRemoveMember":
-      "Remover este membro da rotulação?",
+    "labelings.create.confirmRemoveMember": "Remover este membro da rotulação?",
     "labelings.create.userFallback": "Usuário #{{id}}",
     "labelings.create.delete.title": "Excluir rotulação",
     "labelings.create.delete.confirm": "Excluir rotulação",
@@ -437,7 +437,8 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.answers.answeredFieldPlural": "campos respondidos",
     "labelings.create.answers.modal.close": "Fechar",
     "labelings.create.answers.modal.contextTitle": "Contexto do item",
-    "labelings.create.answers.modal.contextEmpty": "Nenhum contexto disponível.",
+    "labelings.create.answers.modal.contextEmpty":
+      "Nenhum contexto disponível.",
     "labelings.create.answers.modal.answersTitle": "Respostas",
     "labelings.create.answers.modal.answersEmpty":
       "Nenhuma resposta registrada.",
@@ -445,8 +446,10 @@ export const translations: Record<Language, TranslationMap> = {
       "Estrutura da rotulação não encontrada para exibir as seções.",
     "labelings.create.answers.modal.sectionLabel": "Seção {{order}}",
     "labelings.create.answers.modal.sectionFallback": "Seção",
-    "labelings.create.answers.modal.questionsCountSingular": "{{count}} pergunta",
-    "labelings.create.answers.modal.questionsCountPlural": "{{count}} perguntas",
+    "labelings.create.answers.modal.questionsCountSingular":
+      "{{count}} pergunta",
+    "labelings.create.answers.modal.questionsCountPlural":
+      "{{count}} perguntas",
     "labelings.create.answers.modal.noQuestions":
       "Nenhuma pergunta nesta seção.",
     "labelings.create.answers.modal.contextFallback": "Contexto",
@@ -484,7 +487,8 @@ export const translations: Record<Language, TranslationMap> = {
     "users.edit.success": "Usuário atualizado com sucesso.",
     "users.edit.error": "Não foi possível atualizar o usuário.",
     "projects.new.title": "Novo Projeto",
-    "projects.new.description": "Preencha as informações abaixo para criar um novo projeto.",
+    "projects.new.description":
+      "Preencha as informações abaixo para criar um novo projeto.",
     "projects.new.nameLabel": "Nome",
     "projects.new.namePlaceholder": "Nome do projeto",
     "projects.new.nameRequired": "O nome é obrigatório.",
@@ -503,18 +507,21 @@ export const translations: Record<Language, TranslationMap> = {
     "projects.detail.title": "Projeto",
     "projects.detail.loading": "Carregando...",
     "projects.detail.loadingUser": "Carregando informações do usuário...",
-    "projects.detail.accessDenied": "Seu perfil não possui permissão para visualizar este projeto.",
+    "projects.detail.accessDenied":
+      "Seu perfil não possui permissão para visualizar este projeto.",
     "projects.detail.saveButton": "Salvar alterações",
     "projects.detail.saving": "Salvando...",
     "projects.detail.deleteButton": "Excluir projeto",
     "projects.detail.infoTitle": "Informações do projeto",
-    "projects.detail.infoDescription": "Atualize o nome, descrição ou status do projeto.",
+    "projects.detail.infoDescription":
+      "Atualize o nome, descrição ou status do projeto.",
     "projects.detail.loadingProject": "Carregando projeto...",
     "projects.detail.nameLabel": "Nome",
     "projects.detail.descriptionLabel": "Descrição",
     "projects.detail.statusLabel": "Status",
     "projects.detail.membersTitle": "Membros do projeto",
-    "projects.detail.membersDescription": "Controle quem tem acesso ao projeto e quais permissões cada pessoa possui.",
+    "projects.detail.membersDescription":
+      "Controle quem tem acesso ao projeto e quais permissões cada pessoa possui.",
     "projects.detail.loadingMembers": "Carregando membros...",
     "projects.detail.addMemberTitle": "Adicionar novo membro",
     "projects.detail.userLabel": "Usuário",
@@ -530,7 +537,8 @@ export const translations: Record<Language, TranslationMap> = {
     "projects.detail.emailNotAvailable": "Email não disponível",
     "projects.detail.removeButton": "Remover",
     "projects.detail.deleteTitle": "Excluir Projeto",
-    "projects.detail.deleteDescription": "Você tem certeza que deseja excluir este projeto? Todos os dados relacionados serão perdidos permanentemente.",
+    "projects.detail.deleteDescription":
+      "Você tem certeza que deseja excluir este projeto? Todos os dados relacionados serão perdidos permanentemente.",
     "projects.detail.deleteConfirm": "Excluir Projeto",
     "projects.detail.deleteCancel": "Cancelar",
     "projects.detail.updateSuccess": "Projeto atualizado com sucesso.",
@@ -542,11 +550,16 @@ export const translations: Record<Language, TranslationMap> = {
     "projects.detail.roleUpdateError": "Não foi possível atualizar o membro.",
     "projects.detail.removeMemberSuccess": "Membro removido.",
     "projects.detail.removeMemberError": "Não foi possível remover o membro.",
-    "projects.detail.adminOnlyEdit": "Apenas administradores podem editar projetos.",
-    "projects.detail.adminOnlyDelete": "Apenas administradores podem deletar projetos.",
-    "projects.detail.adminOnlyAddMember": "Apenas administradores podem adicionar membros.",
-    "projects.detail.adminOnlyChangeRole": "Apenas administradores podem alterar permissões.",
-    "projects.detail.adminOnlyRemoveMember": "Apenas administradores podem remover membros.",
+    "projects.detail.adminOnlyEdit":
+      "Apenas administradores podem editar projetos.",
+    "projects.detail.adminOnlyDelete":
+      "Apenas administradores podem deletar projetos.",
+    "projects.detail.adminOnlyAddMember":
+      "Apenas administradores podem adicionar membros.",
+    "projects.detail.adminOnlyChangeRole":
+      "Apenas administradores podem alterar permissões.",
+    "projects.detail.adminOnlyRemoveMember":
+      "Apenas administradores podem remover membros.",
     "filterBar.searchPlaceholder": "Pesquisar...",
     "filterBar.searchAria": "Buscar projeto",
     "filterBar.filterButton": "Filtrar",
@@ -563,19 +576,23 @@ export const translations: Record<Language, TranslationMap> = {
     "answer.showGuide": "Guia",
     "answer.reloadItem": "Recarregar item",
     "answer.guideTitle": "Guia",
-    "answer.guideDescription": "Informações adicionais para responder os itens.",
+    "answer.guideDescription":
+      "Informações adicionais para responder os itens.",
     "answer.openNewTab": "Abrir em nova aba",
     "answer.noGuide": "Nenhum guia foi fornecido para esta rotulação.",
     "answer.loadingItem": "Carregando item e perguntas...",
-    "answer.thankYou": "Obrigado por rotular! Você não tem mais itens para responder nessa rotulação.",
+    "answer.thankYou":
+      "Obrigado por rotular! Você não tem mais itens para responder nessa rotulação.",
     "answer.noItemsNow": "Nenhum item disponível para resposta agora.",
     "answer.advance": "Avançar",
     "answer.sending": "Enviando...",
     "answer.sendAnswer": "Enviar resposta",
     "answer.answerSent": "Resposta enviada! Buscando próximo item...",
     "answer.sendError": "Não foi possível enviar a resposta.",
-    "answer.fillRequired": "Preencha todas as perguntas obrigatórias antes de enviar.",
-    "answer.fillRequiredSection": "Preencha todas as perguntas obrigatórias antes de avançar.",
+    "answer.fillRequired":
+      "Preencha todas as perguntas obrigatórias antes de enviar.",
+    "answer.fillRequiredSection":
+      "Preencha todas as perguntas obrigatórias antes de avançar.",
     "answer.section.title": "Seção",
     "answer.section.number": "Seção {{number}}",
     "answer.section.questionsCount": "{{count}} perguntas",
@@ -592,7 +609,8 @@ export const translations: Record<Language, TranslationMap> = {
     "answer.context.type": "Tipo: ",
     "answer.context.noValue": "Valor não encontrado para este item.",
     "answer.context.title": "Contexto",
-    "answer.context.invalidImage": "Imagem inválida. Contate o dono da rotulação.",
+    "answer.context.invalidImage":
+      "Imagem inválida. Contate o dono da rotulação.",
     "guide.pageTitle": "Guia da rotulação",
     "guide.title": "Guia",
     "guide.invalidId": "ID da rotulação inválido.",
@@ -750,7 +768,8 @@ export const translations: Record<Language, TranslationMap> = {
     "projects.empty": "No projects found.",
     "projects.loadError": "Unable to load projects.",
     "projects.createDenied": "Only administrators can create projects.",
-    "projects.accessDenied": "Your profile does not have permission to view projects.",
+    "projects.accessDenied":
+      "Your profile does not have permission to view projects.",
     "projects.userLoading": "Loading user information...",
     "projects.stats.usersLabeling": "Users labeling",
     "projects.stats.labelingsDone": "Labelings completed",
@@ -826,8 +845,7 @@ export const translations: Record<Language, TranslationMap> = {
       "Number of people who must label each item before it is finalized.",
     "labelings.upload.processing": "Processing...",
     "labelings.upload.create": "Create labeling",
-    "labelings.upload.error.invalidFileExtension":
-      "Please select a .csv file",
+    "labelings.upload.error.invalidFileExtension": "Please select a .csv file",
     "labelings.upload.error.invalidFile": "Invalid file.",
     "labelings.upload.error.missingTitle": "Provide a title for the labeling.",
     "labelings.upload.error.missingProject": "Select a project.",
@@ -846,15 +864,15 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.tabs.guide": "Guide",
     "labelings.create.tabs.decision": "Decision",
     "labelings.create.summary.title": "Answers summary",
-    "labelings.create.summary.description": "View charts and stats per question.",
+    "labelings.create.summary.description":
+      "View charts and stats per question.",
     "labelings.create.summary.loading": "Loading answers...",
     "labelings.create.summary.empty": "No answers available yet.",
     "labelings.create.summary.questionFallback": "Question",
     "labelings.create.summary.sectionLabel": "Section {{order}}",
     "labelings.create.summary.typeLabel": "Type: {{type}}",
     "labelings.create.summary.responsesCount": "Responses",
-    "labelings.create.summary.chart.noData":
-      "Not enough data to render chart.",
+    "labelings.create.summary.chart.noData": "Not enough data to render chart.",
     "labelings.create.summary.chart.topResponses": "Top responses",
     "labelings.create.summary.chart.histogram": "Distribution",
     "labelings.create.summary.chart.other": "Other",
@@ -911,7 +929,8 @@ export const translations: Record<Language, TranslationMap> = {
       "Numeric questions have no additional settings.",
     "labelings.create.questionType.multipleChoice.optionsLabel": "Options",
     "labelings.create.questionType.multipleChoice.addOption": "Add option",
-    "labelings.create.questionType.multipleChoice.optionLabel": "Option {{index}}",
+    "labelings.create.questionType.multipleChoice.optionLabel":
+      "Option {{index}}",
     "labelings.create.questionType.multipleChoice.allowMultiple":
       "Allow multiple answers (Checkbox)",
     "labelings.create.questionType.range.minLabel": "Minimum value",
@@ -976,8 +995,7 @@ export const translations: Record<Language, TranslationMap> = {
       "Unable to save the labeling structure.",
     "labelings.create.errors.invalidFormStructure":
       "Invalid form structure. Check for empty fields or errors.",
-    "labelings.create.errors.deleteLabeling":
-      "Unable to delete the labeling.",
+    "labelings.create.errors.deleteLabeling": "Unable to delete the labeling.",
     "labelings.create.errors.saveGuide": "Unable to save the guide.",
     "labelings.create.success.formSaved": "Labeling form saved successfully.",
     "labelings.create.success.guideSaved": "Guide updated successfully.",
@@ -1002,8 +1020,7 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.answers.countPlural": "answers",
     "labelings.create.answers.loading": "Loading answers...",
     "labelings.create.answers.emptyAll": "No answers found for this labeling.",
-    "labelings.create.answers.emptyUser":
-      "No answers for the selected user.",
+    "labelings.create.answers.emptyUser": "No answers for the selected user.",
     "labelings.create.answers.itemLabel": "Item #{{index}}",
     "labelings.create.answers.itemIdLabel": "Item ID {{id}}",
     "labelings.create.answers.userLabel": "User: {{name}}",
@@ -1061,7 +1078,8 @@ export const translations: Record<Language, TranslationMap> = {
     "users.edit.success": "User updated successfully.",
     "users.edit.error": "Unable to update the user.",
     "projects.new.title": "New Project",
-    "projects.new.description": "Fill in the information below to create a new project.",
+    "projects.new.description":
+      "Fill in the information below to create a new project.",
     "projects.new.nameLabel": "Name",
     "projects.new.namePlaceholder": "Project name",
     "projects.new.nameRequired": "The name is required.",
@@ -1080,18 +1098,21 @@ export const translations: Record<Language, TranslationMap> = {
     "projects.detail.title": "Project",
     "projects.detail.loading": "Loading...",
     "projects.detail.loadingUser": "Loading user information...",
-    "projects.detail.accessDenied": "Your profile does not have permission to view this project.",
+    "projects.detail.accessDenied":
+      "Your profile does not have permission to view this project.",
     "projects.detail.saveButton": "Save changes",
     "projects.detail.saving": "Saving...",
     "projects.detail.deleteButton": "Delete project",
     "projects.detail.infoTitle": "Project information",
-    "projects.detail.infoDescription": "Update the project's name, description, or status.",
+    "projects.detail.infoDescription":
+      "Update the project's name, description, or status.",
     "projects.detail.loadingProject": "Loading project...",
     "projects.detail.nameLabel": "Name",
     "projects.detail.descriptionLabel": "Description",
     "projects.detail.statusLabel": "Status",
     "projects.detail.membersTitle": "Project members",
-    "projects.detail.membersDescription": "Control who has access to the project and what permissions each person has.",
+    "projects.detail.membersDescription":
+      "Control who has access to the project and what permissions each person has.",
     "projects.detail.loadingMembers": "Loading members...",
     "projects.detail.addMemberTitle": "Add new member",
     "projects.detail.userLabel": "User",
@@ -1107,7 +1128,8 @@ export const translations: Record<Language, TranslationMap> = {
     "projects.detail.emailNotAvailable": "Email not available",
     "projects.detail.removeButton": "Remove",
     "projects.detail.deleteTitle": "Delete Project",
-    "projects.detail.deleteDescription": "Are you sure you want to delete this project? All related data will be permanently lost.",
+    "projects.detail.deleteDescription":
+      "Are you sure you want to delete this project? All related data will be permanently lost.",
     "projects.detail.deleteConfirm": "Delete Project",
     "projects.detail.deleteCancel": "Cancel",
     "projects.detail.updateSuccess": "Project updated successfully.",
@@ -1120,10 +1142,14 @@ export const translations: Record<Language, TranslationMap> = {
     "projects.detail.removeMemberSuccess": "Member removed.",
     "projects.detail.removeMemberError": "Unable to remove member.",
     "projects.detail.adminOnlyEdit": "Only administrators can edit projects.",
-    "projects.detail.adminOnlyDelete": "Only administrators can delete projects.",
-    "projects.detail.adminOnlyAddMember": "Only administrators can add members.",
-    "projects.detail.adminOnlyChangeRole": "Only administrators can change permissions.",
-    "projects.detail.adminOnlyRemoveMember": "Only administrators can remove members.",
+    "projects.detail.adminOnlyDelete":
+      "Only administrators can delete projects.",
+    "projects.detail.adminOnlyAddMember":
+      "Only administrators can add members.",
+    "projects.detail.adminOnlyChangeRole":
+      "Only administrators can change permissions.",
+    "projects.detail.adminOnlyRemoveMember":
+      "Only administrators can remove members.",
     "filterBar.searchPlaceholder": "Search...",
     "filterBar.searchAria": "Search project",
     "filterBar.filterButton": "Filter",
@@ -1144,7 +1170,8 @@ export const translations: Record<Language, TranslationMap> = {
     "answer.openNewTab": "Open in new tab",
     "answer.noGuide": "No guide was provided for this labeling.",
     "answer.loadingItem": "Loading item and questions...",
-    "answer.thankYou": "Thank you for labeling! You have no more items to answer in this labeling.",
+    "answer.thankYou":
+      "Thank you for labeling! You have no more items to answer in this labeling.",
     "answer.noItemsNow": "No items available for answering now.",
     "answer.advance": "Advance",
     "answer.sending": "Sending...",
@@ -1152,7 +1179,8 @@ export const translations: Record<Language, TranslationMap> = {
     "answer.answerSent": "Answer sent! Fetching next item...",
     "answer.sendError": "Unable to send the answer.",
     "answer.fillRequired": "Fill in all required questions before submitting.",
-    "answer.fillRequiredSection": "Fill in all required questions before advancing.",
+    "answer.fillRequiredSection":
+      "Fill in all required questions before advancing.",
     "answer.section.title": "Section",
     "answer.section.number": "Section {{number}}",
     "answer.section.questionsCount": "{{count}} questions",
