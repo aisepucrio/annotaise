@@ -317,7 +317,7 @@ export default function ProjectDetailsPage() {
           </h1>
           <div className="flex items-center gap-3">
             <Button
-              type="submit"
+              onClick={handleSaveProject}
               disabled={isSubmitting || !isAdmin}
               variant="white"
               fill={false}
