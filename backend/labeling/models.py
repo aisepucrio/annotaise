@@ -12,6 +12,7 @@ class Labeling(models.Model):
         ARCHIVED = "archived", "Arquivada"
         FINISHED = "finished", "Finalizada"
     
+    #required_labelings = models.ForeignKey(null=True, blank=True, on_delete=models.SET_NULL)
     status = models.CharField(choices=Status.choices,default="draft")
     project = models.ForeignKey("project.Project", on_delete=models.CASCADE, related_name="labelings", db_index=True)
     created_by = models.ForeignKey(

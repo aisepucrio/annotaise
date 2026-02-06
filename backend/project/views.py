@@ -112,6 +112,19 @@ class ProjectMembershipViewSet(viewsets.ModelViewSet):
             self.permission_classes = [IsAdminAccount]
         return super().get_permissions()
     
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.role == ProjectMembership.RoleChoices.OWNER:
+            owner_count = ProjectMembership.objects.filter(
+                project=instance.project, role=ProjectMembership.RoleChoices.OWNER
+            ).count()
+            if owner_count <= 1:
+                instance.project.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
     def get_queryset(self):
         user = getattr(self.request, "user", None)
         project_param = self.request.query_params.get("project")

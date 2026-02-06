@@ -52,6 +52,7 @@ export const translations: Record<Language, TranslationMap> = {
       "Convite não encontrado. Verifique se o link está correto.",
     "invitation.error.invalid": "Convite inválido.",
     "invitation.error.accept": "Não foi possível aceitar o convite.",
+    "invitation.error.expired": "Este convite expirou.",
     "invitation.success.accountCreated":
       "Conta criada com sucesso! Use seu email e a senha definida para fazer login.",
     "invitation.form.requiredFields": "Preencha os campos obrigatórios.",
@@ -99,6 +100,7 @@ export const translations: Record<Language, TranslationMap> = {
       "Acompanhe todas as rotulações que você pode responder:\n- Veja progresso geral e pendências.\n- Use filtros para localizar rapidamente o que precisa ser feito.\n- Entre nos itens para registrar respostas com segurança e padronização.",
     "labelings.searchPlaceholder": "Pesquisar rotulações...",
     "labelings.loadError": "Não foi possível carregar as rotulações.",
+    "labelings.empty": "Nenhuma rotulação encontrada.",
     "labelings.nonAdminNote":
       "Você pode visualizar e responder as rotulações em que participa, mas somente administradores podem criar novas.",
     "labelings.progress.daysPassed": "Dias passados",
@@ -117,6 +119,7 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.manage.newButton": "Nova Rotulação",
     "labelings.manage.newAria": "Abrir nova rotulação",
     "labelings.manage.loadError": "Não foi possível carregar as rotulações.",
+    "labelings.manage.empty": "Nenhuma rotulação encontrada.",
     "labelings.manage.createDenied":
       "Apenas administradores podem criar rotulações.",
     "labelings.manage.createError": "Não foi possível criar a rotulação.",
@@ -666,6 +669,7 @@ export const translations: Record<Language, TranslationMap> = {
       "Invitation not found. Check if the link is correct.",
     "invitation.error.invalid": "Invalid invitation.",
     "invitation.error.accept": "Unable to accept the invitation.",
+    "invitation.error.expired": "This invitation has expired.",
     "invitation.success.accountCreated":
       "Account created successfully! Use your email and the password you set to log in.",
     "invitation.form.requiredFields": "Fill in the required fields.",
@@ -712,6 +716,7 @@ export const translations: Record<Language, TranslationMap> = {
       "Track all labelings you can answer:\n- See overall progress and pending items.\n- Use filters to quickly find what needs to be done.\n- Open items to record answers with consistency.",
     "labelings.searchPlaceholder": "Search labelings...",
     "labelings.loadError": "Unable to load labelings.",
+    "labelings.empty": "No labelings found.",
     "labelings.nonAdminNote":
       "You can view and answer labelings you are part of, but only admins can create new ones.",
     "labelings.progress.daysPassed": "Days passed",
@@ -730,6 +735,7 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.manage.newButton": "New labeling",
     "labelings.manage.newAria": "Open new labeling",
     "labelings.manage.loadError": "Unable to load labelings.",
+    "labelings.manage.empty": "No labelings found.",
     "labelings.manage.createDenied":
       "Only administrators can create labelings.",
     "labelings.manage.createError": "Unable to create the labeling.",
