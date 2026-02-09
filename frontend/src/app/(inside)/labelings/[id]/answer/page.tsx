@@ -12,9 +12,11 @@ import { ExternalLink } from "lucide-react";
 import { useTranslations } from "@/i18n/use-translations";
 import {
   fetchLabelingById,
-  type LabelingStructureSection,
-} from "@/lib/services/labeling_create_service";
-import { fetchNextAnswer, submitAnswer } from "@/lib/services/answer_service";
+  fetchLabelingStructure,
+  fetchNextAnswer,
+  submitAnswer,
+} from "@/modules/labelings/labelingService";
+import type { LabelingStructureSection } from "@/modules/labelings/labelingsTypes";
 import {
   buildInitialAnswers,
   validateRequired,

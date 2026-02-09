@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { UpdateUserPayload, User } from "@/lib/services/user_service";
+import type { UpdateUserPayload, User } from "@/modules/user/userTypes";
 import { toast } from "sonner";
 
 import { useTranslations } from "@/i18n/use-translations";

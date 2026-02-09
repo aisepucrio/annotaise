@@ -20,13 +20,16 @@ import {
   deleteProjectMembership,
   fetchProject,
   fetchProjectMemberships,
-  type ProjectMembership,
-  type ProjectMembershipPayload,
-  type ProjectPayload,
   updateProject,
   updateProjectMembership,
-} from "@/lib/services/project_service";
-import { fetchUsers, type User } from "@/lib/services/user_service";
+} from "@/modules/projects/projectService";
+import type {
+  ProjectMembership,
+  ProjectMembershipPayload,
+  ProjectPayload,
+} from "@/modules/projects/projectsTypes";
+import { fetchUsers } from "@/modules/user/userService";
+import type { User } from "@/modules/user/userTypes";
 
 type Params = {
   projectId: string;

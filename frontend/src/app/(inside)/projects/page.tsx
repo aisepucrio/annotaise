@@ -11,8 +11,8 @@ import GridItemCard from "@/components/grid/GridItemCard";
 import {
   createProject,
   fetchProjectDashboard,
-  type ProjectPayload,
-} from "@/lib/services/project_service";
+} from "@/modules/projects/projectService";
+import type { ProjectPayload } from "@/modules/projects/projectsTypes";
 import useCurrent from "@/hooks/current_user_hook";
 import { toast } from "sonner";
 import { useTranslations } from "@/i18n/use-translations";

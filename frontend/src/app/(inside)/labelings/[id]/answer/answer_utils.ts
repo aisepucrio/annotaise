@@ -1,4 +1,4 @@
-import type { LabelingStructureElement, LabelingStructureSection } from "@/lib/services/labeling_create_service";
+import type { LabelingStructureElement, LabelingStructureSection } from "@/modules/labelings/labelingsTypes";
 import type { AnswerMap } from "./answer_types";
 
 export function buildInitialAnswers(sections: LabelingStructureSection[]): AnswerMap {

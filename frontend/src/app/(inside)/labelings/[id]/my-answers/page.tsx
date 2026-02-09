@@ -5,16 +5,18 @@ import { useParams, useRouter } from "next/navigation";
 import useSWR from "swr";
 import axios from "axios";
 import { ArrowLeft, Edit3 } from "lucide-react";
-import { fetchLabelingById } from "@/lib/services/labeling_create_service";
 import {
+  fetchLabelingById,
+  fetchLabelingStructure,
   fetchMyAnswers,
   updateAnswer,
-  type AnswerResponse,
-} from "@/lib/services/answer_service";
+} from "@/modules/labelings/labelingService";
+import type {
+  AnswerResponse,
+  LabelingStructureSection,
+} from "@/modules/labelings/labelingsTypes";
 import SectionCard from "../answer/section_card";
 import { buildInitialAnswers } from "../answer/answer_utils";
-import type { LabelingStructureSection } from "@/lib/services/labeling_create_service";
-import { fetchLabelingStructure } from "@/lib/services/labeling_create_service";
 import type { AnswerMap } from "../answer/answer_types";
 import { toast } from "sonner";
 import { useTranslations } from "@/i18n/use-translations";

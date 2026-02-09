@@ -1,6 +1,6 @@
 "use client";
 
-import type { LabelingStructureElement } from "@/lib/services/labeling_create_service";
+import type { LabelingStructureElement } from "@/modules/labelings/labelingsTypes";
 import { formatPayloadValue } from "./answer_utils";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";

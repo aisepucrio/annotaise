@@ -11,9 +11,11 @@ import GridItemCard from "@/components/grid/GridItemCard";
 import {
   fetchUsersDashboard,
   updateUser,
-  type UpdateUserPayload,
-  type User,
-} from "@/lib/services/user_service";
+} from "@/modules/user/userService";
+import type {
+  UpdateUserPayload,
+  User,
+} from "@/modules/user/userTypes";
 
 import useCurrent from "@/hooks/current_user_hook";
 import useInvitationCreator from "@/hooks/use_invitation_creator";

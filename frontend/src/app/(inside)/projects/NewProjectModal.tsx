@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import type {
   ProjectPayload,
   ProjectStatus,
-} from "@/lib/services/project_service";
+} from "@/modules/projects/projectsTypes";
 import { toast } from "sonner";
 import { useTranslations } from "@/i18n/use-translations";
 import Modal from "@/components/modal/Modal";

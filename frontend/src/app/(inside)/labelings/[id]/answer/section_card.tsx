@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { LabelingStructureSection } from "@/lib/services/labeling_create_service";
+import type { LabelingStructureSection } from "@/modules/labelings/labelingsTypes";
 import type { AnswerMap } from "./answer_types";
 import ContextRow from "./context_row";
 import QuestionBlock from "./question_block";
