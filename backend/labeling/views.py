@@ -143,10 +143,9 @@ class LabelingViewSet(viewsets.ModelViewSet):
             .filter(memberships__user=request.user, id__in=items)
             .select_related('project')
             .annotate(
-                total_labelings=Count('items', distinct=True),
                 done_labelings=Count(
-                    'items',
-                    filter=Q(items__status='finished'),
+                    'answers',
+                    filter=Q(answers__answered_by=request.user),
                     distinct=True),
             )
         )
@@ -162,7 +161,6 @@ class LabelingViewSet(viewsets.ModelViewSet):
                 "total_days" : (element.final_date - element.start_date).days,
                 "days_passed" : (today - element.start_date).days,
                 "items_done" : element.done_labelings,
-                "total_items" : element.total_labelings,
             })
         ser = self.get_serializer_class() 
         ser = ser(data=output,many=True)   

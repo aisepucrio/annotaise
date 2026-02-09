@@ -212,7 +212,7 @@ class LabelingDashboardSerializer(serializers.Serializer):
     days_passed = serializers.IntegerField()
 
     items_done = serializers.IntegerField()
-    total_items = serializers.IntegerField()
+    total_items = serializers.IntegerField(required=False, allow_null=True)
 #TODO validações individuais de cada serializer, pra não cair em internal server error
 
 class LabelingMembershipDashboardSerializer(serializers.Serializer):

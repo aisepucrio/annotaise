@@ -357,7 +357,7 @@ export default function NewLabelingModal({
           <div className="space-y-5">
             <Input
               id="csv-title"
-              label={t("labelings.upload.titleLabel")}
+              label={t("labelings.upload.titleLabel") + "*"}
               placeholder={t("labelings.upload.titlePlaceholder")}
               value={title}
               onChange={(e) => setTitle((e.target as HTMLInputElement).value)}
@@ -365,7 +365,7 @@ export default function NewLabelingModal({
 
             <Select
               id="csv-project"
-              label={t("labelings.upload.projectLabel")}
+              label={t("labelings.upload.projectLabel")+ "*"}
               options={(projects ?? []).map((p) => ({
                 value: String(p.id),
                 label: p.name,
@@ -384,7 +384,7 @@ export default function NewLabelingModal({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <DatePicker
                 id="csv-start"
-                label={t("labelings.upload.startDateLabel")}
+                label={t("labelings.upload.startDateLabel") + "*"}
                 value={startDate}
                 onChange={(e) =>
                   setStartDate((e.target as HTMLInputElement).value)
@@ -392,7 +392,7 @@ export default function NewLabelingModal({
               />
               <DatePicker
                 id="csv-final"
-                label={t("labelings.upload.finalDateLabel")}
+                label={t("labelings.upload.finalDateLabel")+ "*"}
                 value={finalDate}
                 onChange={(e) =>
                   setFinalDate((e.target as HTMLInputElement).value)

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import PageLayout from "@/components/inside-pages-layout/PageLayout";
-import IndividualLabelingCard from "../IndividualLabelingCard";
+import IndividualLabelingCard from "../IndividualManageLabelingCard";
 import { Plus, Pen } from "lucide-react";
 import NewLabelingModal from "./NewLabelingModal";
 import GridItemCard from "@/components/grid/GridItemCard";

@@ -141,7 +141,7 @@ export default function SectionForm({
       <div className="flex gap-5 pb-5">
         <textarea
           className="text-sm font-semibold text-blue-900 border border-gray-300 rounded-md px-3 py-1 outline-none focus:border-blue-500 w-full"
-          placeholder={t("labelings.create.section.titlePlaceholder")}
+          placeholder={t("labelings.create.section.titlePlaceholder")+"*"}
           value={data?.title ?? ""}
           onChange={(e) => {
             onChangeTitle(e.target.value);

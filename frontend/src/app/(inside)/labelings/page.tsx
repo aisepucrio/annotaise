@@ -76,7 +76,6 @@ export default function LabelingsPage() {
       }
     >
       {labelingsList.map((l, index) => {
-        const pending = Math.max((l.total_items ?? 0) - (l.items_done ?? 0), 0);
         return (
           <GridItemCard key={l.id} index={index}>
             <IndividualLabelingCard
@@ -85,7 +84,6 @@ export default function LabelingsPage() {
               daysPassed={l.days_passed}
               daysTotal={l.total_days}
               labelingsDone={l.items_done}
-              labelingsPending={pending}
               actionButton={
                 <Button
                   icon={<Tag size={20} strokeWidth={1.75} />}
