@@ -10,7 +10,6 @@ import { useUsersDashboardQuery } from "@/modules/user/userQueries";
 import { useUpdateUserMutation } from "@/modules/user/userMutations";
 import type { UpdateUserPayload, User } from "@/modules/user/userTypes";
 
-import useCurrent from "@/hooks/current_user_hook";
 import useInvitationCreator from "./useInvtationCreator";
 import { useTranslations } from "@/i18n/use-translations";
 
@@ -20,13 +19,7 @@ import EditUserModal from "./EditUserModal";
 
 export default function UsersPage() {
   // Contexto e i18n
-  const currentUser = useCurrent();
   const { t } = useTranslations();
-
-  // Permissão
-  const isAdmin = Boolean(
-    currentUser?.is_staff || currentUser?.account_type === "admin",
-  );
 
   // Estado de UI
   const [searchTerm, setSearchTerm] = useState("");
@@ -37,11 +30,7 @@ export default function UsersPage() {
   const handleCreateInvitation = useInvitationCreator();
 
   // Dados (React Query)
-  const {
-    data: users,
-    error,
-    isLoading: dataLoading,
-  } = useUsersDashboardQuery(searchTerm);
+  const { data: users, error, isLoading } = useUsersDashboardQuery(searchTerm);
 
   const updateUserMutation = editingUser
     ? useUpdateUserMutation(editingUser.id)
@@ -51,9 +40,6 @@ export default function UsersPage() {
     if (!editingUser || !updateUserMutation) return;
     await updateUserMutation.mutateAsync(payload);
   };
-
-  const isLoading = currentUser === undefined || (isAdmin && dataLoading);
-  const showAccessDenied = currentUser !== undefined && !isAdmin;
 
   // Filtro local
   const filteredUsers = useMemo(() => {
@@ -92,14 +78,9 @@ export default function UsersPage() {
       hasButton
       buttonText={t("users.createButton")}
       onButtonClick={() => setModalOpen(true)}
-      buttonDisabled={!isAdmin}
       isLoading={isLoading}
       message={
-        !isLoading && showAccessDenied
-          ? t("users.accessDenied")
-          : !isLoading && filteredUsers.length === 0
-            ? t("users.empty")
-            : undefined
+        !isLoading && filteredUsers.length === 0 ? t("users.empty") : undefined
       }
       minColumnWidth="420px"
       modal={

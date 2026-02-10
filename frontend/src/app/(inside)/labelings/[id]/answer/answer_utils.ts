@@ -1,7 +1,12 @@
-import type { LabelingStructureElement, LabelingStructureSection } from "@/modules/labelings/labelingsTypes";
+import type {
+  LabelingStructureElement,
+  LabelingStructureSection,
+} from "@/modules/labelings/labelingsTypes";
 import type { AnswerMap } from "./answer_types";
 
-export function buildInitialAnswers(sections: LabelingStructureSection[]): AnswerMap {
+export function buildInitialAnswers(
+  sections: LabelingStructureSection[],
+): AnswerMap {
   const initial: AnswerMap = {};
 
   sections.forEach((section) => {
@@ -28,7 +33,7 @@ export function buildInitialAnswers(sections: LabelingStructureSection[]): Answe
 export function validateRequired(
   sections: LabelingStructureSection[],
   answers: AnswerMap,
-  t: (key: string) => string
+  t: (key: string) => string,
 ): string | null {
   const missing: Array<string | number> = [];
 
@@ -60,7 +65,7 @@ export function validateRequired(
 export function validateSectionRequired(
   section: LabelingStructureSection,
   answers: AnswerMap,
-  t: (key: string) => string
+  t: (key: string) => string,
 ): string | null {
   const missing: Array<string | number> = [];
 
@@ -101,7 +106,7 @@ export function formatPayloadValue(value: unknown): string {
 
 export function labelForQuestion(
   questionType: LabelingStructureElement["question_type"],
-  t: (key: string) => string
+  t: (key: string) => string,
 ): string {
   switch (questionType) {
     case "text":

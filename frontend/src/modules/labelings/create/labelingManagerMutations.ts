@@ -13,7 +13,7 @@ import type {
   LabelingMembershipRole,
 } from "@/modules/labelings/labelingsTypes";
 
-// Utilizada para criar um novo labeling
+// Utilizada para deletar labeling
 export function useDeleteLabelingMutation() {
   const qc = useQueryClient();
 

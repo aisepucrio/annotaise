@@ -8,17 +8,12 @@ import Button from "@/components/button/Button";
 import { Tag } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useLabelingDashboardQuery } from "@/modules/labelings/labelingQueries";
-import useCurrent from "@/hooks/current_user_hook";
 import { toast } from "sonner";
 import { useTranslations } from "@/i18n/use-translations";
 
 export default function LabelingsPage() {
-  const currentUser = useCurrent();
   const { t } = useTranslations();
   const router = useRouter();
-  const isAdmin = Boolean(
-    currentUser?.is_staff || currentUser?.account_type === "admin",
-  );
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
   const {

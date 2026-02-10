@@ -4,48 +4,31 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import PageLayout from "@/components/inside-pages-layout/PageLayout";
 import IndividualProjectCard from "./IndividualProjectCard";
-import { Plus } from "lucide-react";
 import NewProjectModal from "./NewProjectModal";
 import GridItemCard from "@/components/grid/GridItemCard";
 import { useProjectDashboardQuery } from "@/modules/projects/projectsQueries";
 import { useCreateProjectMutation } from "@/modules/projects/projectsMutations";
 import type { ProjectPayload } from "@/modules/projects/projectsTypes";
-import useCurrent from "@/hooks/current_user_hook";
 import { toast } from "sonner";
 import { useTranslations } from "@/i18n/use-translations";
 
 export default function Projects() {
   const router = useRouter();
-  const currentUser = useCurrent();
   const { t } = useTranslations();
-  const canSeeProjects = Boolean(
-    currentUser &&
-    (currentUser.is_staff || currentUser.account_type !== "standard"),
-  );
-  const isAdmin = Boolean(
-    currentUser?.is_staff || currentUser?.account_type === "admin",
-  );
   const [modalOpen, setModalOpen] = useState(false);
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
   const {
     data: projects,
     error,
-    isLoading: dataLoading,
+    isLoading,
   } = useProjectDashboardQuery(debouncedSearch);
 
   const createProjectMutation = useCreateProjectMutation();
 
   const projectList = projects ?? [];
-  const isLoading =
-    currentUser === undefined || (canSeeProjects && dataLoading);
-  const showAccessDenied = currentUser !== undefined && !canSeeProjects;
 
   const handleCreateProject = async (payload: ProjectPayload) => {
-    if (!isAdmin) {
-      toast.error(t("projects.createDenied"));
-      return;
-    }
     await createProjectMutation.mutateAsync(payload);
   };
 
@@ -68,14 +51,9 @@ export default function Projects() {
       hasButton
       buttonText={t("projects.createButton")}
       onButtonClick={() => setModalOpen(true)}
-      buttonDisabled={!isAdmin}
       isLoading={isLoading}
       message={
-        !isLoading && showAccessDenied
-          ? t("projects.accessDenied")
-          : !isLoading && projectList.length === 0
-            ? t("projects.empty")
-            : undefined
+        !isLoading && projectList.length === 0 ? t("projects.empty") : undefined
       }
       minColumnWidth="480px"
       modal={
@@ -94,10 +72,7 @@ export default function Projects() {
             labelings_done={project.finished_labelings}
             labelings_pending={project.pending_labelings}
             labelings_late={project.late_labelings}
-            onManage={
-              isAdmin ? () => router.push(`/projects/${project.id}`) : undefined
-            }
-            canManage={isAdmin}
+            onManage={() => router.push(`/projects/${project.id}`)}
           />
         </GridItemCard>
       ))}

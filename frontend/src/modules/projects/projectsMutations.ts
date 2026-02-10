@@ -7,12 +7,9 @@ import {
   updateProjectMembership,
   deleteProjectMembership,
 } from "./projectService";
-import type {
-  ProjectPayload,
-  ProjectMembershipPayload,
-} from "./projectsTypes";
+import type { ProjectPayload, ProjectMembershipPayload } from "./projectsTypes";
 
-// Mutation para criar projeto
+// Utilizada para criar projeto
 export function useCreateProjectMutation() {
   const queryClient = useQueryClient();
 
@@ -20,12 +17,14 @@ export function useCreateProjectMutation() {
     mutationFn: (data: ProjectPayload) => createProject(data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["projects"] });
-      void queryClient.invalidateQueries({ queryKey: ["projects", "dashboard"] });
+      void queryClient.invalidateQueries({
+        queryKey: ["projects", "dashboard"],
+      });
     },
   });
 }
 
-// Mutation para atualizar projeto
+// Utilizada para atualizar projeto
 export function useUpdateProjectMutation(projectId: number) {
   const queryClient = useQueryClient();
 
@@ -34,12 +33,14 @@ export function useUpdateProjectMutation(projectId: number) {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["projects", projectId] });
       void queryClient.invalidateQueries({ queryKey: ["projects"] });
-      void queryClient.invalidateQueries({ queryKey: ["projects", "dashboard"] });
+      void queryClient.invalidateQueries({
+        queryKey: ["projects", "dashboard"],
+      });
     },
   });
 }
 
-// Mutation para deletar projeto
+// Utilizada para deletar projeto
 export function useDeleteProjectMutation(projectId: number) {
   const queryClient = useQueryClient();
 
@@ -47,44 +48,58 @@ export function useDeleteProjectMutation(projectId: number) {
     mutationFn: () => deleteProject(projectId),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["projects"] });
-      void queryClient.invalidateQueries({ queryKey: ["projects", "dashboard"] });
+      void queryClient.invalidateQueries({
+        queryKey: ["projects", "dashboard"],
+      });
     },
   });
 }
 
-// Mutation para criar membership
+// Utilizada para criar membership no projeto
 export function useCreateProjectMembershipMutation(projectId: number) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: ProjectMembershipPayload) => createProjectMembership(data),
+    mutationFn: (data: ProjectMembershipPayload) =>
+      createProjectMembership(data),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["projects", projectId, "memberships"] });
+      void queryClient.invalidateQueries({
+        queryKey: ["projects", projectId, "memberships"],
+      });
     },
   });
 }
 
-// Mutation para atualizar membership
+// Utilizada para atualizar membership no projeto
 export function useUpdateProjectMembershipMutation(projectId: number) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<ProjectMembershipPayload> }) =>
-      updateProjectMembership(id, data),
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: number;
+      data: Partial<ProjectMembershipPayload>;
+    }) => updateProjectMembership(id, data),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["projects", projectId, "memberships"] });
+      void queryClient.invalidateQueries({
+        queryKey: ["projects", projectId, "memberships"],
+      });
     },
   });
 }
 
-// Mutation para deletar membership
+// Utilizada para deletar membership no projeto
 export function useDeleteProjectMembershipMutation(projectId: number) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (membershipId: number) => deleteProjectMembership(membershipId),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["projects", projectId, "memberships"] });
+      void queryClient.invalidateQueries({
+        queryKey: ["projects", projectId, "memberships"],
+      });
     },
   });
 }

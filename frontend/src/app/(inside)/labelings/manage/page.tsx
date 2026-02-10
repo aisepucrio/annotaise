@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import PageLayout from "@/components/inside-pages-layout/PageLayout";
 import IndividualLabelingCard from "../IndividualLabelingCard";
-import { Plus, Pen } from "lucide-react";
+import { Pen } from "lucide-react";
 import NewLabelingModal from "./NewLabelingModal";
 import GridItemCard from "@/components/grid/GridItemCard";
 import Button from "@/components/button/Button";
@@ -10,7 +10,6 @@ import { useRouter } from "next/navigation";
 import axios from "axios";
 import { useLabelingDashboardEditQuery } from "@/modules/labelings/labelingQueries";
 import { useCreateLabelingWithCsvMutation } from "@/modules/labelings/labelingMutations";
-import useCurrent from "@/hooks/current_user_hook";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useTranslations } from "@/i18n/use-translations";
@@ -27,12 +26,8 @@ type UploadPayload = {
 };
 
 export default function LabelingsPage() {
-  const currentUser = useCurrent();
   const { t } = useTranslations();
   const router = useRouter();
-  const isAdmin = Boolean(
-    currentUser?.is_staff || currentUser?.account_type === "admin",
-  );
   const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -73,10 +68,6 @@ export default function LabelingsPage() {
     blockSectionBack,
     decision,
   }: UploadPayload) {
-    if (!isAdmin) {
-      toast.error(t("labelings.manage.createDenied"));
-      return;
-    }
     try {
       await createLabelingWithCsv.mutateAsync({
         payload: {
@@ -120,7 +111,6 @@ export default function LabelingsPage() {
       hasButton
       buttonText={t("labelings.manage.newButton")}
       onButtonClick={() => setOpen(true)}
-      buttonDisabled={!isAdmin}
       isLoading={isLoading}
       message={
         !isLoading && labelingsList.length === 0
