@@ -1,6 +1,5 @@
 import { useCallback } from "react";
 import type { SectionData, SectionElement } from "./SectionForm";
-import type { TranslateFn } from "./QuestionBlock";
 import {
   createContextElement,
   createQuestionElement,
@@ -14,7 +13,9 @@ import {
 export function useElementManager(
   sections: SectionData[],
   setSections: (sections: SectionData[]) => void,
+  options?: { allowContext?: boolean },
 ) {
+  const allowContext = options?.allowContext ?? true;
   /**
    * Adiciona um contexto em uma seção específica
    * @param sectionId - ID da seção onde adicionar
@@ -22,6 +23,7 @@ export function useElementManager(
    */
   const addContext = useCallback(
     (sectionId: string, insertAfterId: string | null | undefined) => {
+      if (!allowContext) return;
       setSections(
         sections.map((s) => {
           if (s.id !== sectionId) return s;
@@ -44,7 +46,7 @@ export function useElementManager(
         }),
       );
     },
-    [sections, setSections],
+    [allowContext, sections, setSections],
   );
 
   /**
@@ -54,10 +56,9 @@ export function useElementManager(
    * @param t - Função de tradução
    */
   const addQuestion = useCallback(
-    (
+   (
       sectionId: string,
       insertAfterId: string | null | undefined,
-      t: TranslateFn,
     ) => {
       setSections(
         sections.map((s) => {
@@ -69,14 +70,14 @@ export function useElementManager(
               ...s,
               elements: [
                 ...s.elements,
-                createQuestionElement(nextOrder(s.elements), t),
+                createQuestionElement(nextOrder(s.elements)),
               ],
             };
           }
 
           // Insere após o elemento especificado
           return insertElementAfter(s, insertAfterId, (order) =>
-            createQuestionElement(order, t),
+            createQuestionElement(order),
           );
         }),
       );

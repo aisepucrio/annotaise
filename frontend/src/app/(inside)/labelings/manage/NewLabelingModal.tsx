@@ -25,6 +25,7 @@ type NewLabelingModalProps = {
     finalDate?: string;
     blockSectionBack?: boolean;
     decision: boolean;
+    hasBackgroundForm: boolean;
   }) => Promise<void>;
 };
 
@@ -45,6 +46,7 @@ export default function NewLabelingModal({
   const [finalDate, setFinalDate] = useState("");
   const [usersPerItem, setUsersPerItem] = useState<string>("1");
   const [decisionEnabled, setDecisionEnabled] = useState(false);
+  const [hasBackgroundForm, setHasBackgroundForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState<Step>("upload");
   const [hasEmptyFields, setHasEmptyFields] = useState(false);
@@ -71,6 +73,7 @@ export default function NewLabelingModal({
       setFinalDate("");
       setUsersPerItem("1");
       setDecisionEnabled(false);
+      setHasBackgroundForm(false);
       setIsSubmitting(false);
       setHasEmptyFields(false);
       setIsAnalyzingFile(false);
@@ -183,6 +186,7 @@ export default function NewLabelingModal({
         finalDate: finalDate || undefined,
         blockSectionBack: true,
         decision: decisionEnabled,
+        hasBackgroundForm,
       });
     } catch (err) {
       const message =
@@ -422,6 +426,22 @@ export default function NewLabelingModal({
                   {t("labelings.upload.decisionHelpLine2")}
                 </p>
               </div>
+            </div>
+
+            <div className="flex items-center gap-3 rounded-lg border border-blueberry-700/30 bg-blue-50 px-3 py-2">
+              <input
+                id="csv-background-form"
+                type="checkbox"
+                checked={hasBackgroundForm}
+                onChange={(e) => setHasBackgroundForm(e.target.checked)}
+                className="h-4 w-4 accent-blueberry-700 cursor-pointer"
+              />
+              <label
+                htmlFor="csv-background-form"
+                className="text-sm font-medium text-gray-800 cursor-pointer"
+              >
+                FORMULÁRIO BACKGROUND
+              </label>
             </div>
 
             <Input

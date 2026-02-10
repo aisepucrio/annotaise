@@ -1,7 +1,7 @@
 from .models import Item, ItemMembership
 from .serializers import UploadItemCSVSerializer, ItemSerializer, NextItemResponseSerializer
 from labeling.models import Labeling, LabelingMembership, LabelingSection
-from answer.models import Answer
+from answer.models import Answer, BackgroundAnswer
 from user.permissions import IsAdminAccount
 from .permissions import CanEditProjectPermission
 
@@ -256,11 +256,26 @@ class NextItemView(RetrieveAPIView):
         labeling = get_object_or_404(Labeling, id=kwargs['labeling_id'])
         user = request.user
 
-        if not LabelingSection.objects.filter(labeling=labeling).exists():
+        if not LabelingSection.objects.filter(
+            labeling=labeling,
+            form_type=LabelingSection.FormType.MAIN,
+        ).exists():
             return Response({'detail':'o formulário dessa rotulação está vazio','code':'EMPTY_FORM'},status=403)
 
         if not LabelingMembership.objects.filter(labeling=labeling,user=user).exists():
             return Response('Você não faz parte dessa rotulação',status=403)
+
+        if labeling.has_background_form and not BackgroundAnswer.objects.filter(
+            labeling=labeling,
+            answered_by=user,
+        ).exists():
+            return Response(
+                {
+                    'detail': 'Você precisa responder o formulário background antes de rotular.',
+                    'code': 'BACKGROUND_REQUIRED',
+                },
+                status=403,
+            )
 
         item = self.get_next_item_for_user(labeling, user)
         if isinstance(item, Response):

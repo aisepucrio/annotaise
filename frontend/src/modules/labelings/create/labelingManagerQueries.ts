@@ -29,15 +29,22 @@ export function useLabelingHeaderQuery(labelingId: number) {
 
 // Hook para buscar a estrutura do labeling
 export function useLabelingStructureQuery(labelingId: number) {
+  return useLabelingStructureQueryByType(labelingId, "main");
+}
+
+export function useLabelingStructureQueryByType(
+  labelingId: number,
+  formType: "main" | "background",
+) {
   const enabled = !Number.isNaN(labelingId);
 
   return useQuery({
-    queryKey: ["labelings", labelingId, "structure"],
+    queryKey: ["labelings", labelingId, "structure", formType],
     enabled,
     queryFn: async () => {
       const [labeling, structure] = await Promise.all([
         fetchLabeling(labelingId),
-        fetchLabelingStructure(labelingId),
+        fetchLabelingStructure(labelingId, formType),
       ]);
 
       // Derivar colunas do CSV ou da estrutura, dando preferência para o CSV se disponível
@@ -47,7 +54,7 @@ export function useLabelingStructureQuery(labelingId: number) {
       const structureColumns = deriveColumnsFromStructure(structure);
       const columns = csvColumns.length > 0 ? csvColumns : structureColumns;
 
-      return { structure, columns };
+      return { labeling, structure, columns };
     },
   });
 }

@@ -2,7 +2,6 @@ import { useState, useCallback } from "react";
 import { arrayMove } from "@dnd-kit/sortable";
 import type { DragEndEvent } from "@dnd-kit/core";
 import type { SectionData } from "./SectionForm";
-import type { TranslateFn } from "./QuestionBlock";
 import { createDefaultSection } from "./elementFactories";
 
 /**
@@ -37,12 +36,11 @@ export function useSectionManager(initialSections: SectionData[] = []) {
   /**
    * Adiciona uma nova seção.
    * @param insertAfterId - ID da seção ou elemento após o qual inserir. Null = início
-   * @param t - Função de tradução
    */
   const addSection = useCallback(
-    (insertAfterId: string | null | undefined, t: TranslateFn) => {
+    (insertAfterId: string | null | undefined) => {
       setSections((prev) => {
-        const nextSection = createDefaultSection(t);
+        const nextSection = createDefaultSection();
 
         if (!insertAfterId) {
           // Adiciona no início

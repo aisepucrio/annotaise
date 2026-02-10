@@ -22,6 +22,7 @@ from django.db.models import Count, Q
 from drf_spectacular.utils import extend_schema
 from datetime import datetime, timedelta
 import json
+from answer.models import BackgroundAnswer
 
 class LabelingViewSet(viewsets.ModelViewSet):
     serializer_class = LabelingSerializer
@@ -100,16 +101,21 @@ class LabelingViewSet(viewsets.ModelViewSet):
     def list_labeling_memberships(self,request, pk=None):
         labeling = get_object_or_404(Labeling,pk=pk)
         memberships = LabelingMembership.objects.filter(labeling=labeling).select_related('user')
+        background_users = set(
+            BackgroundAnswer.objects.filter(labeling=labeling).values_list("answered_by_id", flat=True)
+        )
 
         output = []
         for membership in memberships:
             output.append({
                 "id": membership.id,
+                "user": membership.user_id,
                 "first_name": membership.user.first_name,
                 "last_name": membership.user.last_name,
                 "email": membership.user.email,
                 "role": membership.role,
                 "joined_at": membership.joined_at,
+                "background_answered": membership.user_id in background_users,
             })
         
         ser = LabelingMembershipDashboardSerializer(data=output, many=True)
@@ -153,7 +159,18 @@ class LabelingViewSet(viewsets.ModelViewSet):
             qs = qs.filter(
                 Q(title__icontains=search) | Q(project__name__icontains=search)
             )
+        labeling_ids = list(qs.values_list("id", flat=True))
+        background_answered_ids = set(
+            BackgroundAnswer.objects.filter(
+                answered_by=request.user,
+                labeling_id__in=labeling_ids,
+            ).values_list("labeling_id", flat=True)
+        )
         for element in qs:
+            background_answered = (
+                not element.has_background_form
+                or element.id in background_answered_ids
+            )
             output.append({
                 "id" : element.id,
                 "labeling_name" : element.title,
@@ -161,6 +178,8 @@ class LabelingViewSet(viewsets.ModelViewSet):
                 "total_days" : (element.final_date - element.start_date).days,
                 "days_passed" : (today - element.start_date).days,
                 "items_done" : element.done_labelings,
+                "background_required": bool(element.has_background_form),
+                "background_answered": background_answered,
             })
         ser = self.get_serializer_class() 
         ser = ser(data=output,many=True)   
@@ -188,7 +207,8 @@ class LabelingViewSet(viewsets.ModelViewSet):
             return Response(status=400, data={"detail":"labeling_id is required"})
 
         qs = LabelingElement.objects.filter(
-            labeling_section__labeling_id=labeling_id
+            labeling_section__labeling_id=labeling_id,
+            labeling_section__form_type=LabelingSection.FormType.MAIN,
         )
 
         type_qp = request.query_params.get("type")
@@ -226,6 +246,20 @@ class LabelingMembershipViewSet(viewsets.ModelViewSet):
         )
 
 class CreateReadLabelingStructureView(APIView):
+    def _resolve_form_type(self, request):
+        form_type = request.query_params.get("form_type", LabelingSection.FormType.MAIN)
+        allowed = {
+            LabelingSection.FormType.MAIN,
+            LabelingSection.FormType.BACKGROUND,
+        }
+        if form_type not in allowed:
+            raise ValidationError(
+                detail={
+                    "detail": "form_type inválido. Use 'main' ou 'background'.",
+                    "code": "INVALID_FORM_TYPE",
+                }
+            )
+        return form_type
 
     def get_permissions(self):
         if self.request.method in ['GET']:# TODO isso aqui tem que ser retirado mas acho que vai quebrar o frontend
@@ -237,7 +271,13 @@ class CreateReadLabelingStructureView(APIView):
         examples=None)    
     def get(self, request, labeling_id):
         labeling = get_object_or_404(Labeling, id=labeling_id)
-        sections = LabelingSection.objects.filter(labeling=labeling)
+        form_type = self._resolve_form_type(request)
+        if (
+            form_type == LabelingSection.FormType.BACKGROUND
+            and not labeling.has_background_form
+        ):
+            return Response([], status=status.HTTP_200_OK)
+        sections = LabelingSection.objects.filter(labeling=labeling, form_type=form_type)
         out = LabelingSectionSerializer(sections, many=True).data
         return Response(out, status=status.HTTP_200_OK)
 
@@ -248,6 +288,18 @@ class CreateReadLabelingStructureView(APIView):
     @transaction.atomic # importante pra se der problema nao deletar o que ja existe
     def put(self, request, labeling_id):
         labeling = get_object_or_404(Labeling, id=labeling_id)
+        form_type = self._resolve_form_type(request)
+        if (
+            form_type == LabelingSection.FormType.BACKGROUND
+            and not labeling.has_background_form
+        ):
+            return Response(
+                {
+                    "detail": "Esta rotulação não está configurada com formulário background.",
+                    "code": "BACKGROUND_DISABLED",
+                },
+                status=400,
+            )
 
         perm = CanEditLabelingsInProjectPermission()
         if not perm.can_edit_labeling(request.user, labeling_id):
@@ -268,7 +320,10 @@ class CreateReadLabelingStructureView(APIView):
 
         sections_data = serializer.validated_data.get("sections", [])
 
-        existing_sections_qs = LabelingSection.objects.filter(labeling=labeling).prefetch_related(
+        existing_sections_qs = LabelingSection.objects.filter(
+            labeling=labeling,
+            form_type=form_type,
+        ).prefetch_related(
             "elements__multiple_choice_items", "elements__question_range"
         )
         existing_sections = {sec.id: sec for sec in existing_sections_qs}
@@ -302,6 +357,7 @@ class CreateReadLabelingStructureView(APIView):
             else:
                 section = LabelingSection.objects.create(
                     labeling=labeling,
+                    form_type=form_type,
                     order=section_order,
                     **section_data
                 )

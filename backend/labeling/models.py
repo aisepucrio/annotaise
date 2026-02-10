@@ -28,6 +28,7 @@ class Labeling(models.Model):
 
     users_per_item = models.PositiveIntegerField(null=False, blank=False,default=1)
     block_section_back = models.BooleanField(default=False)
+    has_background_form = models.BooleanField(default=False)
 
     column_names = models.JSONField(
         default=list, blank=True,
@@ -66,15 +67,25 @@ class LabelingGroupQuota(models.Model):
 
 
 class LabelingSection(models.Model):
+    class FormType(models.TextChoices):
+        MAIN = "main", "Principal"
+        BACKGROUND = "background", "Background"
+
     labeling = models.ForeignKey("Labeling", on_delete=models.CASCADE, related_name="sections")
+    form_type = models.CharField(
+        max_length=16,
+        choices=FormType.choices,
+        default=FormType.MAIN,
+        db_index=True,
+    )
     title = models.CharField(max_length=200)
     order = models.PositiveSmallIntegerField(default=1)
 
     class Meta:
-        ordering = ["labeling_id", "order"]
+        ordering = ["labeling_id", "form_type", "order"]
         constraints = [
             models.UniqueConstraint(
-                fields=["labeling", "order"], name="unique_section_order_per_labeling"
+                fields=["labeling", "form_type", "order"], name="unique_section_order_per_labeling_form_type"
             ),
         ]
 

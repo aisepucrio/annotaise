@@ -11,6 +11,7 @@ import type {
   AnswerStructure,
   AnswerPayload,
   AnswerResponse,
+  BackgroundAnswerResponse,
 } from "./labelingsTypes";
 
 // Funções relacionadas a Labelings
@@ -105,9 +106,13 @@ export async function exportLabelingAnswersCsv(
 // Funções relacionadas a estrutura do labeling
 export async function fetchLabelingStructure(
   id: number,
+  formType: "main" | "background" = "main",
 ): Promise<LabelingStructureSection[]> {
   const { data } = await api.get<LabelingStructureSection[]>(
     `/labelings/${id}/structure`,
+    {
+      params: { form_type: formType },
+    },
   );
   return data;
 }
@@ -115,8 +120,11 @@ export async function fetchLabelingStructure(
 export async function saveLabelingStructure(
   id: number,
   payload: LabelingStructurePayload,
+  formType: "main" | "background" = "main",
 ): Promise<void> {
-  await api.put(`/labelings/${id}/structure`, payload);
+  await api.put(`/labelings/${id}/structure`, payload, {
+    params: { form_type: formType },
+  });
 }
 
 // Funções relacionadas a memberships
@@ -194,5 +202,38 @@ export async function updateAnswer(
   payload: Pick<AnswerPayload, "answer_payload">,
 ): Promise<AnswerResponse> {
   const { data } = await api.patch<AnswerResponse>(`/answers/${id}/`, payload);
+  return data;
+}
+
+export async function fetchMyBackgroundAnswer(
+  labelingId: number,
+): Promise<BackgroundAnswerResponse | null> {
+  const { data } = await api.get<BackgroundAnswerResponse | null>(
+    `/labelings/${labelingId}/background-answer/`,
+  );
+  return data;
+}
+
+export async function submitBackgroundAnswer(payload: {
+  labeling: number;
+  answer_payload: Record<string, unknown>;
+}): Promise<BackgroundAnswerResponse> {
+  const { data } = await api.put<BackgroundAnswerResponse>(
+    `/labelings/${payload.labeling}/background-answer/`,
+    { answer_payload: payload.answer_payload },
+  );
+  return data;
+}
+
+export async function fetchLabelingBackgroundAnswers(
+  labelingId: number,
+  userId?: number,
+): Promise<BackgroundAnswerResponse[]> {
+  const { data } = await api.get<BackgroundAnswerResponse[]>(
+    `/labelings/${labelingId}/background-answers/`,
+    {
+      params: userId ? { user_id: userId } : undefined,
+    },
+  );
   return data;
 }

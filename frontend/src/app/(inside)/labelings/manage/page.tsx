@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import PageLayout from "@/components/inside-pages-layout/PageLayout";
 import IndividualLabelingCard from "../IndividualManageLabelingCard";
-import { Plus, Pen } from "lucide-react";
+import { Pen } from "lucide-react";
 import NewLabelingModal from "./NewLabelingModal";
 import GridItemCard from "@/components/grid/GridItemCard";
 import Button from "@/components/button/Button";
@@ -28,6 +28,7 @@ type UploadPayload = {
   finalDate?: string;
   blockSectionBack?: boolean;
   decision: boolean;
+  hasBackgroundForm: boolean;
 };
 
 export default function LabelingsPage() {
@@ -78,6 +79,7 @@ export default function LabelingsPage() {
     finalDate,
     blockSectionBack,
     decision,
+    hasBackgroundForm,
   }: UploadPayload) {
     if (!isAdmin) {
       toast.error(t("labelings.manage.createDenied"));
@@ -92,6 +94,7 @@ export default function LabelingsPage() {
         final_date: finalDate || undefined,
         block_section_back: blockSectionBack,
         decision,
+        has_background_form: hasBackgroundForm,
       });
       await importLabelingItemsCsv(labeling.id, file);
       setOpen(false);

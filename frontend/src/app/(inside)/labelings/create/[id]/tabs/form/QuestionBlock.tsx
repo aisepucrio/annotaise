@@ -95,11 +95,11 @@ export default function QuestionBlock({
         : undefined;
 
   return (
-    <GridItemCard index={0} className="mb-2">
+    <GridItemCard index={1} className="mb-2">
       <div data-actions-anchor="true" data-section-element-id={data.id}>
         {/* header: título + ações (required + remover) */}
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-blueberry-500">
+          <h3 className="text-sm font-semibold text-blueberry-900">
             {t("labelings.create.question.title")}
           </h3>
 
@@ -107,7 +107,7 @@ export default function QuestionBlock({
             {/* toggle: obrigatório */}
             <div className="flex items-center my-auto gap-2">
               <span
-                className={`text-sm font-semibold transition-colors ${data.required ? "text-blueberry-500" : "text-gray-400"}`}
+                className={`text-sm font-semibold transition-colors ${data.required ? "text-blueberry-900" : "text-gray-400"}`}
               >
                 {t("labelings.create.question.required")}
               </span>
@@ -121,7 +121,7 @@ export default function QuestionBlock({
                   className="sr-only peer"
                   aria-label={t("labelings.create.question.required")}
                 />
-                <div className="relative h-5 w-9 rounded-full bg-gray-300 transition-colors peer-checked:bg-blueberry-500 after:content-[''] after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-4" />
+                <div className="relative h-5 w-9 rounded-full bg-gray-300 transition-colors peer-checked:bg-blueberry-900 after:content-[''] after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-4" />
               </label>
             </div>
 

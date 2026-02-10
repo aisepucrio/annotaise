@@ -1,5 +1,5 @@
 import type { ContextElement } from "./ContextBlock";
-import type { QuestionElement, TranslateFn } from "./QuestionBlock";
+import type { QuestionElement } from "./QuestionBlock";
 import type { SectionData } from "./SectionForm";
 import { getDefaultQuestionConfig } from "./QuestionBlock";
 
@@ -18,7 +18,6 @@ export const createContextElement = (order: number): ContextElement => ({
  */
 export const createQuestionElement = (
   order: number,
-  t: TranslateFn,
 ): QuestionElement => ({
   id: crypto.randomUUID(),
   kind: "question",
@@ -32,14 +31,26 @@ export const createQuestionElement = (
 /**
  * Cria uma seção padrão com um contexto e uma pergunta
  */
-export const createDefaultSection = (t: TranslateFn): SectionData => {
+export const createDefaultSection = (): SectionData => {
   const context = createContextElement(0);
-  const question = createQuestionElement(1, t);
+  const question = createQuestionElement(1);
 
   return {
     id: crypto.randomUUID(),
     title: "",
     elements: [context, question],
+    order: 0,
+  };
+};
+
+export const createDefaultSectionWithoutContext = (
+): SectionData => {
+  const question = createQuestionElement(0);
+
+  return {
+    id: crypto.randomUUID(),
+    title: "",
+    elements: [question],
     order: 0,
   };
 };

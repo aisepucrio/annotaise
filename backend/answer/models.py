@@ -20,3 +20,40 @@ class Answer(models.Model):
 
     def __str__(self):
         return f"Questão respondida por {self.answered_by} para {self.item.id} da rotulação {self.labeling.title}"
+
+
+class BackgroundAnswer(models.Model):
+    labeling = models.ForeignKey(
+        "labeling.Labeling",
+        on_delete=models.CASCADE,
+        related_name="background_answers",
+    )
+    answered_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.DO_NOTHING,
+        related_name="background_answers_given",
+    )
+    answer_payload = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-updated_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["labeling", "answered_by"],
+                name="unique_background_answer_per_user",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["labeling", "answered_by"],
+                name="bg_answer_lbl_user_idx",
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"Background respondido por {self.answered_by} "
+            f"na rotulação {self.labeling.title}"
+        )

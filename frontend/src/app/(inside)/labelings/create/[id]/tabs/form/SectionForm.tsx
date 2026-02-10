@@ -39,6 +39,7 @@ type Props = {
   index: number; // 0-based
   total: number;
   columns?: string[];
+  allowContext?: boolean;
   visibleInsertionPointId: string | null;
   onChangeTitle: (title: string) => void;
   onRemoveSection?: () => void;
@@ -55,6 +56,7 @@ export default function SectionForm({
   index,
   total,
   columns = [],
+  allowContext = true,
   visibleInsertionPointId,
   onChangeTitle,
   onRemoveSection,
@@ -204,6 +206,7 @@ export default function SectionForm({
                 isVisible={
                   visibleInsertionPointId === `section-${data.id}-start`
                 }
+                allowContext={allowContext}
                 onMouseEnter={onMouseEnterInsertionPoint}
                 onMouseLeave={onMouseLeaveInsertionPoint}
                 onAddContext={() => onAddContext(null)}
@@ -215,6 +218,9 @@ export default function SectionForm({
             {/* Renderiza cada elemento com insertion point após */}
             {orderedElements.map((element) => {
               const isContext = element.kind === "context";
+              if (isContext && !allowContext) {
+                return null;
+              }
 
               return (
                 <div key={element.id}>
@@ -254,6 +260,7 @@ export default function SectionForm({
                       isVisible={
                         visibleInsertionPointId === `element-${element.id}`
                       }
+                      allowContext={allowContext}
                       onMouseEnter={onMouseEnterInsertionPoint}
                       onMouseLeave={onMouseLeaveInsertionPoint}
                       onAddContext={() => onAddContext(element.id)}

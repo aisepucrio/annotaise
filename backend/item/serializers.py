@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Item
 from labeling.serializers import LabelingSectionSerializer
+from labeling.models import LabelingSection
 
 class ItemSerializer(serializers.ModelSerializer):
     payload = serializers.DictField()
@@ -15,6 +16,11 @@ class UploadItemCSVSerializer(serializers.Serializer):
     file = serializers.FileField()
 
 class NextItemResponseSerializer(serializers.Serializer):
-    sections = LabelingSectionSerializer(source='labeling.sections', many=True, read_only=True)
-    # source='*' ensures the whole Item instance is passed to the nested serializer
+    sections = serializers.SerializerMethodField()
     item = ItemSerializer(source='*', read_only=True)
+
+    def get_sections(self, item):
+        sections = item.labeling.sections.filter(
+            form_type=LabelingSection.FormType.MAIN
+        )
+        return LabelingSectionSerializer(sections, many=True).data

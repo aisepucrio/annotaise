@@ -230,10 +230,17 @@ export default function LabelingCreationPage() {
   const renderTabContent = () => {
     switch (activeTab) {
       case "form":
-        return <FormTab labelingId={labelingId} />;
+        return (
+          <FormTab
+            labelingId={labelingId}
+            hasBackgroundForm={Boolean(labeling?.has_background_form)}
+          />
+        );
       case "assign":
         return (
           <AssignTab
+            labelingId={labelingId}
+            hasBackgroundForm={Boolean(labeling?.has_background_form)}
             memberships={memberships}
             membershipLoading={membershipsQuery.isLoading}
             membershipSaving={
@@ -267,7 +274,12 @@ export default function LabelingCreationPage() {
           />
         );
       default:
-        return <FormTab labelingId={labelingId} />;
+        return (
+          <FormTab
+            labelingId={labelingId}
+            hasBackgroundForm={Boolean(labeling?.has_background_form)}
+          />
+        );
     }
   };
 

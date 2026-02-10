@@ -50,10 +50,19 @@ export function useSaveLabelingStructureMutation() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, sections }: { id: number; sections: SectionDTO[] }) =>
-      saveLabelingStructure(id, { sections }),
-    onSuccess: (_data, { id }) => {
-      qc.invalidateQueries({ queryKey: ["labelings", id, "structure"] });
+    mutationFn: ({
+      id,
+      sections,
+      formType,
+    }: {
+      id: number;
+      sections: SectionDTO[];
+      formType?: "main" | "background";
+    }) => saveLabelingStructure(id, { sections }, formType ?? "main"),
+    onSuccess: (_data, { id, formType }) => {
+      qc.invalidateQueries({
+        queryKey: ["labelings", id, "structure", formType ?? "main"],
+      });
     },
   });
 }
@@ -83,7 +92,6 @@ export function useUpdateMembershipMutation() {
   return useMutation({
     mutationFn: ({
       id,
-      labelingId,
       role,
     }: {
       id: number;
@@ -103,7 +111,7 @@ export function useDeleteMembershipMutation() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, labelingId }: { id: number; labelingId: number }) =>
+    mutationFn: ({ id }: { id: number; labelingId: number }) =>
       deleteLabelingMembership(id),
     onSuccess: (_data, { labelingId }) => {
       qc.invalidateQueries({

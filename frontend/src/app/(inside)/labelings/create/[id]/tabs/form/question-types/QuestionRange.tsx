@@ -37,29 +37,29 @@ export default function QuestionRangeEditor({ config, onChange }: Props) {
   return (
     <div className="flex flex-col gap-3">
       <div className="grid grid-cols-3 gap-3">
-        <label className="flex flex-col text-xs text-blue-900">
+        <label className="flex flex-col text-xs text-blueberry-900">
           {t("labelings.create.questionType.range.minLabel")}
           <input
             type="number"
-            className="mt-1 rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none cursor-text"
+            className="mt-1 rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-blueberry-900 focus:outline-none cursor-text"
             value={min ?? ""}
             onChange={handleNumericChange("min")}
           />
         </label>
-        <label className="flex flex-col text-xs text-blue-900">
+        <label className="flex flex-col text-xs text-blueberry-900">
           {t("labelings.create.questionType.range.maxLabel")}
           <input
             type="number"
-            className="mt-1 rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none cursor-text"
+            className="mt-1 rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-blueberry-900 focus:outline-none cursor-text"
             value={max ?? ""}
             onChange={handleNumericChange("max")}
           />
         </label>
-        <label className="flex flex-col text-xs text-blue-900">
+        <label className="flex flex-col text-xs text-blueberry-900">
           {t("labelings.create.questionType.range.stepLabel")}
           <input
             type="number"
-            className="mt-1 rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none cursor-text"
+            className="mt-1 rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-blueberry-900 focus:outline-none cursor-text"
             value={step ?? ""}
             min={0}
             step="any"

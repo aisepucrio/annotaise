@@ -15,7 +15,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Save } from "lucide-react";
-import { useMemo, useCallback, useEffect, type ReactNode } from "react";
+import { useMemo, useCallback, useEffect, type ReactNode, useState } from "react";
 import { toast } from "sonner";
 import InsertionPoint from "./InsertionPoint";
 import SectionForm from "./SectionForm";
@@ -23,25 +23,33 @@ import { mapSectionsFromDTO, mapSectionsToDTO } from "./LabelingMapping";
 import { useSectionManager } from "./useSectionManager";
 import { useElementManager } from "./useElementManager";
 import { useVisibleInsertionPoint } from "./useVisibleInsertionPoint";
-import { createDefaultSection } from "./elementFactories";
+import {
+  createDefaultSection,
+  createDefaultSectionWithoutContext,
+} from "./elementFactories";
 import Button from "@/components/button/Button";
 import { useTranslations } from "@/i18n/use-translations";
-import { useLabelingStructureQuery } from "@/modules/labelings/create/labelingManagerQueries";
+import { useLabelingStructureQueryByType } from "@/modules/labelings/create/labelingManagerQueries";
 import { useSaveLabelingStructureMutation } from "@/modules/labelings/create/labelingManagerMutations";
 import { getApiErrorMessage } from "@/lib/getApiErrorMessage";
 
 type FormTabProps = {
   labelingId: number;
+  hasBackgroundForm: boolean;
 };
 
-export default function FormTab({ labelingId }: FormTabProps) {
-  const { t } = useTranslations();
+type FormType = "main" | "background";
 
-  // Queries and mutations
-  const structureQuery = useLabelingStructureQuery(labelingId);
+export default function FormTab({
+  labelingId,
+  hasBackgroundForm,
+}: FormTabProps) {
+  const { t } = useTranslations();
+  const [activeFormType, setActiveFormType] = useState<FormType>("main");
+
+  const structureQuery = useLabelingStructureQueryByType(labelingId, activeFormType);
   const saveMutation = useSaveLabelingStructureMutation();
 
-  // Custom hooks for section and element management
   const {
     sections,
     setSections,
@@ -52,9 +60,11 @@ export default function FormTab({ labelingId }: FormTabProps) {
     handleDragEnd,
   } = useSectionManager();
 
-  const { addContext, addQuestion } = useElementManager(sections, setSections);
+  const allowContext = activeFormType === "main";
+  const { addContext, addQuestion } = useElementManager(sections, setSections, {
+    allowContext,
+  });
 
-  // Visibility management for insertion points
   const {
     visiblePointId,
     updateVisiblePoint,
@@ -62,34 +72,42 @@ export default function FormTab({ labelingId }: FormTabProps) {
     handleMouseLeave,
   } = useVisibleInsertionPoint();
 
-  // Load structure into local state
+  useEffect(() => {
+    if (!hasBackgroundForm && activeFormType === "background") {
+      setActiveFormType("main");
+    }
+  }, [activeFormType, hasBackgroundForm]);
+
   useEffect(() => {
     if (structureQuery.data?.structure) {
       const mappedSections = mapSectionsFromDTO(structureQuery.data.structure);
-      setSections(
-        mappedSections.length > 0 ? mappedSections : [createDefaultSection(t)],
-      );
-    }
-  }, [structureQuery.data?.structure, setSections, t]);
+      if (mappedSections.length > 0) {
+        setSections(mappedSections);
+        return;
+      }
 
-  // Update visible insertion point when sections change
+      setSections([
+        allowContext
+          ? createDefaultSection()
+          : createDefaultSectionWithoutContext(),
+      ]);
+    }
+  }, [allowContext, setSections, structureQuery.data?.structure]);
+
   useEffect(() => {
     updateVisiblePoint();
   }, [sections, updateVisiblePoint]);
 
-  // Derived state
   const columns = structureQuery.data?.columns ?? [];
   const isLoadingLabeling = structureQuery.isLoading;
   const isSaving = saveMutation.isPending;
 
-  // Drag and drop sensors
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 6 },
     }),
   );
 
-  // Save structure handler
   const handleSaveStructure = useCallback(async () => {
     if (Number.isNaN(labelingId)) {
       toast.error(t("labelings.create.errors.invalidId"));
@@ -98,7 +116,7 @@ export default function FormTab({ labelingId }: FormTabProps) {
 
     const payload = mapSectionsToDTO(sections);
     saveMutation.mutate(
-      { id: labelingId, sections: payload },
+      { id: labelingId, sections: payload, formType: activeFormType },
       {
         onSuccess: () => {
           toast.success(t("labelings.create.success.formSaved"));
@@ -113,9 +131,8 @@ export default function FormTab({ labelingId }: FormTabProps) {
         },
       },
     );
-  }, [labelingId, sections, saveMutation, t]);
+  }, [activeFormType, labelingId, sections, saveMutation, t]);
 
-  // Error handling for query errors
   useEffect(() => {
     if (structureQuery.error) {
       toast.error(
@@ -134,7 +151,38 @@ export default function FormTab({ labelingId }: FormTabProps) {
 
   return (
     <>
-      <div className="w-[80%] mx-auto flex flex-col gap-3 md:flex-row md:items-end md:justify-end">
+      <div
+        className={`w-[80%] mx-auto flex flex-col gap-3 md:flex-row md:items-end ${
+          hasBackgroundForm ? "md:justify-between" : "md:justify-end"
+        }`}
+      >
+        {hasBackgroundForm ? (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setActiveFormType("main")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                activeFormType === "main"
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              {t("labelings.create.tabs.form")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveFormType("background")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                activeFormType === "background"
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              FORMULÁRIO BACKGROUND
+            </button>
+          </div>
+        ) : null}
+
         <Button
           type="button"
           onClick={handleSaveStructure}
@@ -158,10 +206,10 @@ export default function FormTab({ labelingId }: FormTabProps) {
           strategy={verticalListSortingStrategy}
         >
           <div className="mt-2 space-y-6 w-[80%]  mx-auto ">
-            {/* Ponto de inserção no início */}
             <div className="pointer-events-auto mb-0">
               <InsertionPoint
                 id="start"
+                allowContext={allowContext}
                 isVisible={visiblePointId === "start"}
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
@@ -172,10 +220,10 @@ export default function FormTab({ labelingId }: FormTabProps) {
                 }}
                 onAddQuestion={() => {
                   if (sections.length > 0) {
-                    addQuestion(sections[0].id, null, t);
+                    addQuestion(sections[0].id, null);
                   }
                 }}
-                onAddSection={() => addSection(null, t)}
+                onAddSection={() => addSection(null)}
               />
             </div>
 
@@ -187,6 +235,7 @@ export default function FormTab({ labelingId }: FormTabProps) {
                     index={idx}
                     total={sections.length}
                     columns={columns}
+                    allowContext={allowContext}
                     visibleInsertionPointId={visiblePointId}
                     onChangeTitle={(title) =>
                       updateSectionTitle(section.id, title)
@@ -197,20 +246,20 @@ export default function FormTab({ labelingId }: FormTabProps) {
                       addContext(section.id, insertAfterId)
                     }
                     onAddQuestion={(insertAfterId) =>
-                      addQuestion(section.id, insertAfterId, t)
+                      addQuestion(section.id, insertAfterId)
                     }
                     onAddSection={(insertAfterId) =>
-                      addSection(insertAfterId ?? section.id, t)
+                      addSection(insertAfterId ?? section.id)
                     }
                     onMouseEnterInsertionPoint={handleMouseEnter}
                     onMouseLeaveInsertionPoint={handleMouseLeave}
                   />
                 </SortableSection>
 
-                {/* Ponto de inserção após cada seção */}
                 <div className="pointer-events-auto ">
                   <InsertionPoint
                     id={`section-${section.id}`}
+                    allowContext={allowContext}
                     isVisible={visiblePointId === `section-${section.id}`}
                     onMouseEnter={handleMouseEnter}
                     onMouseLeave={handleMouseLeave}
@@ -223,10 +272,10 @@ export default function FormTab({ labelingId }: FormTabProps) {
                     onAddQuestion={() => {
                       const nextIdx = idx + 1;
                       if (nextIdx < sections.length) {
-                        addQuestion(sections[nextIdx].id, null, t);
+                        addQuestion(sections[nextIdx].id, null);
                       }
                     }}
-                    onAddSection={() => addSection(section.id, t)}
+                    onAddSection={() => addSection(section.id)}
                   />
                 </div>
               </div>

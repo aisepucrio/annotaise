@@ -6,6 +6,7 @@ import { useTranslations } from "@/i18n/use-translations";
 type InsertionPointProps = {
   id: string;
   isVisible: boolean;
+  allowContext?: boolean;
   onAddContext: () => void;
   onAddQuestion: () => void;
   onAddSection: () => void;
@@ -21,6 +22,7 @@ type InsertionPointProps = {
 export default function InsertionPoint({
   id,
   isVisible,
+  allowContext = true,
   onAddContext,
   onAddQuestion,
   onAddSection,
@@ -59,14 +61,16 @@ export default function InsertionPoint({
       >
         <div className="flex gap-2 transition-all">
           {/* Botão: Adicionar Contexto */}
-          <button
-            type="button"
-            onClick={onAddContext}
-            title={t("labelings.create.actions.addContext")}
-            className="w-8 h-8 bg-blueberry-900 hover:bg-blueberry-700 text-white rounded-full shadow-lg flex items-center justify-center cursor-pointer transition-colors z-10 relative"
-          >
-            <Info size={16} />
-          </button>
+          {allowContext ? (
+            <button
+              type="button"
+              onClick={onAddContext}
+              title={t("labelings.create.actions.addContext")}
+              className="w-8 h-8 bg-blueberry-900 hover:bg-blueberry-700 text-white rounded-full shadow-lg flex items-center justify-center cursor-pointer transition-colors z-10 relative"
+            >
+              <Info size={16} />
+            </button>
+          ) : null}
 
           {/* Botão: Adicionar Pergunta */}
           <button

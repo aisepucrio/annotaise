@@ -9,24 +9,18 @@ import { Tag } from "lucide-react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import { fetchLabelingDashboard } from "@/modules/labelings/labelingService";
-import useCurrent from "@/hooks/current_user_hook";
 import { toast } from "sonner";
 import { useTranslations } from "@/i18n/use-translations";
 
 export default function LabelingsPage() {
-  const currentUser = useCurrent();
   const { t } = useTranslations();
   const router = useRouter();
-  const isAdmin = Boolean(
-    currentUser?.is_staff || currentUser?.account_type === "admin",
-  );
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
   const {
     data: labelings,
     error,
     isLoading,
-    mutate,
   } = useSWR(["labelings-dashboard", debouncedSearch], () =>
     fetchLabelingDashboard(debouncedSearch),
   );
@@ -58,6 +52,9 @@ export default function LabelingsPage() {
       minColumnWidth="420px"
     >
       {labelingsList.map((l, index) => {
+        const mustAnswerBackgroundFirst = Boolean(
+          l.background_required && !l.background_answered,
+        );
         return (
           <GridItemCard key={l.id} index={index}>
             <IndividualLabelingCard
@@ -69,11 +66,19 @@ export default function LabelingsPage() {
               actionButton={
                 <Button
                   icon={<Tag size={20} strokeWidth={1.75} />}
-                  onClick={() => router.push(`/labelings/${l.id}/answer`)}
+                  onClick={() =>
+                    router.push(
+                      mustAnswerBackgroundFirst
+                        ? `/labelings/${l.id}/background`
+                        : `/labelings/${l.id}/answer`,
+                    )
+                  }
                   variant="normal"
                   ariaLabel={t("labelings.action.answerAria")}
                 >
-                  {t("labelings.action.answer")}
+                  {mustAnswerBackgroundFirst
+                    ? "BACKGROUND"
+                    : t("labelings.action.answer")}
                 </Button>
               }
             />

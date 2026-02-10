@@ -8,7 +8,7 @@ class LabelingSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Labeling
-        fields = ['id', 'project', 'title', 'created_at','status','column_names','start_date','final_date','users_per_item','block_section_back','guide','decision','decisive_question']
+        fields = ['id', 'project', 'title', 'created_at','status','column_names','start_date','final_date','users_per_item','block_section_back','has_background_form','guide','decision','decisive_question']
         read_only_fields = ['id', 'created_at','created_by','column_names','status']
 
     def create(self, validated_data):
@@ -213,14 +213,18 @@ class LabelingDashboardSerializer(serializers.Serializer):
 
     items_done = serializers.IntegerField()
     total_items = serializers.IntegerField(required=False, allow_null=True)
+    background_required = serializers.BooleanField(required=False)
+    background_answered = serializers.BooleanField(required=False)
 #TODO validações individuais de cada serializer, pra não cair em internal server error
 
 class LabelingMembershipDashboardSerializer(serializers.Serializer):
     id = serializers.IntegerField()
+    user = serializers.IntegerField()
 
     first_name = serializers.CharField(allow_blank=True, allow_null=True)
     last_name = serializers.CharField(allow_blank=True, allow_null=True)
     email = serializers.EmailField()
     role = serializers.CharField()
+    background_answered = serializers.BooleanField(required=False)
 
     joined_at = serializers.DateTimeField()
