@@ -430,6 +430,8 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.answers.unknownUser": "Usuário desconhecido",
     "labelings.create.answers.countSingle": "resposta",
     "labelings.create.answers.countPlural": "respostas",
+    "labelings.create.answers.itemCountSingle": "item",
+    "labelings.create.answers.itemCountPlural": "itens",
     "labelings.create.answers.loading": "Carregando respostas...",
     "labelings.create.answers.emptyAll":
       "Nenhuma resposta encontrada para esta rotulação.",
@@ -447,6 +449,22 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.answers.modal.contextEmpty":
       "Nenhum contexto disponível.",
     "labelings.create.answers.modal.answersTitle": "Respostas",
+    "labelings.create.answers.modal.itemSummaryTitle":
+      "Análise geral do item",
+    "labelings.create.answers.modal.itemSummaryDescription":
+      "Visão consolidada das respostas deste item.",
+    "labelings.create.answers.modal.itemSummaryEmpty":
+      "Sem dados suficientes para gerar análise deste item.",
+    "labelings.create.answers.modal.selectUserLabel":
+      "Usuário para visualizar",
+    "labelings.create.answers.modal.tabItemSummary":
+      "Análise geral do item",
+    "labelings.create.answers.modal.tabUserAnswer":
+      "Contexto e respostas do usuário",
+    "labelings.create.answers.modal.responsesCountSingular":
+      "{{count}} resposta neste item",
+    "labelings.create.answers.modal.responsesCountPlural":
+      "{{count}} respostas neste item",
     "labelings.create.answers.modal.answersEmpty":
       "Nenhuma resposta registrada.",
     "labelings.create.answers.modal.structureMissing":
@@ -1031,6 +1049,8 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.answers.unknownUser": "Unknown user",
     "labelings.create.answers.countSingle": "answer",
     "labelings.create.answers.countPlural": "answers",
+    "labelings.create.answers.itemCountSingle": "item",
+    "labelings.create.answers.itemCountPlural": "items",
     "labelings.create.answers.loading": "Loading answers...",
     "labelings.create.answers.emptyAll": "No answers found for this labeling.",
     "labelings.create.answers.emptyUser": "No answers for the selected user.",
@@ -1045,6 +1065,19 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.answers.modal.contextTitle": "Item context",
     "labelings.create.answers.modal.contextEmpty": "No context available.",
     "labelings.create.answers.modal.answersTitle": "Answers",
+    "labelings.create.answers.modal.itemSummaryTitle": "Item overview",
+    "labelings.create.answers.modal.itemSummaryDescription":
+      "Consolidated view of answers for this item.",
+    "labelings.create.answers.modal.itemSummaryEmpty":
+      "Not enough data to build this item's analysis.",
+    "labelings.create.answers.modal.selectUserLabel": "User to inspect",
+    "labelings.create.answers.modal.tabItemSummary": "Item overview",
+    "labelings.create.answers.modal.tabUserAnswer":
+      "User context and answers",
+    "labelings.create.answers.modal.responsesCountSingular":
+      "{{count}} answer on this item",
+    "labelings.create.answers.modal.responsesCountPlural":
+      "{{count}} answers on this item",
     "labelings.create.answers.modal.answersEmpty": "No answers recorded.",
     "labelings.create.answers.modal.structureMissing":
       "Labeling structure not found to display sections.",

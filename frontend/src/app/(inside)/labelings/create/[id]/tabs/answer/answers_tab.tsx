@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Download } from "lucide-react";
@@ -11,8 +12,20 @@ import type {
   LabelingStructureSection,
 } from "@/modules/labelings/labelingsTypes";
 import { useTranslations } from "@/i18n/use-translations";
+import {
+  buildQuestionSummaries,
+  resolveQuestionTypeLabel,
+  type BarItem,
+} from "./question_summary_utils";
 
 type ResponderOption = { id: number; label: string };
+
+type ItemAnswersGroup = {
+  key: string;
+  itemId: number;
+  rowIndex: number | null;
+  answers: AnswerResponse[];
+};
 
 type AnswersTabProps = {
   responderOptions: ResponderOption[];
@@ -21,12 +34,10 @@ type AnswersTabProps = {
   onExportCsv: () => void;
   exporting: boolean;
   answersLoading: boolean;
+  allAnswers: AnswerResponse[];
   filteredAnswers: AnswerResponse[];
   totalAnswers: number;
   getUserLabel: (userId: number) => string;
-  onInspectAnswer: (answer: AnswerResponse) => void;
-  inspectAnswer: AnswerResponse | null;
-  onCloseInspect: () => void;
   structureSections: LabelingStructureSection[];
 };
 
@@ -42,15 +53,41 @@ export default function AnswersTab({
   onExportCsv,
   exporting,
   answersLoading,
+  allAnswers,
   filteredAnswers,
   totalAnswers,
   getUserLabel,
-  onInspectAnswer,
-  inspectAnswer,
-  onCloseInspect,
   structureSections,
 }: AnswersTabProps) {
   const { t, locale } = useTranslations();
+
+  const groupedFilteredItems = useMemo(
+    () => groupAnswersByItem(filteredAnswers),
+    [filteredAnswers],
+  );
+  const groupedAllItems = useMemo(
+    () => groupAnswersByItem(allAnswers),
+    [allAnswers],
+  );
+  const groupedAllItemsByKey = useMemo(
+    () => new Map(groupedAllItems.map((group) => [group.key, group])),
+    [groupedAllItems],
+  );
+
+  const [inspectItemKey, setInspectItemKey] = useState<string | null>(null);
+
+  const inspectItemGroup = useMemo(() => {
+    if (!inspectItemKey) return null;
+    return groupedAllItemsByKey.get(inspectItemKey) ?? null;
+  }, [groupedAllItemsByKey, inspectItemKey]);
+
+  useEffect(() => {
+    if (!inspectItemKey) return;
+    if (!inspectItemGroup) {
+      setInspectItemKey(null);
+    }
+  }, [inspectItemGroup, inspectItemKey]);
+
   return (
     <>
       <div className="max-w-6xl mx-auto mt-2 space-y-4">
@@ -95,10 +132,10 @@ export default function AnswersTab({
                 : t("labelings.create.answers.exportButton")}
             </Button>
             <span className="text-sm text-gray-600">
-              {filteredAnswers.length}{" "}
-              {filteredAnswers.length === 1
-                ? t("labelings.create.answers.countSingle")
-                : t("labelings.create.answers.countPlural")}
+              {groupedFilteredItems.length}{" "}
+              {groupedFilteredItems.length === 1
+                ? t("labelings.create.answers.itemCountSingle")
+                : t("labelings.create.answers.itemCountPlural")}
             </span>
           </div>
         </div>
@@ -107,7 +144,7 @@ export default function AnswersTab({
           <p className="text-sm text-gray-500">
             {t("labelings.create.answers.loading")}
           </p>
-        ) : filteredAnswers.length === 0 ? (
+        ) : groupedFilteredItems.length === 0 ? (
           <p className="text-sm text-gray-600">
             {totalAnswers === 0
               ? t("labelings.create.answers.emptyAll")
@@ -115,54 +152,39 @@ export default function AnswersTab({
           </p>
         ) : (
           <GridLayout minColumnWidth="420px">
-            {filteredAnswers.map((answer, index) => {
-              const rowIndex = answer.item_detail?.row_index;
-              const itemLabel =
-                rowIndex !== undefined && rowIndex !== null
-                  ? t("labelings.create.answers.itemLabel", {
-                      index: rowIndex + 1,
-                    })
-                  : t("labelings.create.answers.itemIdLabel", {
-                      id: answer.item_detail?.id ?? answer.item,
-                    });
-              const userLabel = getUserLabel(answer.answered_by);
-              const answeredAt = new Date(answer.created_at).toLocaleString(
-                locale,
-              );
-              const answeredCount = Object.keys(
-                answer.answer_payload ?? {},
-              ).length;
+            {groupedFilteredItems.map((group, index) => {
+              const itemLabel = resolveItemLabel(group.rowIndex, group.itemId, t);
+              const latestAnswer = group.answers[0];
+              const answeredAt = latestAnswer
+                ? new Date(latestAnswer.created_at).toLocaleString(locale)
+                : "-";
+              const answeredCount = group.answers.length;
 
               return (
-                <GridItemCard key={answer.id} index={index}>
+                <GridItemCard key={group.key} index={index}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1">
                       <p className="text-sm font-semibold text-blue-900">
                         {itemLabel}
                       </p>
                       <p className="text-sm text-gray-800">
-                        {t("labelings.create.answers.userLabel", {
-                          name: userLabel,
-                        })}
+                        {answeredCount}{" "}
+                        {answeredCount === 1
+                          ? t("labelings.create.answers.countSingle")
+                          : t("labelings.create.answers.countPlural")}
                       </p>
                       <p className="text-xs text-gray-500">{answeredAt}</p>
                     </div>
                     <Button
                       variant="normal"
                       fill={false}
-                      onClick={() => onInspectAnswer(answer)}
+                      onClick={() => setInspectItemKey(group.key)}
                       ariaLabel={t("labelings.create.answers.inspectAria")}
                       className="px-4 py-2"
                     >
                       {t("labelings.create.answers.inspectButton")}
                     </Button>
                   </div>
-                  <p className="mt-3 text-xs text-gray-600">
-                    {answeredCount}{" "}
-                    {answeredCount === 1
-                      ? t("labelings.create.answers.answeredFieldSingle")
-                      : t("labelings.create.answers.answeredFieldPlural")}
-                  </p>
                 </GridItemCard>
               );
             })}
@@ -171,9 +193,9 @@ export default function AnswersTab({
       </div>
 
       <InspectAnswerModal
-        answer={inspectAnswer}
-        onClose={onCloseInspect}
-        userLabel={inspectAnswer ? getUserLabel(inspectAnswer.answered_by) : ""}
+        itemGroup={inspectItemGroup}
+        onClose={() => setInspectItemKey(null)}
+        getUserLabel={getUserLabel}
         sections={structureSections}
       />
     </>
@@ -181,35 +203,87 @@ export default function AnswersTab({
 }
 
 type InspectAnswerModalProps = {
-  answer: AnswerResponse | null;
+  itemGroup: ItemAnswersGroup | null;
   onClose: () => void;
-  userLabel: string;
+  getUserLabel: (userId: number) => string;
   sections: LabelingStructureSection[];
 };
 
+type InspectModalTab = "item-summary" | "user-answer";
+
 function InspectAnswerModal({
-  answer,
+  itemGroup,
   onClose,
-  userLabel,
+  getUserLabel,
   sections,
 }: InspectAnswerModalProps) {
   const { t, locale } = useTranslations();
-  if (!answer) return null;
-
-  const payloadEntries = Object.entries(
-    (answer.item_detail?.payload ?? {}) as Record<string, unknown>,
+  const numberFormatter = useMemo(
+    () => new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }),
+    [locale],
   );
-  const answerEntries = Object.entries(answer.answer_payload ?? {});
-  const rowIndex = answer.item_detail?.row_index;
-  const itemLabel =
-    rowIndex !== undefined && rowIndex !== null
-      ? t("labelings.create.answers.itemLabel", {
-          index: rowIndex + 1,
-        })
-      : t("labelings.create.answers.itemIdLabel", {
-          id: answer.item_detail?.id ?? answer.item,
-        });
-  const answeredAt = new Date(answer.created_at).toLocaleString(locale);
+
+  const userAnswers = useMemo(
+    () => selectLatestAnswersByUser(itemGroup?.answers ?? []),
+    [itemGroup],
+  );
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [activeModalTab, setActiveModalTab] =
+    useState<InspectModalTab>("item-summary");
+
+  useEffect(() => {
+    if (!itemGroup || userAnswers.length === 0) {
+      setSelectedUserId(null);
+      return;
+    }
+
+    const hasSelected = userAnswers.some(
+      (answer) => answer.answered_by === selectedUserId,
+    );
+    if (!hasSelected) {
+      setSelectedUserId(userAnswers[0].answered_by);
+    }
+  }, [itemGroup, selectedUserId, userAnswers]);
+
+  useEffect(() => {
+    if (!itemGroup) return;
+    setActiveModalTab("item-summary");
+  }, [itemGroup]);
+
+  const selectedAnswer = useMemo(() => {
+    if (!userAnswers.length) return null;
+    if (selectedUserId === null) return userAnswers[0];
+    return (
+      userAnswers.find((answer) => answer.answered_by === selectedUserId) ??
+      userAnswers[0]
+    );
+  }, [selectedUserId, userAnswers]);
+
+  const itemSummaries = useMemo(
+    () =>
+      buildQuestionSummaries({
+        answers: itemGroup?.answers ?? [],
+        structureSections: sections,
+        t,
+        numberFormatter,
+      }),
+    [itemGroup, numberFormatter, sections, t],
+  );
+
+  if (!itemGroup || !selectedAnswer) return null;
+
+  const selectedUserLabel = getUserLabel(selectedAnswer.answered_by);
+  const payloadEntries = Object.entries(
+    (selectedAnswer.item_detail?.payload ?? {}) as Record<string, unknown>,
+  );
+  const answerEntries = Object.entries(selectedAnswer.answer_payload ?? {});
+  const rowIndex = selectedAnswer.item_detail?.row_index;
+  const itemLabel = resolveItemLabel(
+    rowIndex ?? null,
+    selectedAnswer.item_detail?.id ?? selectedAnswer.item,
+    t,
+  );
+  const answeredAt = new Date(selectedAnswer.created_at).toLocaleString(locale);
 
   const orderedSections = [...sections].sort(
     (a, b) => (a.order ?? 0) - (b.order ?? 0),
@@ -218,7 +292,7 @@ function InspectAnswerModal({
   answerEntries.forEach(([key, value]) =>
     answersByQuestion.set(String(key), value),
   );
-  const itemPayload = (answer.item_detail?.payload ?? {}) as Record<
+  const itemPayload = (selectedAnswer.item_detail?.payload ?? {}) as Record<
     string,
     unknown
   >;
@@ -230,17 +304,15 @@ function InspectAnswerModal({
         onClick={onClose}
       />
       <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-        <div className="w-full max-w-3xl rounded-2xl bg-white shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
+        <div className="w-full max-w-4xl rounded-2xl bg-white shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-wide text-gray-500">
                 {answeredAt}
               </p>
-              <h3 className="text-lg font-semibold text-gray-900">
-                {itemLabel}
-              </h3>
+              <h3 className="text-lg font-semibold text-gray-900">{itemLabel}</h3>
               <p className="text-sm text-gray-700">
-                {t("labelings.create.answers.userLabel", { name: userLabel })}
+                {t("labelings.create.answers.userLabel", { name: selectedUserLabel })}
               </p>
             </div>
             <button
@@ -253,7 +325,158 @@ function InspectAnswerModal({
           </div>
 
           <div className="mt-5 space-y-4">
-            <div className="rounded-lg border border-blue-100 bg-blue-50 p-4">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveModalTab("item-summary")}
+                  className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                    activeModalTab === "item-summary"
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  {t("labelings.create.answers.modal.tabItemSummary")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveModalTab("user-answer")}
+                  className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                    activeModalTab === "user-answer"
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  {t("labelings.create.answers.modal.tabUserAnswer")}
+                </button>
+              </div>
+
+              <div className="flex flex-col">
+                <label className="text-xs font-semibold uppercase tracking-wide text-gray-700">
+                  {t("labelings.create.answers.modal.selectUserLabel")}
+                </label>
+                <select
+                  value={String(selectedAnswer.answered_by)}
+                  onChange={(event) => setSelectedUserId(Number(event.target.value))}
+                  className="mt-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                >
+                  {userAnswers.map((answer) => (
+                    <option key={answer.answered_by} value={answer.answered_by}>
+                      {getUserLabel(answer.answered_by)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {activeModalTab === "item-summary" ? (
+              <div className="rounded-lg border border-blue-100 bg-blue-50 p-4">
+                <div>
+                  <h4 className="text-sm font-semibold text-blueberry-900">
+                    {t("labelings.create.answers.modal.itemSummaryTitle")}
+                  </h4>
+                  <p className="text-xs text-blueberry-700">
+                    {t("labelings.create.answers.modal.itemSummaryDescription")}
+                  </p>
+                </div>
+
+              <p className="mt-3 text-xs text-blueberry-700">
+                {itemGroup.answers.length === 1
+                  ? t("labelings.create.answers.modal.responsesCountSingular", {
+                      count: itemGroup.answers.length,
+                    })
+                  : t("labelings.create.answers.modal.responsesCountPlural", {
+                      count: itemGroup.answers.length,
+                    })}
+              </p>
+
+              {itemSummaries.length === 0 ? (
+                <p className="mt-3 text-sm text-gray-600">
+                  {t("labelings.create.answers.modal.itemSummaryEmpty")}
+                </p>
+              ) : (
+                <div className="mt-3 grid gap-3 md:grid-cols-2">
+                  {itemSummaries.map((summary) => (
+                    <div
+                      key={summary.key}
+                      className="rounded-lg border border-blue-100 bg-white p-3"
+                    >
+                      <p className="text-[11px] uppercase tracking-wide text-blueberry-700">
+                        {summary.sectionLabel}
+                      </p>
+                      <div className="prose prose-sm mt-1 max-w-none text-gray-900 prose-a:text-blueberry-700 prose-a:visited:text-blueberry-700">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {summary.label}
+                        </ReactMarkdown>
+                      </div>
+                      <div className="mt-1 flex flex-wrap gap-2 text-xs text-gray-500">
+                        <span>
+                          {t("labelings.create.summary.typeLabel", {
+                            type: resolveQuestionTypeLabel(summary.type, t),
+                          })}
+                        </span>
+                        <span className="text-gray-300">•</span>
+                        <span>
+                          {summary.responseCount}{" "}
+                          {t("labelings.create.summary.responsesCount")}
+                        </span>
+                      </div>
+
+                      {summary.chart.kind === "none" ? (
+                        <p className="mt-2 text-sm text-gray-500">
+                          {summary.chart.title}
+                        </p>
+                      ) : summary.chart.kind === "hist" ? (
+                        <div className="mt-2 space-y-2">
+                          <div className="text-xs font-semibold text-gray-600">
+                            {summary.chart.title}
+                          </div>
+                          <SummaryBarChart
+                            items={summary.chart.items}
+                            total={summary.chart.total}
+                          />
+                          <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                            <SummaryStatLine
+                              label={t("labelings.create.summary.stats.min")}
+                              value={numberFormatter.format(summary.chart.stats.min)}
+                            />
+                            <SummaryStatLine
+                              label={t("labelings.create.summary.stats.max")}
+                              value={numberFormatter.format(summary.chart.stats.max)}
+                            />
+                            <SummaryStatLine
+                              label={t("labelings.create.summary.stats.average")}
+                              value={numberFormatter.format(summary.chart.stats.avg)}
+                            />
+                            <SummaryStatLine
+                              label={t("labelings.create.summary.stats.median")}
+                              value={numberFormatter.format(
+                                summary.chart.stats.median,
+                              )}
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="mt-2 space-y-2">
+                          <div className="text-xs font-semibold text-gray-600">
+                            {summary.chart.title}
+                          </div>
+                          <SummaryBarChart
+                            items={summary.chart.items}
+                            total={summary.chart.total}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            ) : null}
+
+            {activeModalTab === "user-answer" ? (
+              <>
+                <div className="rounded-lg border border-blue-100 bg-blue-50 p-4">
               <h4 className="text-sm font-semibold text-blue-900 mb-2">
                 {t("labelings.create.answers.modal.contextTitle")}
               </h4>
@@ -282,7 +505,7 @@ function InspectAnswerModal({
               )}
             </div>
 
-            <div className="rounded-lg border border-gray-200 bg-white p-4">
+                <div className="rounded-lg border border-gray-200 bg-white p-4">
               <h4 className="text-sm font-semibold text-gray-900 mb-2">
                 {t("labelings.create.answers.modal.answersTitle")}
               </h4>
@@ -507,11 +730,139 @@ function InspectAnswerModal({
                 </div>
               )}
             </div>
+              </>
+            ) : null}
           </div>
         </div>
       </div>
     </>
   );
+}
+
+function SummaryStatLine({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-gray-200 px-2 py-2">
+      <p className="text-[11px] uppercase tracking-wide text-gray-400">{label}</p>
+      <p className="text-sm font-semibold text-gray-700">{value}</p>
+    </div>
+  );
+}
+
+function SummaryBarChart({ items, total }: { items: BarItem[]; total: number }) {
+  if (!items.length) return null;
+  const max = Math.max(...items.map((item) => item.count), 1);
+
+  return (
+    <div className="space-y-2">
+      {items.map((item) => {
+        const percentOfMax = (item.count / max) * 100;
+        const percentOfTotal =
+          total > 0 ? Math.round((item.count / total) * 100) : 0;
+        return (
+          <div key={item.label} className="space-y-1">
+            <div className="flex items-center justify-between text-xs text-gray-600">
+              <span className="truncate max-w-[65%]" title={item.label}>
+                {item.label}
+              </span>
+              <span>
+                {item.count} ({percentOfTotal}%)
+              </span>
+            </div>
+            <div className="h-2 w-full rounded-full bg-blue-100">
+              <div
+                className="h-full rounded-full bg-blue-600"
+                style={{ width: `${percentOfMax}%` }}
+              />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function getItemGroupKey(answer: AnswerResponse): string {
+  const detailId = answer.item_detail?.id;
+  if (detailId !== undefined && detailId !== null) {
+    return `detail-${detailId}`;
+  }
+  return `item-${answer.item}`;
+}
+
+function groupAnswersByItem(answers: AnswerResponse[]): ItemAnswersGroup[] {
+  const groups = new Map<string, ItemAnswersGroup>();
+
+  answers.forEach((answer) => {
+    const key = getItemGroupKey(answer);
+    const existing = groups.get(key);
+
+    if (existing) {
+      existing.answers.push(answer);
+      if (
+        existing.rowIndex === null &&
+        answer.item_detail?.row_index !== undefined &&
+        answer.item_detail?.row_index !== null
+      ) {
+        existing.rowIndex = answer.item_detail.row_index;
+      }
+      return;
+    }
+
+    groups.set(key, {
+      key,
+      itemId: answer.item_detail?.id ?? answer.item,
+      rowIndex: answer.item_detail?.row_index ?? null,
+      answers: [answer],
+    });
+  });
+
+  const grouped = Array.from(groups.values()).map((group) => ({
+    ...group,
+    answers: [...group.answers].sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    ),
+  }));
+
+  return grouped.sort((a, b) => {
+    if (a.rowIndex !== null && b.rowIndex !== null) {
+      return a.rowIndex - b.rowIndex;
+    }
+    if (a.rowIndex !== null) return -1;
+    if (b.rowIndex !== null) return 1;
+    return a.itemId - b.itemId;
+  });
+}
+
+function selectLatestAnswersByUser(answers: AnswerResponse[]): AnswerResponse[] {
+  const sorted = [...answers].sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+  );
+  const map = new Map<number, AnswerResponse>();
+
+  sorted.forEach((answer) => {
+    if (!map.has(answer.answered_by)) {
+      map.set(answer.answered_by, answer);
+    }
+  });
+
+  return Array.from(map.values());
+}
+
+function resolveItemLabel(
+  rowIndex: number | null,
+  itemId: number,
+  t: TranslateFn,
+): string {
+  if (rowIndex !== null) {
+    return t("labelings.create.answers.itemLabel", {
+      index: rowIndex + 1,
+    });
+  }
+
+  return t("labelings.create.answers.itemIdLabel", {
+    id: itemId,
+  });
 }
 
 function formatAnswerValue(value: unknown, t: TranslateFn): string {

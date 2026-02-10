@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
 import AnswersTab from "./answers_tab";
@@ -10,7 +10,6 @@ import { useTranslations } from "@/i18n/use-translations";
 import { useLabelingAnswersWithStructureQuery } from "@/modules/labelings/create/labelingManagerQueries";
 import { exportLabelingAnswersCsv } from "@/modules/labelings/labelingService";
 import { getApiErrorMessage } from "@/lib/getApiErrorMessage";
-import type { AnswerResponse } from "@/modules/labelings/labelingsTypes";
 import type { User } from "@/modules/user/userTypes";
 
 type AnswerTabProps = {
@@ -26,14 +25,14 @@ export default function AnswerTab({ labelingId, users }: AnswerTabProps) {
   const [selectedResponder, setSelectedResponder] = useState<"all" | number>(
     "all",
   );
-  const [inspectAnswer, setInspectAnswer] = useState<AnswerResponse | null>(
-    null,
-  );
   const [exporting, setExporting] = useState(false);
 
   const { data, isLoading } = useLabelingAnswersWithStructureQuery(labelingId);
-  const answers = data?.answers ?? [];
-  const structureSections = data?.structure ?? [];
+  const answers = useMemo(() => data?.answers ?? [], [data?.answers]);
+  const structureSections = useMemo(
+    () => data?.structure ?? [],
+    [data?.structure],
+  );
 
   // Mapear users por ID
   const usersById = useMemo(() => {
@@ -43,12 +42,15 @@ export default function AnswerTab({ labelingId, users }: AnswerTabProps) {
   }, [users]);
 
   // Função para obter label do usuário
-  const getUserLabel = (userId: number): string => {
-    const user = usersById.get(userId);
-    if (!user) return t("labelings.create.answers.unknownUser");
-    const fullName = `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim();
-    return fullName || user.email || user.username || `User #${userId}`;
-  };
+  const getUserLabel = useCallback(
+    (userId: number): string => {
+      const user = usersById.get(userId);
+      if (!user) return t("labelings.create.answers.unknownUser");
+      const fullName = `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim();
+      return fullName || user.email || user.username || `User #${userId}`;
+    },
+    [usersById, t],
+  );
 
   // Opções de responder (para o filtro)
   const responderOptions = useMemo(() => {
@@ -143,12 +145,10 @@ export default function AnswerTab({ labelingId, users }: AnswerTabProps) {
             onExportCsv={handleExportCsv}
             exporting={exporting}
             answersLoading={isLoading}
+            allAnswers={answers}
             filteredAnswers={filteredAnswers}
             totalAnswers={answers.length}
             getUserLabel={getUserLabel}
-            onInspectAnswer={setInspectAnswer}
-            inspectAnswer={inspectAnswer}
-            onCloseInspect={() => setInspectAnswer(null)}
             structureSections={structureSections}
           />
         ) : (
