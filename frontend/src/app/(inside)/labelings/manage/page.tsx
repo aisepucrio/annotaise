@@ -13,7 +13,7 @@ import {
   createLabeling,
   fetchLabelingDashboardEdit,
   importLabelingItemsCsv,
-} from "@/lib/services/labeling_service";
+} from "@/modules/labelings/labelingService";
 import useCurrent from "@/hooks/current_user_hook";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";

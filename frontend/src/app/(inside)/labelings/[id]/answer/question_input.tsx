@@ -1,6 +1,6 @@
 import Input from "@/components/form/Input";
 import NumberInput from "@/components/form/NumberInput";
-import type { LabelingStructureElement } from "@/lib/services/labeling_create_service";
+import type { LabelingStructureElement } from "@/modules/labelings/labelingsTypes";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 

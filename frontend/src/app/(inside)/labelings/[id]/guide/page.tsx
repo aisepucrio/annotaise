@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { fetchLabelingById } from "@/lib/services/labeling_create_service";
+import { fetchLabelingById } from "@/modules/labelings/labelingService";
 import { useTranslations } from "@/i18n/use-translations";
 
 export default function LabelingGuidePage() {

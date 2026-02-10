@@ -1,7 +1,7 @@
 "use client";
 
 import Cookies from "js-cookie";
-import { api } from "./api";
+import { api } from "@/modules/api";
 
 /**
  * Stores a token in cookies.
@@ -21,16 +21,6 @@ const removeTokens = () => {
   Cookies.remove("accessToken");
   Cookies.remove("refreshToken");
 };
-
-// Interceptor: só roda no client
-api.interceptors.request.use((config) => {
-  const accessToken = getToken("access");
-  if (accessToken) {
-    config.headers = config.headers ?? {};
-    config.headers.Authorization = `Bearer ${accessToken}`;
-  }
-  return config;
-});
 
 const login = (email: string, password: string) => {
   return api.post("/api/auth/token/", { email, password });

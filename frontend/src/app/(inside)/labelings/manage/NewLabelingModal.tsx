@@ -3,7 +3,8 @@
 import { Loader2, TriangleAlert, Upload } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import useSWR from "swr";
-import { fetchProjects, Project } from "@/lib/services/project_service";
+import { fetchProjects } from "@/modules/projects/projectService";
+import type { Project } from "@/modules/projects/projectsTypes";
 import { toast } from "sonner";
 import Modal from "@/components/modal/Modal";
 import Input from "@/components/form/Input";

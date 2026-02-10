@@ -3,7 +3,8 @@ import {
   InternalAxiosRequestConfig,
   AxiosRequestHeaders,
 } from "axios";
-import { api } from "@/lib/api";
+import { api } from "@/modules/api";
+
 import { AuthActions } from "@/lib/authClient";
 
 // Extrai utilitários
@@ -101,7 +102,7 @@ api.interceptors.response.use(
         resolve(api(original));
       });
     });
-  }
+  },
 );
 
 export const fetcher = async <T = unknown>(url: string): Promise<T> => {

@@ -2,9 +2,6 @@
 
 import { PropsWithChildren, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import type { AxiosError, InternalAxiosRequestConfig } from "axios";
-import type { AxiosRequestHeaders } from "axios";
-import { api } from "@/lib/api";
 import { AuthActions } from "@/lib/authClient";
 
 const LOGIN_PATH = "/login";
@@ -70,59 +67,6 @@ export default function AuthGuard({ children }: PropsWithChildren) {
       cancelled = true;
     };
   }, [getToken, pathname, removeTokens, router]);
-
-  useEffect(() => {
-    const interceptorId = api.interceptors.response.use(
-      (response) => response,
-      async (error: AxiosError) => {
-        const status = error.response?.status;
-        const originalRequest =
-          (error.config as
-            | (InternalAxiosRequestConfig & { _retry?: boolean })
-            | undefined) ?? undefined;
-
-        if (status !== 401 || !originalRequest) {
-          return Promise.reject(error);
-        }
-
-        const isRefreshCall = originalRequest.url?.includes(
-          "/api/auth/token/refresh/"
-        );
-
-        if (isRefreshCall || originalRequest._retry) {
-          removeTokens();
-          router.replace(LOGIN_PATH);
-          return Promise.reject(error);
-        }
-
-        originalRequest._retry = true;
-
-        try {
-          const refreshed = await handleJWTRefresh();
-          const newAccess = refreshed?.data?.access;
-
-          if (!newAccess) {
-            throw new Error("Missing access token");
-          }
-
-          storeToken(newAccess, "access");
-          const headers: AxiosRequestHeaders = originalRequest.headers ?? {};
-          headers.Authorization = `Bearer ${newAccess}`;
-          originalRequest.headers = headers;
-
-          return api(originalRequest);
-        } catch (refreshError) {
-          removeTokens();
-          router.replace(LOGIN_PATH);
-          return Promise.reject(refreshError);
-        }
-      }
-    );
-
-    return () => {
-      api.interceptors.response.eject(interceptorId);
-    };
-  }, [handleJWTRefresh, removeTokens, router, storeToken]);
 
   if (!isAllowed) {
     return null;

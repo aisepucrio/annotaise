@@ -1,0 +1,161 @@
+"use client";
+
+import { Users } from "lucide-react";
+import {
+  type LabelingMembershipDashboard,
+  type LabelingMembershipRole,
+} from "@/modules/labelings/labelingsTypes";
+import { type User } from "@/modules/user/userTypes";
+import { useTranslations } from "@/i18n/use-translations";
+import Select from "@/components/form/Select";
+import Button from "@/components/button/Button";
+
+type AssignTabProps = {
+  memberships: LabelingMembershipDashboard[];
+  membershipLoading: boolean;
+  membershipSaving: boolean;
+  availableUsers: User[];
+  roleOptions: LabelingMembershipRole[];
+  newMemberId: string;
+  newMemberRole: LabelingMembershipRole;
+  onChangeNewMemberId: (value: string) => void;
+  onChangeNewMemberRole: (role: LabelingMembershipRole) => void;
+  onAddMember: () => void;
+  onChangeRole: (
+    membership: LabelingMembershipDashboard,
+    role: LabelingMembershipRole,
+  ) => void;
+  onRemoveMember: (membership: LabelingMembershipDashboard) => void;
+};
+
+export default function AssignTab({
+  memberships,
+  membershipLoading,
+  membershipSaving,
+  availableUsers,
+  roleOptions,
+  newMemberId,
+  newMemberRole,
+  onChangeNewMemberId,
+  onChangeNewMemberRole,
+  onAddMember,
+  onChangeRole,
+  onRemoveMember,
+}: AssignTabProps) {
+  const { t } = useTranslations();
+  const roleLabels: Record<string, string> = {
+    annotator: t("roles.annotator"),
+    admin: t("roles.admin"),
+    editor: t("roles.editor"),
+    standard: t("roles.standard"),
+  };
+
+  return (
+    <div className="w-[80%] mx-auto mt-2 space-y-4">
+      {/* Renderiza adicionar membro */}
+      <div className=" border-b-3 border-gray-300 p-3 space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm font-medium text-gray-900">
+            {t("labelings.create.assign.addTitle")}
+          </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+          <Select
+            value={newMemberId}
+            onChange={(e) => onChangeNewMemberId(e.target.value)}
+            disabled={membershipSaving}
+            options={availableUsers.map((user) => ({
+              value: String(user.id),
+              label:
+                `${user.first_name || ""} ${user.last_name || ""}`.trim() ||
+                user.email,
+            }))}
+            placeholder={t("labelings.create.assign.selectUser")}
+          />
+          <Select
+            value={newMemberRole}
+            onChange={(e) =>
+              onChangeNewMemberRole(e.target.value as LabelingMembershipRole)
+            }
+            disabled={membershipSaving}
+            options={roleOptions.map((opt) => ({
+              value: opt,
+              label: roleLabels[opt] ?? opt,
+            }))}
+          />
+          <Button
+            type="button"
+            onClick={onAddMember}
+            disabled={!newMemberId || membershipSaving}
+            variant="normal"
+          >
+            {membershipSaving
+              ? t("labelings.create.assign.adding")
+              : t("labelings.create.assign.add")}
+          </Button>
+        </div>
+      </div>
+
+      {/* Renderiza os membros atuais */}
+      {membershipLoading ? (
+        <p className="text-sm text-gray-500">
+          {t("labelings.create.assign.loading")}
+        </p>
+      ) : memberships.length === 0 ? (
+        <p className="text-sm text-gray-600">
+          {t("labelings.create.assign.empty")}
+        </p>
+      ) : (
+        <div className="space-y-2 w-[98%] mx-auto">
+          {memberships.map((membership) => {
+            const fullName = `${membership.first_name || ""} ${
+              membership.last_name || ""
+            }`.trim();
+            return (
+              <div
+                key={membership.id}
+                className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 rounded-lg border border-gray-200 p-3"
+              >
+                <div className="flex items-center gap-2">
+                  <Users size={16} className="text-blue-900" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      {fullName || membership.email}
+                    </p>
+                    <p className="text-xs text-gray-500">{membership.email}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Select
+                    value={membership.role}
+                    onChange={(e) =>
+                      onChangeRole(
+                        membership,
+                        e.target.value as LabelingMembershipRole,
+                      )
+                    }
+                    disabled={membershipSaving}
+                    options={roleOptions.map((opt) => ({
+                      value: opt,
+                      label: roleLabels[opt] ?? opt,
+                    }))}
+                    containerClassName="min-w-[150px]"
+                  />
+                  <Button
+                    type="button"
+                    onClick={() => onRemoveMember(membership)}
+                    disabled={membershipSaving}
+                    variant="red"
+                    fill={false}
+                  >
+                    {t("labelings.create.assign.remove")}
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}

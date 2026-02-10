@@ -3,13 +3,12 @@
 import { useEffect, useState } from "react";
 import PageLayout from "@/components/inside-pages-layout/PageLayout";
 import IndividualLabelingCard from "./IndividualLabelingCard";
-import EditLabelingModal from "./create/[id]/edit_labeling_modal";
 import GridItemCard from "@/components/grid/GridItemCard";
 import Button from "@/components/button/Button";
 import { Tag } from "lucide-react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
-import { fetchLabelingDashboard } from "@/lib/services/labeling_service";
+import { fetchLabelingDashboard } from "@/modules/labelings/labelingService";
 import useCurrent from "@/hooks/current_user_hook";
 import { toast } from "sonner";
 import { useTranslations } from "@/i18n/use-translations";
@@ -22,10 +21,6 @@ export default function LabelingsPage() {
     currentUser?.is_staff || currentUser?.account_type === "admin",
   );
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [editOpen, setEditOpen] = useState(false);
-  const [selectedLabelingId, setSelectedLabelingId] = useState<number | null>(
-    null,
-  );
 
   const {
     data: labelings,
@@ -61,19 +56,6 @@ export default function LabelingsPage() {
           : undefined
       }
       minColumnWidth="420px"
-      modal={
-        <EditLabelingModal
-          open={editOpen}
-          labelingId={selectedLabelingId ?? 0}
-          onClose={() => {
-            setEditOpen(false);
-            setSelectedLabelingId(null);
-          }}
-          onUpdated={async () => {
-            await mutate();
-          }}
-        />
-      }
     >
       {labelingsList.map((l, index) => {
         return (

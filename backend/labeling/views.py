@@ -215,10 +215,12 @@ class LabelingMembershipViewSet(viewsets.ModelViewSet):
         if not user or not getattr(user, "is_authenticated", False):
             return self.queryset.none()
 
+        # Filtra memberships de labelings onde o usuário é owner/contributor do projeto
         return (
             self.queryset.filter(
-                labeling__memberships__user=user,
-                labeling__memberships__role__in=[ProjectMembership.RoleChoices.OWNER, ProjectMembership.RoleChoices.CONTRIBUTOR],
+                Q(labeling__project__memberships__user=user,
+                  labeling__project__memberships__role__in=[ProjectMembership.RoleChoices.OWNER, ProjectMembership.RoleChoices.CONTRIBUTOR]) |
+                Q(labeling__created_by=user)
             )
             .distinct()
         )
