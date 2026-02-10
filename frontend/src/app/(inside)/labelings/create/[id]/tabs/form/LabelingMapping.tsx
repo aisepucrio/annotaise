@@ -7,7 +7,7 @@ import {
   LabelingStructureSection,
   QuestionRangeDTO,
 } from "@/modules/labelings/labelingsTypes";
-import { SectionData, SectionElement } from "./section_form";
+import { SectionData, SectionElement } from "./SectionForm";
 import { QuestionElement } from "./QuestionBlock";
 import { ContextElement } from "./ContextBlock";
 import { MultipleChoiceQuestionConfig } from "./question-types/QuestionMultipleChoice";

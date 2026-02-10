@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import type { SectionData, SectionElement } from "./section_form";
+import type { SectionData, SectionElement } from "./SectionForm";
 import type { TranslateFn } from "./QuestionBlock";
 import {
   createContextElement,

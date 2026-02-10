@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { arrayMove } from "@dnd-kit/sortable";
 import type { DragEndEvent } from "@dnd-kit/core";
-import type { SectionData } from "./section_form";
+import type { SectionData } from "./SectionForm";
 import type { TranslateFn } from "./QuestionBlock";
 import { createDefaultSection } from "./elementFactories";
 

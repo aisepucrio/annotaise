@@ -1,6 +1,6 @@
 import type { ContextElement } from "./ContextBlock";
 import type { QuestionElement, TranslateFn } from "./QuestionBlock";
-import type { SectionData } from "./section_form";
+import type { SectionData } from "./SectionForm";
 import { getDefaultQuestionConfig } from "./QuestionBlock";
 
 /**
