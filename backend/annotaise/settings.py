@@ -59,6 +59,8 @@ INSTALLED_APPS = [
     'project',
     'labeling',
     'rest_framework',
+    'health_check',
+    'health_check.db',
 ]
 
 MIDDLEWARE = [

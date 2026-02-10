@@ -407,6 +407,8 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.success.formSaved":
       "Formulário da rotulação salvo com sucesso.",
     "labelings.create.success.guideSaved": "Guia atualizado com sucesso.",
+    "labelings.create.success.memberAdded": "Membro adicionado com sucesso.",
+    "labelings.create.success.memberRemoved": "Membro removido com sucesso.",
     "labelings.create.confirmRemoveMember": "Remover este membro da rotulação?",
     "labelings.create.userFallback": "Usuário #{{id}}",
     "labelings.create.delete.title": "Excluir rotulação",
@@ -1027,6 +1029,8 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.errors.saveGuide": "Unable to save the guide.",
     "labelings.create.success.formSaved": "Labeling form saved successfully.",
     "labelings.create.success.guideSaved": "Guide updated successfully.",
+    "labelings.create.success.memberAdded": "Member added successfully.",
+    "labelings.create.success.memberRemoved": "Member removed successfully.",
     "labelings.create.confirmRemoveMember":
       "Remove this member from the labeling?",
     "labelings.create.userFallback": "User #{{id}}",
