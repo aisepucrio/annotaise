@@ -32,12 +32,10 @@ export default function UsersPage() {
   // Dados (React Query)
   const { data: users, error, isLoading } = useUsersDashboardQuery(searchTerm);
 
-  const updateUserMutation = editingUser
-    ? useUpdateUserMutation(editingUser.id)
-    : null;
+  const updateUserMutation = useUpdateUserMutation(editingUser?.id);
 
   const handleUpdateUser = async (payload: UpdateUserPayload) => {
-    if (!editingUser || !updateUserMutation) return;
+    if (!editingUser) return;
     await updateUserMutation.mutateAsync(payload);
   };
 

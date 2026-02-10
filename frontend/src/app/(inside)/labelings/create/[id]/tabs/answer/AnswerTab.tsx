@@ -93,28 +93,22 @@ export default function AnswerTab({ labelingId, users }: AnswerTabProps) {
       {/* Header com toggle e botão de exportar */}
       <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <button
-            type="button"
+          <Button
+            variant={activeView === "answers" ? "normal" : "muted"}
+            fill={false}
             onClick={() => setActiveView("answers")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              activeView === "answers"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
+            className="font-medium"
           >
             {t("labelings.create.tabs.answers")}
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant={activeView === "summary" ? "normal" : "muted"}
+            fill={false}
             onClick={() => setActiveView("summary")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              activeView === "summary"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
+            className="font-medium"
           >
             {t("labelings.create.tabs.summary")}
-          </button>
+          </Button>
         </div>
 
         <Button

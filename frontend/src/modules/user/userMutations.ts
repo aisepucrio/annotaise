@@ -16,11 +16,18 @@ export function useCreateInvitationMutation() {
 }
 
 // Utilizada para atualizar usuário
-export function useUpdateUserMutation(userId: number) {
+export function useUpdateUserMutation(userId?: number | null) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: UpdateUserPayload) => updateUser(userId, data),
+    mutationFn: (data: UpdateUserPayload) => {
+      if (userId == null) {
+        return Promise.reject(
+          new Error("Cannot update user without a valid userId."),
+        );
+      }
+      return updateUser(userId, data);
+    },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["users"] });
       void queryClient.invalidateQueries({ queryKey: ["users", "dashboard"] });

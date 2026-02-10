@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import LabelingHeader from "./LabelingHeader";
-import FormTab from "./tabs/form/FormTab";
+import FormTab, { type FormTabHandle } from "./tabs/form/FormTab";
 import AssignTab from "./tabs/assign/AssignTab";
 import AnswerTab from "./tabs/answer/AnswerTab";
-import GuideTab from "./tabs/guide/GuideTab";
+import GuideTab, { type GuideTabHandle } from "./tabs/guide/GuideTab";
 import EditLabelingModal from "./EditLabelingModal";
 import ConfirmDeleteModal from "@/components/ConfirmDeleteModal";
 import {
@@ -22,6 +22,7 @@ import {
   useCreateMembershipMutation,
   useUpdateMembershipMutation,
   useDeleteMembershipMutation,
+  useSaveLabelingStructureMutation,
 } from "@/modules/labelings/create/labelingManagerMutations";
 import { getApiErrorMessage } from "@/lib/getApiErrorMessage";
 import { useTranslations } from "@/i18n/use-translations";
@@ -35,6 +36,8 @@ export default function LabelingCreationPage() {
   const router = useRouter();
   const params = useParams();
   const headerRef = useRef<HTMLDivElement | null>(null);
+  const formTabRef = useRef<FormTabHandle>(null);
+  const guideTabRef = useRef<GuideTabHandle>(null);
   const { t } = useTranslations();
 
   const [activeTab, setActiveTab] = useState<string>("form");
@@ -58,6 +61,7 @@ export default function LabelingCreationPage() {
 
   const deleteMutation = useDeleteLabelingMutation();
   const updateMutation = useUpdateLabelingMutation();
+  const saveStructureMutation = useSaveLabelingStructureMutation();
   const createMembershipMutation = useCreateMembershipMutation();
   const updateMembershipMutation = useUpdateMembershipMutation();
   const deleteMembershipMutation = useDeleteMembershipMutation();
@@ -219,6 +223,26 @@ export default function LabelingCreationPage() {
       : base;
   }, [labeling?.decision, t]);
 
+  // Determine if save button should be visible (only for form and guide tabs)
+  const showSaveButton = activeTab === "form" || activeTab === "guide";
+
+  // Determine if save is in progress based on active tab
+  const isSaving =
+    activeTab === "form"
+      ? saveStructureMutation.isPending
+      : activeTab === "guide"
+        ? updateMutation.isPending
+        : false;
+
+  // Handler for save button in header
+  const handleHeaderSave = useCallback(() => {
+    if (activeTab === "form") {
+      formTabRef.current?.save();
+    } else if (activeTab === "guide") {
+      guideTabRef.current?.save();
+    }
+  }, [activeTab]);
+
   // Se a tab ativa for "decision" e o labeling não tiver decisão, volta para "form"
   useEffect(() => {
     if (!labeling?.decision && activeTab === "decision") {
@@ -230,7 +254,7 @@ export default function LabelingCreationPage() {
   const renderTabContent = () => {
     switch (activeTab) {
       case "form":
-        return <FormTab labelingId={labelingId} />;
+        return <FormTab ref={formTabRef} labelingId={labelingId} />;
       case "assign":
         return (
           <AssignTab
@@ -259,6 +283,7 @@ export default function LabelingCreationPage() {
       case "guide":
         return (
           <GuideTab
+            ref={guideTabRef}
             guideText={guideText}
             onGuideChange={setGuideText}
             onSaveGuide={handleSaveGuide}
@@ -267,12 +292,12 @@ export default function LabelingCreationPage() {
           />
         );
       default:
-        return <FormTab labelingId={labelingId} />;
+        return <FormTab ref={formTabRef} labelingId={labelingId} />;
     }
   };
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-screen flex flex-col overflow-hidden">
       <LabelingHeader
         labeling={labeling}
         project={project}
@@ -285,10 +310,13 @@ export default function LabelingCreationPage() {
         onBack={() => router.push("/labelings/manage")}
         onEditInfo={() => setIsEditInfoOpen(true)}
         onDelete={() => setIsDeleteOpen(true)}
+        showSaveButton={showSaveButton}
+        onSave={handleHeaderSave}
+        isSaving={isSaving}
       />
 
       {/* Renderização do componente */}
-      <div className="flex-1 ">{renderTabContent()}</div>
+      <div className="flex-1 min-h-0 overflow-y-auto">{renderTabContent()}</div>
 
       {/* Modal de edição */}
       <EditLabelingModal

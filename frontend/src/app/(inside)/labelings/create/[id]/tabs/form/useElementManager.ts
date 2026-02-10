@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import type { SectionData, SectionElement } from "./section_form";
+import type { SectionData, SectionElement } from "./SectionForm";
 import type { TranslateFn } from "./QuestionBlock";
 import {
   createContextElement,
@@ -25,6 +25,21 @@ export function useElementManager(
       setSections(
         sections.map((s) => {
           if (s.id !== sectionId) return s;
+
+          // Special token: "start" means insert at beginning
+          if (insertAfterId === "start") {
+            const newElement = createContextElement(0);
+            return {
+              ...s,
+              elements: [
+                newElement,
+                ...s.elements.map((el: SectionElement, idx: number) => ({
+                  ...el,
+                  order: idx + 1,
+                })),
+              ],
+            };
+          }
 
           if (!insertAfterId) {
             // Adiciona no final
@@ -62,6 +77,21 @@ export function useElementManager(
       setSections(
         sections.map((s) => {
           if (s.id !== sectionId) return s;
+
+          // Special token: "start" means insert at beginning
+          if (insertAfterId === "start") {
+            const newElement = createQuestionElement(0, t);
+            return {
+              ...s,
+              elements: [
+                newElement,
+                ...s.elements.map((el: SectionElement, idx: number) => ({
+                  ...el,
+                  order: idx + 1,
+                })),
+              ],
+            };
+          }
 
           if (!insertAfterId) {
             // Adiciona no final
@@ -124,7 +154,7 @@ function insertElementAfter(
     ...ordered.slice(0, insertIndex),
     createElement(insertIndex),
     ...ordered.slice(insertIndex),
-  ].map((el, idx) => ({ ...el, order: idx }));
+  ].map((el: SectionElement, idx: number) => ({ ...el, order: idx }));
 
   return { ...section, elements: merged };
 }

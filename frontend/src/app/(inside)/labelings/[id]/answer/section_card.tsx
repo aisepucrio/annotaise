@@ -68,7 +68,7 @@ export default function SectionCard({
         </div>
       </div>
 
-      <div className="space-y-4 bg-white p-4 px-[10%]">
+      <div className="space-y-4 bg-white px-[10%]">
         {blocks.length > 0 ? (
           blocks.map((block, blockIndex) =>
             block.type === "context" ? (

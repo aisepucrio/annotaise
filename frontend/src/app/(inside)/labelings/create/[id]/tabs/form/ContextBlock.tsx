@@ -72,7 +72,6 @@ export default function ContextBlock({
           </button>
         </div>
         <Input
-          multiline
           rows={3}
           value={data.title ?? ""}
           onChange={handleTitleChange}

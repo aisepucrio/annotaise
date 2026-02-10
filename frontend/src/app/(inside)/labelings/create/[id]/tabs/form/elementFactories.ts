@@ -1,6 +1,6 @@
 import type { ContextElement } from "./ContextBlock";
 import type { QuestionElement, TranslateFn } from "./QuestionBlock";
-import type { SectionData } from "./section_form";
+import type { SectionData } from "./SectionForm";
 import { getDefaultQuestionConfig } from "./QuestionBlock";
 
 /**
@@ -30,16 +30,13 @@ export const createQuestionElement = (
 });
 
 /**
- * Cria uma seção padrão com um contexto e uma pergunta
+ * Cria uma seção padrão
  */
 export const createDefaultSection = (t: TranslateFn): SectionData => {
-  const context = createContextElement(0);
-  const question = createQuestionElement(1, t);
-
   return {
     id: crypto.randomUUID(),
     title: "",
-    elements: [context, question],
+    elements: [],
     order: 0,
   };
 };

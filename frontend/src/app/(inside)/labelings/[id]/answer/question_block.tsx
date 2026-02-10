@@ -24,7 +24,7 @@ export default function QuestionBlock({
   return (
     <>
       <div className="text-left mt-12 mb-0">
-        <div className=" inline-block text-metal-900 text-sm font-normal border-blueberry-700">
+        <div className=" inline-block text-metal-900 text-md font-normal border-blueberry-700">
           <div className="p-1 flex items-center gap-1">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {questionText}
@@ -34,7 +34,13 @@ export default function QuestionBlock({
         </div>
       </div>
 
-      <div className=" border-3 border-blueberry-700 p-5 shadow-md rounded-2xl">
+      <div
+        className="border-t-6 border-l-6 p-5 shadow-md rounded-br-xl rounded-ss-3xl"
+        style={{
+          borderTopColor: "var(--blueberry-500)",
+          borderLeftColor: "var(--blueberry-500)",
+        }}
+      >
         <QuestionInput element={element} value={value} onChange={onChange} />
       </div>
     </>
