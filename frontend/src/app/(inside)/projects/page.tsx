@@ -1,17 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import useSWR from "swr";
 import { useRouter } from "next/navigation";
 import PageLayout from "@/components/inside-pages-layout/PageLayout";
 import IndividualProjectCard from "./IndividualProjectCard";
 import { Plus } from "lucide-react";
 import NewProjectModal from "./NewProjectModal";
 import GridItemCard from "@/components/grid/GridItemCard";
-import {
-  createProject,
-  fetchProjectDashboard,
-} from "@/modules/projects/projectService";
+import { useProjectDashboardQuery } from "@/modules/projects/projectsQueries";
+import { useCreateProjectMutation } from "@/modules/projects/projectsMutations";
 import type { ProjectPayload } from "@/modules/projects/projectsTypes";
 import useCurrent from "@/hooks/current_user_hook";
 import { toast } from "sonner";
@@ -35,11 +32,9 @@ export default function Projects() {
     data: projects,
     error,
     isLoading: dataLoading,
-    mutate,
-  } = useSWR(
-    canSeeProjects ? ["projects-dashboard", debouncedSearch] : null,
-    () => fetchProjectDashboard(debouncedSearch),
-  );
+  } = useProjectDashboardQuery(debouncedSearch);
+
+  const createProjectMutation = useCreateProjectMutation();
 
   const projectList = projects ?? [];
   const isLoading =
@@ -51,8 +46,7 @@ export default function Projects() {
       toast.error(t("projects.createDenied"));
       return;
     }
-    await createProject(payload);
-    await mutate();
+    await createProjectMutation.mutateAsync(payload);
   };
 
   useEffect(() => {

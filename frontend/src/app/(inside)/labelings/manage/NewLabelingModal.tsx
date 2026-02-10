@@ -2,9 +2,7 @@
 
 import { Loader2, TriangleAlert, Upload } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import useSWR from "swr";
-import { fetchProjects } from "@/modules/projects/projectService";
-import type { Project } from "@/modules/projects/projectsTypes";
+import { useProjectsQuery } from "@/modules/projects/projectsQueries";
 import { toast } from "sonner";
 import Modal from "@/components/modal/Modal";
 import Input from "@/components/form/Input";
@@ -50,11 +48,7 @@ export default function NewLabelingModal({
   const [hasEmptyFields, setHasEmptyFields] = useState(false);
   const [isAnalyzingFile, setIsAnalyzingFile] = useState(false);
 
-  const shouldFetchProjects = open;
-  const { data: projects, isLoading: isLoadingProjects } = useSWR<Project[]>(
-    shouldFetchProjects ? "projects:list" : null,
-    fetchProjects,
-  );
+  const { data: projects, isLoading: isLoadingProjects } = useProjectsQuery();
 
   // Efeitos: selecionar primeiro projeto e resetar estado quando modal fecha
   useEffect(() => {

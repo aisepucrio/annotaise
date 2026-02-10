@@ -1,24 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import useSWR from "swr";
-import { UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 import PageLayout from "@/components/inside-pages-layout/PageLayout";
 import GridItemCard from "@/components/grid/GridItemCard";
 
-import {
-  fetchUsersDashboard,
-  updateUser,
-} from "@/modules/user/userService";
-import type {
-  UpdateUserPayload,
-  User,
-} from "@/modules/user/userTypes";
+import { useUsersDashboardQuery } from "@/modules/user/userQueries";
+import { useUpdateUserMutation } from "@/modules/user/userMutations";
+import type { UpdateUserPayload, User } from "@/modules/user/userTypes";
 
 import useCurrent from "@/hooks/current_user_hook";
-import useInvitationCreator from "@/hooks/use_invitation_creator";
+import useInvitationCreator from "./useInvtationCreator";
 import { useTranslations } from "@/i18n/use-translations";
 
 import IndividualUserCard from "./IndividualUserCard";
@@ -43,21 +36,21 @@ export default function UsersPage() {
   // Ações
   const handleCreateInvitation = useInvitationCreator();
 
-  const handleUpdateUser = async (payload: UpdateUserPayload) => {
-    if (!editingUser) return;
-    await updateUser(editingUser.id, payload);
-    await mutate();
-  };
-
-  // Dados (SWR)
+  // Dados (React Query)
   const {
     data: users,
     error,
     isLoading: dataLoading,
-    mutate,
-  } = useSWR<User[]>(isAdmin ? ["users", searchTerm] : null, () =>
-    fetchUsersDashboard(searchTerm),
-  );
+  } = useUsersDashboardQuery(searchTerm);
+
+  const updateUserMutation = editingUser
+    ? useUpdateUserMutation(editingUser.id)
+    : null;
+
+  const handleUpdateUser = async (payload: UpdateUserPayload) => {
+    if (!editingUser || !updateUserMutation) return;
+    await updateUserMutation.mutateAsync(payload);
+  };
 
   const isLoading = currentUser === undefined || (isAdmin && dataLoading);
   const showAccessDenied = currentUser !== undefined && !isAdmin;

@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import useSWR from "swr";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Save, Trash2 } from "lucide-react";
@@ -15,20 +14,22 @@ import Select from "@/components/form/Select";
 import useCurrent from "@/hooks/current_user_hook";
 import SidebarLayout from "@/components/side-bar/sidebar_layout";
 import {
-  createProjectMembership,
-  deleteProject,
-  deleteProjectMembership,
-  fetchProject,
-  fetchProjectMemberships,
-  updateProject,
-  updateProjectMembership,
-} from "@/modules/projects/projectService";
+  useProjectQuery,
+  useProjectMembershipsQuery,
+} from "@/modules/projects/projectsQueries";
+import {
+  useUpdateProjectMutation,
+  useDeleteProjectMutation,
+  useCreateProjectMembershipMutation,
+  useUpdateProjectMembershipMutation,
+  useDeleteProjectMembershipMutation,
+} from "@/modules/projects/projectsMutations";
 import type {
   ProjectMembership,
   ProjectMembershipPayload,
   ProjectPayload,
 } from "@/modules/projects/projectsTypes";
-import { fetchUsers } from "@/modules/user/userService";
+import { useUsersQuery } from "@/modules/user/userQueries";
 import type { User } from "@/modules/user/userTypes";
 
 type Params = {
@@ -79,28 +80,28 @@ export default function ProjectDetailsPage() {
     data: project,
     isLoading: loadingProject,
     error: projectError,
-    mutate: mutateProject,
-  } = useSWR(projectId && canSeeProjects ? ["project", projectId] : null, () =>
-    fetchProject(projectId)
-  );
+  } = useProjectQuery(projectId);
 
   // Buscar membros do projeto
   const {
     data: memberships,
     isLoading: loadingMemberships,
-    mutate: mutateMemberships,
     error: membershipsError,
-  } = useSWR(
-    projectId && canSeeProjects ? ["project-memberships", projectId] : null,
-    () => fetchProjectMemberships(projectId)
-  );
+  } = useProjectMembershipsQuery(projectId);
 
   // Buscar todos os usuários
   const {
     data: users,
     isLoading: loadingUsers,
     error: usersError,
-  } = useSWR(canSeeProjects ? "project-users" : null, () => fetchUsers());
+  } = useUsersQuery();
+
+  // Mutations
+  const updateProjectMutation = useUpdateProjectMutation(projectId);
+  const deleteProjectMutation = useDeleteProjectMutation(projectId);
+  const createMembershipMutation = useCreateProjectMembershipMutation(projectId);
+  const updateMembershipMutation = useUpdateProjectMembershipMutation(projectId);
+  const deleteMembershipMutation = useDeleteProjectMembershipMutation(projectId);
 
   // Form para editar projeto
   const {
@@ -116,7 +117,7 @@ export default function ProjectDetailsPage() {
   const availableUsers = useMemo(() => {
     if (!users || !memberships) return [];
     const assignedIds = new Set(memberships.map((m) => m.user));
-    return users.filter((user) => !assignedIds.has(user.id));
+    return (users as User[]).filter((user: User) => !assignedIds.has(user.id));
   }, [users, memberships]);
 
   // Exibir nome do usuário
@@ -181,8 +182,7 @@ export default function ProjectDetailsPage() {
     if (!projectId) return;
 
     try {
-      await updateProject(projectId, values);
-      await mutateProject();
+      await updateProjectMutation.mutateAsync(values);
       toast.success(t("projects.detail.updateSuccess"));
     } catch (error) {
       const message =
@@ -201,7 +201,7 @@ export default function ProjectDetailsPage() {
 
     try {
       setDeleteLoading(true);
-      await deleteProject(projectId);
+      await deleteProjectMutation.mutateAsync();
       setIsDeleteModalOpen(false);
       router.push("/projects");
     } catch (error) {
@@ -223,14 +223,13 @@ export default function ProjectDetailsPage() {
     if (!projectId || !newMemberId) return;
 
     try {
-      await createProjectMembership({
+      await createMembershipMutation.mutateAsync({
         project: projectId,
         user: Number(newMemberId),
         role: newMemberRole,
       });
       setNewMemberId("");
       setNewMemberRole("viewer");
-      await mutateMemberships();
       toast.success(t("projects.detail.addMemberSuccess"));
     } catch (error) {
       const message =
@@ -251,8 +250,10 @@ export default function ProjectDetailsPage() {
     if (membership.role === nextRole) return;
 
     try {
-      await updateProjectMembership(membership.id, { role: nextRole });
-      await mutateMemberships();
+      await updateMembershipMutation.mutateAsync({
+        id: membership.id,
+        data: { role: nextRole },
+      });
       toast.success(t("projects.detail.roleUpdateSuccess"));
     } catch (error) {
       const message =
@@ -269,8 +270,7 @@ export default function ProjectDetailsPage() {
     }
 
     try {
-      await deleteProjectMembership(membership.id);
-      await mutateMemberships();
+      await deleteMembershipMutation.mutateAsync(membership.id);
       toast.success(t("projects.detail.removeMemberSuccess"));
     } catch (error) {
       const message =
@@ -321,12 +321,12 @@ export default function ProjectDetailsPage() {
           <div className="flex items-center gap-3">
             <Button
               onClick={handleSaveProject}
-              disabled={isSubmitting || !isAdmin}
+              disabled={isSubmitting || updateProjectMutation.isPending || !isAdmin}
               variant="white"
               fill={false}
               icon={<Save size={20} />}
             >
-              {isSubmitting ? t("projects.detail.saving") : t("projects.detail.saveButton")}
+              {isSubmitting || updateProjectMutation.isPending ? t("projects.detail.saving") : t("projects.detail.saveButton")}
             </Button>
 
             <Button
@@ -415,7 +415,7 @@ export default function ProjectDetailsPage() {
                         ? [{ value: "", label: t("projects.detail.loadingUsers") }]
                         : availableUsers.length === 0
                         ? [{ value: "", label: t("projects.detail.noUsersAvailable") }]
-                        : availableUsers.map((user) => ({
+                        : availableUsers.map((user: User) => ({
                             value: user.id.toString(),
                             label: getUserName(user),
                           }))

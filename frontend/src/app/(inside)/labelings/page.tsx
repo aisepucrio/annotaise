@@ -7,8 +7,7 @@ import GridItemCard from "@/components/grid/GridItemCard";
 import Button from "@/components/button/Button";
 import { Tag } from "lucide-react";
 import { useRouter } from "next/navigation";
-import useSWR from "swr";
-import { fetchLabelingDashboard } from "@/modules/labelings/labelingService";
+import { useLabelingDashboardQuery } from "@/modules/labelings/labelingQueries";
 import useCurrent from "@/hooks/current_user_hook";
 import { toast } from "sonner";
 import { useTranslations } from "@/i18n/use-translations";
@@ -26,10 +25,7 @@ export default function LabelingsPage() {
     data: labelings,
     error,
     isLoading,
-    mutate,
-  } = useSWR(["labelings-dashboard", debouncedSearch], () =>
-    fetchLabelingDashboard(debouncedSearch),
-  );
+  } = useLabelingDashboardQuery(debouncedSearch);
 
   const labelingsList = labelings ?? [];
 

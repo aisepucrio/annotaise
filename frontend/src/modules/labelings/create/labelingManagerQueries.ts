@@ -9,7 +9,7 @@ import { fetchProject } from "@/modules/projects/projectService";
 import { fetchUsers } from "@/modules/user/userService";
 import type { LabelingStructureSection } from "@/modules/labelings/labelingsTypes";
 
-// Hook para buscar os dados do header (labeling + projeto)
+// Utilizada para buscar os dados básicos do labeling + projeto (para o header)
 export function useLabelingHeaderQuery(labelingId: number) {
   const enabled = !Number.isNaN(labelingId);
 
@@ -27,7 +27,7 @@ export function useLabelingHeaderQuery(labelingId: number) {
   });
 }
 
-// Hook para buscar a estrutura do labeling
+// Utilizada para buscar a estrutura do labeling + colunas (derivadas do CSV ou da estrutura)
 export function useLabelingStructureQuery(labelingId: number) {
   const enabled = !Number.isNaN(labelingId);
 
@@ -40,7 +40,7 @@ export function useLabelingStructureQuery(labelingId: number) {
         fetchLabelingStructure(labelingId),
       ]);
 
-      // Derivar colunas do CSV ou da estrutura, dando preferência para o CSV se disponível
+      // Prioriza colunas do CSV, mas se não tiver, deriva da estrutura
       const csvColumns = Array.isArray(labeling.column_names)
         ? labeling.column_names
         : [];
@@ -52,7 +52,7 @@ export function useLabelingStructureQuery(labelingId: number) {
   });
 }
 
-// Funçao para derivar colunas do labeling a partir da estrutura
+// Auxiliar, utilizada para derivar colunas da estrutura do labeling (para casos sem CSV ou para mostrar colunas mesmo quando tem CSV)
 function deriveColumnsFromStructure(
   sections: LabelingStructureSection[],
 ): string[] {
@@ -67,7 +67,7 @@ function deriveColumnsFromStructure(
   return cols;
 }
 
-// Hook para buscar memberships do labeling
+// Utilizada para buscar os membros do labeling
 export function useLabelingMembershipsQuery(labelingId: number) {
   const enabled = !Number.isNaN(labelingId);
 
@@ -78,7 +78,7 @@ export function useLabelingMembershipsQuery(labelingId: number) {
   });
 }
 
-// Hook para buscar usuários disponíveis
+// Utilizada para buscar os usuários disponíveis (para adicionar como membros)
 export function useAvailableUsersQuery() {
   return useQuery({
     queryKey: ["users"],
@@ -86,7 +86,7 @@ export function useAvailableUsersQuery() {
   });
 }
 
-// Hook para buscar as respostas do labeling
+// Utilizada para buscar as respostas do labeling (para a tab de respostas)
 export function useLabelingAnswersQuery(labelingId: number) {
   const enabled = !Number.isNaN(labelingId);
 
@@ -97,7 +97,7 @@ export function useLabelingAnswersQuery(labelingId: number) {
   });
 }
 
-// Hook para buscar respostas + estrutura juntos (para a tab de answers/summary)
+// Utilizada para buscar as respostas do labeling + estrutura (para a tab de respostas, para mostrar perguntas e respostas juntas)
 export function useLabelingAnswersWithStructureQuery(labelingId: number) {
   const enabled = !Number.isNaN(labelingId);
 
