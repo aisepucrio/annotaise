@@ -1,4 +1,4 @@
-import type { ChangeEvent } from "react";
+import NumberInput from "@/components/form/NumberInput";
 import { useTranslations } from "@/i18n/use-translations";
 
 export type RangeQuestionConfig = {
@@ -25,50 +25,37 @@ export default function QuestionRangeEditor({ config, onChange }: Props) {
   const { min, max, step } = config;
 
   const handleNumericChange =
-    (field: "min" | "max" | "step") => (e: ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value;
+    (field: "min" | "max" | "step") => (value: number | string) => {
       const parsed = value === "" ? undefined : Number(value);
       onChange({
         ...config,
-        [field]: parsed,
+        [field]: Number.isNaN(parsed) ? undefined : parsed,
       });
     };
 
   return (
     <div className="flex flex-col gap-3">
       <div className="grid grid-cols-3 gap-3">
-        <label className="flex flex-col text-xs text-blueberry-900">
-          {t("labelings.create.questionType.range.minLabel")}
-          <input
-            type="number"
-            className="mt-1 rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-blueberry-900 focus:outline-none cursor-text"
-            value={min ?? ""}
-            onChange={handleNumericChange("min")}
-          />
-        </label>
-        <label className="flex flex-col text-xs text-blueberry-900">
-          {t("labelings.create.questionType.range.maxLabel")}
-          <input
-            type="number"
-            className="mt-1 rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-blueberry-900 focus:outline-none cursor-text"
-            value={max ?? ""}
-            onChange={handleNumericChange("max")}
-          />
-        </label>
-        <label className="flex flex-col text-xs text-blueberry-900">
-          {t("labelings.create.questionType.range.stepLabel")}
-          <input
-            type="number"
-            className="mt-1 rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-blueberry-900 focus:outline-none cursor-text"
-            value={step ?? ""}
-            min={0}
-            step="any"
-            onChange={handleNumericChange("step")}
-          />
-        </label>
+        <NumberInput
+          label={t("labelings.create.questionType.range.minLabel")}
+          value={min ?? ""}
+          onChange={handleNumericChange("min")}
+        />
+        <NumberInput
+          label={t("labelings.create.questionType.range.maxLabel")}
+          value={max ?? ""}
+          onChange={handleNumericChange("max")}
+        />
+        <NumberInput
+          label={t("labelings.create.questionType.range.stepLabel")}
+          value={step ?? ""}
+          min={0}
+          step={0.01}
+          onChange={handleNumericChange("step")}
+        />
       </div>
       {(min !== undefined || max !== undefined || step !== undefined) && (
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-gray-600">
           {t("labelings.create.questionType.range.summary", {
             min: min ?? "-",
             max: max ?? "-",

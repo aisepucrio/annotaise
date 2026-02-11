@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { AuthActions } from "@/lib/authClient";
-import useCurrent from "@/hooks/current_user_hook";
+import { useIsAdmin } from "@/lib/AdminContext";
 import { BookmarkPlus } from "lucide-react";
 import LanguageToggle from "@/components/LanguageToggle";
 import { useTranslations } from "@/i18n/use-translations";
@@ -25,15 +25,9 @@ interface SidebarProps {
 export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
   const router = useRouter();
   const { removeTokens } = AuthActions();
-  const currentUser = useCurrent();
+  const { isAdmin } = useIsAdmin();
   const { t } = useTranslations();
-  const isAdmin = Boolean(
-    currentUser?.is_staff || currentUser?.account_type === "admin",
-  );
-  const canSeeProjects = Boolean(
-    currentUser &&
-    (currentUser.is_staff || currentUser.account_type !== "standard"),
-  );
+  const canSeeProjects = isAdmin;
 
   const handleLogout = () => {
     removeTokens();
@@ -115,16 +109,6 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
         )}
 
         <ul className="space-y-1 mt-3 w-full">
-          {/* 
-          {isAdmin ? (
-            <SidebarItem
-              icon={<LayoutDashboard size={24} />}
-              label={t("sidebar.dashboard")}
-            href="/dashboard"
-            alias="/dashboard"
-            hover_color="blue"
-            collapsed={!isOpen}
-          />) : null} */}
           {isAdmin ? (
             <SidebarItem
               icon={<User size={24} />}
@@ -135,16 +119,7 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
               collapsed={!isOpen}
             />
           ) : null}
-          {/* {isAdmin ? (
-            <SidebarItem
-              icon={<Users size={24} />}
-              label={t("sidebar.groups")}
-              href="/groups"
-              alias="/groups"
-              hover_color="blue"
-              collapsed={!isOpen}
-            />
-          ) : null} */}
+
           {canSeeProjects ? (
             <SidebarItem
               icon={<FolderKanban size={24} />}
@@ -177,17 +152,6 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
 
         {/* Rodape */}
         <div className="text-sm text-gray-500 mt-auto w-full space-y-1 pl-0">
-          {/*     CONFIGURAÇÕES, REMOVIDA POR ENQUANTO    
-          <SidebarItem
-            icon={<Settings size={24} />}
-            label="Configurações"
-            href="/options"
-            alias="/options"
-            hover_color="gray"
-            collapsed={!isOpen}
-          />
-          */}
-
           <button
             type="button"
             className="text-sm text-red-400 mt-auto w-full space-y-1"

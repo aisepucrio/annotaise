@@ -179,7 +179,6 @@ export default function SectionForm({
       {/* Campo de título da seção */}
       <div className="flex gap-5">
         <Input
-          multiline
           rows={2}
           className="text-sm font-semibold text-blue-900"
           placeholder={t("labelings.create.section.titlePlaceholder")}
@@ -209,8 +208,8 @@ export default function SectionForm({
                 allowContext={allowContext}
                 onMouseEnter={onMouseEnterInsertionPoint}
                 onMouseLeave={onMouseLeaveInsertionPoint}
-                onAddContext={() => onAddContext(null)}
-                onAddQuestion={() => onAddQuestion(null)}
+                onAddContext={() => onAddContext("start")}
+                onAddQuestion={() => onAddQuestion("start")}
                 onAddSection={() => onAddSection(null)}
               />
             </div>
@@ -232,6 +231,7 @@ export default function SectionForm({
                         ? t("labelings.create.section.dragContext")
                         : t("labelings.create.section.dragQuestion")
                     }
+                    kind={isContext ? "context" : "question"}
                   >
                     {isContext ? (
                       <ContextBlock
@@ -285,13 +285,14 @@ export default function SectionForm({
 type SortableElementProps = {
   id: string;
   label: string;
+  kind: "context" | "question";
   children: React.ReactNode;
 };
 
 /**
  * Wrapper que torna um elemento arrastável com drag handle.
  */
-function SortableElement({ id, label, children }: SortableElementProps) {
+function SortableElement({ id, label, kind, children }: SortableElementProps) {
   const {
     attributes,
     listeners,
@@ -307,6 +308,8 @@ function SortableElement({ id, label, children }: SortableElementProps) {
     transition,
     opacity: isDragging ? 0.92 : 1,
   };
+  const dragColorClass =
+    kind === "context" ? "bg-blueberry-700" : "bg-blueberry-500";
 
   return (
     <div
@@ -318,7 +321,7 @@ function SortableElement({ id, label, children }: SortableElementProps) {
         type="button"
         aria-label={label}
         title={label}
-        className="absolute -left-7 top-6 flex h-8 w-8 items-center justify-center rounded-l-md rounded-r-none bg-blueberry-900 text-white cursor-grab active:cursor-grabbing pt-0.5"
+        className={`absolute -left-7 top-6 flex h-8 w-8 items-center justify-center rounded-l-md rounded-r-none text-white cursor-grab active:cursor-grabbing pt-0.5 ${dragColorClass}`}
         {...attributes}
         {...listeners}
       >

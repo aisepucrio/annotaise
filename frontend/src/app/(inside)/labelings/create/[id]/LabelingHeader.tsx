@@ -1,5 +1,5 @@
 import type { RefObject } from "react";
-import { ArrowLeft, Edit, Calendar, Trash2 } from "lucide-react";
+import { ArrowLeft, Edit, Calendar, Trash2, Save } from "lucide-react";
 import Button from "@/components/button/Button";
 import { useTranslations } from "@/i18n/use-translations";
 import type { Labeling } from "@/modules/labelings/labelingsTypes";
@@ -21,6 +21,11 @@ interface LabelingHeaderProps {
   onEditInfo: () => void;
   onDelete: () => void;
   headerRef?: RefObject<HTMLDivElement | null>;
+
+  // Optional save button
+  showSaveButton?: boolean;
+  onSave?: () => void;
+  isSaving?: boolean;
 }
 
 function formatDate(dateStr: string | null, locale: string) {
@@ -40,16 +45,20 @@ export default function LabelingHeader({
   onEditInfo,
   onDelete,
   headerRef,
+  showSaveButton = false,
+  onSave,
+  isSaving = false,
 }: LabelingHeaderProps) {
   const { t, locale } = useTranslations();
 
   return (
     <div
       ref={headerRef}
-      className="bg-blueberry-700 text-white px-6 py-3 shadow-md shrink-0"
+      className="bg-blueberry-700 text-white px-4 py-2 shadow-md shrink-0 sticky top-0 z-20"
     >
       <div className="flex items-center justify-between">
         {/* Esquerda: título, informações do projeto, datas e ação de editar */}
+        {/* Botão */}
         <div className="flex items-center gap-3">
           <Button
             variant="light"
@@ -62,18 +71,16 @@ export default function LabelingHeader({
             <ArrowLeft size={22} />
           </Button>
 
+          {/* Título e nome do projeto */}
           <div className="flex flex-col">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl font-semibold leading-tight">
+            <div className="flex items-center gap-3">
+              <span className="text-xl font-semibold leading-tight">
                 {labeling?.title ||
                   (isLoading
                     ? t("labelings.create.header.loadingTitle")
                     : t("labelings.create.header.titleFallback"))}
               </span>
-            </div>
-
-            <div className="flex items-center gap-2 text-md opacity-90 mt-1">
-              <span className="font-medium">
+              <span className="text-sm opacity-90">
                 {project?.name
                   ? t("labelings.create.header.projectLabel", {
                       name: project.name,
@@ -82,7 +89,8 @@ export default function LabelingHeader({
               </span>
             </div>
 
-            <div className="flex items-center gap-3 text-md mt-1">
+            {/* Data */}
+            <div className="flex items-center gap-3 text-md mt-0.5">
               <span className="flex items-center gap-1">
                 <Calendar size={14} />
                 {`${formatDate(labeling?.start_date ?? null, locale)} - ${formatDate(
@@ -91,6 +99,7 @@ export default function LabelingHeader({
                 )}`}
               </span>
 
+              {/* Badges */}
               {project?.status && (
                 <span className="px-2 py-1 bg-white/20 text-white text-[11px] font-semibold uppercase tracking-wide">
                   {project.status}
@@ -125,19 +134,28 @@ export default function LabelingHeader({
           </button>
         </div>
 
-        {/* Direita: ação de excluir */}
-        <div className="flex items-down gap-3">
+        {/* Direita: botão de salvar (opcional) e botão de excluir */}
+        <div className="flex items-center gap-2">
+          {showSaveButton && onSave && (
+            <Button
+              variant="white"
+              fill={false}
+              onClick={onSave}
+              disabled={isSaving || isLoading}
+              icon={<Save size={20} />}
+              className="bg-white/20 hover:bg-white/30"
+            >
+              {isSaving ? t("common.saving") : t("common.saveChanges")}
+            </Button>
+          )}
           <Button
             variant="red"
             fill={false}
+            size="icon"
             onClick={onDelete}
             disabled={isDeleting || isLoading}
             icon={<Trash2 size={16} />}
-          >
-            {isDeleting
-              ? t("labelings.create.header.deleting")
-              : t("labelings.create.header.deleteButton")}
-          </Button>
+          ></Button>
         </div>
       </div>
 
@@ -151,7 +169,7 @@ export default function LabelingHeader({
             key={tab.key}
             type="button"
             onClick={() => onTabClick(tab.key)}
-            className={`pb-1 border-b-2 transition-colors cursor-pointer ${
+            className={`pb-0 border-b-2 transition-colors cursor-pointer ${
               activeTabKey === tab.key
                 ? "border-white font-semibold text-white"
                 : "border-transparent text-blue-100 hover:text-white"

@@ -1,4 +1,4 @@
-import { api } from "../api";
+import { api } from "@/lib/api";
 import type {
   User,
   CreateUserPayload,
@@ -7,6 +7,7 @@ import type {
   Invitation,
 } from "./userTypes";
 
+// Busca todos os usuários com opção de busca
 export async function fetchUsers(search?: string): Promise<User[]> {
   const { data } = await api.get<User[]>("/users/", {
     params: search ? { search } : undefined,
@@ -14,6 +15,7 @@ export async function fetchUsers(search?: string): Promise<User[]> {
   return data;
 }
 
+// Busca usuários do dashboard com opção de busca
 export async function fetchUsersDashboard(search?: string): Promise<User[]> {
   const { data } = await api.get<User[]>("/users/dashboard/", {
     params: search ? { search } : undefined,
@@ -21,6 +23,7 @@ export async function fetchUsersDashboard(search?: string): Promise<User[]> {
   return data;
 }
 
+// Cria um novo usuário
 export async function createUser(payload: CreateUserPayload): Promise<User> {
   const { data } = await api.post<User>("/users/", {
     ...payload,
@@ -29,6 +32,7 @@ export async function createUser(payload: CreateUserPayload): Promise<User> {
   return data;
 }
 
+// Cria um convite para novo usuário
 export async function createInvitation(
   payload: CreateInvitationPayload,
 ): Promise<{ link: string; invitation: Invitation }> {
@@ -39,6 +43,7 @@ export async function createInvitation(
   return data;
 }
 
+// Atualiza dados de um usuário existente
 export async function updateUser(
   id: number,
   payload: UpdateUserPayload,

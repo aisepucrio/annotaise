@@ -117,20 +117,6 @@ export default function AnswersTab({
             </select>
           </div>
           <div className="flex items-center gap-2 ml-auto">
-            <Button
-              variant="normal"
-              fill={false}
-              size="icon"
-              onClick={() => void onExportCsv()}
-              disabled={exporting}
-              className="px-4"
-              ariaLabel={t("labelings.create.answers.exportAria")}
-              icon={<Download size={16} />}
-            >
-              {exporting
-                ? t("labelings.create.answers.exporting")
-                : t("labelings.create.answers.exportButton")}
-            </Button>
             <span className="text-sm text-gray-600">
               {groupedFilteredItems.length}{" "}
               {groupedFilteredItems.length === 1

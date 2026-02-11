@@ -7,11 +7,12 @@ type ButtonVariant =
   | "red"
   | "green"
   | "disabled"
-  | "white";
+  | "white"
+  | "muted";
 
 type ButtonProps = {
   /** Texto do botão */
-  children: React.ReactNode;
+  children?: React.ReactNode;
   /** Ícone opcional (componente Lucide ou similar) */
   icon?: React.ReactNode;
   /** Função de clique */
@@ -58,6 +59,12 @@ export default function Button({
     }
 
     switch (variant) {
+      case "muted":
+        return {
+          bg: "var(--metal-100)",
+          text: "var(--metal-700)",
+          hoverBg: "var(--metal-200)",
+        };
       case "white":
         return {
           bg: "var(--metal-50)",
@@ -95,14 +102,14 @@ export default function Button({
 
   const colors = getColors();
   const fontWeight = bold ? "font-bold" : "font-normal";
-  const paddingClasses = size === "icon" ? "p-2" : "px-4 py-2";
+  const paddingClasses = size === "icon" ? "p-2 " : "px-4 py-2";
 
   return (
     <button
       onClick={onClick}
       disabled={disabled}
       className={`
-        inline-flex items-center justify-center gap-2 
+        inline-flex items-center justify-center ${children ? "gap-2" : ""} 
         rounded-lg ${paddingClasses}
         transition-colors text-sm cursor-pointer
         ${fill ? "w-full" : "w-auto"}

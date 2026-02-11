@@ -331,6 +331,7 @@ export const translations: Record<Language, TranslationMap> = {
       "Opção {{index}}",
     "labelings.create.questionType.multipleChoice.allowMultiple":
       "Permitir múltiplas respostas (Checkbox)",
+    "labelings.create.questionType.multipleChoice.dragOption": "Arrastar opção",
     "labelings.create.questionType.range.minLabel": "Valor mínimo",
     "labelings.create.questionType.range.maxLabel": "Valor máximo",
     "labelings.create.questionType.range.stepLabel": "Passo",
@@ -963,6 +964,7 @@ export const translations: Record<Language, TranslationMap> = {
       "Option {{index}}",
     "labelings.create.questionType.multipleChoice.allowMultiple":
       "Allow multiple answers (Checkbox)",
+    "labelings.create.questionType.multipleChoice.dragOption": "Drag option",
     "labelings.create.questionType.range.minLabel": "Minimum value",
     "labelings.create.questionType.range.maxLabel": "Maximum value",
     "labelings.create.questionType.range.stepLabel": "Step",

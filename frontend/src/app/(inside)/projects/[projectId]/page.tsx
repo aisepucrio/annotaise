@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import useSWR from "swr";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Save, Trash2 } from "lucide-react";
@@ -12,23 +11,23 @@ import Button from "@/components/button/Button";
 import ConfirmDeleteModal from "@/components/ConfirmDeleteModal";
 import Input from "@/components/form/Input";
 import Select from "@/components/form/Select";
-import useCurrent from "@/hooks/current_user_hook";
-import SidebarLayout from "@/components/side-bar/sidebar_layout";
 import {
-  createProjectMembership,
-  deleteProject,
-  deleteProjectMembership,
-  fetchProject,
-  fetchProjectMemberships,
-  updateProject,
-  updateProjectMembership,
-} from "@/modules/projects/projectService";
+  useProjectQuery,
+  useProjectMembershipsQuery,
+} from "@/modules/projects/projectsQueries";
+import {
+  useUpdateProjectMutation,
+  useDeleteProjectMutation,
+  useCreateProjectMembershipMutation,
+  useUpdateProjectMembershipMutation,
+  useDeleteProjectMembershipMutation,
+} from "@/modules/projects/projectsMutations";
 import type {
   ProjectMembership,
   ProjectMembershipPayload,
   ProjectPayload,
 } from "@/modules/projects/projectsTypes";
-import { fetchUsers } from "@/modules/user/userService";
+import { useUsersQuery } from "@/modules/user/userQueries";
 import type { User } from "@/modules/user/userTypes";
 
 type Params = {
@@ -38,7 +37,6 @@ type Params = {
 export default function ProjectDetailsPage() {
   const router = useRouter();
   const params = useParams<Params>();
-  const currentUser = useCurrent();
   const { t } = useTranslations();
   const projectId = Number(params?.projectId);
 
@@ -64,43 +62,38 @@ export default function ProjectDetailsPage() {
     { value: "viewer", label: t("projects.detail.role.viewer") },
   ];
 
-  // Verificações de permissão
-  const userLoading = currentUser === undefined;
-  const canSeeProjects = Boolean(
-    currentUser &&
-      (currentUser.is_staff || currentUser.account_type !== "standard")
-  );
-  const isAdmin = Boolean(
-    currentUser?.is_staff || currentUser?.account_type === "admin"
-  );
+  // Ainda precisamos saber se é admin para mostrar botões de ação nos membros
 
   // Buscar dados do projeto
   const {
     data: project,
     isLoading: loadingProject,
     error: projectError,
-    mutate: mutateProject,
-  } = useSWR(projectId && canSeeProjects ? ["project", projectId] : null, () =>
-    fetchProject(projectId)
-  );
+  } = useProjectQuery(projectId);
 
   // Buscar membros do projeto
   const {
     data: memberships,
     isLoading: loadingMemberships,
-    mutate: mutateMemberships,
     error: membershipsError,
-  } = useSWR(
-    projectId && canSeeProjects ? ["project-memberships", projectId] : null,
-    () => fetchProjectMemberships(projectId)
-  );
+  } = useProjectMembershipsQuery(projectId);
 
   // Buscar todos os usuários
   const {
     data: users,
     isLoading: loadingUsers,
     error: usersError,
-  } = useSWR(canSeeProjects ? "project-users" : null, () => fetchUsers());
+  } = useUsersQuery();
+
+  // Mutations
+  const updateProjectMutation = useUpdateProjectMutation(projectId);
+  const deleteProjectMutation = useDeleteProjectMutation(projectId);
+  const createMembershipMutation =
+    useCreateProjectMembershipMutation(projectId);
+  const updateMembershipMutation =
+    useUpdateProjectMembershipMutation(projectId);
+  const deleteMembershipMutation =
+    useDeleteProjectMembershipMutation(projectId);
 
   // Form para editar projeto
   const {
@@ -116,14 +109,14 @@ export default function ProjectDetailsPage() {
   const availableUsers = useMemo(() => {
     if (!users || !memberships) return [];
     const assignedIds = new Set(memberships.map((m) => m.user));
-    return users.filter((user) => !assignedIds.has(user.id));
+    return (users as User[]).filter((user: User) => !assignedIds.has(user.id));
   }, [users, memberships]);
 
   // Exibir nome do usuário
   const getUserName = (
     user?:
       | Partial<User>
-      | { email?: string; first_name?: string; last_name?: string }
+      | { email?: string; first_name?: string; last_name?: string },
   ) => {
     if (!user) return "";
     const fullName = `${user.first_name || ""} ${user.last_name || ""}`.trim();
@@ -138,7 +131,7 @@ export default function ProjectDetailsPage() {
       toast.error(
         projectError instanceof Error
           ? projectError.message
-          : t("projects.detail.updateError")
+          : t("projects.detail.updateError"),
       );
     }
   }, [projectError, t]);
@@ -149,16 +142,10 @@ export default function ProjectDetailsPage() {
       toast.error(
         error instanceof Error
           ? error.message
-          : t("projects.detail.updateError")
+          : t("projects.detail.updateError"),
       );
     }
   }, [membershipsError, usersError, t]);
-
-  useEffect(() => {
-    if (!userLoading && !canSeeProjects) {
-      toast.error(t("projects.detail.accessDenied"));
-    }
-  }, [canSeeProjects, userLoading, t]);
 
   useEffect(() => {
     if (project) {
@@ -174,15 +161,10 @@ export default function ProjectDetailsPage() {
   // HANDLERS - Ações do usuário
   // ===============================
   const handleSaveProject = handleSubmit(async (values) => {
-    if (!isAdmin) {
-      toast.error(t("projects.detail.adminOnlyEdit"));
-      return;
-    }
     if (!projectId) return;
 
     try {
-      await updateProject(projectId, values);
-      await mutateProject();
+      await updateProjectMutation.mutateAsync(values);
       toast.success(t("projects.detail.updateSuccess"));
     } catch (error) {
       const message =
@@ -193,15 +175,11 @@ export default function ProjectDetailsPage() {
   });
 
   const handleDeleteProject = async () => {
-    if (!isAdmin) {
-      toast.error(t("projects.detail.adminOnlyDelete"));
-      return;
-    }
     if (!projectId) return;
 
     try {
       setDeleteLoading(true);
-      await deleteProject(projectId);
+      await deleteProjectMutation.mutateAsync();
       setIsDeleteModalOpen(false);
       router.push("/projects");
     } catch (error) {
@@ -216,21 +194,16 @@ export default function ProjectDetailsPage() {
 
   const handleAddMember = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!isAdmin) {
-      toast.error(t("projects.detail.adminOnlyAddMember"));
-      return;
-    }
     if (!projectId || !newMemberId) return;
 
     try {
-      await createProjectMembership({
+      await createMembershipMutation.mutateAsync({
         project: projectId,
         user: Number(newMemberId),
         role: newMemberRole,
       });
       setNewMemberId("");
       setNewMemberRole("viewer");
-      await mutateMemberships();
       toast.success(t("projects.detail.addMemberSuccess"));
     } catch (error) {
       const message =
@@ -242,17 +215,15 @@ export default function ProjectDetailsPage() {
 
   const handleRoleChange = async (
     membership: ProjectMembership,
-    nextRole: ProjectMembershipPayload["role"]
+    nextRole: ProjectMembershipPayload["role"],
   ) => {
-    if (!isAdmin) {
-      toast.error(t("projects.detail.adminOnlyChangeRole"));
-      return;
-    }
     if (membership.role === nextRole) return;
 
     try {
-      await updateProjectMembership(membership.id, { role: nextRole });
-      await mutateMemberships();
+      await updateMembershipMutation.mutateAsync({
+        id: membership.id,
+        data: { role: nextRole },
+      });
       toast.success(t("projects.detail.roleUpdateSuccess"));
     } catch (error) {
       const message =
@@ -263,14 +234,8 @@ export default function ProjectDetailsPage() {
   };
 
   const handleRemoveMember = async (membership: ProjectMembership) => {
-    if (!isAdmin) {
-      toast.error(t("projects.detail.adminOnlyRemoveMember"));
-      return;
-    }
-
     try {
-      await deleteProjectMembership(membership.id);
-      await mutateMemberships();
+      await deleteMembershipMutation.mutateAsync(membership.id);
       toast.success(t("projects.detail.removeMemberSuccess"));
     } catch (error) {
       const message =
@@ -281,34 +246,9 @@ export default function ProjectDetailsPage() {
   };
 
   // ===============================
-  // RENDERIZAÇÃO - Estados de carregamento e permissão
+  // RENDERIZAÇÃO
   // ===============================
   if (!projectId) return null;
-
-  if (userLoading) {
-    return (
-      <SidebarLayout>
-        <p className="mt-6 text-sm text-metal-500">
-          {t("projects.detail.loadingUser")}
-        </p>
-      </SidebarLayout>
-    );
-  }
-
-  if (!canSeeProjects) {
-    return (
-      <div className="flex flex-col h-screen">
-        <InnerPageHeader onBack={() => router.push("/projects")}>
-          <h1 className="text-xl font-semibold">{t("projects.detail.title")}</h1>
-        </InnerPageHeader>
-        <div className="flex-1 p-6">
-          <p className="text-sm text-metal-700">
-            {t("projects.detail.accessDenied")}
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-col h-screen">
@@ -321,19 +261,20 @@ export default function ProjectDetailsPage() {
           <div className="flex items-center gap-3">
             <Button
               onClick={handleSaveProject}
-              disabled={isSubmitting || !isAdmin}
+              disabled={isSubmitting || updateProjectMutation.isPending}
               variant="white"
               fill={false}
               icon={<Save size={20} />}
             >
-              {isSubmitting ? t("projects.detail.saving") : t("projects.detail.saveButton")}
+              {isSubmitting || updateProjectMutation.isPending
+                ? t("projects.detail.saving")
+                : t("projects.detail.saveButton")}
             </Button>
 
             <Button
               variant="red"
               fill={false}
               onClick={() => setIsDeleteModalOpen(true)}
-              disabled={deleteLoading || !isAdmin}
               icon={<Trash2 size={16} />}
             >
               {t("projects.detail.deleteButton")}
@@ -356,20 +297,20 @@ export default function ProjectDetailsPage() {
           </div>
 
           {loadingProject ? (
-            <p className="text-sm text-metal-500">{t("projects.detail.loadingProject")}</p>
+            <p className="text-sm text-metal-500">
+              {t("projects.detail.loadingProject")}
+            </p>
           ) : project ? (
             <form onSubmit={handleSaveProject} className="space-y-4">
               <Input
                 label={t("projects.detail.nameLabel")}
                 {...register("name", { required: true })}
-                disabled={!isAdmin}
                 required
               />
 
               <Input
                 label={t("projects.detail.descriptionLabel")}
                 {...register("description")}
-                disabled={!isAdmin}
                 multiline
                 rows={4}
               />
@@ -378,7 +319,6 @@ export default function ProjectDetailsPage() {
                 label={t("projects.detail.statusLabel")}
                 {...register("status", { required: true })}
                 options={STATUS_OPTIONS}
-                disabled={!isAdmin}
                 required
               />
             </form>
@@ -396,7 +336,9 @@ export default function ProjectDetailsPage() {
           </div>
 
           {loadingMemberships || loadingUsers ? (
-            <p className="text-sm text-metal-500">{t("projects.detail.loadingMembers")}</p>
+            <p className="text-sm text-metal-500">
+              {t("projects.detail.loadingMembers")}
+            </p>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-8 items-start">
               {/* Coluna Esquerda: Formulário para adicionar novo membro */}
@@ -412,18 +354,26 @@ export default function ProjectDetailsPage() {
                     onChange={(e) => setNewMemberId(e.target.value)}
                     options={
                       loadingUsers
-                        ? [{ value: "", label: t("projects.detail.loadingUsers") }]
+                        ? [
+                            {
+                              value: "",
+                              label: t("projects.detail.loadingUsers"),
+                            },
+                          ]
                         : availableUsers.length === 0
-                        ? [{ value: "", label: t("projects.detail.noUsersAvailable") }]
-                        : availableUsers.map((user) => ({
-                            value: user.id.toString(),
-                            label: getUserName(user),
-                          }))
+                          ? [
+                              {
+                                value: "",
+                                label: t("projects.detail.noUsersAvailable"),
+                              },
+                            ]
+                          : availableUsers.map((user: User) => ({
+                              value: user.id.toString(),
+                              label: getUserName(user),
+                            }))
                     }
                     placeholder={t("projects.detail.userPlaceholder")}
-                    disabled={
-                      !isAdmin || loadingUsers || availableUsers.length === 0
-                    }
+                    disabled={loadingUsers || availableUsers.length === 0}
                   />
 
                   <Select
@@ -431,17 +381,16 @@ export default function ProjectDetailsPage() {
                     value={newMemberRole}
                     onChange={(e) =>
                       setNewMemberRole(
-                        e.target.value as ProjectMembershipPayload["role"]
+                        e.target.value as ProjectMembershipPayload["role"],
                       )
                     }
                     options={ROLE_OPTIONS}
-                    disabled={!isAdmin}
                   />
 
                   <div className="flex justify-end pt-2">
                     <Button
                       type="submit"
-                      disabled={!newMemberId || !isAdmin || loadingUsers}
+                      disabled={!newMemberId || loadingUsers}
                       fill={false}
                     >
                       {t("projects.detail.addMemberButton")}
@@ -456,12 +405,12 @@ export default function ProjectDetailsPage() {
               {/* Coluna Direita: Lista de membros */}
               <div className="space-y-4">
                 <h3 className="text-sm font-semibold text-metal-900">
-                  {t("projects.detail.currentMembersTitle")} ({(memberships ?? []).length})
+                  {t("projects.detail.currentMembersTitle")} (
+                  {(memberships ?? []).length})
                 </h3>
 
                 <ul className="space-y-2 max-h-96 overflow-y-auto pr-2">
                   {(memberships ?? []).map((membership) => {
-                    const isCurrentUser = currentUser?.id === membership.user;
                     const userName = membership.user_detail
                       ? getUserName(membership.user_detail)
                       : `Usuário #${membership.user}`;
@@ -489,11 +438,10 @@ export default function ProjectDetailsPage() {
                                 handleRoleChange(
                                   membership,
                                   e.target
-                                    .value as ProjectMembershipPayload["role"]
+                                    .value as ProjectMembershipPayload["role"],
                                 )
                               }
                               options={ROLE_OPTIONS}
-                              disabled={isCurrentUser || !isAdmin}
                               containerClassName="flex-1"
                             />
 
@@ -501,7 +449,6 @@ export default function ProjectDetailsPage() {
                               variant="red"
                               fill={false}
                               onClick={() => handleRemoveMember(membership)}
-                              disabled={isCurrentUser || !isAdmin}
                             >
                               {t("projects.detail.removeButton")}
                             </Button>

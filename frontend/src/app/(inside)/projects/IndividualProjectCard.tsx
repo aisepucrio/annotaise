@@ -13,8 +13,7 @@ type IndividualProjectCardProps = {
   labelings_done: number;
   labelings_pending: number;
   labelings_late: number;
-  onManage?: () => void;
-  canManage?: boolean;
+  onManage: () => void;
 };
 
 export default function IndividualProjectCard({
@@ -24,7 +23,6 @@ export default function IndividualProjectCard({
   labelings_pending,
   labelings_late,
   onManage,
-  canManage = true,
 }: IndividualProjectCardProps) {
   const router = useRouter();
   const { t } = useTranslations();
@@ -99,16 +97,14 @@ export default function IndividualProjectCard({
             <StatusBadge type="ok" text={t("projects.status.onTrack")} />
           )}
 
-          {canManage ? (
-            <Button
-              icon={<NotebookPen size={20} strokeWidth={1.75} />}
-              onClick={onManage}
-              variant="normal"
-              ariaLabel={t("projects.manageAria")}
-            >
-              {t("projects.manage")}
-            </Button>
-          ) : null}
+          <Button
+            icon={<NotebookPen size={20} strokeWidth={1.75} />}
+            onClick={onManage}
+            variant="normal"
+            ariaLabel={t("projects.manageAria")}
+          >
+            {t("projects.manage")}
+          </Button>
         </div>
       </div>
     </>

@@ -7,14 +7,9 @@ import NewLabelingModal from "./NewLabelingModal";
 import GridItemCard from "@/components/grid/GridItemCard";
 import Button from "@/components/button/Button";
 import { useRouter } from "next/navigation";
-import useSWR from "swr";
 import axios from "axios";
-import {
-  createLabeling,
-  fetchLabelingDashboardEdit,
-  importLabelingItemsCsv,
-} from "@/modules/labelings/labelingService";
-import useCurrent from "@/hooks/current_user_hook";
+import { useLabelingDashboardEditQuery } from "@/modules/labelings/labelingQueries";
+import { useCreateLabelingWithCsvMutation } from "@/modules/labelings/labelingMutations";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useTranslations } from "@/i18n/use-translations";
@@ -32,33 +27,20 @@ type UploadPayload = {
 };
 
 export default function LabelingsPage() {
-  const currentUser = useCurrent();
   const { t } = useTranslations();
   const router = useRouter();
-  const isAdmin = Boolean(
-    currentUser?.is_staff || currentUser?.account_type === "admin",
-  );
   const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
   const [debouncedSearch, setDebouncedSearch] = useState("");
-
-  useEffect(() => {
-    const projectQuery = searchParams.get("project");
-    if (projectQuery) {
-      setDebouncedSearch(projectQuery);
-    }
-  }, [searchParams]);
 
   const {
     data: labelings,
     error,
     isLoading,
-    mutate,
-  } = useSWR(["labelings-dashboard-edit", debouncedSearch], () =>
-    fetchLabelingDashboardEdit(debouncedSearch),
-  );
+  } = useLabelingDashboardEditQuery(debouncedSearch);
 
   const labelingsList = labelings ?? [];
+  const createLabelingWithCsv = useCreateLabelingWithCsvMutation();
 
   useEffect(() => {
     if (error) {
@@ -69,6 +51,13 @@ export default function LabelingsPage() {
       toast.error(errorMessage);
     }
   }, [error, t]);
+
+  useEffect(() => {
+    const projectQuery = searchParams.get("project");
+    if (projectQuery) {
+      setDebouncedSearch(projectQuery);
+    }
+  }, [searchParams]);
 
   async function handleConfirm({
     file,
@@ -81,24 +70,21 @@ export default function LabelingsPage() {
     decision,
     hasBackgroundForm,
   }: UploadPayload) {
-    if (!isAdmin) {
-      toast.error(t("labelings.manage.createDenied"));
-      return;
-    }
     try {
-      const labeling = await createLabeling({
-        title,
-        project: projectId,
-        users_per_item: usersPerItem,
-        start_date: startDate || undefined,
-        final_date: finalDate || undefined,
-        block_section_back: blockSectionBack,
-        decision,
-        has_background_form: hasBackgroundForm,
+      await createLabelingWithCsv.mutateAsync({
+        payload: {
+          title,
+          project: projectId,
+          users_per_item: usersPerItem,
+          start_date: startDate || undefined,
+          final_date: finalDate || undefined,
+          block_section_back: blockSectionBack,
+          decision,
+          has_background_form: hasBackgroundForm,
+        },
+        file,
       });
-      await importLabelingItemsCsv(labeling.id, file);
       setOpen(false);
-      await mutate();
     } catch (err) {
       if (axios.isAxiosError(err)) {
         const detail =
@@ -128,7 +114,6 @@ export default function LabelingsPage() {
       hasButton
       buttonText={t("labelings.manage.newButton")}
       onButtonClick={() => setOpen(true)}
-      buttonDisabled={!isAdmin}
       isLoading={isLoading}
       message={
         !isLoading && labelingsList.length === 0
