@@ -55,10 +55,6 @@ function getImageSrc(value: string): string {
   return `data:image/png;base64,${value}`;
 }
 
-function isValidImageSource(value: string): boolean {
-  return isValidImageUrl(value) || isValidBase64Image(value);
-}
-
 function ImageContext({
   value,
   errorMessage,
@@ -132,7 +128,7 @@ export default function ContextRow({ element, payload, t }: ContextRowProps) {
   return (
     <>
       <div className="text-left mt-12 mb-0">
-        <div className=" inline-block text-metal-900 text-sm font-normal  border-blueberry-700">
+        <div className=" inline-block text-metal-900 text-md font-normal  border-blueberry-700">
           <div className="p-1">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {contextLabel}
@@ -141,7 +137,13 @@ export default function ContextRow({ element, payload, t }: ContextRowProps) {
         </div>
       </div>
 
-      <div className=" border-3 border-blueberry-700 p-5 shadow-md rounded-2xl bg-blueberry-700-15">
+      <div
+        className="border-t-6 border-l-6 p-5 shadow-md rounded-br-xl rounded-ss-3xl bg-blueberry-700-15"
+        style={{
+          borderTopColor: "var(--blueberry-700)",
+          borderLeftColor: "var(--blueberry-700)",
+        }}
+      >
         {renderContent()}
       </div>
     </>

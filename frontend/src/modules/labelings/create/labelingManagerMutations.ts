@@ -13,7 +13,7 @@ import type {
   LabelingMembershipRole,
 } from "@/modules/labelings/labelingsTypes";
 
-// Hook para excluir um labeling
+// Utilizada para deletar labeling
 export function useDeleteLabelingMutation() {
   const qc = useQueryClient();
 
@@ -26,7 +26,7 @@ export function useDeleteLabelingMutation() {
   });
 }
 
-// Hook para atualizar um labeling
+// Utilizada para atualizar os dados básicos do labeling
 export function useUpdateLabelingMutation() {
   const qc = useQueryClient();
 
@@ -45,7 +45,7 @@ export function useUpdateLabelingMutation() {
   });
 }
 
-// Hook para salvar a estrutura do labeling (formulário)
+// Utilizada para salvar a estrutura do labeling (seções e itens)
 export function useSaveLabelingStructureMutation() {
   const qc = useQueryClient();
 
@@ -67,7 +67,7 @@ export function useSaveLabelingStructureMutation() {
   });
 }
 
-// Hook para criar membership
+// Utilizada para criar membership
 export function useCreateMembershipMutation() {
   const qc = useQueryClient();
 
@@ -85,7 +85,7 @@ export function useCreateMembershipMutation() {
   });
 }
 
-// Hook para atualizar membership
+// Utilizada para atualizar membership
 export function useUpdateMembershipMutation() {
   const qc = useQueryClient();
 
@@ -106,7 +106,7 @@ export function useUpdateMembershipMutation() {
   });
 }
 
-// Hook para remover membership
+// Utilizada para remover membership
 export function useDeleteMembershipMutation() {
   const qc = useQueryClient();
 

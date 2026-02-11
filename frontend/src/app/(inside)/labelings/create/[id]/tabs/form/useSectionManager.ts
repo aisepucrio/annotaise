@@ -1,7 +1,8 @@
 import { useState, useCallback } from "react";
 import { arrayMove } from "@dnd-kit/sortable";
 import type { DragEndEvent } from "@dnd-kit/core";
-import type { SectionData } from "./SectionForm";
+import type { SectionData, SectionElement } from "./SectionForm";
+import type { TranslateFn } from "./QuestionBlock";
 import { createDefaultSection } from "./elementFactories";
 
 /**
@@ -36,11 +37,12 @@ export function useSectionManager(initialSections: SectionData[] = []) {
   /**
    * Adiciona uma nova seção.
    * @param insertAfterId - ID da seção ou elemento após o qual inserir. Null = início
+   * @param t - Função de tradução
    */
   const addSection = useCallback(
-    (insertAfterId: string | null | undefined) => {
+    (insertAfterId: string | null | undefined, t?: TranslateFn) => {
       setSections((prev) => {
-        const nextSection = createDefaultSection();
+        const nextSection = createDefaultSection(t);
 
         if (!insertAfterId) {
           // Adiciona no início
@@ -68,8 +70,40 @@ export function useSectionManager(initialSections: SectionData[] = []) {
             (el) => el.id === insertAfterId,
           );
           if (elementExists) {
-            // Encontrou o elemento, insere seção após a seção atual
-            return insertAtIndex(prev, nextSection, i + 1);
+            // Encontrou o elemento dentro desta seção.
+            // Separamos a seção em dois: a primeira mantém os elementos até o elemento selecionado (inclusive),
+            // e a nova seção recebe os elementos posteriores.
+            const ordered = [...section.elements].sort(
+              (a, b) => (a.order ?? 0) - (b.order ?? 0),
+            );
+            const elementIndex = ordered.findIndex(
+              (el) => el.id === insertAfterId,
+            );
+            const firstPart = ordered
+              .slice(0, elementIndex + 1)
+              .map((el: SectionElement, idx: number) => ({
+                ...el,
+                order: idx,
+              }));
+            const secondPart = ordered
+              .slice(elementIndex + 1)
+              .map((el: SectionElement, idx: number) => ({
+                ...el,
+                order: idx,
+              }));
+
+            const newSection = {
+              ...createDefaultSection(t),
+              elements: secondPart,
+            };
+
+            // Replace the current section with the truncated first part
+            const updatedPrev = prev.map((s: SectionData, idxSec: number) =>
+              idxSec === i ? { ...s, elements: firstPart } : s,
+            );
+
+            // Insert newSection after the current
+            return insertAtIndex(updatedPrev, newSection, i + 1);
           }
         }
 

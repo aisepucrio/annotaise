@@ -3,7 +3,8 @@ import "./globals.css";
 import { Montserrat } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { LanguageProvider } from "@/i18n/language-context";
-import ReactQueryProvider from "@/modules/ReactQueryProvider";
+import ReactQueryProvider from "@/lib/ReactQueryProvider";
+import { AdminProvider } from "@/lib/AdminContext";
 const montserrat = Montserrat({
   variable: "--font-montserrat",
   subsets: ["latin", "latin-ext"],
@@ -27,10 +28,12 @@ export default function RootLayout({
         style={{ fontFamily: "var(--font-montserrat)" }}
       >
         <ReactQueryProvider>
-          <LanguageProvider>
-            {children}
-            <Toaster />
-          </LanguageProvider>
+          <AdminProvider>
+            <LanguageProvider>
+              {children}
+              <Toaster />
+            </LanguageProvider>
+          </AdminProvider>
         </ReactQueryProvider>
       </body>
     </html>

@@ -1,7 +1,7 @@
 "use client";
 
 import Cookies from "js-cookie";
-import { api } from "@/modules/api";
+import { api } from "@/lib/api";
 
 /**
  * Stores a token in cookies.
@@ -20,6 +20,18 @@ const getToken = (type: "access" | "refresh") => {
 const removeTokens = () => {
   Cookies.remove("accessToken");
   Cookies.remove("refreshToken");
+};
+
+/**
+ * Centraliza o comportamento de logout forçado: remove tokens e redireciona para /login.
+ * Protege contra execução server-side.
+ */
+const forceLogoutAndRedirect = () => {
+  removeTokens();
+  if (typeof window !== "undefined") {
+    if (window.location.pathname === "/login") return;
+    window.location.replace("/login");
+  }
 };
 
 const login = (email: string, password: string) => {
@@ -44,5 +56,6 @@ export const AuthActions = () => {
     getToken,
     logout,
     removeTokens,
+    forceLogoutAndRedirect,
   };
 };

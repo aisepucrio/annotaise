@@ -56,7 +56,7 @@ export default function SectionCard({
       {/* Título */}
 
       <div className="text-center">
-        <div className="relative inline-block text-metal-900 text-lg font-normal border-b-3 border-blueberry-700 mb-4 p-1">
+        <div className="relative inline-block text-metal-900 text-xl font-normal border-b-3 border-blueberry-700 p-1">
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             components={{
@@ -68,7 +68,7 @@ export default function SectionCard({
         </div>
       </div>
 
-      <div className="space-y-4 bg-white p-4 px-[10%]">
+      <div className="space-y-4 p-2 bg-white px-[10%]">
         {blocks.length > 0 ? (
           blocks.map((block, blockIndex) =>
             block.type === "context" ? (

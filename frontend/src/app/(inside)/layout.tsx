@@ -1,7 +1,7 @@
 "use client";
 
 import "@/lib/fetcher"; // Registra os interceptors de autenticação
-import AuthGuard from "@/components/auth-guard";
+import AuthGuard from "@/components/AuthGuard";
 import { SidebarProvider } from "@/components/side-bar/sidebar_provider";
 import SidebarLayout from "@/components/side-bar/sidebar_layout";
 

@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import type { SectionData, SectionElement } from "./SectionForm";
+import type { TranslateFn } from "./QuestionBlock";
 import {
   createContextElement,
   createQuestionElement,
@@ -27,6 +28,21 @@ export function useElementManager(
       setSections(
         sections.map((s) => {
           if (s.id !== sectionId) return s;
+
+          // Special token: "start" means insert at beginning
+          if (insertAfterId === "start") {
+            const newElement = createContextElement(0);
+            return {
+              ...s,
+              elements: [
+                newElement,
+                ...s.elements.map((el: SectionElement, idx: number) => ({
+                  ...el,
+                  order: idx + 1,
+                })),
+              ],
+            };
+          }
 
           if (!insertAfterId) {
             // Adiciona no final
@@ -56,13 +72,29 @@ export function useElementManager(
    * @param t - Função de tradução
    */
   const addQuestion = useCallback(
-   (
+    (
       sectionId: string,
       insertAfterId: string | null | undefined,
+      t?: TranslateFn,
     ) => {
       setSections(
         sections.map((s) => {
           if (s.id !== sectionId) return s;
+
+          // Special token: "start" means insert at beginning
+          if (insertAfterId === "start") {
+            const newElement = createQuestionElement(0, t);
+            return {
+              ...s,
+              elements: [
+                newElement,
+                ...s.elements.map((el: SectionElement, idx: number) => ({
+                  ...el,
+                  order: idx + 1,
+                })),
+              ],
+            };
+          }
 
           if (!insertAfterId) {
             // Adiciona no final
@@ -70,14 +102,14 @@ export function useElementManager(
               ...s,
               elements: [
                 ...s.elements,
-                createQuestionElement(nextOrder(s.elements)),
+                createQuestionElement(nextOrder(s.elements), t),
               ],
             };
           }
 
           // Insere após o elemento especificado
           return insertElementAfter(s, insertAfterId, (order) =>
-            createQuestionElement(order),
+            createQuestionElement(order, t),
           );
         }),
       );
@@ -125,7 +157,7 @@ function insertElementAfter(
     ...ordered.slice(0, insertIndex),
     createElement(insertIndex),
     ...ordered.slice(insertIndex),
-  ].map((el, idx) => ({ ...el, order: idx }));
+  ].map((el: SectionElement, idx: number) => ({ ...el, order: idx }));
 
   return { ...section, elements: merged };
 }
