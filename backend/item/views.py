@@ -129,11 +129,10 @@ class NextItemView(RetrieveAPIView):
                 status=400,
             )
 
-
         # 1) Já tem membership ativo?
         membership = (
             ItemMembership.objects
-            .select_for_update()  # lock na linha do membership
+            .select_for_update()
             .select_related('item')
             .filter(
                 user=user,
@@ -143,7 +142,7 @@ class NextItemView(RetrieveAPIView):
             .first()
         )
         if membership:
-            membership.created_at = timezone.now() # TODO esse atributo tem um nome bem enganoso... melhor updated at
+            membership.created_at = timezone.now()
             return membership.item
         
 
@@ -156,9 +155,9 @@ class NextItemView(RetrieveAPIView):
                     membership_count=Count('memberships'),
                     total_count=F('answer_count') + F('membership_count'),
                 )
-                .order_by('-answer_count') # terminar os que ja tao sendo feitos primeiro
+                .order_by('-answer_count', '?')  # adiciona randomização como desempate
                 .first()
-                )
+            )
             total_count = getattr(item, "total_count", None)
             if item is not None:
                 item = (
@@ -167,11 +166,9 @@ class NextItemView(RetrieveAPIView):
                     .filter(pk=item.pk)
                     .first()
                 )
-            if item is None :return None
+            if item is None: return None
 
             if total_count > labeling.users_per_item:
-                # se for maior é porque só pode ter um item membership e ele deve ser roubado
-                
                 STALE_MINUTES = 1
                 stale_limit = timezone.now() - timedelta(minutes=STALE_MINUTES)
 
@@ -179,23 +176,17 @@ class NextItemView(RetrieveAPIView):
 
                 if membership:
                     item = membership.item
-                    # remove o lock antigo
                     membership.delete()
-                    # cria o lock pro usuário atual
                     self.ensure_membership(item, user)
                     return item
                 else:
-                    
                     ItemMembership.objects.create(item=item, user=user)
                     return item
-
             else:
                 self.ensure_membership(item, user)
-
                 return item
 
         else:
-
             # 2) Pega um novo item elegível (sem membership associado)
             item_id = (
                 Item.objects
@@ -206,9 +197,9 @@ class NextItemView(RetrieveAPIView):
                     total_count=F('answer_count') + F('membership_count'),
                 )
                 .filter(total_count__lt=labeling.users_per_item)
-                .order_by('-answer_count') # terminar os que ja tao sendo feitos primeiro
+                .order_by('-answer_count', '?')  # adiciona randomização como desempate
                 .first()
-                )
+            )
             
             if item_id is not None:
                 item_id = item_id.id
@@ -229,11 +220,11 @@ class NextItemView(RetrieveAPIView):
                 .filter(
                     item__labeling=labeling,
                     item__status='pending',
-                    created_at__lt=stale_limit,  # membership velho
+                    created_at__lt=stale_limit,
                 )
-                .exclude(user=user)                             # não rouba de si mesmo
+                .exclude(user=user)
                 .exclude(item__answers__answered_by=user)
-                .order_by('created_at')                         # o mais antigo primeiro
+                .order_by('created_at')  # aqui mantém o mais antigo, faz sentido manter essa lógica
                 .first()
             )
 
@@ -242,13 +233,10 @@ class NextItemView(RetrieveAPIView):
                 item = Item.objects.select_for_update().filter(pk=item.pk).first()
                 if not item:
                     return None
-                # remove o lock antigo
                 membership.delete()
-                # cria o lock pro usuário atual
                 self.ensure_membership(item, user)
                 return item
 
-        # Nenhum item elegível
         return None
 
     @transaction.atomic
