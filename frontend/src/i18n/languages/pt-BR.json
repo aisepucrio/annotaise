@@ -200,6 +200,13 @@
       "guide": "Guia",
       "decision": "Decisão"
     },
+    "formType": {
+      "ariaLabel": "Selecionar tipo de formulário da rotulação",
+      "mainLabel": "Rotulação",
+      "mainTooltip": "Formulário principal da rotulação: define contextos e perguntas usadas para avaliar cada item.",
+      "backgroundLabel": "Background",
+      "backgroundTooltip": "Formulário de background: coleta informações do anotador separadas da avaliação principal dos itens."
+    },
     "loading": "Carregando...",
     "labeling": "Rotulação",
     "projectLabel": "Projeto: {name}",

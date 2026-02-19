@@ -200,6 +200,13 @@
       "guide": "Guide",
       "decision": "Decision"
     },
+    "formType": {
+      "ariaLabel": "Select labeling form type",
+      "mainLabel": "Labeling",
+      "mainTooltip": "Main labeling form: defines the contexts and questions used to evaluate each item.",
+      "backgroundLabel": "Background",
+      "backgroundTooltip": "Background form: collects annotator information separate from the main item evaluation."
+    },
     "loading": "Loading...",
     "labeling": "Labeling",
     "projectLabel": "Project: {name}",

@@ -1,7 +1,6 @@
 "use client";
 
 import { useId, cloneElement } from "react";
-import { createPortal } from "react-dom";
 import { Tooltip as ReactTooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 
@@ -32,16 +31,14 @@ export function Tooltip({ content, children, place = "bottom" }: TooltipProps) {
 
   return (
     <>
-      {createPortal(
-        <div className={`fixed inset-0 z-9  pointer-events-none`} />,
-        document.body
-      )}
       {trigger}
       <ReactTooltip
         id={tooltipId}
         place={place}
+        positionStrategy="fixed"
         opacity={0.9}
-        className="z-10 bg-white! text-black! border! border-gray-200! rounded-md! px-3! py-2! text-sm! shadow-lg! opacity-100! hover:opacity-80! transition-opacity duration-150 max-w-md! whitespace-pre-wrap!"
+        style={{ zIndex: 9999 }}
+        className="z-[9999] bg-white! text-black! font-normal! border! border-gray-200! rounded-md! px-3! py-2! text-sm! shadow-lg! opacity-100! hover:opacity-80! transition-opacity duration-150 max-w-md! whitespace-pre-wrap!"
       />
     </>
   );

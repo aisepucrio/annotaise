@@ -13,6 +13,7 @@ import {
 import { toast } from "sonner";
 import InsertionPoint from "./InsertionPoint";
 import SectionForm from "./SectionForm";
+import FormTypeSelector, { type FormType } from "./FormTypeSelector";
 import { mapSectionsFromDTO, mapSectionsToDTO } from "./LabelingMapping";
 import { useSectionManager } from "./useSectionManager";
 import { useElementManager } from "./useElementManager";
@@ -30,8 +31,6 @@ type FormTabProps = {
   labelingId: number;
   hasBackgroundForm: boolean;
 };
-
-type FormType = "main" | "background";
 
 export type FormTabHandle = {
   save: () => void;
@@ -230,29 +229,18 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(
     return (
       <>
         {hasBackgroundForm ? (
-          <div className="w-[80%] mx-auto flex items-center gap-2 mt-2">
-            <button
-              type="button"
-              onClick={() => setActiveFormType("main")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                activeFormType === "main"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              {t("labelings.create.tabs.form")}
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveFormType("background")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                activeFormType === "background"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              FORMULÁRIO BACKGROUND
-            </button>
+          <div className="w-[80%] mx-auto mt-2">
+            <FormTypeSelector
+              value={activeFormType}
+              onChange={setActiveFormType}
+              ariaLabel={t("labelings.create.formType.ariaLabel")}
+              mainLabel={t("labelings.create.formType.mainLabel")}
+              mainTooltip={t("labelings.create.formType.mainTooltip")}
+              backgroundLabel={t("labelings.create.formType.backgroundLabel")}
+              backgroundTooltip={t(
+                "labelings.create.formType.backgroundTooltip",
+              )}
+            />
           </div>
         ) : null}
 
