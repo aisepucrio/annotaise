@@ -13,7 +13,7 @@ import {
 import { toast } from "sonner";
 import InsertionPoint from "./InsertionPoint";
 import SectionForm from "./SectionForm";
-import FormTypeSelector, { type FormType } from "./FormTypeSelector";
+import TwoOptionSelector from "../TwoOptionSelector";
 import { mapSectionsFromDTO, mapSectionsToDTO } from "./LabelingMapping";
 import { useSectionManager } from "./useSectionManager";
 import { useElementManager } from "./useElementManager";
@@ -31,6 +31,8 @@ type FormTabProps = {
   labelingId: number;
   hasBackgroundForm: boolean;
 };
+
+type FormType = "main" | "background";
 
 export type FormTabHandle = {
   save: () => void;
@@ -230,16 +232,22 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(
       <>
         {hasBackgroundForm ? (
           <div className="w-[80%] mx-auto mt-2">
-            <FormTypeSelector
+            <TwoOptionSelector
               value={activeFormType}
               onChange={setActiveFormType}
               ariaLabel={t("labelings.create.formType.ariaLabel")}
-              mainLabel={t("labelings.create.formType.mainLabel")}
-              mainTooltip={t("labelings.create.formType.mainTooltip")}
-              backgroundLabel={t("labelings.create.formType.backgroundLabel")}
-              backgroundTooltip={t(
-                "labelings.create.formType.backgroundTooltip",
-              )}
+              options={[
+                {
+                  value: "main",
+                  label: t("labelings.create.formType.mainLabel"),
+                  tooltip: t("labelings.create.formType.mainTooltip"),
+                },
+                {
+                  value: "background",
+                  label: t("labelings.create.formType.backgroundLabel"),
+                  tooltip: t("labelings.create.formType.backgroundTooltip"),
+                },
+              ]}
             />
           </div>
         ) : null}

@@ -11,6 +11,7 @@ import { useLabelingAnswersWithStructureQuery } from "@/modules/labelings/create
 import { exportLabelingAnswersCsv } from "@/modules/labelings/labelingService";
 import { getApiErrorMessage } from "@/lib/getApiErrorMessage";
 import type { User } from "@/modules/user/userTypes";
+import TwoOptionSelector from "../TwoOptionSelector";
 
 type AnswerTabProps = {
   labelingId: number;
@@ -93,40 +94,47 @@ export default function AnswerTab({ labelingId, users }: AnswerTabProps) {
   return (
     <div className="h-full flex flex-col">
       {/* Header com toggle e botão de exportar */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Button
-            variant={activeView === "answers" ? "normal" : "muted"}
-            fill={false}
-            onClick={() => setActiveView("answers")}
-            className="font-medium"
-          >
-            {t("labelings.create.tabs.answers")}
-          </Button>
-          <Button
-            variant={activeView === "summary" ? "normal" : "muted"}
-            fill={false}
-            onClick={() => setActiveView("summary")}
-            className="font-medium"
-          >
-            {t("labelings.create.tabs.summary")}
-          </Button>
-        </div>
+      <div className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="grid grid-cols-1 items-center gap-3 md:grid-cols-[1fr_minmax(320px,460px)_1fr]">
+          <div className="md:col-start-2">
+            <div className="mx-auto w-full">
+              <TwoOptionSelector
+                value={activeView}
+                onChange={setActiveView}
+                ariaLabel={`${t("labelings.create.tabs.answers")} / ${t(
+                  "labelings.create.tabs.summary",
+                )}`}
+                options={[
+                  {
+                    value: "answers",
+                    label: t("labelings.create.tabs.answers"),
+                  },
+                  {
+                    value: "summary",
+                    label: t("labelings.create.tabs.summary"),
+                  },
+                ]}
+              />
+            </div>
+          </div>
 
-        <Button
-          variant="normal"
-          fill={false}
-          size="icon"
-          onClick={() => void handleExportCsv()}
-          disabled={exporting}
-          className="px-4"
-          ariaLabel={t("labelings.create.answers.exportAria")}
-          icon={<Download size={16} />}
-        >
-          {exporting
-            ? t("labelings.create.answers.exporting")
-            : t("labelings.create.answers.exportButton")}
-        </Button>
+          <div className="md:col-start-3 md:justify-self-end">
+            <Button
+              variant="normal"
+              fill={false}
+              size="icon"
+              onClick={() => void handleExportCsv()}
+              disabled={exporting}
+              className="px-4"
+              ariaLabel={t("labelings.create.answers.exportAria")}
+              icon={<Download size={16} />}
+            >
+              {exporting
+                ? t("labelings.create.answers.exporting")
+                : t("labelings.create.answers.exportButton")}
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* Conteúdo */}
