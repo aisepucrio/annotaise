@@ -895,24 +895,58 @@ class Command(BaseCommand):
                     question_type=LabelingElement.QuestionType.CONTEXT
                 ).order_by("order")
             )
-            if len(background_questions) >= 4:
+            background_payload: dict[str, Any] = {}
+
+            for question in background_questions:
+                question_key = str(question.id)
+                question_text = (question.text or "").strip().lower()
+
+                if question.question_type == LabelingElement.QuestionType.NUMBER:
+                    background_payload[question_key] = 32
+                    continue
+
+                if question.question_type == LabelingElement.QuestionType.RANGE:
+                    background_payload[question_key] = 8
+                    continue
+
+                if question.question_type == LabelingElement.QuestionType.TEXT:
+                    background_payload[question_key] = "Resposta de background"
+                    continue
+
+                if question.question_type == LabelingElement.QuestionType.MULTIPLE_CHOICE:
+                    options = list(
+                        question.multiple_choice_items.order_by("order").values_list(
+                            "text", flat=True
+                        )
+                    )
+                    if not options:
+                        continue
+
+                    if question.allow_multiple:
+                        preferred = ["Eletrônicos", "Computadores", "Fotografia"]
+                        selected = [option for option in preferred if option in options]
+                        background_payload[question_key] = selected or options[:2]
+                        continue
+
+                    preferred_single = "Vou rotular só com o que aparece aqui (sem buscar fora)"
+                    if preferred_single in options:
+                        background_payload[question_key] = preferred_single
+                    else:
+                        background_payload[question_key] = options[0]
+                    continue
+
+                if "idade" in question_text:
+                    background_payload[question_key] = 32
+                elif "familiaridade" in question_text:
+                    background_payload[question_key] = 8
+                else:
+                    background_payload[question_key] = ""
+
+            if background_payload:
                 BackgroundAnswer.objects.update_or_create(
                     labeling=labeling,
                     answered_by=admin_user,
-                    defaults={
-                        "answer_payload": {
-                            str(background_questions[0].id): 32,
-                            str(background_questions[1].id): 8,
-                            str(background_questions[2].id): [
-                                "Eletrônicos",
-                                "Computadores",
-                                "Fotografia",
-                            ],
-                            str(background_questions[3].id): (
-                                "Vou rotular só com o que aparece aqui (sem buscar fora)"
-                            ),
-                        }
-                    },
+                    defaults={"answer_payload": background_payload},
                 )
 
         main_sections = list(
