@@ -229,10 +229,15 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.upload.startDateLabel": "Data inicial",
     "labelings.upload.finalDateLabel": "Data final",
     "labelings.upload.decisionLabel": "Ativar decisão automática",
+    "labelings.upload.decisionTooltip":
+      "*Experimental* Ative para decidir respostas finais automaticamente quando todos os usuários finalizarem um item.\nEm caso de empate, a rotulação continua.",
     "labelings.upload.decisionHelpLine1":
       "*EXPERIMENTAL* Marque para decidir respostas finais automaticamente quando todos os usuários finalizarem um item",
     "labelings.upload.decisionHelpLine2":
       "(caso haja empate em algum item a rotulação é continuada).",
+    "labelings.upload.backgroundFormLabel": "Formulário de background",
+    "labelings.upload.backgroundFormTooltip":
+      "Ative para incluir um formulário de background com informações pessoais do rotulador.",
     "labelings.upload.usersPerItemLabel": "Usuários por item",
     "labelings.upload.usersPerItemTooltip":
       "Número de pessoas que devem rotular cada item antes de ser finalizado.",
@@ -880,10 +885,15 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.upload.startDateLabel": "Start date",
     "labelings.upload.finalDateLabel": "End date",
     "labelings.upload.decisionLabel": "Enable automatic decision",
+    "labelings.upload.decisionTooltip":
+      "*Experimental* Enable to decide final answers automatically when all users finish an item.\nIf there is a tie, labeling continues.",
     "labelings.upload.decisionHelpLine1":
       "*EXPERIMENTAL* Check to decide final answers automatically when all users finish an item",
     "labelings.upload.decisionHelpLine2":
       "(if there is a tie on any item, the labeling continues).",
+    "labelings.upload.backgroundFormLabel": "Background form",
+    "labelings.upload.backgroundFormTooltip":
+      "Enable to include a background form with personal information from the annotator.",
     "labelings.upload.usersPerItemLabel": "Users per item",
     "labelings.upload.usersPerItemTooltip":
       "Number of people who must label each item before it is finalized.",

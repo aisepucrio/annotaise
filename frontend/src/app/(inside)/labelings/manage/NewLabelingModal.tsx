@@ -10,6 +10,7 @@ import Select from "@/components/form/Select";
 import DatePicker from "@/components/form/DatePicker";
 import Checkbox from "@/components/form/Checkbox";
 import Button from "@/components/button/Button";
+import Tooltip from "@/components/tooltip/Tooltip";
 import { useTranslations } from "@/i18n/use-translations";
 
 type NewLabelingModalProps = {
@@ -400,46 +401,56 @@ export default function NewLabelingModal({
               />
             </div>
 
-            <div className="flex items-start gap-3 rounded-lg border border-blueberry-700/30 bg-blue-50 px-3 py-2">
-              <Checkbox
-                id="csv-decision"
-                checked={decisionEnabled}
-                onChange={setDecisionEnabled}
-                variant="circle"
-                hoverColor="var(--blueberry-500)"
-                checkedColor="var(--blueberry-700)"
-                className="mt-0.5"
-              />
-              <div className="flex flex-col">
-                <label
-                  htmlFor="csv-decision"
-                  className="cursor-pointer text-sm font-medium text-gray-800"
-                >
-                  {t("labelings.upload.decisionLabel")}
-                </label>
-                <p className="text-xs text-gray-600">
-                  {t("labelings.upload.decisionHelpLine1")}
-                  <br />
-                  {t("labelings.upload.decisionHelpLine2")}
-                </p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex items-center gap-2 rounded-lg border border-metal-200 bg-metal-50 px-3 py-2">
+                <Checkbox
+                  id="csv-decision"
+                  checked={decisionEnabled}
+                  onChange={setDecisionEnabled}
+                  variant="square"
+                  hoverColor="var(--metal-500)"
+                  checkedColor="var(--metal-700)"
+                  className="shrink-0"
+                />
+                <div className="flex items-center gap-1">
+                  <label
+                    htmlFor="csv-decision"
+                    className="cursor-pointer text-sm font-medium text-metal-900"
+                  >
+                    {t("labelings.upload.decisionLabel")}
+                  </label>
+                  <Tooltip
+                    content={t("labelings.upload.decisionTooltip")}
+                    color="var(--metal-700)"
+                    size="sm"
+                  />
+                </div>
               </div>
-            </div>
 
-            <div className="flex items-center gap-3 rounded-lg border border-blueberry-700/30 bg-blue-50 px-3 py-2">
-              <Checkbox
-                id="csv-background-form"
-                checked={hasBackgroundForm}
-                onChange={setHasBackgroundForm}
-                variant="square"
-                hoverColor="var(--blueberry-500)"
-                checkedColor="var(--blueberry-700)"
-              />
-              <label
-                htmlFor="csv-background-form"
-                className="cursor-pointer text-sm font-medium text-gray-800"
-              >
-                FORMULÁRIO BACKGROUND
-              </label>
+              <div className="flex items-center gap-2 rounded-lg border border-metal-200 bg-metal-50 px-3 py-2">
+                <Checkbox
+                  id="csv-background-form"
+                  checked={hasBackgroundForm}
+                  onChange={setHasBackgroundForm}
+                  variant="square"
+                  hoverColor="var(--metal-500)"
+                  checkedColor="var(--metal-700)"
+                  className="shrink-0"
+                />
+                <div className="flex items-center gap-1">
+                  <label
+                    htmlFor="csv-background-form"
+                    className="cursor-pointer text-sm font-medium text-metal-900"
+                  >
+                    {t("labelings.upload.backgroundFormLabel")}
+                  </label>
+                  <Tooltip
+                    content={t("labelings.upload.backgroundFormTooltip")}
+                    color="var(--metal-700)"
+                    size="sm"
+                  />
+                </div>
+              </div>
             </div>
 
             <Input
