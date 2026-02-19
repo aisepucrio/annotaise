@@ -6,6 +6,8 @@ type GridItemCardProps = {
   children: React.ReactNode;
   /** Índice do item no array  */
   index: number;
+  /** Cor da borda (CSS color value), quando definida sobrescreve o padrão alternado */
+  borderColor?: string;
   /** Classes CSS adicionais para personalização */
   className?: string;
 };
@@ -13,13 +15,17 @@ type GridItemCardProps = {
 export default function GridItemCard({
   children,
   index,
+  borderColor,
   className = "",
 }: GridItemCardProps) {
   const columnCount = useGridColumns();
   const row = Math.floor(index / columnCount);
   const col = index % columnCount;
   const isEven = (row + col) % 2 === 0;
-  const borderColor = isEven ? "var(--blueberry-500)" : "var(--blueberry-700)";
+  const defaultBorderColor = isEven
+    ? "var(--blueberry-500)"
+    : "var(--blueberry-700)";
+  const appliedBorderColor = borderColor ?? defaultBorderColor;
 
   return (
     <div
@@ -32,8 +38,8 @@ export default function GridItemCard({
         ${className}
       `}
       style={{
-        borderTopColor: borderColor,
-        borderLeftColor: borderColor,
+        borderTopColor: appliedBorderColor,
+        borderLeftColor: appliedBorderColor,
       }}
     >
       {children}
