@@ -267,7 +267,7 @@ export const translations: Record<Language, TranslationMap> = {
       "Formulário principal da rotulação: define contextos e perguntas usadas para avaliar cada item.",
     "labelings.create.formType.backgroundLabel": "Background",
     "labelings.create.formType.backgroundTooltip":
-      "Formulário de background: coleta informações do anotador separadas da avaliação principal dos itens.",
+      "Formulário de background: coleta informações pessoais do rotulador separadas da avaliação principal dos itens.",
     "labelings.create.summary.title": "Resumo das respostas",
     "labelings.create.summary.description":
       "Visualize gráficos e estatísticas por pergunta.",
@@ -907,14 +907,13 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.tabs.summary": "Answers summary",
     "labelings.create.tabs.guide": "Guide",
     "labelings.create.tabs.decision": "Decision",
-    "labelings.create.formType.ariaLabel":
-      "Select labeling form type",
+    "labelings.create.formType.ariaLabel": "Select labeling form type",
     "labelings.create.formType.mainLabel": "Labeling",
     "labelings.create.formType.mainTooltip":
       "Main labeling form: defines the contexts and questions used to evaluate each item.",
     "labelings.create.formType.backgroundLabel": "Background",
     "labelings.create.formType.backgroundTooltip":
-      "Background form: collects annotator information separate from the main item evaluation.",
+      "Background form: collects annotator personal information separate from the main item evaluation.",
     "labelings.create.summary.title": "Answers summary",
     "labelings.create.summary.description":
       "View charts and stats per question.",
