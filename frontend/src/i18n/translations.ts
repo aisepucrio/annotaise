@@ -345,6 +345,12 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.assign.selectUser": "Selecione um usuário",
     "labelings.create.assign.adding": "Adicionando...",
     "labelings.create.assign.add": "Adicionar",
+    "labelings.create.assign.background.button": "Background",
+    "labelings.create.assign.background.title": "Background",
+    "labelings.create.assign.background.emptyAnswer":
+      "Este usuário ainda não respondeu o formulário background.",
+    "labelings.create.assign.background.formNotConfigured":
+      "Formulário background não configurado.",
     "labelings.create.guide.description":
       "Escreva orientações gerais para quem vai responder esta rotulação.",
     "labelings.create.guide.save": "Salvar guia",
@@ -453,16 +459,13 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.answers.modal.contextEmpty":
       "Nenhum contexto disponível.",
     "labelings.create.answers.modal.answersTitle": "Respostas",
-    "labelings.create.answers.modal.itemSummaryTitle":
-      "Análise geral do item",
+    "labelings.create.answers.modal.itemSummaryTitle": "Análise geral do item",
     "labelings.create.answers.modal.itemSummaryDescription":
       "Visão consolidada das respostas deste item.",
     "labelings.create.answers.modal.itemSummaryEmpty":
       "Sem dados suficientes para gerar análise deste item.",
-    "labelings.create.answers.modal.selectUserLabel":
-      "Usuário para visualizar",
-    "labelings.create.answers.modal.tabItemSummary":
-      "Análise geral do item",
+    "labelings.create.answers.modal.selectUserLabel": "Usuário para visualizar",
+    "labelings.create.answers.modal.tabItemSummary": "Análise geral do item",
     "labelings.create.answers.modal.tabUserAnswer":
       "Contexto e respostas do usuário",
     "labelings.create.answers.modal.responsesCountSingular":
@@ -979,6 +982,12 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.assign.selectUser": "Select a user",
     "labelings.create.assign.adding": "Adding...",
     "labelings.create.assign.add": "Add",
+    "labelings.create.assign.background.button": "Background",
+    "labelings.create.assign.background.title": "Background",
+    "labelings.create.assign.background.emptyAnswer":
+      "This user has not answered the background form yet.",
+    "labelings.create.assign.background.formNotConfigured":
+      "Background form is not configured.",
     "labelings.create.guide.description":
       "Write general guidelines for those who will answer this labeling.",
     "labelings.create.guide.save": "Save guide",
@@ -1080,8 +1089,7 @@ export const translations: Record<Language, TranslationMap> = {
       "Not enough data to build this item's analysis.",
     "labelings.create.answers.modal.selectUserLabel": "User to inspect",
     "labelings.create.answers.modal.tabItemSummary": "Item overview",
-    "labelings.create.answers.modal.tabUserAnswer":
-      "User context and answers",
+    "labelings.create.answers.modal.tabUserAnswer": "User context and answers",
     "labelings.create.answers.modal.responsesCountSingular":
       "{{count}} answer on this item",
     "labelings.create.answers.modal.responsesCountPlural":
