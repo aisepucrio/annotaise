@@ -4,10 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { Save, Trash2 } from "lucide-react";
+import { Save } from "lucide-react";
 import { useTranslations } from "@/i18n/use-translations";
 import InnerPageHeader from "@/components/InnerPageHeader";
 import Button from "@/components/button/Button";
+import DeleteIconButton from "@/components/button/DeleteIconButton";
 import ConfirmDeleteModal from "@/components/ConfirmDeleteModal";
 import Input from "@/components/form/Input";
 import Select from "@/components/form/Select";
@@ -271,14 +272,10 @@ export default function ProjectDetailsPage() {
                 : t("projects.detail.saveButton")}
             </Button>
 
-            <Button
-              variant="red"
-              fill={false}
+            <DeleteIconButton
               onClick={() => setIsDeleteModalOpen(true)}
-              icon={<Trash2 size={16} />}
-            >
-              {t("projects.detail.deleteButton")}
-            </Button>
+              ariaLabel={t("projects.detail.deleteButton")}
+            ></DeleteIconButton>
           </div>
         </>
       </InnerPageHeader>
@@ -445,13 +442,10 @@ export default function ProjectDetailsPage() {
                               containerClassName="flex-1"
                             />
 
-                            <Button
-                              variant="red"
-                              fill={false}
+                            <DeleteIconButton
                               onClick={() => handleRemoveMember(membership)}
-                            >
-                              {t("projects.detail.removeButton")}
-                            </Button>
+                              ariaLabel={t("projects.detail.removeButton")}
+                            ></DeleteIconButton>
                           </div>
                         </div>
                       </li>

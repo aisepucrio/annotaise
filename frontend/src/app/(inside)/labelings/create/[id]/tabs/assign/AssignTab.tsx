@@ -10,6 +10,7 @@ import { type User } from "@/modules/user/userTypes";
 import { useTranslations } from "@/i18n/use-translations";
 import Select from "@/components/form/Select";
 import Button from "@/components/button/Button";
+import DeleteIconButton from "@/components/button/DeleteIconButton";
 import BackgroundModal, { type BackgroundModalHandle } from "./BackgroundModal";
 
 type AssignTabProps = {
@@ -171,15 +172,11 @@ export default function AssignTab({
                       </Button>
                     ) : null}
 
-                    <Button
-                      type="button"
+                    <DeleteIconButton
                       onClick={() => onRemoveMember(membership)}
                       disabled={membershipSaving}
-                      variant="red"
-                      fill={false}
-                    >
-                      {t("labelings.create.assign.remove")}
-                    </Button>
+                      ariaLabel={t("labelings.create.assign.remove")}
+                    ></DeleteIconButton>
                   </div>
                 </div>
               );

@@ -1,6 +1,7 @@
 import type { RefObject } from "react";
-import { ArrowLeft, Edit, Calendar, Trash2, Save } from "lucide-react";
+import { ArrowLeft, Edit, Calendar, Save } from "lucide-react";
 import Button from "@/components/button/Button";
+import DeleteIconButton from "@/components/button/DeleteIconButton";
 import { useTranslations } from "@/i18n/use-translations";
 import type { Labeling } from "@/modules/labelings/labelingsTypes";
 import type { Project } from "@/modules/projects/projectsTypes";
@@ -148,14 +149,11 @@ export default function LabelingHeader({
               {isSaving ? t("common.saving") : t("common.saveChanges")}
             </Button>
           )}
-          <Button
-            variant="red"
-            fill={false}
-            size="icon"
+          <DeleteIconButton
             onClick={onDelete}
             disabled={isDeleting || isLoading}
-            icon={<Trash2 size={16} />}
-          ></Button>
+            ariaLabel={t("labelings.create.header.deleteButton")}
+          />
         </div>
       </div>
 

@@ -3,6 +3,9 @@
 import { forwardRef, useImperativeHandle, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import ContextVizualizer from "@/components/answer-vizualizer/ContextVizualizer";
+import QuestionVizualizer from "@/components/answer-vizualizer/QuestionVizualizer";
+import SessionVizualizer from "@/components/answer-vizualizer/SessionVizualizer";
 import Modal from "@/components/modal/Modal";
 import {
   type BackgroundAnswerResponse,
@@ -105,58 +108,51 @@ const BackgroundModal = forwardRef<BackgroundModalHandle, BackgroundModalProps>(
             {t("labelings.create.assign.background.formNotConfigured")}
           </p>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {orderedSections.map((section) => {
               const orderedElements = [...section.elements]
-                .filter((element) => element.question_type !== "context")
                 .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
               return (
-                <div
+                <SessionVizualizer
                   key={section.id ?? section.order}
-                  className="rounded-xl border border-gray-100 shadow-sm"
+                  title={
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {section.title?.trim() ||
+                        t("labelings.create.answers.modal.sectionFallback")}
+                    </ReactMarkdown>
+                  }
                 >
-                  <div className="bg-blue-900 px-4 py-3 text-white rounded-t-xl">
-                    <span className="text-[11px] uppercase tracking-wide text-blue-100">
-                      {t("labelings.create.answers.modal.sectionLabel", {
-                        order: section.order ?? "",
-                      })}
-                    </span>
-                    <div className="prose prose-sm max-w-none text-white">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {section.title?.trim() ||
-                          t("labelings.create.answers.modal.sectionFallback")}
-                      </ReactMarkdown>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3 p-4">
-                    {orderedElements.map((question, idx) => {
-                      const value = answersByQuestion.get(
-                        String(question.id ?? question.order ?? idx),
-                      );
-                      const label =
-                        question.text?.trim() ||
-                        t("labelings.create.answers.modal.questionFallback");
-
+                  {orderedElements.map((element, idx) => {
+                    if (element.question_type === "context") {
                       return (
-                        <div
-                          key={question.id ?? `${section.id}-q-${idx}`}
-                          className="rounded-lg border border-gray-100 p-3 shadow-sm"
-                        >
-                          <div className="prose prose-sm max-w-none text-gray-900">
-                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                              {label}
-                            </ReactMarkdown>
-                          </div>
-                          <p className="mt-2 text-sm text-gray-800 break-words">
-                            {formatAnswerValue(value, t)}
-                          </p>
-                        </div>
+                        <ContextVizualizer
+                          key={element.id ?? `${section.id}-ctx-${idx}`}
+                          text={element.text}
+                        />
                       );
-                    })}
-                  </div>
-                </div>
+                    }
+
+                    const value = answersByQuestion.get(
+                      String(element.id ?? element.order ?? idx),
+                    );
+                    const label =
+                      element.text?.trim() ||
+                      t("labelings.create.answers.modal.questionFallback");
+
+                    return (
+                      <QuestionVizualizer
+                        key={element.id ?? `${section.id}-q-${idx}`}
+                        question={
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {label}
+                          </ReactMarkdown>
+                        }
+                        answer={formatAnswerValue(value, t)}
+                      />
+                    );
+                  })}
+                </SessionVizualizer>
               );
             })}
           </div>
