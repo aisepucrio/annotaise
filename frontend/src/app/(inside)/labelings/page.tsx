@@ -60,6 +60,7 @@ export default function LabelingsPage() {
               daysPassed={l.days_passed}
               daysTotal={l.total_days}
               labelingsDone={l.items_done}
+              variant="labelings"
               actionButton={
                 <Button
                   icon={<Tag size={20} strokeWidth={1.75} />}

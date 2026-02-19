@@ -172,6 +172,7 @@
     "loadError": "Unable to load labelings.",
     "daysPassed": "Days Passed",
     "daysLate": "Days Late",
+    "deadlineFinished": "Deadline reached",
     "labelingsDone": "Labelings Done",
     "labelingsLate": "Labelings Late",
     "completed": "Completed",

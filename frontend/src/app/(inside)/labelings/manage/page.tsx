@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import PageLayout from "@/components/inside-pages-layout/PageLayout";
-import IndividualLabelingCard from "../IndividualManageLabelingCard";
+import IndividualLabelingCard from "../IndividualLabelingCard";
 import { Pen } from "lucide-react";
 import NewLabelingModal from "./NewLabelingModal";
 import GridItemCard from "@/components/grid/GridItemCard";
@@ -131,8 +131,16 @@ export default function LabelingsPage() {
     >
       {labelingsList.map((l, index) => {
         const pending = Math.max((l.total_items ?? 0) - (l.items_done ?? 0), 0);
+        const isComplete = l.items_done !== 0 && pending === 0;
+        const isLate = l.days_passed > l.total_days && l.total_days > 0;
+        const borderColor = isComplete
+          ? "var(--green-blueberry)"
+          : isLate
+            ? "var(--red-blueberry)"
+            : undefined;
+
         return (
-          <GridItemCard key={l.id} index={index}>
+          <GridItemCard key={l.id} index={index} borderColor={borderColor}>
             <IndividualLabelingCard
               title={l.labeling_name}
               project={l.project_name}
@@ -140,6 +148,7 @@ export default function LabelingsPage() {
               daysTotal={l.total_days}
               labelingsDone={l.items_done}
               labelingsPending={pending}
+              variant="manage"
               actionButton={
                 <Button
                   icon={<Pen size={18} strokeWidth={1.75} />}
