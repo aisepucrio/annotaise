@@ -157,12 +157,12 @@ docker compose exec api python manage.py createsuperuser
 
 ## Seed ReSellia QA
 
-Use este seed para criar o caso de uso real de marketplace (**ReSellia QA**) no backend.
+Use this seed to create the real marketplace use case (**ReSellia QA**) in the backend.
 
-- O comando pede no terminal: **email do administrador** para atribuir a criação do projeto/rotulação.
-- O usuário informado precisa existir e ter perfil de admin.
+- The command prompts in the terminal for the **administrator email** to assign project/labeling creation.
+- The provided user must exist and have an admin profile.
 
-- **Com Docker (rodar na raiz do repositório):**
+- **With Docker (run from the repository root):**
 
 ```bash
 docker compose exec api uv run manage.py seed_resellia_qa
