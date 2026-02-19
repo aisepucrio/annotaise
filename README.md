@@ -155,19 +155,6 @@ docker compose exec api python manage.py migrate
 docker compose exec api python manage.py createsuperuser
 ```
 
-## Seed ReSellia QA
-
-Use this seed to create the real marketplace use case (**ReSellia QA**) in the backend.
-
-- The command prompts in the terminal for the **administrator email** to assign project/labeling creation.
-- The provided user must exist and have an admin profile.
-
-- **With Docker (run from the repository root):**
-
-```bash
-docker compose exec api uv run manage.py seed_resellia_qa
-```
-
 ### Run AnnotAISE
 
 - **With Docker**
@@ -193,3 +180,16 @@ docker compose start
   npm run dev
 
   ```
+
+## Seed
+
+Use this seed to create the real marketplace use case (**ReSellia QA**) in the backend.
+
+- The command prompts in the terminal for the **administrator email** to assign project/labeling creation.
+- The provided user must exist and have an admin profile.
+
+- **With Docker (run from the repository root):**
+
+```bash
+docker compose exec api uv run manage.py seed_resellia_qa
+```
