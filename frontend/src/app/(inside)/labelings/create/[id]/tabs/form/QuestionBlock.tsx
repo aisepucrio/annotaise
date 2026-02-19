@@ -95,7 +95,7 @@ export default function QuestionBlock({
         : undefined;
 
   return (
-    <GridItemCard index={1} className="mb-2">
+    <GridItemCard index={0} className="mb-2">
       <div data-actions-anchor="true" data-section-element-id={data.id}>
         {/* header: título + ações (required + remover) */}
         <div className="mb-3 flex items-center justify-between">
