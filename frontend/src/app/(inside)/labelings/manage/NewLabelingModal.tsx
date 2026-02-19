@@ -8,6 +8,7 @@ import Modal from "@/components/modal/Modal";
 import Input from "@/components/form/Input";
 import Select from "@/components/form/Select";
 import DatePicker from "@/components/form/DatePicker";
+import Checkbox from "@/components/form/Checkbox";
 import Button from "@/components/button/Button";
 import { useTranslations } from "@/i18n/use-translations";
 
@@ -399,18 +400,20 @@ export default function NewLabelingModal({
               />
             </div>
 
-            <div className="flex items-center gap-3 rounded-lg border border-blueberry-700/30 bg-blue-50 px-3 py-2">
-              <input
+            <div className="flex items-start gap-3 rounded-lg border border-blueberry-700/30 bg-blue-50 px-3 py-2">
+              <Checkbox
                 id="csv-decision"
-                type="checkbox"
                 checked={decisionEnabled}
-                onChange={(e) => setDecisionEnabled(e.target.checked)}
-                className="h-4 w-4 accent-blueberry-700 cursor-pointer"
+                onChange={setDecisionEnabled}
+                variant="circle"
+                hoverColor="var(--blueberry-500)"
+                checkedColor="var(--blueberry-700)"
+                className="mt-0.5"
               />
               <div className="flex flex-col">
                 <label
                   htmlFor="csv-decision"
-                  className="text-sm font-medium text-gray-800 cursor-pointer"
+                  className="cursor-pointer text-sm font-medium text-gray-800"
                 >
                   {t("labelings.upload.decisionLabel")}
                 </label>
@@ -423,16 +426,17 @@ export default function NewLabelingModal({
             </div>
 
             <div className="flex items-center gap-3 rounded-lg border border-blueberry-700/30 bg-blue-50 px-3 py-2">
-              <input
+              <Checkbox
                 id="csv-background-form"
-                type="checkbox"
                 checked={hasBackgroundForm}
-                onChange={(e) => setHasBackgroundForm(e.target.checked)}
-                className="h-4 w-4 accent-blueberry-700 cursor-pointer"
+                onChange={setHasBackgroundForm}
+                variant="square"
+                hoverColor="var(--blueberry-500)"
+                checkedColor="var(--blueberry-700)"
               />
               <label
                 htmlFor="csv-background-form"
-                className="text-sm font-medium text-gray-800 cursor-pointer"
+                className="cursor-pointer text-sm font-medium text-gray-800"
               >
                 FORMULÁRIO BACKGROUND
               </label>

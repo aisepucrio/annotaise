@@ -1,5 +1,6 @@
 import Input from "@/components/form/Input";
 import NumberInput from "@/components/form/NumberInput";
+import Checkbox from "@/components/form/Checkbox";
 import type { LabelingStructureElement } from "@/modules/labelings/labelingsTypes";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -82,14 +83,15 @@ export default function QuestionInput({
             const optionValue = item.text;
             if (allowMultiple) {
               const isChecked = selectedList.includes(optionValue);
+              const optionId = `${groupName}-option-${item.id ?? index}`;
               return (
-                <label
+                <div
                   key={item.id ?? index}
-                  className="flex items-center gap-2 text-sm text-metal-900"
+                  className="flex items-start gap-2 text-sm text-metal-900"
                 >
-                  <input
-                    type="checkbox"
-                    value={optionValue}
+                  <Checkbox
+                    id={optionId}
+                    variant="square"
                     checked={isChecked}
                     onChange={() => {
                       const next = isChecked
@@ -97,36 +99,42 @@ export default function QuestionInput({
                         : [...selectedList, optionValue];
                       onChange(next);
                     }}
-                    className="h-4 w-4 text-blueberry-700 hover:text-blueberry-900"
+                    checkedColor="var(--blueberry-500)"
+                    className="mt-0.5 shrink-0"
                   />
+                  <label htmlFor={optionId} className="cursor-pointer">
+                    <span className="prose prose-sm max-w-none">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {optionValue}
+                      </ReactMarkdown>
+                    </span>
+                  </label>
+                </div>
+              );
+            }
+
+            const optionId = `${groupName}-single-option-${item.id ?? index}`;
+            return (
+              <div
+                key={item.id ?? index}
+                className="flex items-start gap-2 text-sm text-metal-900"
+              >
+                <Checkbox
+                  id={optionId}
+                  variant="circle"
+                  checked={selected === optionValue}
+                  onChange={() => onChange(optionValue)}
+                  checkedColor="var(--blueberry-500)"
+                  className="mt-0.5 shrink-0"
+                />
+                <label htmlFor={optionId} className="cursor-pointer">
                   <span className="prose prose-sm max-w-none">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                       {optionValue}
                     </ReactMarkdown>
                   </span>
                 </label>
-              );
-            }
-
-            return (
-              <label
-                key={item.id ?? index}
-                className="flex items-center gap-2 text-sm text-metal-900"
-              >
-                <input
-                  type="radio"
-                  name={groupName}
-                  value={optionValue}
-                  checked={selected === optionValue}
-                  onChange={() => onChange(optionValue)}
-                  className="h-4 w-4 text-blueberry-900"
-                />
-                <span className="prose prose-sm max-w-none">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {optionValue}
-                  </ReactMarkdown>
-                </span>
-              </label>
+              </div>
             );
           })}
           {items.length === 0 ? (
