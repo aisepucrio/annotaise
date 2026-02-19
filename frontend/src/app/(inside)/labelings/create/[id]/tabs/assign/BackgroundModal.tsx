@@ -5,7 +5,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import ContextVizualizer from "@/components/answer-vizualizer/ContextVizualizer";
 import QuestionVizualizer from "@/components/answer-vizualizer/QuestionVizualizer";
-import SessionVizualizer from "@/components/answer-vizualizer/SessionVizualizer";
+import SectionVizualizer from "@/components/answer-vizualizer/SectionVizualizer";
 import Modal from "@/components/modal/Modal";
 import {
   type BackgroundAnswerResponse,
@@ -114,7 +114,7 @@ const BackgroundModal = forwardRef<BackgroundModalHandle, BackgroundModalProps>(
                 .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
               return (
-                <SessionVizualizer
+                <SectionVizualizer
                   key={section.id ?? section.order}
                   title={
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -152,7 +152,7 @@ const BackgroundModal = forwardRef<BackgroundModalHandle, BackgroundModalProps>(
                       />
                     );
                   })}
-                </SessionVizualizer>
+                </SectionVizualizer>
               );
             })}
           </div>

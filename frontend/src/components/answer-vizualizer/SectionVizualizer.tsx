@@ -1,14 +1,14 @@
 import { type ReactNode } from "react";
 
-type SessionVizualizerProps = {
+type SectionVizualizerProps = {
   title: ReactNode;
   children: ReactNode;
 };
 
-export default function SessionVizualizer({
+export default function SectionVizualizer({
   title,
   children,
-}: SessionVizualizerProps) {
+}: SectionVizualizerProps) {
   return (
     <section className="border-l-4 border-blueberry-500 pl-4 py-1">
       <div className="prose prose-sm max-w-none text-blueberry-900 prose-a:text-blueberry-700 prose-a:visited:text-blueberry-700">
