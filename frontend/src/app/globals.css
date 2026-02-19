@@ -12,8 +12,7 @@
 
   --blueberry-500: #4561db;
   --blueberry-700: #1e2f93;
-  --blueberry-700-15: #1e2f9315;
-  --blueberry-700-25: #1e2f9325;
+
   --blueberry-900: #0e1862;
 
   --metal-900: #1f2129;
@@ -29,12 +28,15 @@
   --red-blueberry: #971a44;
 
   /* versões com opacity (os % da tabela) */
-  --green-blueberry-10: rgba(30, 102, 85, 0.1);
-  --orange-blueberry-10: rgba(143, 94, 73, 0.15);
-  --red-blueberry-10: rgba(115, 35, 62, 0.15);
-  --blueberry-700-10: rgba(30, 47, 147, 0.15);
+  --green-blueberry-25: rgba(30, 102, 85, 0.25);
+  --green-blueberry-15: rgba(30, 102, 85, 0.15);
+  --orange-blueberry-25: rgba(143, 94, 73, 0.25);
+  --orange-blueberry-15: rgba(143, 94, 73, 0.15);
+  --red-blueberry-25: rgba(115, 35, 62, 0.25);
+  --red-blueberry-15: rgba(115, 35, 62, 0.15);
+  --blueberry-700-15: #1e2f9315;
+  --blueberry-700-25: #1e2f9325;
   --metal-500-15: rgba(124, 130, 146, 0.15);
-  --blueberry-700-25: rgba(30, 47, 147, 0.25);
 
   /* outros (shadcn) */
   --radius: 0.625rem;
@@ -99,12 +101,15 @@
   --color-green-blueberry: var(--green-blueberry);
   --color-red-blueberry: var(--red-blueberry);
 
-  --green-blueberry-10: var(--green-blueberry-10);
-  --orange-blueberry-10: var(--orange-blueberry-10);
-  --red-blueberry-10: var(--red-blueberry-10);
-  --blueberry-700-10: var(--blueberry-700-10);
-  --metal-500-15: var(--metal-500-15);
-  --blueberry-700-25: var(--blueberry-700-25);
+  /* versões com opacity (os % da tabela) */
+  --color-green-blueberry-25: var(--green-blueberry-25);
+  --color-green-blueberry-15: var(--green-blueberry-15);
+  --color-orange-blueberry-25: var(--orange-blueberry-25);
+  --color-orange-blueberry-15: var(--orange-blueberry-15);
+  --color-red-blueberry-25: var(--red-blueberry-25);
+  --color-red-blueberry-15: var(--red-blueberry-15);
+  --color-blueberry-700-10: var(--blueberry-700-10);
+  --color-metal-500-15: var(--metal-500-15);
 
   /* Others (shadcn) */
   --color-sidebar-ring: var(--sidebar-ring);

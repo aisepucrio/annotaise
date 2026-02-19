@@ -57,22 +57,19 @@ export default function IndividualUserCard({
         <StatPill
           label={t("users.stats.projects")}
           value={projects}
-          textColor="var(--blueberry-700)"
-          backgroundColor="var(--blueberry-700-10)"
+          color="blue"
           cut="left"
         />
         <StatPill
           label={t("users.stats.labelingsDone")}
           value={labelings_done}
-          textColor="var(--green-blueberry)"
-          backgroundColor="var(--green-blueberry-10)"
+          color="green"
           cut="left"
         />
         <StatPill
           label={t("users.stats.labelingsPending")}
           value={labelings_pending}
-          textColor="var(--orange-blueberry)"
-          backgroundColor="var(--orange-blueberry-10)"
+          color="orange"
           cut="left"
         />
       </div>
