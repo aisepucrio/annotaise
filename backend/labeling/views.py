@@ -195,9 +195,7 @@ class LabelingViewSet(viewsets.ModelViewSet):
         
         if perm.can_edit_labeling_by_project(user,self.request.data.get('project')) == False:
             raise PermissionDenied(detail=perm.message)
-        labeling = serializer.save(created_by=user)
-
-        return super().perform_create(serializer)
+        serializer.save(created_by=user)
     
     @action(methods=["get"], detail=True, url_path="elements")
     def elements(self, request, pk=None):

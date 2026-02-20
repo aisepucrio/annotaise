@@ -23,6 +23,7 @@ import pandas as pd
 
 from rest_framework.generics import ListAPIView
 from django.db.models import Q
+from django.db import transaction
 from rest_framework.permissions import IsAuthenticated
 #TODO aqui é melhor usar permission pra ver se o item membership existe!
 class AnswerViewset(viewsets.ModelViewSet):
@@ -102,23 +103,13 @@ class AnswerViewset(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(data=data, context={'request':request})
         serializer.is_valid(raise_exception=True)
-        
-    
-        self.perform_create(serializer)
-
-        # Remove a reserva do item
-        membership.delete()
+        payload = serializer.validated_data.get("answer_payload", {})
+        decisive_answer = None
         if labeling.decision == True:
+            decisive_element = labeling.decisive_question
+            decisive_id = decisive_element.id
 
             #caso a validação seja por decisão, verifica se ja atingiu o numero necessario de respostas para finalizar a rotulação
-            payload = data.get('answer_payload', {})
-
-            decisive_element = labeling.decisive_question
-           
-            decisive_id = decisive_element.id
-            decision_dict = item.decision_payload or {}
-            '''a ideia e primeiro adicionar tudo no dicionario e depois checar se ja terminou (todas as questoes alvo ja tem decisao)'''
-
             answer_value = None
             if isinstance(payload, dict):
                 answer_value = payload.get(str(decisive_id))
@@ -129,52 +120,63 @@ class AnswerViewset(viewsets.ModelViewSet):
                     {"detail": "Resposta da pergunta decisiva não encontrada."},
                     status=400,
                 )
-            answer = str(answer_value)
-            if not decision_dict.get(answer,None):
-                decision_dict[answer] = 1
-            else:
-                decision_dict[answer] += 1
+            decisive_answer = str(answer_value)
 
-            item.decision_payload = decision_dict
-            item.save()
-            if labeling.users_per_item <= Answer.objects.filter(item__id=item_id).count():
-                #agora checando se terminou (isso futuramente pode ser uma função)
-                done = False
-                biggest = 0
-                for answer, number_of_appearences in decision_dict.items():
-                    if number_of_appearences > biggest:
-                        biggest = number_of_appearences
-                        biggest_answer = answer
-                        done = True
-                    elif number_of_appearences == biggest:
-                        done = False # empate, decisao nao tomada ainda
-                if done == True:
-                        #decisao tomada
-                    item.status = 'finished'
-                    item.save()
-                    
+        with transaction.atomic():
+            self.perform_create(serializer)
+
+            # Remove a reserva do item
+            membership.delete()
+
+            if labeling.decision == True:
+                decision_dict = item.decision_payload or {}
+                '''a ideia e primeiro adicionar tudo no dicionario e depois checar se ja terminou (todas as questoes alvo ja tem decisao)'''
+
+                if not decision_dict.get(decisive_answer, None):
+                    decision_dict[decisive_answer] = 1
+                else:
+                    decision_dict[decisive_answer] += 1
+
+                item.decision_payload = decision_dict
+                item.save()
+                if labeling.users_per_item <= Answer.objects.filter(item__id=item_id).count():
+                    #agora checando se terminou (isso futuramente pode ser uma função)
+                    done = False
+                    biggest = 0
+                    for answer, number_of_appearences in decision_dict.items():
+                        if number_of_appearences > biggest:
+                            biggest = number_of_appearences
+                            biggest_answer = answer
+                            done = True
+                        elif number_of_appearences == biggest:
+                            done = False # empate, decisao nao tomada ainda
+                    if done == True:
+                            #decisao tomada
+                        item.status = 'finished'
+                        item.save()
+                        
+                if not labeling.items.filter(~Q(status='finished')).exists():
+                    labeling.status = 'finished'
+                    labeling.save()
+
+                return Response(serializer.data, status=201)
+
+            else:
+
+                obj = Item.objects.select_related('labeling').get(id=item_id)
+                
+
+                if obj.labeling.users_per_item <= Answer.objects.filter(item__id=item_id).count():
+                    obj.status = 'finished'
+                    obj.save()
+
+                headers = self.get_success_headers(serializer.data)
+
             if not labeling.items.filter(~Q(status='finished')).exists():
                 labeling.status = 'finished'
                 labeling.save()
 
-            return Response(serializer.data, status=201)
-
-        else:
-
-            obj = Item.objects.select_related('labeling').get(id=item_id)
-            
-
-            if obj.labeling.users_per_item <= Answer.objects.filter(item__id=item_id).count():
-                obj.status = 'finished'
-                obj.save()
-
-            headers = self.get_success_headers(serializer.data)
-
-        if not labeling.items.filter(~Q(status='finished')).exists():
-            labeling.status = 'finished'
-            labeling.save()
-
-        return Response(serializer.data, status=201, headers=headers)
+            return Response(serializer.data, status=201, headers=headers)
 
     def _assert_owner_or_admin(self, answer):
         user = self.request.user
