@@ -13,6 +13,7 @@ import { useCreateLabelingWithCsvMutation } from "@/modules/labelings/labelingMu
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useTranslations } from "@/i18n/use-translations";
+import type { DistributionStrategy } from "@/modules/labelings/labelingsTypes";
 
 type UploadPayload = {
   file: File;
@@ -24,6 +25,7 @@ type UploadPayload = {
   blockSectionBack?: boolean;
   decision: boolean;
   hasBackgroundForm: boolean;
+  distributionStrategy: DistributionStrategy;
 };
 
 export default function LabelingsPage() {
@@ -69,6 +71,7 @@ export default function LabelingsPage() {
     blockSectionBack,
     decision,
     hasBackgroundForm,
+    distributionStrategy,
   }: UploadPayload) {
     try {
       await createLabelingWithCsv.mutateAsync({
@@ -81,6 +84,7 @@ export default function LabelingsPage() {
           block_section_back: blockSectionBack,
           decision,
           has_background_form: hasBackgroundForm,
+          distribution_strategy: distributionStrategy,
         },
         file,
       });

@@ -238,6 +238,12 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.upload.backgroundFormLabel": "Formulário de background",
     "labelings.upload.backgroundFormTooltip":
       "Ative para incluir um formulário de background com informações pessoais do rotulador.",
+    "labelings.upload.distributionStrategyLabel": "Estratégia de distribuição",
+    "labelings.upload.distributionStrategyTooltip":
+      "Define como os itens serão distribuídos entre os rotuladores.",
+    "labelings.upload.distributionStrategy.auto": "Automática",
+    "labelings.upload.distributionStrategy.specified": "Estipulada",
+    "labelings.upload.distributionStrategy.per_person": "Por pessoa",
     "labelings.upload.usersPerItemLabel": "Usuários por item",
     "labelings.upload.usersPerItemTooltip":
       "Número de pessoas que devem rotular cada item antes de ser finalizado.",
@@ -894,6 +900,12 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.upload.backgroundFormLabel": "Background form",
     "labelings.upload.backgroundFormTooltip":
       "Enable to include a background form with personal information from the annotator.",
+    "labelings.upload.distributionStrategyLabel": "Distribution strategy",
+    "labelings.upload.distributionStrategyTooltip":
+      "Defines how items will be distributed among annotators.",
+    "labelings.upload.distributionStrategy.auto": "Automatic",
+    "labelings.upload.distributionStrategy.specified": "Specified",
+    "labelings.upload.distributionStrategy.per_person": "Per person",
     "labelings.upload.usersPerItemLabel": "Users per item",
     "labelings.upload.usersPerItemTooltip":
       "Number of people who must label each item before it is finalized.",

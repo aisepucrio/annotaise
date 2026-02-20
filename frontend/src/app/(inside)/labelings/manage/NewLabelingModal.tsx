@@ -12,6 +12,7 @@ import Checkbox from "@/components/form/Checkbox";
 import Button from "@/components/button/Button";
 import Tooltip from "@/components/tooltip/Tooltip";
 import { useTranslations } from "@/i18n/use-translations";
+import type { DistributionStrategy } from "@/modules/labelings/labelingsTypes";
 
 type NewLabelingModalProps = {
   open: boolean;
@@ -26,6 +27,7 @@ type NewLabelingModalProps = {
     blockSectionBack?: boolean;
     decision: boolean;
     hasBackgroundForm: boolean;
+    distributionStrategy: DistributionStrategy;
   }) => Promise<void>;
 };
 
@@ -45,6 +47,7 @@ export default function NewLabelingModal({
   const [startDate, setStartDate] = useState("");
   const [finalDate, setFinalDate] = useState("");
   const [usersPerItem, setUsersPerItem] = useState<string>("1");
+  const [distributionStrategy, setDistributionStrategy] = useState<DistributionStrategy>("auto");
   const [decisionEnabled, setDecisionEnabled] = useState(false);
   const [hasBackgroundForm, setHasBackgroundForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -68,6 +71,7 @@ export default function NewLabelingModal({
       setStartDate("");
       setFinalDate("");
       setUsersPerItem("1");
+      setDistributionStrategy("auto");
       setDecisionEnabled(false);
       setHasBackgroundForm(false);
       setIsSubmitting(false);
@@ -77,6 +81,15 @@ export default function NewLabelingModal({
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   }, [open]);
+
+  const isPerPerson = distributionStrategy === "per_person";
+
+  useEffect(() => {
+    if (isPerPerson) {
+      setDecisionEnabled(false);
+      setUsersPerItem("1");
+    }
+  }, [isPerPerson]);
 
   useEffect(() => {
     if (open && !startDate) {
@@ -183,6 +196,7 @@ export default function NewLabelingModal({
         blockSectionBack: true,
         decision: decisionEnabled,
         hasBackgroundForm,
+        distributionStrategy,
       });
     } catch (err) {
       const message =
@@ -407,6 +421,7 @@ export default function NewLabelingModal({
                   id="csv-decision"
                   checked={decisionEnabled}
                   onChange={setDecisionEnabled}
+                  disabled={isPerPerson}
                   variant="square"
                   hoverColor="var(--metal-500)"
                   checkedColor="var(--metal-700)"
@@ -453,6 +468,23 @@ export default function NewLabelingModal({
               </div>
             </div>
 
+            <Select
+              id="csv-distribution-strategy"
+              label={t("labelings.upload.distributionStrategyLabel")}
+              options={[
+                { value: "auto", label: t("labelings.upload.distributionStrategy.auto") },
+                { value: "specified", label: t("labelings.upload.distributionStrategy.specified") },
+                { value: "per_person", label: t("labelings.upload.distributionStrategy.per_person") },
+              ]}
+              value={distributionStrategy}
+              onChange={(e) =>
+                setDistributionStrategy(
+                  (e.target as HTMLSelectElement).value as DistributionStrategy,
+                )
+              }
+              tooltip={t("labelings.upload.distributionStrategyTooltip")}
+            />
+
             <Input
               id="csv-users-per-item"
               label={t("labelings.upload.usersPerItemLabel")}
@@ -462,6 +494,7 @@ export default function NewLabelingModal({
               onChange={(e) =>
                 setUsersPerItem((e.target as HTMLInputElement).value)
               }
+              disabled={isPerPerson}
               placeholder="1"
               tooltip={t("labelings.upload.usersPerItemTooltip")}
             />

@@ -1,4 +1,5 @@
 export type LabelingStatus = "draft" | "active" | "archived" | "finished";
+export type DistributionStrategy = "auto" | "specified" | "per_person";
 
 // Campos que o backend retorna para um labeling
 export type Labeling = {
@@ -17,6 +18,7 @@ export type Labeling = {
   created_at: string;
   created_by: number;
   block_section_back?: boolean;
+  distribution_strategy?: DistributionStrategy;
 };
 
 // Campos que o backend aceita pra criar/editar (sem id/created_at/etc)
@@ -30,6 +32,7 @@ export type LabelingPayload = Pick<
   | "decisive_question"
   | "guide"
   | "block_section_back"
+  | "distribution_strategy"
 > & {
   status?: LabelingStatus;
   start_date?: string;

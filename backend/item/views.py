@@ -21,6 +21,7 @@ from django.db import transaction
 from django.utils import timezone
 
 
+
 class ListItemsView(ListAPIView):
     serializer_class = ItemSerializer
 
@@ -65,6 +66,7 @@ class ImportItemsCsvView(APIView):
 
         labeling = get_object_or_404(Labeling, id=labeling_id)
 
+
         uploaded_file = serializer.validated_data['file']
 
         if uploaded_file is None:
@@ -77,6 +79,12 @@ class ImportItemsCsvView(APIView):
         df.fillna("Valor Nulo", inplace=True)
 
         cols = df.columns
+
+        if labeling.distribution_strategy == Labeling.DistributionStrategy.PER_PERSON:
+            if "user_id" not in cols:
+                labeling.delete()
+                return Response({"detail": "Para a estratégia 'Por pessoa', o arquivo CSV deve conter uma coluna 'user_id' com os IDs dos usuários."}, status=400)
+
 
         labeling.column_names = list(cols)
         labeling.save()
@@ -106,29 +114,16 @@ class NextItemView(RetrieveAPIView):
         return Response(serializer.data, status=200)
 
     def ensure_membership(self, item, user):
-        membership = (
-            ItemMembership.objects
-            .select_for_update()
-            .filter(item=item, user=user)
-            .first()
-        )
-        if membership:
-            return membership
-        return ItemMembership.objects.create(item=item, user=user)
+        membership, _ = ItemMembership.objects.get_or_create(item=item, user=user)
+        return membership
 
-    def get_next_item_for_user(self, labeling, user):
+    def _get_item_auto_strategy(self, labeling, user):
         """
         Retorna o próximo item para o usuário, seguindo a ordem:
         1) Item já em membership do usuário (incompleto)
         2) Novo item livre e elegível
         3) Item de outra pessoa com membership expirado (rouba)
         """
-        if labeling.status == "finished":
-            return Response(
-                {"detail": "Essa rotulação já foi finalizada", "code": "ROTULACAO_FINALIZADA"},
-                status=400,
-            )
-
         # 1) Já tem membership ativo?
         membership = (
             ItemMembership.objects
@@ -236,6 +231,40 @@ class NextItemView(RetrieveAPIView):
                 membership.delete()
                 self.ensure_membership(item, user)
                 return item
+        return None
+
+    def _get_item_per_person_strategy(self, labeling, user):
+        item = (
+            Item.objects
+            .annotate(item_user_id=F('payload__user_id'))
+            .filter(labeling=labeling, status='pending', item_user_id=user.id)
+            .exclude(answers__answered_by=user)
+            .order_by('?')
+            .first()
+        )
+        if item:
+            self.ensure_membership(item, user)
+            return item
+        return None
+    
+    def get_next_item_for_user(self, labeling, user):
+        
+        if labeling.status == "finished":
+            return Response(
+                {"detail": "Essa rotulação já foi finalizada", "code": "ROTULACAO_FINALIZADA"},
+                status=400,
+            )
+        
+        if labeling.distribution_strategy == Labeling.DistributionStrategy.AUTO:
+            return self._get_item_auto_strategy(labeling, user)
+        elif labeling.distribution_strategy == Labeling.DistributionStrategy.SPECIFIED:
+            return Response(
+                {"detail": "A estratégia de distribuição 'Estipulada' ainda não é suportada.", "code": "ESTRATEGIA_NAO_SUPORTADA"},
+                status=400,
+            )
+        elif labeling.distribution_strategy == Labeling.DistributionStrategy.PER_PERSON:
+
+            return self._get_item_per_person_strategy(labeling, user)
 
         return None
 

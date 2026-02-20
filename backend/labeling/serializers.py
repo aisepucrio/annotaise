@@ -8,7 +8,7 @@ class LabelingSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Labeling
-        fields = ['id', 'project', 'title', 'created_at','status','column_names','start_date','final_date','users_per_item','block_section_back','has_background_form','guide','decision','decisive_question']
+        fields = ['id', 'project', 'title', 'created_at','status','column_names','start_date','final_date','users_per_item','block_section_back','has_background_form','guide','decision','decisive_question','distribution_strategy']
         read_only_fields = ['id', 'created_at','created_by','column_names','status']
 
     def create(self, validated_data):
