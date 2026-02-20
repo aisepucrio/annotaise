@@ -636,16 +636,12 @@ function InspectAnswerModal({
                                                   )}`
                                                 : ""}
                                             </p>
-                                            <div className="mt-1 prose prose-sm max-w-none text-gray-800">
-                                              <ReactMarkdown
-                                                remarkPlugins={[remarkGfm]}
-                                              >
-                                                {formatContextValue(
-                                                  value,
-                                                  ctx.context_type,
-                                                  t,
-                                                )}
-                                              </ReactMarkdown>
+                                            <div className="mt-1">
+                                              <ContextValueRenderer
+                                                value={value}
+                                                contextType={ctx.context_type}
+                                                t={t}
+                                              />
                                             </div>
                                           </div>
                                         );
@@ -877,4 +873,84 @@ function formatContextValue(
     return `\`\`\`\n${text}\n\`\`\``;
   }
   return text;
+}
+
+function ContextValueRenderer({
+  value,
+  contextType,
+  t,
+}: {
+  value: unknown;
+  contextType: string | null | undefined;
+  t: TranslateFn;
+}) {
+  if (contextType === "image") {
+    return <ContextImageValue value={value} t={t} />;
+  }
+
+  return (
+    <div className="prose prose-sm max-w-none text-gray-800">
+      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+        {formatContextValue(value, contextType, t)}
+      </ReactMarkdown>
+    </div>
+  );
+}
+
+function ContextImageValue({
+  value,
+  t,
+}: {
+  value: unknown;
+  t: TranslateFn;
+}) {
+  const [hasError, setHasError] = useState(false);
+  const raw = typeof value === "string" ? value.trim() : "";
+
+  if (!raw) {
+    return (
+      <p className="text-sm text-gray-700">
+        {t("labelings.create.answers.modal.contextEmpty")}
+      </p>
+    );
+  }
+
+  if (hasError) {
+    return (
+      <div className="space-y-1">
+        <p className="text-xs font-semibold uppercase tracking-wide text-red-600">
+          Imagem invalida
+        </p>
+        <p className="text-sm text-gray-700 break-words">{raw}</p>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={normalizeImageSrc(raw)}
+      alt="Context image"
+      className="max-h-[22rem] w-auto max-w-full rounded-md border border-blue-100 object-contain"
+      loading="lazy"
+      onError={() => setHasError(true)}
+    />
+  );
+}
+
+function normalizeImageSrc(value: string): string {
+  if (value.startsWith("http://") || value.startsWith("https://")) {
+    return value;
+  }
+  if (value.startsWith("data:image/")) {
+    return value;
+  }
+  if (looksLikeBase64(value)) {
+    return `data:image/png;base64,${value}`;
+  }
+  return value;
+}
+
+function looksLikeBase64(value: string): boolean {
+  if (value.length < 100) return false;
+  return /^[A-Za-z0-9+/=]+$/.test(value);
 }
