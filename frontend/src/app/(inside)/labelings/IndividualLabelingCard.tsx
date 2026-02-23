@@ -82,7 +82,11 @@ export default function IndividualLabelingCard({
       {/* título */}
       <h3
         className={`${
-          isLate ? "text-red-blueberry" : "text-black"
+          isComplete
+            ? "text-green-blueberry"
+            : isLate
+              ? "text-red-blueberry"
+              : "text-black"
         } font-semibold leading-tight pr-10`}
       >
         {title}
