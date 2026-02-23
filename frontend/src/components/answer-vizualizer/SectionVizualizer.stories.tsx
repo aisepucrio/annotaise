@@ -6,13 +6,30 @@ const meta = {
   title: "AnswerVizualizer/SectionVizualizer",
   component: SectionVizualizer,
   tags: ["autodocs"],
+  argTypes: {
+    title: {
+      description:
+        "Título da seção (aceita texto simples ou conteúdo em React/Markdown renderizado externamente). Sem `sectionLabel`, é exibido como divisor interno centralizado com linhas laterais.",
+      control: false,
+    },
+    sectionLabel: {
+      description:
+        "Rótulo opcional exibido no cabeçalho superior (ex.: `Seção 1`). Quando presente, o `title` deixa de aparecer como divisor interno e passa a compor o cabeçalho superior acima da caixa com borda azul.",
+      control: false,
+    },
+    children: {
+      description:
+        "Conteúdo da seção, normalmente uma lista de `QuestionVizualizer` e/ou `ContextVizualizer`.",
+      control: false,
+    },
+  },
   parameters: {
     layout: "centered",
     docs: {
       description: {
         component:
-          "Container visual para uma sessão de perguntas e respostas. " +
-          "Mantém foco em leitura com título destacado e itens separados por divisórias leves.",
+          "Container visual para agrupar perguntas/respostas. " +
+          "Suporta dois modos: divisor interno com `title` centralizado (linhas laterais) ou cabeçalho superior com `sectionLabel` + `title` acima da caixa com borda azul à esquerda.",
       },
     },
   },
@@ -22,6 +39,14 @@ export default meta;
 type Story = StoryObj<typeof SectionVizualizer>;
 
 export const Default: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Uso básico sem `sectionLabel`: o `title` é renderizado como divisor interno centralizado, com linhas laterais, dentro da caixa da seção.",
+      },
+    },
+  },
   render: () => (
     <div className="w-[720px] rounded-xl border border-metal-100 bg-white p-5">
       <SectionVizualizer title="Dados profissionais">
@@ -38,10 +63,19 @@ export const Default: Story = {
   ),
 };
 
-export const WithMarkdownTitle: Story = {
+export const WithSectionLabel: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Uso com cabeçalho externo: `sectionLabel` e `title` aparecem juntos no topo, e o divisor interno do título não é exibido.",
+      },
+    },
+  },
   render: () => (
     <div className="w-[720px] rounded-xl border border-metal-100 bg-white p-5">
       <SectionVizualizer
+        sectionLabel="Seção 1"
         title={
           <span>
             <strong>Contexto</strong> do usuário e experiência prévia

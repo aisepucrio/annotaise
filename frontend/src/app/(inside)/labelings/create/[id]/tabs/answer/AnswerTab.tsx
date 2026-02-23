@@ -1,24 +1,20 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
-import { Download } from "lucide-react";
 import { toast } from "sonner";
 import AnswersTab from "./answers/AnswersTab";
-import SummaryTab from "./answers-summary/summary_tab";
-import Button from "@/components/button/Button";
+import SummaryTab from "./answers-summary/AnswersSummaryTab";
+import AnswerTabHeader, { type AnswerView } from "./AnswerTabHeader";
 import { useTranslations } from "@/i18n/use-translations";
 import { useLabelingAnswersWithStructureQuery } from "@/modules/labelings/create/labelingManagerQueries";
 import { exportLabelingAnswersCsv } from "@/modules/labelings/labelingService";
 import { getApiErrorMessage } from "@/lib/getApiErrorMessage";
 import type { User } from "@/modules/user/userTypes";
-import TwoOptionSelector from "../TwoOptionSelector";
 
 type AnswerTabProps = {
   labelingId: number;
   users: User[];
 };
-
-type AnswerView = "answers" | "summary";
 
 export default function AnswerTab({ labelingId, users }: AnswerTabProps) {
   const { t } = useTranslations();
@@ -98,50 +94,13 @@ export default function AnswerTab({ labelingId, users }: AnswerTabProps) {
 
   return (
     <div className="h-full flex flex-col">
-      {!shouldHideLocalHeader ? (
-        <div className="bg-white border-b border-gray-200 px-6 py-4">
-          <div className="grid grid-cols-1 items-center gap-3 md:grid-cols-[1fr_minmax(320px,460px)_1fr]">
-            <div className="md:col-start-2">
-              <div className="mx-auto w-full">
-                <TwoOptionSelector
-                  value={activeView}
-                  onChange={setActiveView}
-                  ariaLabel={`${t("labelings.create.tabs.answers")} / ${t(
-                    "labelings.create.tabs.summary",
-                  )}`}
-                  options={[
-                    {
-                      value: "answers",
-                      label: t("labelings.create.tabs.answers"),
-                    },
-                    {
-                      value: "summary",
-                      label: t("labelings.create.tabs.summary"),
-                    },
-                  ]}
-                />
-              </div>
-            </div>
-
-            <div className="md:col-start-3 md:justify-self-end">
-              <Button
-                variant="normal"
-                fill={false}
-                size="icon"
-                onClick={() => void handleExportCsv()}
-                disabled={exporting}
-                className="px-4"
-                ariaLabel={t("labelings.create.answers.exportAria")}
-                icon={<Download size={16} />}
-              >
-                {exporting
-                  ? t("labelings.create.answers.exporting")
-                  : t("labelings.create.answers.exportButton")}
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <AnswerTabHeader
+        hidden={shouldHideLocalHeader}
+        activeView={activeView}
+        onViewChange={setActiveView}
+        exporting={exporting}
+        onExportCsv={() => void handleExportCsv()}
+      />
 
       <div
         className={

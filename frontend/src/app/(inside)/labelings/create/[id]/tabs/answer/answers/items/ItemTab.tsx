@@ -5,13 +5,13 @@ import Button from "@/components/button/Button";
 import type { LabelingStructureSection } from "@/modules/labelings/labelingsTypes";
 import { useTranslations } from "@/i18n/use-translations";
 import TwoOptionSelector from "../../../TwoOptionSelector";
-import { buildQuestionSummaries } from "../..//question_summary_utils";
 import {
+  buildQuestionSummaries,
   resolveItemLabel,
   selectLatestAnswersByUser,
   type ItemAnswersGroup,
   type TranslateFn,
-} from "../../answers_tab_utils";
+} from "../../utils";
 import ItemSummary from "./ItemSummary";
 import ItemAnswers from "./ItemAnswers";
 import { ArrowLeft } from "lucide-react";
@@ -100,6 +100,14 @@ export default function ItemTab({
     selectedAnswer.item_detail?.id ?? selectedAnswer.item,
     t,
   );
+  const itemResponsesLabel =
+    itemGroup.answers.length === 1
+      ? t("labelings.create.answers.modal.responsesCountSingular", {
+          count: itemGroup.answers.length,
+        })
+      : t("labelings.create.answers.modal.responsesCountPlural", {
+          count: itemGroup.answers.length,
+        });
   const answeredAt = new Date(selectedAnswer.created_at).toLocaleString(locale);
 
   const orderedSections = [...sections].sort(
@@ -123,6 +131,9 @@ export default function ItemTab({
                 <h3 className="truncate text-lg font-semibold text-gray-900">
                   {itemLabel}
                 </h3>
+                <p className="mt-1 text-xs uppercase tracking-wide text-gray-500">
+                  {itemResponsesLabel}
+                </p>
                 <p className="mt-1 text-xs uppercase tracking-wide text-gray-500">
                   {answeredAt}
                 </p>
@@ -174,7 +185,6 @@ export default function ItemTab({
           {activeTab === "item-summary" ? (
             <ItemSummary
               itemSummaries={itemSummaries}
-              totalAnswers={itemGroup.answers.length}
               t={t}
               numberFormatter={numberFormatter}
             />

@@ -9,6 +9,7 @@ import FormTab, { type FormTabHandle } from "./tabs/form/FormTab";
 import AssignTab from "./tabs/assign/AssignTab";
 import AnswerTab from "./tabs/answer/AnswerTab";
 import GuideTab, { type GuideTabHandle } from "./tabs/guide/GuideTab";
+import DecisionTab from "./tabs/decision/decision_tab";
 import EditLabelingModal from "./EditLabelingModal";
 import ConfirmDeleteModal from "@/components/ConfirmDeleteModal";
 import {
@@ -297,6 +298,16 @@ export default function LabelingCreationPage() {
             onSaveGuide={handleSaveGuide}
             disableSave={guideText === (labeling?.guide ?? "")}
             isSaving={updateMutation.isPending}
+          />
+        );
+      case "decision":
+        return (
+          <DecisionTab
+            labelingId={labelingId}
+            decisiveQuestionId={labeling?.decisive_question ?? null}
+            onDecisiveQuestionChange={() => {
+              void headerQuery.refetch();
+            }}
           />
         );
       default:

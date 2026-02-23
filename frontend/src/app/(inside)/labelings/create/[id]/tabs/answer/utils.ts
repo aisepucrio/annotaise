@@ -4,15 +4,20 @@ import type {
   LabelingStructureSection,
 } from "@/modules/labelings/labelingsTypes";
 
-const MAX_TEXT_BARS = 6;
+export type TranslateFn = (
+  key: string,
+  params?: Record<string, string | number>,
+) => string;
 
-const QUESTION_TYPE_LABELS: Record<string, string> = {
-  text: "labelings.create.question.type.text",
-  number: "labelings.create.question.type.number",
-  range: "labelings.create.question.type.range",
-  multiple_choice: "labelings.create.question.type.multipleChoice",
+// --- Tipos compartilhados (lista de respostas por item) ---
+export type ItemAnswersGroup = {
+  key: string;
+  itemId: number;
+  rowIndex: number | null;
+  answers: AnswerResponse[];
 };
 
+// --- Tipos compartilhados (sumários de perguntas) ---
 export type BarItem = { label: string; count: number };
 
 export type QuestionSummaryChart =
@@ -33,13 +38,151 @@ export type QuestionSummary = {
   sectionLabel: string;
   responseCount: number;
   chart: QuestionSummaryChart;
+  textResponses?: string[];
 };
 
-type TranslateFn = (
-  key: string,
-  params?: Record<string, string | number>,
-) => string;
+const MAX_TEXT_BARS = 6;
 
+const QUESTION_TYPE_LABELS: Record<string, string> = {
+  text: "labelings.create.question.type.text",
+  number: "labelings.create.question.type.number",
+  range: "labelings.create.question.type.range",
+  multiple_choice: "labelings.create.question.type.multipleChoice",
+};
+
+// --- Helpers genéricos ---
+function getCreatedAtMs(answer: AnswerResponse) {
+  return new Date(answer.created_at).getTime();
+}
+
+function sortByCreatedAtDesc(a: AnswerResponse, b: AnswerResponse) {
+  return getCreatedAtMs(b) - getCreatedAtMs(a);
+}
+
+function noDataChart(t: TranslateFn): QuestionSummaryChart {
+  return {
+    kind: "none",
+    title: t("labelings.create.summary.chart.noData"),
+  };
+}
+
+function hasValue(value: unknown) {
+  if (value === null || value === undefined) return false;
+  if (typeof value === "string") return value.trim().length > 0;
+  if (Array.isArray(value)) return value.length > 0;
+  return true;
+}
+
+// --- Agrupamento / seleção de respostas ---
+function getItemGroupKey(answer: AnswerResponse): string {
+  const detailId = answer.item_detail?.id;
+  return detailId !== undefined && detailId !== null
+    ? `detail-${detailId}`
+    : `item-${answer.item}`;
+}
+
+export function groupAnswersByItem(answers: AnswerResponse[]): ItemAnswersGroup[] {
+  const groups = new Map<string, ItemAnswersGroup>();
+
+  for (const answer of answers) {
+    const key = getItemGroupKey(answer);
+    const existing = groups.get(key);
+
+    if (existing) {
+      existing.answers.push(answer);
+
+      if (
+        existing.rowIndex === null &&
+        answer.item_detail?.row_index !== undefined &&
+        answer.item_detail?.row_index !== null
+      ) {
+        existing.rowIndex = answer.item_detail.row_index;
+      }
+
+      continue;
+    }
+
+    groups.set(key, {
+      key,
+      itemId: answer.item_detail?.id ?? answer.item,
+      rowIndex: answer.item_detail?.row_index ?? null,
+      answers: [answer],
+    });
+  }
+
+  const grouped = Array.from(groups.values()).map((group) => ({
+    ...group,
+    answers: [...group.answers].sort(sortByCreatedAtDesc),
+  }));
+
+  return grouped.sort((a, b) => {
+    if (a.rowIndex !== null && b.rowIndex !== null) return a.rowIndex - b.rowIndex;
+    if (a.rowIndex !== null) return -1;
+    if (b.rowIndex !== null) return 1;
+    return a.itemId - b.itemId;
+  });
+}
+
+export function selectLatestAnswersByUser(
+  answers: AnswerResponse[],
+): AnswerResponse[] {
+  const latestByUser = new Map<number, AnswerResponse>();
+
+  for (const answer of [...answers].sort(sortByCreatedAtDesc)) {
+    if (!latestByUser.has(answer.answered_by)) {
+      latestByUser.set(answer.answered_by, answer);
+    }
+  }
+
+  return Array.from(latestByUser.values());
+}
+
+export function resolveItemLabel(
+  rowIndex: number | null,
+  itemId: number,
+  t: TranslateFn,
+): string {
+  if (rowIndex !== null) {
+    return t("labelings.create.answers.itemLabel", {
+      index: rowIndex + 1,
+    });
+  }
+
+  return t("labelings.create.answers.itemIdLabel", {
+    id: itemId,
+  });
+}
+
+// --- Formatação de valores (respostas/contexto) ---
+export function formatAnswerValue(value: unknown, t: TranslateFn): string {
+  if (value === null || value === undefined) return "-";
+  if (Array.isArray(value)) {
+    return value.map((entry) => formatAnswerValue(entry, t)).join(", ");
+  }
+  if (typeof value === "boolean") {
+    return value ? t("common.yes") : t("common.no");
+  }
+  if (typeof value === "object") {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
+  }
+
+  return String(value);
+}
+
+export function formatContextValue(
+  value: unknown,
+  contextType: string | null | undefined,
+  t: TranslateFn,
+): string {
+  const text = formatAnswerValue(value, t);
+  return contextType === "code" ? `\`\`\`\n${text}\n\`\`\`` : text;
+}
+
+// --- Sumário de perguntas (dashboard / item) ---
 export function buildQuestionSummaries({
   answers,
   structureSections,
@@ -68,6 +211,7 @@ export function buildQuestionSummaries({
         const label =
           element.text?.trim() ||
           t("labelings.create.summary.questionFallback");
+
         const baseSectionLabel = t("labelings.create.summary.sectionLabel", {
           order: section.order ?? sectionIndex + 1,
         });
@@ -75,30 +219,31 @@ export function buildQuestionSummaries({
         const sectionLabel = sectionTitle
           ? `${baseSectionLabel} - ${sectionTitle}`
           : baseSectionLabel;
+
         const key = String(
           element.id ?? `${section.order ?? sectionIndex}-${elementIndex}`,
         );
-
         const answerKey = element.id ? String(element.id) : null;
         const values = answerKey
           ? answers.map((answer) => (answer.answer_payload ?? {})[answerKey])
           : [];
-        const responseCount = values.filter((value) => hasValue(value)).length;
-
-        const chart = buildChartForElement({
-          element,
-          values,
-          t,
-          numberFormatter,
-        });
 
         summaries.push({
           key,
           label,
           type: element.question_type,
           sectionLabel,
-          responseCount,
-          chart,
+          responseCount: values.filter(hasValue).length,
+          textResponses:
+            element.question_type === "text"
+              ? extractTextResponses(values, t)
+              : undefined,
+          chart: buildChartForElement({
+            element,
+            values,
+            t,
+            numberFormatter,
+          }),
         });
       });
   });
@@ -117,46 +262,30 @@ function buildChartForElement({
   t: TranslateFn;
   numberFormatter: Intl.NumberFormat;
 }): QuestionSummaryChart {
-  const cleanValues = values.filter((value) => hasValue(value));
-
-  if (cleanValues.length === 0) {
-    return {
-      kind: "none",
-      title: t("labelings.create.summary.chart.noData"),
-    };
-  }
+  const cleanValues = values.filter(hasValue);
+  if (!cleanValues.length) return noDataChart(t);
 
   if (element.question_type === "multiple_choice") {
     const items = buildChoiceCounts(element, cleanValues, t);
-    if (!items.length) {
-      return {
-        kind: "none",
-        title: t("labelings.create.summary.chart.noData"),
-      };
-    }
-    const total = items.reduce((acc, item) => acc + item.count, 0);
+    if (!items.length) return noDataChart(t);
+
     return {
       kind: "bar",
       title: t("labelings.create.summary.chart.topResponses"),
       items,
-      total,
+      total: items.reduce((sum, item) => sum + item.count, 0),
     };
   }
 
   if (element.question_type === "text") {
     const items = buildTextCounts(cleanValues, t);
-    if (!items.length) {
-      return {
-        kind: "none",
-        title: t("labelings.create.summary.chart.noData"),
-      };
-    }
-    const total = items.reduce((acc, item) => acc + item.count, 0);
+    if (!items.length) return noDataChart(t);
+
     return {
       kind: "bar",
       title: t("labelings.create.summary.chart.topResponses"),
       items,
-      total,
+      total: items.reduce((sum, item) => sum + item.count, 0),
     };
   }
 
@@ -165,40 +294,22 @@ function buildChartForElement({
       .map((value) => Number(value))
       .filter((value) => Number.isFinite(value));
 
-    if (!numericValues.length) {
-      return {
-        kind: "none",
-        title: t("labelings.create.summary.chart.noData"),
-      };
-    }
+    if (!numericValues.length) return noDataChart(t);
 
-    const stats = computeStats(numericValues);
-    const items = buildHistogram({
-      values: numericValues,
-      range: element.question_range ?? undefined,
-      numberFormatter,
-    });
-    const total = numericValues.length;
     return {
       kind: "hist",
       title: t("labelings.create.summary.chart.histogram"),
-      items,
-      total,
-      stats,
+      items: buildHistogram({
+        values: numericValues,
+        range: element.question_range ?? undefined,
+        numberFormatter,
+      }),
+      total: numericValues.length,
+      stats: computeStats(numericValues),
     };
   }
 
-  return {
-    kind: "none",
-    title: t("labelings.create.summary.chart.noData"),
-  };
-}
-
-function hasValue(value: unknown) {
-  if (value === null || value === undefined) return false;
-  if (typeof value === "string") return value.trim().length > 0;
-  if (Array.isArray(value)) return value.length > 0;
-  return true;
+  return noDataChart(t);
 }
 
 export function resolveQuestionTypeLabel(
@@ -206,29 +317,48 @@ export function resolveQuestionTypeLabel(
   t: (key: string) => string,
 ): string {
   const labelKey = QUESTION_TYPE_LABELS[type];
-  if (labelKey) {
-    return t(labelKey);
-  }
-  return type;
+  return labelKey ? t(labelKey) : type;
 }
 
+// --- Helpers internos do sumário ---
 function normalizeChoiceValue(
   value: unknown,
   t: (key: string) => string,
 ): string | null {
   if (value === null || value === undefined) return null;
-  if (typeof value === "boolean")
+
+  if (typeof value === "boolean") {
     return value ? t("common.yes") : t("common.no");
+  }
+
   if (typeof value === "string") {
     const trimmed = value.trim();
     if (!trimmed) return null;
+
     const lowered = trimmed.toLowerCase();
     if (lowered === "true") return t("common.yes");
     if (lowered === "false") return t("common.no");
     return trimmed;
   }
+
   if (typeof value === "number") return String(value);
   return String(value);
+}
+
+function extractTextResponses(values: unknown[], t: (key: string) => string): string[] {
+  const responses: string[] = [];
+
+  values.forEach((value) => {
+    const entries = Array.isArray(value) ? value : [value];
+
+    entries.forEach((entry) => {
+      const normalized = normalizeChoiceValue(entry, t);
+      if (!normalized) return;
+      responses.push(normalized);
+    });
+  });
+
+  return responses;
 }
 
 function buildChoiceCounts(
@@ -240,17 +370,20 @@ function buildChoiceCounts(
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
     .map((item) => item.text);
 
-  const optionSet = new Set(options);
   const counts = new Map<string, number>();
+  const optionSet = new Set(options);
+
   options.forEach((option) => counts.set(option, 0));
 
   let otherCount = 0;
 
   values.forEach((value) => {
-    const list = Array.isArray(value) ? value : [value];
-    list.forEach((entry) => {
+    const entries = Array.isArray(value) ? value : [value];
+
+    entries.forEach((entry) => {
       const normalized = normalizeChoiceValue(entry, t);
       if (!normalized) return;
+
       if (optionSet.has(normalized)) {
         counts.set(normalized, (counts.get(normalized) ?? 0) + 1);
       } else {
@@ -274,11 +407,9 @@ function buildChoiceCounts(
   return items.filter((item) => item.count > 0);
 }
 
-function buildTextCounts(
-  values: unknown[],
-  t: (key: string) => string,
-): BarItem[] {
+function buildTextCounts(values: unknown[], t: (key: string) => string): BarItem[] {
   const counts = new Map<string, number>();
+
   values.forEach((value) => {
     const normalized = normalizeChoiceValue(value, t);
     if (!normalized) return;
@@ -286,6 +417,7 @@ function buildTextCounts(
   });
 
   const sorted = Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
+
   if (sorted.length <= MAX_TEXT_BARS) {
     return sorted.map(([label, count]) => ({ label, count }));
   }
@@ -296,17 +428,19 @@ function buildTextCounts(
   }));
   const restCount = sorted
     .slice(MAX_TEXT_BARS - 1)
-    .reduce((acc, [, count]) => acc + count, 0);
+    .reduce((sum, [, count]) => sum + count, 0);
+
   top.push({
     label: t("labelings.create.summary.chart.other"),
     count: restCount,
   });
+
   return top;
 }
 
 function computeStats(values: number[]) {
   const sorted = [...values].sort((a, b) => a - b);
-  const total = sorted.reduce((sum, val) => sum + val, 0);
+  const total = sorted.reduce((sum, value) => sum + value, 0);
   const avg = total / sorted.length;
   const mid = Math.floor(sorted.length / 2);
   const median =
@@ -343,26 +477,25 @@ function buildHistogram({
     ];
   }
 
-  const binCount = Math.min(
-    6,
-    Math.max(3, Math.ceil(Math.sqrt(values.length))),
-  );
+  const binCount = Math.min(6, Math.max(3, Math.ceil(Math.sqrt(values.length))));
   const width = (maxRange - minRange) / binCount;
-
   const bins = Array.from({ length: binCount }, () => 0);
 
   values.forEach((value) => {
-    const idx = Math.min(
+    const index = Math.min(
       binCount - 1,
       Math.max(0, Math.floor((value - minRange) / width)),
     );
-    bins[idx] += 1;
+    bins[index] += 1;
   });
 
   return bins.map((count, index) => {
     const start = minRange + width * index;
     const end = index === binCount - 1 ? maxRange : start + width;
-    const label = `${numberFormatter.format(start)} - ${numberFormatter.format(end)}`;
-    return { label, count };
+
+    return {
+      label: `${numberFormatter.format(start)} - ${numberFormatter.format(end)}`,
+      count,
+    };
   });
 }

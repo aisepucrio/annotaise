@@ -10,7 +10,7 @@ import type {
 } from "@/modules/labelings/labelingsTypes";
 import { useTranslations } from "@/i18n/use-translations";
 import ItemTab from "./items/ItemTab";
-import { groupAnswersByItem, resolveItemLabel } from "../answers_tab_utils";
+import { groupAnswersByItem, resolveItemLabel } from "../utils";
 
 type ResponderOption = { id: number; label: string };
 
@@ -134,7 +134,7 @@ export default function AnswersTab({
             : t("labelings.create.answers.emptyUser")}
         </p>
       ) : (
-        <GridLayout minColumnWidth="420px">
+        <GridLayout minColumnWidth="300px">
           {groupedFilteredItems.map((group, index) => {
             const latestAnswer = group.answers[0];
             const answeredAt = latestAnswer

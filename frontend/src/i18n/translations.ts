@@ -279,9 +279,6 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.formType.backgroundLabel": "Background",
     "labelings.create.formType.backgroundTooltip":
       "Formulário de background: coleta informações pessoais do rotulador separadas da avaliação principal dos itens.",
-    "labelings.create.summary.title": "Resumo das respostas",
-    "labelings.create.summary.description":
-      "Visualize gráficos e estatísticas por pergunta.",
     "labelings.create.summary.loading": "Carregando respostas...",
     "labelings.create.summary.empty": "Nenhuma resposta disponível ainda.",
     "labelings.create.summary.questionFallback": "Pergunta",
@@ -436,6 +433,7 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.success.guideSaved": "Guia atualizado com sucesso.",
     "labelings.create.success.memberAdded": "Membro adicionado com sucesso.",
     "labelings.create.success.memberRemoved": "Membro removido com sucesso.",
+    "labelings.create.success.deleted": "Rotulação excluída com sucesso.",
     "labelings.create.confirmRemoveMember": "Remover este membro da rotulação?",
     "labelings.create.userFallback": "Usuário #{{id}}",
     "labelings.create.delete.title": "Excluir rotulação",
@@ -489,9 +487,9 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.answers.modal.tabUserAnswer":
       "Contexto e respostas do usuário",
     "labelings.create.answers.modal.responsesCountSingular":
-      "{{count}} resposta neste item",
+      "{{count}} resposta",
     "labelings.create.answers.modal.responsesCountPlural":
-      "{{count}} respostas neste item",
+      "{{count}} respostas",
     "labelings.create.answers.modal.answersEmpty":
       "Nenhuma resposta registrada.",
     "labelings.create.answers.modal.structureMissing":
@@ -937,9 +935,6 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.formType.backgroundLabel": "Background",
     "labelings.create.formType.backgroundTooltip":
       "Background form: collects annotator personal information separate from the main item evaluation.",
-    "labelings.create.summary.title": "Answers summary",
-    "labelings.create.summary.description":
-      "View charts and stats per question.",
     "labelings.create.summary.loading": "Loading answers...",
     "labelings.create.summary.empty": "No answers available yet.",
     "labelings.create.summary.questionFallback": "Question",
@@ -1082,6 +1077,7 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.success.guideSaved": "Guide updated successfully.",
     "labelings.create.success.memberAdded": "Member added successfully.",
     "labelings.create.success.memberRemoved": "Member removed successfully.",
+    "labelings.create.success.deleted": "Labeling deleted successfully.",
     "labelings.create.confirmRemoveMember":
       "Remove this member from the labeling?",
     "labelings.create.userFallback": "User #{{id}}",
@@ -1129,10 +1125,8 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.answers.modal.selectUserLabel": "User to inspect",
     "labelings.create.answers.modal.tabItemSummary": "Item overview",
     "labelings.create.answers.modal.tabUserAnswer": "User context and answers",
-    "labelings.create.answers.modal.responsesCountSingular":
-      "{{count}} answer on this item",
-    "labelings.create.answers.modal.responsesCountPlural":
-      "{{count}} answers on this item",
+    "labelings.create.answers.modal.responsesCountSingular": "{{count}} answer",
+    "labelings.create.answers.modal.responsesCountPlural": "{{count}} answers",
     "labelings.create.answers.modal.answersEmpty": "No answers recorded.",
     "labelings.create.answers.modal.structureMissing":
       "Labeling structure not found to display sections.",

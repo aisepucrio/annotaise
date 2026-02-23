@@ -11,7 +11,7 @@ import {
   formatAnswerValue,
   formatContextValue,
   type TranslateFn,
-} from "../../answers_tab_utils";
+} from "../../utils";
 
 type ItemAnswersProps = {
   answerEntries: Array<[string, unknown]>;
@@ -20,9 +20,6 @@ type ItemAnswersProps = {
   itemPayload: Record<string, unknown>;
   t: TranslateFn;
 };
-
-const MARKDOWN_PROSE_CLASS =
-  "prose prose-sm max-w-none text-metal-900 prose-a:text-blueberry-700 prose-a:visited:text-blueberry-700";
 
 export default function ItemAnswers({
   answerEntries,
@@ -64,33 +61,13 @@ export default function ItemAnswers({
           return (
             <SectionVizualizer
               key={section.id ?? `section-${section.order ?? sectionIndex}`}
+              sectionLabel={t("labelings.create.answers.modal.sectionLabel", {
+                order: section.order ?? sectionIndex + 1,
+              })}
               title={
-                <div className="not-prose space-y-2">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="text-[11px] font-semibold uppercase tracking-wide text-blueberry-700">
-                      {t("labelings.create.answers.modal.sectionLabel", {
-                        order: section.order ?? sectionIndex + 1,
-                      })}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {questionCount === 1
-                        ? t(
-                            "labelings.create.answers.modal.questionsCountSingular",
-                            { count: questionCount },
-                          )
-                        : t(
-                            "labelings.create.answers.modal.questionsCountPlural",
-                            { count: questionCount },
-                          )}
-                    </span>
-                  </div>
-
-                  <div className={MARKDOWN_PROSE_CLASS}>
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {sectionTitle}
-                    </ReactMarkdown>
-                  </div>
-                </div>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {sectionTitle}
+                </ReactMarkdown>
               }
             >
               {orderedElements.length === 0 ? (
