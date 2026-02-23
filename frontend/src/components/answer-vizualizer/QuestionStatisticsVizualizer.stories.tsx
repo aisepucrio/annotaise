@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/nextjs";
+import type { TranslateFn } from "@/i18n/types";
 import QuestionStatisticsVizualizer from "./QuestionStatisticsVizualizer";
 import type {
   QuestionSummary,
-  TranslateFn,
 } from "@/app/(inside)/labelings/create/[id]/tabs/answer/utils";
 
 const t: TranslateFn = (key) => {

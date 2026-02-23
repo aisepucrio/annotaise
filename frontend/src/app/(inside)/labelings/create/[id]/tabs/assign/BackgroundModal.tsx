@@ -13,6 +13,7 @@ import {
   type LabelingStructureSection,
 } from "@/modules/labelings/labelingsTypes";
 import { useTranslations } from "@/i18n/use-translations";
+import type { TranslateFn } from "@/i18n/types";
 import {
   fetchLabelingBackgroundAnswers,
   fetchLabelingStructure,
@@ -169,7 +170,7 @@ export default BackgroundModal;
 // Formata qualquer tipo de resposta para exibição textual no modal.
 function formatAnswerValue(
   value: unknown,
-  t: (key: string, params?: Record<string, string | number>) => string,
+  t: TranslateFn,
 ): string {
   if (value === null || value === undefined) return "-";
   if (Array.isArray(value))

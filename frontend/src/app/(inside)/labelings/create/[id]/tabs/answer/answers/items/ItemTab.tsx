@@ -2,6 +2,7 @@
 
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import Button from "@/components/button/Button";
+import type { TranslateFn } from "@/i18n/types";
 import type { LabelingStructureSection } from "@/modules/labelings/labelingsTypes";
 import { useTranslations } from "@/i18n/use-translations";
 import TwoOptionSelector from "../../../TwoOptionSelector";
@@ -10,7 +11,6 @@ import {
   resolveItemLabel,
   selectLatestAnswersByUser,
   type ItemAnswersGroup,
-  type TranslateFn,
 } from "../../utils";
 import ItemSummary from "./ItemSummary";
 import ItemAnswers from "./ItemAnswers";

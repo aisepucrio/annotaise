@@ -1,4 +1,5 @@
 import type { LabelingStructureElement } from "@/modules/labelings/labelingsTypes";
+import type { TranslateFn } from "@/i18n/types";
 import QuestionInput from "./question_input";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -7,7 +8,7 @@ type QuestionBlockProps = {
   element: LabelingStructureElement;
   value: unknown;
   onChange: (value: unknown) => void;
-  t: (key: string, params?: Record<string, string | number>) => string;
+  t: TranslateFn;
 };
 
 export default function QuestionBlock({

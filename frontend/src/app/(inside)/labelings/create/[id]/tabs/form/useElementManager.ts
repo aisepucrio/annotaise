@@ -1,6 +1,6 @@
 import { useCallback } from "react";
+import type { TranslateFn } from "@/i18n/types";
 import type { SectionData, SectionElement } from "./SectionForm";
-import type { TranslateFn } from "./QuestionBlock";
 import {
   createContextElement,
   createQuestionElement,

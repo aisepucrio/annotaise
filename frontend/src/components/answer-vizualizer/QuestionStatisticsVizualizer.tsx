@@ -1,9 +1,9 @@
 "use client";
 
+import type { TranslateFn } from "@/i18n/types";
 import type {
   BarItem,
   QuestionSummary,
-  TranslateFn,
 } from "@/app/(inside)/labelings/create/[id]/tabs/answer/utils";
 
 export type QuestionStatisticsVizualizerProps = {

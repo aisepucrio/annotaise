@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactNode } from "react";
+import type { TranslateFn } from "@/i18n/types";
 import ContextVizualizer from "@/components/answer-vizualizer/ContextVizualizer";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -10,7 +11,6 @@ import type { LabelingStructureSection } from "@/modules/labelings/labelingsType
 import {
   formatAnswerValue,
   formatContextValue,
-  type TranslateFn,
 } from "../../utils";
 
 type ItemAnswersProps = {

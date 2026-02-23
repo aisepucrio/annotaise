@@ -1,12 +1,13 @@
 "use client";
 
 import { type ReactNode } from "react";
+import type { TranslateFn } from "@/i18n/types";
 import SectionVizualizer from "@/components/answer-vizualizer/SectionVizualizer";
 import SummaryVizualizer, {
   groupSummariesBySection,
   splitSummarySectionGroupTitle,
 } from "@/components/answer-vizualizer/SummaryVizualizer";
-import { type QuestionSummary, type TranslateFn } from "../../utils";
+import { type QuestionSummary } from "../../utils";
 
 type ItemSummaryProps = {
   itemSummaries: QuestionSummary[];

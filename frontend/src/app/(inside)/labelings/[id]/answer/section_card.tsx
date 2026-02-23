@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import type { TranslateFn } from "@/i18n/types";
 import type { LabelingStructureSection } from "@/modules/labelings/labelingsTypes";
 import type { AnswerMap } from "./answer_types";
 import ContextRow from "./context_row";
@@ -11,7 +12,7 @@ type SectionCardProps = {
   payload: Record<string, unknown>;
   answers: AnswerMap;
   onChange: (questionId: string | number, value: unknown) => void;
-  t: (key: string, params?: Record<string, string | number>) => string;
+  t: TranslateFn;
 };
 
 export default function SectionCard({

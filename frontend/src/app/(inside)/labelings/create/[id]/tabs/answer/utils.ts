@@ -3,11 +3,7 @@ import type {
   LabelingStructureElement,
   LabelingStructureSection,
 } from "@/modules/labelings/labelingsTypes";
-
-export type TranslateFn = (
-  key: string,
-  params?: Record<string, string | number>,
-) => string;
+import type { TranslateFn } from "@/i18n/types";
 
 // --- Tipos compartilhados (lista de respostas por item) ---
 export type ItemAnswersGroup = {

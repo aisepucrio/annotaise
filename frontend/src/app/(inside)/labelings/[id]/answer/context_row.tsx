@@ -1,5 +1,6 @@
 "use client";
 
+import type { TranslateFn } from "@/i18n/types";
 import type { LabelingStructureElement } from "@/modules/labelings/labelingsTypes";
 import { formatPayloadValue } from "./answer_utils";
 import ReactMarkdown from "react-markdown";
@@ -9,7 +10,7 @@ import { useState } from "react";
 type ContextRowProps = {
   element: LabelingStructureElement;
   payload: Record<string, unknown>;
-  t: (key: string, params?: Record<string, string | number>) => string;
+  t: TranslateFn;
 };
 
 function isValidImageUrl(value: string): boolean {

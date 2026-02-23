@@ -3,8 +3,7 @@
 import { useCallback, useMemo } from "react";
 import { useLanguage } from "./language-context";
 import { translations } from "./translations";
-
-export type TranslateParams = Record<string, string | number>;
+import type { TranslateFn, TranslateParams } from "./types";
 
 function interpolate(template: string, params?: TranslateParams) {
   if (!params) return template;
@@ -21,7 +20,7 @@ export function useTranslations() {
     [language]
   );
 
-  const t = useCallback(
+  const t = useCallback<TranslateFn>(
     (key: string, params?: TranslateParams) => {
       const fallback = translations["pt-BR"][key];
       const template = translations[language]?.[key] ?? fallback ?? key;

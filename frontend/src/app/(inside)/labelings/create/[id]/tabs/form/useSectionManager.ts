@@ -1,8 +1,8 @@
 import { useState, useCallback } from "react";
 import { arrayMove } from "@dnd-kit/sortable";
 import type { DragEndEvent } from "@dnd-kit/core";
+import type { TranslateFn } from "@/i18n/types";
 import type { SectionData, SectionElement } from "./SectionForm";
-import type { TranslateFn } from "./QuestionBlock";
 import { createDefaultSection } from "./elementFactories";
 
 /**

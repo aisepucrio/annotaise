@@ -2,10 +2,10 @@
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import type { TranslateFn } from "@/i18n/types";
 import {
   resolveQuestionTypeLabel,
   type QuestionSummary,
-  type TranslateFn,
 } from "@/app/(inside)/labelings/create/[id]/tabs/answer/utils";
 import QuestionStatisticsVizualizer from "./QuestionStatisticsVizualizer";
 

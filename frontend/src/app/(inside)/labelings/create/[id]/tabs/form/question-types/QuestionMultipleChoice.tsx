@@ -18,7 +18,7 @@ import { CSS } from "@dnd-kit/utilities";
 import Button from "@/components/button/Button";
 import Input from "@/components/form/Input";
 import { useTranslations } from "@/i18n/use-translations";
-import { TranslateFn } from "../QuestionBlock";
+import type { TranslateFn } from "@/i18n/types";
 export type MultipleChoiceQuestionConfig = {
   type: "multiple_choice";
   allowMultiple?: boolean;

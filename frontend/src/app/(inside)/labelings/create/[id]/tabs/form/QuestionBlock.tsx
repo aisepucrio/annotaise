@@ -24,11 +24,6 @@ export type QuestionElement = {
   config?: QuestionConfig;
 };
 
-export type TranslateFn = (
-  key: string,
-  params?: Record<string, string | number>,
-) => string;
-
 /**
  * Retorna a configuração padrão para cada tipo de questão.
  * Usada ao criar novas questões ou mudar o tipo de uma existente.
