@@ -75,10 +75,12 @@ export default function ItemTab({
   if (!selectedAnswer) {
     return (
       <DetailViewLayout onBack={onBack} t={t}>
-        <div className="rounded-2xl bg-white p-6">
-          <p className="text-sm text-gray-600">
-            {t("labelings.create.answers.modal.answersEmpty")}
-          </p>
+        <div className="pt-4">
+          <div className="rounded-2xl bg-white p-6">
+            <p className="text-sm text-gray-600">
+              {t("labelings.create.answers.modal.answersEmpty")}
+            </p>
+          </div>
         </div>
       </DetailViewLayout>
     );
@@ -113,7 +115,7 @@ export default function ItemTab({
 
   return (
     <DetailViewLayout onBack={onBack} t={t}>
-      <div className="flex h-full max-h-full min-h-0 flex-col overflow-hidden border-l border-r">
+      <div className="flex h-full max-h-full min-h-0 flex-col overflow-hidden border-l border-r pt-4">
         <div className="sticky top-0 z-10 border-b border-gray-100 bg-white/95 px-4 py-4 backdrop-blur supports-backdrop-filter:bg-white/85 md:px-6">
           <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(260px,380px)_minmax(220px,260px)] md:items-center">
             <div className="min-w-0">
@@ -204,14 +206,14 @@ function DetailViewLayout({
   t: TranslateFn;
 }) {
   return (
-    <div className="grid h-full min-h-0 items-stretch gap-3 pt-4 md:grid-cols-[max-content_minmax(0,1fr)_max-content]">
-      <div className="md:justify-self-start">
+    <div className="grid h-full min-h-0 items-stretch gap-3 md:grid-cols-[max-content_minmax(0,1fr)_max-content]">
+      <div className="pt-4 md:justify-self-start">
         <BackButton onBack={onBack} t={t} />
       </div>
 
       <div className="h-full min-h-0 min-w-0">{children}</div>
 
-      <div aria-hidden className="hidden md:block invisible">
+      <div aria-hidden className="hidden pt-4 md:block invisible">
         <BackButton onBack={() => {}} t={t} />
       </div>
     </div>
