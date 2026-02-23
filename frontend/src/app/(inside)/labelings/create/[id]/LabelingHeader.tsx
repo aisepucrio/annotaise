@@ -101,12 +101,6 @@ export default function LabelingHeader({
               </span>
 
               {/* Badges */}
-              {project?.status && (
-                <span className="px-2 py-1 bg-white/20 text-white text-[11px] font-semibold uppercase tracking-wide">
-                  {project.status}
-                </span>
-              )}
-
               {labeling?.users_per_item !== undefined && (
                 <span className="px-2 py-1 bg-white/20 text-white text-[11px] font-semibold uppercase tracking-wide">
                   {t("labelings.create.header.usersPerItem", {
