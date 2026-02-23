@@ -38,7 +38,7 @@ export function Tooltip({ content, children, place = "bottom" }: TooltipProps) {
         positionStrategy="fixed"
         opacity={0.9}
         style={{ zIndex: 9999 }}
-        className="z-[9999] bg-white! text-black! font-normal! border! border-gray-200! rounded-md! px-3! py-2! text-sm! shadow-lg! opacity-100! hover:opacity-80! transition-opacity duration-150 max-w-md! whitespace-pre-wrap!"
+        className="z-[9999] bg-white! text-black! font-normal! border! border-gray-200! rounded-md! px-3! py-2! text-sm! shadow-sm! opacity-100! hover:opacity-80! transition-opacity duration-150 max-w-md! whitespace-pre-wrap!"
       />
     </>
   );

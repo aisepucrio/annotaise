@@ -14,6 +14,7 @@ import Tooltip from "@/components/tooltip/Tooltip";
 import { useTranslations } from "@/i18n/use-translations";
 import type { DistributionStrategy } from "@/modules/labelings/labelingsTypes";
 
+// Props esperadas pelo modal de criação de nova rotulagem
 type NewLabelingModalProps = {
   open: boolean;
   onClose: () => void;
@@ -31,7 +32,10 @@ type NewLabelingModalProps = {
   }) => Promise<void>;
 };
 
+// Etapas internas do fluxo (upload -> detalhes)
 type Step = "upload" | "details";
+type DetailFormField = "title" | "projectId" | "startDate" | "finalDate" | "usersPerItem";
+type DetailFormErrors = Partial<Record<DetailFormField, string>>;
 
 export default function NewLabelingModal({
   open,
@@ -39,30 +43,30 @@ export default function NewLabelingModal({
   onConfirm,
 }: NewLabelingModalProps) {
   const { t } = useTranslations();
-  // Hooks: refs + estado local
+
+  // Referência para acionar o input de arquivo via botão
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Estado principal do formulário
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
   const [projectId, setProjectId] = useState<number | null>(null);
   const [startDate, setStartDate] = useState("");
   const [finalDate, setFinalDate] = useState("");
   const [usersPerItem, setUsersPerItem] = useState<string>("1");
-  const [distributionStrategy, setDistributionStrategy] = useState<DistributionStrategy>("auto");
+  const [distributionStrategy, setDistributionStrategy] =
+    useState<DistributionStrategy>("auto");
   const [decisionEnabled, setDecisionEnabled] = useState(false);
   const [hasBackgroundForm, setHasBackgroundForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState<Step>("upload");
   const [hasEmptyFields, setHasEmptyFields] = useState(false);
   const [isAnalyzingFile, setIsAnalyzingFile] = useState(false);
+  const [formErrors, setFormErrors] = useState<DetailFormErrors>({});
 
   const { data: projects, isLoading: isLoadingProjects } = useProjectsQuery();
 
-  // Efeitos: selecionar primeiro projeto e resetar estado quando modal fecha
-  useEffect(() => {
-    if (open && projects?.length && projectId === null)
-      setProjectId(projects[0].id);
-  }, [open, projects, projectId]);
-
+  // Efeito: limpa todo o estado local quando o modal é fechado
   useEffect(() => {
     if (!open) {
       setSelectedFile(null);
@@ -77,6 +81,7 @@ export default function NewLabelingModal({
       setIsSubmitting(false);
       setHasEmptyFields(false);
       setIsAnalyzingFile(false);
+      setFormErrors({});
       setStep("upload");
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
@@ -84,25 +89,44 @@ export default function NewLabelingModal({
 
   const isPerPerson = distributionStrategy === "per_person";
 
+  // Efeito: estratégia "per_person" força configurações incompatíveis
   useEffect(() => {
     if (isPerPerson) {
       setDecisionEnabled(false);
       setUsersPerItem("1");
+      setFormErrors((prev) => {
+        if (!prev.usersPerItem) return prev;
+        const next = { ...prev };
+        delete next.usersPerItem;
+        return next;
+      });
     }
   }, [isPerPerson]);
 
+  function clearFormError(field: DetailFormField) {
+    setFormErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  }
+
+  // Efeito: define a data inicial com a data atual na abertura
   useEffect(() => {
     if (open && !startDate) {
       setStartDate(new Date().toISOString().split("T")[0]);
     }
   }, [open, startDate]);
 
+  // Validação básica do arquivo antes de prosseguir
   function validateFile(file: File) {
     if (!file.name.toLowerCase().endsWith(".csv")) {
       throw new Error(t("labelings.upload.error.invalidFileExtension"));
     }
   }
 
+  // Analisa o CSV para sinalizar linhas com campos vazios
   async function parseHasEmptyFields(file: File) {
     setIsAnalyzingFile(true);
     try {
@@ -128,6 +152,7 @@ export default function NewLabelingModal({
     }
   }
 
+  // Handler do input de arquivo (seleção via explorador)
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) {
@@ -151,37 +176,45 @@ export default function NewLabelingModal({
     }
   }
 
+  // Confirmação final: valida campos e dispara callback externo
   async function handleConfirm() {
+    const nextFormErrors: DetailFormErrors = {};
+
     if (!title.trim()) {
-      toast.error(t("labelings.upload.error.missingTitle"));
-      return;
+      nextFormErrors.title = t("labelings.upload.error.missingTitle");
     }
 
     if (!projectId) {
-      toast.error(t("labelings.upload.error.missingProject"));
+      nextFormErrors.projectId = t("labelings.upload.error.missingProject");
+    }
+
+    if (!finalDate.trim()) {
+      nextFormErrors.finalDate = t("labelings.upload.error.missingFinalDate");
+    }
+
+    const parsedUsersPerItem = Number(usersPerItem);
+    if (!Number.isInteger(parsedUsersPerItem) || parsedUsersPerItem <= 0) {
+      nextFormErrors.usersPerItem = t("labelings.upload.error.invalidUsersPerItem");
+    }
+
+    if (startDate && finalDate && startDate > finalDate) {
+      nextFormErrors.finalDate = t("labelings.upload.error.invalidDates");
+    }
+
+    if (Object.keys(nextFormErrors).length > 0) {
+      setFormErrors(nextFormErrors);
       return;
     }
+
+    setFormErrors({});
 
     if (!selectedFile) {
       toast.error(t("labelings.upload.error.missingFile"));
       return;
     }
 
-    if (!finalDate.trim()) {
-      toast.error(t("labelings.upload.error.missingFinalDate"));
-      return;
-    }
-
-    const parsedUsersPerItem = Number(usersPerItem);
-    if (!Number.isInteger(parsedUsersPerItem) || parsedUsersPerItem <= 0) {
-      toast.error(t("labelings.upload.error.invalidUsersPerItem"));
-      return;
-    }
-
-    if (startDate && finalDate && startDate > finalDate) {
-      toast.error(t("labelings.upload.error.invalidDates"));
-      return;
-    }
+    const confirmedProjectId = projectId;
+    if (confirmedProjectId === null) return;
 
     setIsSubmitting(true);
 
@@ -189,7 +222,7 @@ export default function NewLabelingModal({
       await onConfirm({
         file: selectedFile,
         title: title.trim(),
-        projectId,
+        projectId: confirmedProjectId,
         usersPerItem: parsedUsersPerItem,
         startDate: startDate || undefined,
         finalDate: finalDate || undefined,
@@ -209,23 +242,28 @@ export default function NewLabelingModal({
     }
   }
 
+  // Regra de navegação para avançar da etapa de upload
   const canContinueUploadStep = useMemo(
     () => Boolean(selectedFile) && !isAnalyzingFile,
     [selectedFile, isAnalyzingFile],
   );
 
+  // Navegação entre etapas
   function handleContinueFromUpload() {
     if (!selectedFile) {
       toast.error(t("labelings.upload.error.continueMissingFile"));
       return;
     }
+    setFormErrors({});
     setStep("details");
   }
 
   function handleBackToUpload() {
+    setFormErrors({});
     setStep("upload");
   }
 
+  // Drag and drop de arquivo na área de upload
   function handleDrop(event: React.DragEvent<HTMLDivElement>) {
     event.preventDefault();
     event.stopPropagation();
@@ -249,6 +287,7 @@ export default function NewLabelingModal({
     event.stopPropagation();
   }
 
+  // Parser simples de linha CSV (suporta aspas e escape por aspas duplas)
   function parseCsvLine(line: string): string[] {
     const cells: string[] = [];
     let current = "";
@@ -278,6 +317,7 @@ export default function NewLabelingModal({
 
   if (!open) return null;
 
+  // Descrição muda conforme a etapa ativa do modal
   const modalDescription =
     step === "upload" ? (
       <p>
@@ -299,6 +339,7 @@ export default function NewLabelingModal({
       {/* Render: etapa de upload */}
       {step === "upload" ? (
         <div>
+          {/* Área principal de upload (botão + drag and drop + status) */}
           <div
             className="flex flex-col items-center gap-3 border-2 border-dashed border-blueberry-700 rounded-xl p-6 text-center"
             onDrop={handleDrop}
@@ -338,6 +379,7 @@ export default function NewLabelingModal({
             )}
           </div>
 
+          {/* Alerta de qualidade do CSV quando há células vazias */}
           {hasEmptyFields && (
             <div className="mt-4 rounded-lg border border-red-blueberry bg-red-50 px-3 py-2 text-sm text-red-blueberry">
               <TriangleAlert className="inline-block mr-1 mb-0.5 w-4 h-4" />
@@ -357,6 +399,7 @@ export default function NewLabelingModal({
             </div>
           )}
 
+          {/* Ações da etapa de upload */}
           <div className="mt-6 flex justify-between gap-3 w-[70%] mx-auto">
             <Button
               onClick={handleContinueFromUpload}
@@ -370,51 +413,73 @@ export default function NewLabelingModal({
         // Render: etapa de detalhes
         <div>
           <div className="space-y-5">
+            {/* Identificação da rotulagem */}
             <Input
               id="csv-title"
-              label={t("labelings.upload.titleLabel") + "*"}
+              label={t("labelings.upload.titleLabel")}
+              required
+              error={formErrors.title}
               placeholder={t("labelings.upload.titlePlaceholder")}
               value={title}
-              onChange={(e) => setTitle((e.target as HTMLInputElement).value)}
+              onChange={(e) => {
+                setTitle((e.target as HTMLInputElement).value);
+                clearFormError("title");
+              }}
             />
 
             <Select
               id="csv-project"
-              label={t("labelings.upload.projectLabel")+ "*"}
+              label={t("labelings.upload.projectLabel")}
+              required
+              error={formErrors.projectId}
+              placeholder={t("common.selectPlaceholder")}
               options={(projects ?? []).map((p) => ({
                 value: String(p.id),
                 label: p.name,
               }))}
-              value={projectId ? String(projectId) : ""}
-              onChange={(e) =>
-                setProjectId(Number((e.target as HTMLSelectElement).value))
-              }
+              value={projectId === null ? "" : String(projectId)}
+              onChange={(e) => {
+                const value = (e.target as HTMLSelectElement).value;
+                setProjectId(value ? Number(value) : null);
+                clearFormError("projectId");
+              }}
             />
+
+            {/* Aviso quando não há projetos disponíveis para seleção */}
             {!isLoadingProjects && !(projects?.length ?? 0) && (
               <p className="mt-1 text-xs text-orange-600">
                 {t("labelings.upload.noProjects")}
               </p>
             )}
 
+            {/* Janela de datas da rotulagem */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <DatePicker
                 id="csv-start"
-                label={t("labelings.upload.startDateLabel") + "*"}
+                label={t("labelings.upload.startDateLabel")}
+                required
+                error={formErrors.startDate}
                 value={startDate}
-                onChange={(e) =>
-                  setStartDate((e.target as HTMLInputElement).value)
-                }
+                onChange={(e) => {
+                  setStartDate((e.target as HTMLInputElement).value);
+                  clearFormError("startDate");
+                  clearFormError("finalDate");
+                }}
               />
               <DatePicker
                 id="csv-final"
-                label={t("labelings.upload.finalDateLabel")+ "*"}
+                label={t("labelings.upload.finalDateLabel")}
+                required
+                error={formErrors.finalDate}
                 value={finalDate}
-                onChange={(e) =>
-                  setFinalDate((e.target as HTMLInputElement).value)
-                }
+                onChange={(e) => {
+                  setFinalDate((e.target as HTMLInputElement).value);
+                  clearFormError("finalDate");
+                }}
               />
             </div>
 
+            {/* Configurações booleanas extras (checkboxes) */}
             <div className="grid grid-cols-2 gap-3">
               <div className="flex items-center gap-2 rounded-lg border border-metal-200 bg-metal-50 px-3 py-2">
                 <Checkbox
@@ -468,13 +533,23 @@ export default function NewLabelingModal({
               </div>
             </div>
 
+            {/* Estratégia de distribuição dos itens entre usuários */}
             <Select
               id="csv-distribution-strategy"
               label={t("labelings.upload.distributionStrategyLabel")}
               options={[
-                { value: "auto", label: t("labelings.upload.distributionStrategy.auto") },
-                { value: "specified", label: t("labelings.upload.distributionStrategy.specified") },
-                { value: "per_person", label: t("labelings.upload.distributionStrategy.per_person") },
+                {
+                  value: "auto",
+                  label: t("labelings.upload.distributionStrategy.auto"),
+                },
+                {
+                  value: "specified",
+                  label: t("labelings.upload.distributionStrategy.specified"),
+                },
+                {
+                  value: "per_person",
+                  label: t("labelings.upload.distributionStrategy.per_person"),
+                },
               ]}
               value={distributionStrategy}
               onChange={(e) =>
@@ -485,21 +560,25 @@ export default function NewLabelingModal({
               tooltip={t("labelings.upload.distributionStrategyTooltip")}
             />
 
+            {/* Quantidade de usuários por item (desabilitado em per_person) */}
             <Input
               id="csv-users-per-item"
               label={t("labelings.upload.usersPerItemLabel")}
+              error={formErrors.usersPerItem}
               type="number"
               min={1}
               value={usersPerItem}
-              onChange={(e) =>
-                setUsersPerItem((e.target as HTMLInputElement).value)
-              }
+              onChange={(e) => {
+                setUsersPerItem((e.target as HTMLInputElement).value);
+                clearFormError("usersPerItem");
+              }}
               disabled={isPerPerson}
               placeholder="1"
               tooltip={t("labelings.upload.usersPerItemTooltip")}
             />
           </div>
 
+          {/* Rodapé da etapa de detalhes (voltar + criar) */}
           <div className="mt-6 flex justify-between gap-3">
             <Button
               type="button"
