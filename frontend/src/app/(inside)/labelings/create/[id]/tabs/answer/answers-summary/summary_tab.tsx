@@ -14,7 +14,7 @@ import {
   buildQuestionSummaries,
   resolveQuestionTypeLabel,
   type BarItem,
-} from "./question_summary_utils";
+} from "../question_summary_utils";
 
 type SummaryTabProps = {
   answers: AnswerResponse[];
@@ -60,7 +60,9 @@ export default function SummaryTab({
           {t("labelings.create.summary.loading")}
         </p>
       ) : summaries.length === 0 ? (
-        <p className="text-sm text-gray-600">{t("labelings.create.summary.empty")}</p>
+        <p className="text-sm text-gray-600">
+          {t("labelings.create.summary.empty")}
+        </p>
       ) : (
         <GridLayout minColumnWidth="420px">
           {summaries.map((summary, index) => (
@@ -83,7 +85,8 @@ export default function SummaryTab({
                     </span>
                     <span className="text-gray-300">•</span>
                     <span>
-                      {summary.responseCount} {t("labelings.create.summary.responsesCount")}
+                      {summary.responseCount}{" "}
+                      {t("labelings.create.summary.responsesCount")}
                     </span>
                   </div>
                 </div>
@@ -95,7 +98,10 @@ export default function SummaryTab({
                     <div className="text-xs font-semibold text-gray-600">
                       {summary.chart.title}
                     </div>
-                    <BarChart items={summary.chart.items} total={summary.chart.total} />
+                    <BarChart
+                      items={summary.chart.items}
+                      total={summary.chart.total}
+                    />
                     <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
                       <StatLine
                         label={t("labelings.create.summary.stats.min")}
@@ -111,7 +117,9 @@ export default function SummaryTab({
                       />
                       <StatLine
                         label={t("labelings.create.summary.stats.median")}
-                        value={numberFormatter.format(summary.chart.stats.median)}
+                        value={numberFormatter.format(
+                          summary.chart.stats.median,
+                        )}
                       />
                     </div>
                   </div>
@@ -120,7 +128,10 @@ export default function SummaryTab({
                     <div className="text-xs font-semibold text-gray-600">
                       {summary.chart.title}
                     </div>
-                    <BarChart items={summary.chart.items} total={summary.chart.total} />
+                    <BarChart
+                      items={summary.chart.items}
+                      total={summary.chart.total}
+                    />
                   </div>
                 )}
               </div>
@@ -135,7 +146,9 @@ export default function SummaryTab({
 function StatLine({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-md border border-gray-200 px-2 py-2">
-      <p className="text-[11px] uppercase tracking-wide text-gray-400">{label}</p>
+      <p className="text-[11px] uppercase tracking-wide text-gray-400">
+        {label}
+      </p>
       <p className="text-sm font-semibold text-gray-700">{value}</p>
     </div>
   );

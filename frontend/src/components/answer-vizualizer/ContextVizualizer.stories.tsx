@@ -10,7 +10,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "Componente placeholder para contextos. Atualmente não renderiza conteúdo visual.",
+          "Componente para visualização de contextos (título e conteúdo), incluindo suporte a imagem quando configurado.",
       },
     },
   },
@@ -27,7 +27,7 @@ export const Placeholder: Story = {
     <div className="w-[720px] rounded-xl border border-dashed border-metal-300 bg-white p-5">
       <ContextVizualizer {...args} />
       <p className="text-sm text-metal-600">
-        Este componente está reservado para futura visualização de contextos.
+        Exemplo simples usando apenas o título do contexto.
       </p>
     </div>
   ),

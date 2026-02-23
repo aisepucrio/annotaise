@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
-import AnswersTab from "./answers_tab";
-import SummaryTab from "./summary_tab";
+import AnswersTab from "./answers/AnswersTab";
+import SummaryTab from "./answers-summary/summary_tab";
 import Button from "@/components/button/Button";
 import { useTranslations } from "@/i18n/use-translations";
 import { useLabelingAnswersWithStructureQuery } from "@/modules/labelings/create/labelingManagerQueries";
@@ -23,6 +23,7 @@ type AnswerView = "answers" | "summary";
 export default function AnswerTab({ labelingId, users }: AnswerTabProps) {
   const { t } = useTranslations();
   const [activeView, setActiveView] = useState<AnswerView>("answers");
+  const [isInspectingItem, setIsInspectingItem] = useState(false);
   const [selectedResponder, setSelectedResponder] = useState<"all" | number>(
     "all",
   );
@@ -35,25 +36,23 @@ export default function AnswerTab({ labelingId, users }: AnswerTabProps) {
     [data?.structure],
   );
 
-  // Mapear users por ID
   const usersById = useMemo(() => {
     const map = new Map<number, User>();
     users.forEach((user) => map.set(user.id, user));
     return map;
   }, [users]);
 
-  // Função para obter label do usuário
   const getUserLabel = useCallback(
     (userId: number): string => {
       const user = usersById.get(userId);
       if (!user) return t("labelings.create.answers.unknownUser");
-      const fullName = `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim();
+      const fullName =
+        `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim();
       return fullName || user.email || user.username || `User #${userId}`;
     },
     [usersById, t],
   );
 
-  // Opções de responder (para o filtro)
   const responderOptions = useMemo(() => {
     const uniqueUsers = new Set(answers.map((a) => a.answered_by));
     return Array.from(uniqueUsers).map((userId) => ({
@@ -62,13 +61,17 @@ export default function AnswerTab({ labelingId, users }: AnswerTabProps) {
     }));
   }, [answers, getUserLabel]);
 
-  // Respostas filtradas
   const filteredAnswers = useMemo(() => {
     if (selectedResponder === "all") return answers;
     return answers.filter((a) => a.answered_by === selectedResponder);
   }, [answers, selectedResponder]);
 
-  // Handler de exportação CSV
+  useEffect(() => {
+    if (activeView !== "answers" && isInspectingItem) {
+      setIsInspectingItem(false);
+    }
+  }, [activeView, isInspectingItem]);
+
   const handleExportCsv = async () => {
     if (Number.isNaN(labelingId)) return;
 
@@ -91,67 +94,74 @@ export default function AnswerTab({ labelingId, users }: AnswerTabProps) {
     }
   };
 
+  const shouldHideLocalHeader = activeView === "answers" && isInspectingItem;
+
   return (
     <div className="h-full flex flex-col">
-      {/* Header com toggle e botão de exportar */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="grid grid-cols-1 items-center gap-3 md:grid-cols-[1fr_minmax(320px,460px)_1fr]">
-          <div className="md:col-start-2">
-            <div className="mx-auto w-full">
-              <TwoOptionSelector
-                value={activeView}
-                onChange={setActiveView}
-                ariaLabel={`${t("labelings.create.tabs.answers")} / ${t(
-                  "labelings.create.tabs.summary",
-                )}`}
-                options={[
-                  {
-                    value: "answers",
-                    label: t("labelings.create.tabs.answers"),
-                  },
-                  {
-                    value: "summary",
-                    label: t("labelings.create.tabs.summary"),
-                  },
-                ]}
-              />
+      {!shouldHideLocalHeader ? (
+        <div className="bg-white border-b border-gray-200 px-6 py-4">
+          <div className="grid grid-cols-1 items-center gap-3 md:grid-cols-[1fr_minmax(320px,460px)_1fr]">
+            <div className="md:col-start-2">
+              <div className="mx-auto w-full">
+                <TwoOptionSelector
+                  value={activeView}
+                  onChange={setActiveView}
+                  ariaLabel={`${t("labelings.create.tabs.answers")} / ${t(
+                    "labelings.create.tabs.summary",
+                  )}`}
+                  options={[
+                    {
+                      value: "answers",
+                      label: t("labelings.create.tabs.answers"),
+                    },
+                    {
+                      value: "summary",
+                      label: t("labelings.create.tabs.summary"),
+                    },
+                  ]}
+                />
+              </div>
+            </div>
+
+            <div className="md:col-start-3 md:justify-self-end">
+              <Button
+                variant="normal"
+                fill={false}
+                size="icon"
+                onClick={() => void handleExportCsv()}
+                disabled={exporting}
+                className="px-4"
+                ariaLabel={t("labelings.create.answers.exportAria")}
+                icon={<Download size={16} />}
+              >
+                {exporting
+                  ? t("labelings.create.answers.exporting")
+                  : t("labelings.create.answers.exportButton")}
+              </Button>
             </div>
           </div>
-
-          <div className="md:col-start-3 md:justify-self-end">
-            <Button
-              variant="normal"
-              fill={false}
-              size="icon"
-              onClick={() => void handleExportCsv()}
-              disabled={exporting}
-              className="px-4"
-              ariaLabel={t("labelings.create.answers.exportAria")}
-              icon={<Download size={16} />}
-            >
-              {exporting
-                ? t("labelings.create.answers.exporting")
-                : t("labelings.create.answers.exportButton")}
-            </Button>
-          </div>
         </div>
-      </div>
+      ) : null}
 
-      {/* Conteúdo */}
-      <div className="flex-1 overflow-y-auto">
+      <div
+        className={
+          isInspectingItem
+            ? "flex-1 min-h-0 overflow-hidden"
+            : "flex-1 overflow-y-auto"
+        }
+      >
         {activeView === "answers" ? (
           <AnswersTab
             responderOptions={responderOptions}
             selectedResponder={selectedResponder}
             onResponderChange={setSelectedResponder}
-            onExportCsv={handleExportCsv}
-            exporting={exporting}
             answersLoading={isLoading}
             allAnswers={answers}
             filteredAnswers={filteredAnswers}
             totalAnswers={answers.length}
             getUserLabel={getUserLabel}
             structureSections={structureSections}
+            onInspectingChange={setIsInspectingItem}
           />
         ) : (
           <SummaryTab
