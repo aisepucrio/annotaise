@@ -1,19 +1,10 @@
+import type { TranslateFn } from "@/i18n/types";
 import type {
   AnswerResponse,
   LabelingStructureElement,
   LabelingStructureSection,
 } from "@/modules/labelings/labelingsTypes";
-import type { TranslateFn } from "@/i18n/types";
 
-// --- Tipos compartilhados (lista de respostas por item) ---
-export type ItemAnswersGroup = {
-  key: string;
-  itemId: number;
-  rowIndex: number | null;
-  answers: AnswerResponse[];
-};
-
-// --- Tipos compartilhados (sumários de perguntas) ---
 export type BarItem = { label: string; count: number };
 
 export type QuestionSummaryChart =
@@ -37,149 +28,72 @@ export type QuestionSummary = {
   textResponses?: string[];
 };
 
-const MAX_TEXT_BARS = 6;
-
-const QUESTION_TYPE_LABELS: Record<string, string> = {
-  text: "labelings.create.question.type.text",
-  number: "labelings.create.question.type.number",
-  range: "labelings.create.question.type.range",
-  multiple_choice: "labelings.create.question.type.multipleChoice",
+export type SummarySectionGroup = {
+  title: string;
+  items: QuestionSummary[];
 };
 
-// --- Helpers genéricos ---
-function getCreatedAtMs(answer: AnswerResponse) {
-  return new Date(answer.created_at).getTime();
+const MAX_TEXT_BARS = 6;
+
+export function buildSummarySections({
+  answers,
+  structureSections,
+  t,
+  numberFormatter,
+}: {
+  answers: AnswerResponse[];
+  structureSections: LabelingStructureSection[];
+  t: TranslateFn;
+  numberFormatter: Intl.NumberFormat;
+}): SummarySectionGroup[] {
+  return groupSummariesBySection(
+    buildQuestionSummaries({ answers, structureSections, t, numberFormatter }),
+  );
 }
 
-function sortByCreatedAtDesc(a: AnswerResponse, b: AnswerResponse) {
-  return getCreatedAtMs(b) - getCreatedAtMs(a);
-}
+export function splitSummarySectionGroupTitle(sectionGroupTitle: string): {
+  sectionLabel?: string;
+  title: string;
+} {
+  const separator = " - ";
+  const separatorIndex = sectionGroupTitle.indexOf(separator);
 
-function noDataChart(t: TranslateFn): QuestionSummaryChart {
+  if (separatorIndex < 0) {
+    return { title: sectionGroupTitle };
+  }
+
   return {
-    kind: "none",
-    title: t("labelings.create.summary.chart.noData"),
+    sectionLabel: sectionGroupTitle.slice(0, separatorIndex),
+    title: sectionGroupTitle.slice(separatorIndex + separator.length),
   };
 }
 
-function hasValue(value: unknown) {
-  if (value === null || value === undefined) return false;
-  if (typeof value === "string") return value.trim().length > 0;
-  if (Array.isArray(value)) return value.length > 0;
-  return true;
-}
+function groupSummariesBySection(
+  summaries: QuestionSummary[],
+): SummarySectionGroup[] {
+  const groupsByTitle = new Map<string, SummarySectionGroup>();
+  const orderedGroups: SummarySectionGroup[] = [];
 
-// --- Agrupamento / seleção de respostas ---
-function getItemGroupKey(answer: AnswerResponse): string {
-  const detailId = answer.item_detail?.id;
-  return detailId !== undefined && detailId !== null
-    ? `detail-${detailId}`
-    : `item-${answer.item}`;
-}
-
-export function groupAnswersByItem(answers: AnswerResponse[]): ItemAnswersGroup[] {
-  const groups = new Map<string, ItemAnswersGroup>();
-
-  for (const answer of answers) {
-    const key = getItemGroupKey(answer);
-    const existing = groups.get(key);
-
-    if (existing) {
-      existing.answers.push(answer);
-
-      if (
-        existing.rowIndex === null &&
-        answer.item_detail?.row_index !== undefined &&
-        answer.item_detail?.row_index !== null
-      ) {
-        existing.rowIndex = answer.item_detail.row_index;
-      }
-
-      continue;
+  summaries.forEach((summary) => {
+    const existingGroup = groupsByTitle.get(summary.sectionLabel);
+    if (existingGroup) {
+      existingGroup.items.push(summary);
+      return;
     }
 
-    groups.set(key, {
-      key,
-      itemId: answer.item_detail?.id ?? answer.item,
-      rowIndex: answer.item_detail?.row_index ?? null,
-      answers: [answer],
-    });
-  }
+    const newGroup: SummarySectionGroup = {
+      title: summary.sectionLabel,
+      items: [summary],
+    };
 
-  const grouped = Array.from(groups.values()).map((group) => ({
-    ...group,
-    answers: [...group.answers].sort(sortByCreatedAtDesc),
-  }));
-
-  return grouped.sort((a, b) => {
-    if (a.rowIndex !== null && b.rowIndex !== null) return a.rowIndex - b.rowIndex;
-    if (a.rowIndex !== null) return -1;
-    if (b.rowIndex !== null) return 1;
-    return a.itemId - b.itemId;
+    groupsByTitle.set(summary.sectionLabel, newGroup);
+    orderedGroups.push(newGroup);
   });
+
+  return orderedGroups;
 }
 
-export function selectLatestAnswersByUser(
-  answers: AnswerResponse[],
-): AnswerResponse[] {
-  const latestByUser = new Map<number, AnswerResponse>();
-
-  for (const answer of [...answers].sort(sortByCreatedAtDesc)) {
-    if (!latestByUser.has(answer.answered_by)) {
-      latestByUser.set(answer.answered_by, answer);
-    }
-  }
-
-  return Array.from(latestByUser.values());
-}
-
-export function resolveItemLabel(
-  rowIndex: number | null,
-  itemId: number,
-  t: TranslateFn,
-): string {
-  if (rowIndex !== null) {
-    return t("labelings.create.answers.itemLabel", {
-      index: rowIndex + 1,
-    });
-  }
-
-  return t("labelings.create.answers.itemIdLabel", {
-    id: itemId,
-  });
-}
-
-// --- Formatação de valores (respostas/contexto) ---
-export function formatAnswerValue(value: unknown, t: TranslateFn): string {
-  if (value === null || value === undefined) return "-";
-  if (Array.isArray(value)) {
-    return value.map((entry) => formatAnswerValue(entry, t)).join(", ");
-  }
-  if (typeof value === "boolean") {
-    return value ? t("common.yes") : t("common.no");
-  }
-  if (typeof value === "object") {
-    try {
-      return JSON.stringify(value);
-    } catch {
-      return String(value);
-    }
-  }
-
-  return String(value);
-}
-
-export function formatContextValue(
-  value: unknown,
-  contextType: string | null | undefined,
-  t: TranslateFn,
-): string {
-  const text = formatAnswerValue(value, t);
-  return contextType === "code" ? `\`\`\`\n${text}\n\`\`\`` : text;
-}
-
-// --- Sumário de perguntas (dashboard / item) ---
-export function buildQuestionSummaries({
+function buildQuestionSummaries({
   answers,
   structureSections,
   t,
@@ -308,15 +222,20 @@ function buildChartForElement({
   return noDataChart(t);
 }
 
-export function resolveQuestionTypeLabel(
-  type: string,
-  t: (key: string) => string,
-): string {
-  const labelKey = QUESTION_TYPE_LABELS[type];
-  return labelKey ? t(labelKey) : type;
+function noDataChart(t: TranslateFn): QuestionSummaryChart {
+  return {
+    kind: "none",
+    title: t("labelings.create.summary.chart.noData"),
+  };
 }
 
-// --- Helpers internos do sumário ---
+function hasValue(value: unknown) {
+  if (value === null || value === undefined) return false;
+  if (typeof value === "string") return value.trim().length > 0;
+  if (Array.isArray(value)) return value.length > 0;
+  return true;
+}
+
 function normalizeChoiceValue(
   value: unknown,
   t: (key: string) => string,
@@ -341,7 +260,10 @@ function normalizeChoiceValue(
   return String(value);
 }
 
-function extractTextResponses(values: unknown[], t: (key: string) => string): string[] {
+function extractTextResponses(
+  values: unknown[],
+  t: (key: string) => string,
+): string[] {
   const responses: string[] = [];
 
   values.forEach((value) => {

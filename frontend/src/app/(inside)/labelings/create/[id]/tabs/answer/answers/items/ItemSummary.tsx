@@ -1,81 +1,38 @@
 "use client";
 
-import { type ReactNode } from "react";
 import type { TranslateFn } from "@/i18n/types";
-import SectionVizualizer from "@/components/answer-vizualizer/SectionVizualizer";
-import SummaryVizualizer, {
-  groupSummariesBySection,
-  splitSummarySectionGroupTitle,
-} from "@/components/answer-vizualizer/SummaryVizualizer";
-import { type QuestionSummary } from "../../utils";
+import type {
+  AnswerResponse,
+  LabelingStructureSection,
+} from "@/modules/labelings/labelingsTypes";
+import SummaryVizualizer from "@/components/answer-vizualizer/SummaryVizualizer";
 
 type ItemSummaryProps = {
-  itemSummaries: QuestionSummary[];
+  answers: AnswerResponse[];
+  sections: LabelingStructureSection[];
   t: TranslateFn;
-  numberFormatter: Intl.NumberFormat;
+  locale: string;
 };
 
 export default function ItemSummary({
-  itemSummaries,
+  answers,
+  sections,
   t,
-  numberFormatter,
+  locale,
 }: ItemSummaryProps) {
-  if (itemSummaries.length === 0) {
-    return (
-      <p className="text-sm text-gray-600">
-        {t("labelings.create.answers.modal.itemSummaryEmpty")}
-      </p>
-    );
-  }
-
-  const sectionGroups = groupSummariesBySection(itemSummaries);
-
   return (
-    <div>
-      {sectionGroups.map((sectionGroup, sectionIndex) => (
-        <ItemSummarySection
-          key={sectionGroup.title}
-          sectionTitle={sectionGroup.title}
-          className={sectionIndex > 0 ? "mt-12" : undefined}
-        >
-            <div className="divide-y divide-slate-200">
-              {sectionGroup.items.map((summary) => (
-                <div key={summary.key} className="py-3 first:pt-0 last:pb-0">
-                  <SummaryVizualizer
-                    summary={summary}
-                    t={t}
-                    numberFormatter={numberFormatter}
-                    showTypeLabel
-                    showResponseCount={false}
-                  />
-                </div>
-              ))}
-            </div>
-        </ItemSummarySection>
-      ))}
-    </div>
-  );
-}
-
-function ItemSummarySection({
-  sectionTitle,
-  className,
-  children,
-}: {
-  sectionTitle: string;
-  className?: string;
-  children: ReactNode;
-}) {
-  const parsed = splitSummarySectionGroupTitle(sectionTitle);
-
-  return (
-    <div className={className}>
-      <SectionVizualizer
-        title={parsed.title}
-        sectionLabel={parsed.sectionLabel}
-      >
-        {children}
-      </SectionVizualizer>
-    </div>
+    <SummaryVizualizer
+      answers={answers}
+      structureSections={sections}
+      t={t}
+      locale={locale}
+      emptyState={
+        <p className="text-sm text-gray-600">
+          {t("labelings.create.answers.modal.itemSummaryEmpty")}
+        </p>
+      }
+      showTypeLabel
+      showResponseCount={false}
+    />
   );
 }

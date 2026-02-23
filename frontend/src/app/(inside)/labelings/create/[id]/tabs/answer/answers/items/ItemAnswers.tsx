@@ -8,10 +8,6 @@ import remarkGfm from "remark-gfm";
 import QuestionVizualizer from "@/components/answer-vizualizer/QuestionVizualizer";
 import SectionVizualizer from "@/components/answer-vizualizer/SectionVizualizer";
 import type { LabelingStructureSection } from "@/modules/labelings/labelingsTypes";
-import {
-  formatAnswerValue,
-  formatContextValue,
-} from "../../utils";
 
 type ItemAnswersProps = {
   answerEntries: Array<[string, unknown]>;
@@ -155,4 +151,32 @@ export default function ItemAnswers({
   }
 
   return <>{content}</>;
+}
+
+function formatAnswerValue(value: unknown, t: TranslateFn): string {
+  if (value === null || value === undefined) return "-";
+  if (Array.isArray(value)) {
+    return value.map((entry) => formatAnswerValue(entry, t)).join(", ");
+  }
+  if (typeof value === "boolean") {
+    return value ? t("common.yes") : t("common.no");
+  }
+  if (typeof value === "object") {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
+  }
+
+  return String(value);
+}
+
+function formatContextValue(
+  value: unknown,
+  contextType: string | null | undefined,
+  t: TranslateFn,
+): string {
+  const text = formatAnswerValue(value, t);
+  return contextType === "code" ? `\`\`\`\n${text}\n\`\`\`` : text;
 }

@@ -3,18 +3,23 @@
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import Button from "@/components/button/Button";
 import type { TranslateFn } from "@/i18n/types";
-import type { LabelingStructureSection } from "@/modules/labelings/labelingsTypes";
+import type {
+  AnswerResponse,
+  LabelingStructureSection,
+} from "@/modules/labelings/labelingsTypes";
 import { useTranslations } from "@/i18n/use-translations";
 import TwoOptionSelector from "../../../TwoOptionSelector";
-import {
-  buildQuestionSummaries,
-  resolveItemLabel,
-  selectLatestAnswersByUser,
-  type ItemAnswersGroup,
-} from "../../utils";
+import { resolveItemLabel } from "../../answer-utils";
 import ItemSummary from "./ItemSummary";
 import ItemAnswers from "./ItemAnswers";
 import { ArrowLeft } from "lucide-react";
+
+type ItemAnswersGroup = {
+  key: string;
+  itemId: number;
+  rowIndex: number | null;
+  answers: AnswerResponse[];
+};
 
 type ItemTabProps = {
   itemGroup: ItemAnswersGroup;
@@ -32,10 +37,6 @@ export default function ItemTab({
   sections,
 }: ItemTabProps) {
   const { t, locale } = useTranslations();
-  const numberFormatter = useMemo(
-    () => new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }),
-    [locale],
-  );
 
   const userAnswers = useMemo(
     () => selectLatestAnswersByUser(itemGroup.answers),
@@ -70,17 +71,6 @@ export default function ItemTab({
       userAnswers[0]
     );
   }, [selectedUserId, userAnswers]);
-
-  const itemSummaries = useMemo(
-    () =>
-      buildQuestionSummaries({
-        answers: itemGroup.answers,
-        structureSections: sections,
-        t,
-        numberFormatter,
-      }),
-    [itemGroup.answers, numberFormatter, sections, t],
-  );
 
   if (!selectedAnswer) {
     return (
@@ -184,9 +174,10 @@ export default function ItemTab({
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-5 pt-4 md:px-6 md:pb-6">
           {activeTab === "item-summary" ? (
             <ItemSummary
-              itemSummaries={itemSummaries}
+              answers={itemGroup.answers}
+              sections={sections}
               t={t}
-              numberFormatter={numberFormatter}
+              locale={locale}
             />
           ) : (
             <ItemAnswers
@@ -241,4 +232,21 @@ function BackButton({ onBack, t }: { onBack: () => void; t: TranslateFn }) {
       </Button>
     </div>
   );
+}
+
+function selectLatestAnswersByUser(
+  answers: AnswerResponse[],
+): AnswerResponse[] {
+  const latestByUser = new Map<number, AnswerResponse>();
+
+  for (const answer of [...answers].sort(
+    (a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+  )) {
+    if (!latestByUser.has(answer.answered_by)) {
+      latestByUser.set(answer.answered_by, answer);
+    }
+  }
+
+  return Array.from(latestByUser.values());
 }

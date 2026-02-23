@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { Meta, StoryObj } from "@storybook/nextjs";
 import QuestionVizualizer from "./QuestionVizualizer";
 
@@ -6,7 +7,7 @@ const meta = {
   component: QuestionVizualizer,
   tags: ["autodocs"],
   args: {
-    question: "Como você descreve seu nível de familiaridade com o tema?",
+    question: "Como você descreve sua familiaridade com o tema?",
     answer: "Intermediário. Já trabalhei em projetos semelhantes.",
   },
   parameters: {
@@ -14,7 +15,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "Visualizador de pergunta e resposta com hierarquia clara: pergunta em destaque e resposta em bloco leve.",
+          "Exibe pergunta + resposta em bloco, com suporte a badge customizada ou marcador de obrigatório.",
       },
     },
   },
@@ -23,24 +24,48 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof QuestionVizualizer>;
 
-export const Playground: Story = {
-  render: (args) => (
+function Frame({ children }: { children: ReactNode }) {
+  return (
     <div className="w-[720px] rounded-xl border border-metal-100 bg-white p-5">
-      <QuestionVizualizer {...args} />
+      {children}
     </div>
+  );
+}
+
+export const Default: Story = {
+  render: (args) => (
+    <Frame>
+      <QuestionVizualizer {...args} />
+    </Frame>
   ),
 };
 
-export const LongAnswer: Story = {
+export const Required: Story = {
   args: {
-    question: "Conte sobre sua experiência mais relevante para esta rotulação.",
-    answer:
-      "Atuei em projetos de classificação e revisão de qualidade por mais de três anos, " +
-      "incluindo definição de critérios, treinamento de avaliadores e acompanhamento de métricas.",
+    question: "Campo obrigatório",
+    answer: "Resposta preenchida",
+    required: true,
   },
   render: (args) => (
-    <div className="w-[720px] rounded-xl border border-metal-100 bg-white p-5">
+    <Frame>
       <QuestionVizualizer {...args} />
-    </div>
+    </Frame>
+  ),
+};
+
+export const WithCustomBadge: Story = {
+  args: {
+    question: "Campo opcional com badge",
+    answer: "Valor informado pelo usuário",
+    badge: (
+      <span className="inline-flex items-center rounded-full bg-blueberry-700-15 px-2 py-0.5 text-xs font-medium text-blueberry-700">
+        Opcional
+      </span>
+    ),
+  },
+  render: (args) => (
+    <Frame>
+      <QuestionVizualizer {...args} />
+    </Frame>
   ),
 };

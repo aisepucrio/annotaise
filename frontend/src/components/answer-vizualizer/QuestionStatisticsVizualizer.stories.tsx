@@ -1,9 +1,8 @@
+import type { ReactNode } from "react";
 import type { Meta, StoryObj } from "@storybook/nextjs";
 import type { TranslateFn } from "@/i18n/types";
 import QuestionStatisticsVizualizer from "./QuestionStatisticsVizualizer";
-import type {
-  QuestionSummary,
-} from "@/app/(inside)/labelings/create/[id]/tabs/answer/utils";
+import type { QuestionSummary } from "./SummaryVizualizer";
 
 const t: TranslateFn = (key) => {
   switch (key) {
@@ -12,7 +11,7 @@ const t: TranslateFn = (key) => {
     case "labelings.create.summary.stats.max":
       return "Max";
     case "labelings.create.summary.stats.average":
-      return "Media";
+      return "Média";
     case "labelings.create.summary.stats.median":
       return "Mediana";
     default:
@@ -28,7 +27,7 @@ const histogramSummary: QuestionSummary = {
   responseCount: 8,
   chart: {
     kind: "hist",
-    title: "Distribuicao",
+    title: "Histograma",
     items: [
       { label: "0-1", count: 1 },
       { label: "1-2", count: 3 },
@@ -45,21 +44,51 @@ const histogramSummary: QuestionSummary = {
   },
 };
 
+const multipleChoiceSummary: QuestionSummary = {
+  key: "q-mc-1",
+  label: "Classificação final",
+  type: "multiple_choice",
+  sectionLabel: "Resultado",
+  responseCount: 10,
+  chart: {
+    kind: "bar",
+    title: "Respostas mais frequentes",
+    items: [
+      { label: "Correto", count: 6 },
+      { label: "Parcial", count: 3 },
+      { label: "Incorreto", count: 1 },
+    ],
+    total: 10,
+  },
+};
+
 const textSummary: QuestionSummary = {
   key: "q-text-1",
-  label: "Observacoes",
+  label: "Observações",
   type: "text",
-  sectionLabel: "Comentarios",
+  sectionLabel: "Comentários",
   responseCount: 3,
   chart: {
     kind: "none",
-    title: "Ultimas respostas textuais",
+    title: "Últimas respostas textuais",
   },
   textResponses: [
-    "Fluxo claro e rapido.",
+    "Fluxo claro e rápido.",
     "Precisa melhorar a etapa final.",
     "Boa usabilidade no mobile.",
   ],
+};
+
+const noDataSummary: QuestionSummary = {
+  key: "q-range-1",
+  label: "Pontuação",
+  type: "range",
+  sectionLabel: "Métricas",
+  responseCount: 0,
+  chart: {
+    kind: "none",
+    title: "Sem dados",
+  },
 };
 
 const meta = {
@@ -71,7 +100,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "Visualizador da parte estatística de uma pergunta resumida (texto, barras, histograma e métricas numéricas). Usado internamente pelo `SummaryVizualizer`.",
+          "Parte estatística do resumo por pergunta: histograma, barras categóricas, lista de respostas textuais e fallback sem dados.",
       },
     },
   },
@@ -80,30 +109,62 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof QuestionStatisticsVizualizer>;
 
+function Frame({ children }: { children: ReactNode }) {
+  return (
+    <div className="w-[760px] rounded-xl border border-metal-100 bg-white p-5">
+      {children}
+    </div>
+  );
+}
+
+const numberFormatter = new Intl.NumberFormat("pt-BR", {
+  maximumFractionDigits: 2,
+});
+
 export const Histogram: Story = {
   render: () => (
-    <div className="w-[760px] rounded-xl border border-metal-100 bg-white p-5">
+    <Frame>
       <QuestionStatisticsVizualizer
         summary={histogramSummary}
-        numberFormatter={new Intl.NumberFormat("pt-BR", {
-          maximumFractionDigits: 2,
-        })}
+        numberFormatter={numberFormatter}
         t={t}
       />
-    </div>
+    </Frame>
+  ),
+};
+
+export const MultipleChoiceBars: Story = {
+  render: () => (
+    <Frame>
+      <QuestionStatisticsVizualizer
+        summary={multipleChoiceSummary}
+        numberFormatter={numberFormatter}
+        t={t}
+      />
+    </Frame>
   ),
 };
 
 export const TextResponses: Story = {
   render: () => (
-    <div className="w-[760px] rounded-xl border border-metal-100 bg-white p-5">
+    <Frame>
       <QuestionStatisticsVizualizer
         summary={textSummary}
-        numberFormatter={new Intl.NumberFormat("pt-BR", {
-          maximumFractionDigits: 2,
-        })}
+        numberFormatter={numberFormatter}
         t={t}
       />
-    </div>
+    </Frame>
+  ),
+};
+
+export const NoDataFallback: Story = {
+  render: () => (
+    <Frame>
+      <QuestionStatisticsVizualizer
+        summary={noDataSummary}
+        numberFormatter={numberFormatter}
+        t={t}
+      />
+    </Frame>
   ),
 };

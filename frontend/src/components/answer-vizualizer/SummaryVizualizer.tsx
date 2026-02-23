@@ -1,37 +1,51 @@
 "use client";
 
+import { type ReactNode, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { TranslateFn } from "@/i18n/types";
-import {
-  resolveQuestionTypeLabel,
-  type QuestionSummary,
-} from "@/app/(inside)/labelings/create/[id]/tabs/answer/utils";
+import type {
+  AnswerResponse,
+  LabelingStructureSection,
+} from "@/modules/labelings/labelingsTypes";
+import SectionVizualizer from "@/components/answer-vizualizer/SectionVizualizer";
 import QuestionStatisticsVizualizer from "./QuestionStatisticsVizualizer";
+import {
+  buildSummarySections,
+  splitSummarySectionGroupTitle,
+  type QuestionSummary,
+} from "./summary-vizualizer-utils";
 
-export type SummarySectionGroup = {
-  title: string;
-  items: QuestionSummary[];
+export type {
+  BarItem,
+  QuestionSummary,
+  QuestionSummaryChart,
+  SummarySectionGroup,
+} from "./summary-vizualizer-utils";
+
+const QUESTION_TYPE_LABELS: Record<string, string> = {
+  text: "labelings.create.question.type.text",
+  number: "labelings.create.question.type.number",
+  range: "labelings.create.question.type.range",
+  multiple_choice: "labelings.create.question.type.multipleChoice",
 };
 
-export function splitSummarySectionGroupTitle(sectionGroupTitle: string): {
-  sectionLabel?: string;
-  title: string;
-} {
-  const separator = " - ";
-  const separatorIndex = sectionGroupTitle.indexOf(separator);
-
-  if (separatorIndex < 0) {
-    return { title: sectionGroupTitle };
-  }
-
-  return {
-    sectionLabel: sectionGroupTitle.slice(0, separatorIndex),
-    title: sectionGroupTitle.slice(separatorIndex + separator.length),
-  };
+function resolveQuestionTypeLabel(type: string, t: TranslateFn): string {
+  const labelKey = QUESTION_TYPE_LABELS[type];
+  return labelKey ? t(labelKey) : type;
 }
 
 export type SummaryVizualizerProps = {
+  answers: AnswerResponse[];
+  structureSections: LabelingStructureSection[];
+  t: TranslateFn;
+  locale: string;
+  emptyState?: ReactNode;
+  showTypeLabel?: boolean;
+  showResponseCount?: boolean;
+};
+
+export type SummaryQuestionCardProps = {
   summary: QuestionSummary;
   numberFormatter: Intl.NumberFormat;
   t: TranslateFn;
@@ -40,39 +54,70 @@ export type SummaryVizualizerProps = {
   showResponseCount?: boolean;
 };
 
-export function groupSummariesBySection(
-  summaries: QuestionSummary[],
-): SummarySectionGroup[] {
-  const groupsByTitle = new Map<string, SummarySectionGroup>();
-  const orderedGroups: SummarySectionGroup[] = [];
+export default function SummaryVizualizer({
+  answers,
+  structureSections,
+  t,
+  locale,
+  emptyState,
+  showTypeLabel = false,
+  showResponseCount = true,
+}: SummaryVizualizerProps) {
+  const numberFormatter = useMemo(
+    () => new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }),
+    [locale],
+  );
 
-  summaries.forEach((summary) => {
-    const existingGroup = groupsByTitle.get(summary.sectionLabel);
-    if (existingGroup) {
-      existingGroup.items.push(summary);
-      return;
-    }
+  const sectionGroups = useMemo(
+    () =>
+      buildSummarySections({
+        answers,
+        structureSections,
+        t,
+        numberFormatter,
+      }),
+    [answers, numberFormatter, structureSections, t],
+  );
 
-    const newGroup: SummarySectionGroup = {
-      title: summary.sectionLabel,
-      items: [summary],
-    };
+  if (sectionGroups.length === 0) {
+    return emptyState ? <>{emptyState}</> : null;
+  }
 
-    groupsByTitle.set(summary.sectionLabel, newGroup);
-    orderedGroups.push(newGroup);
-  });
-
-  return orderedGroups;
+  return (
+    <div>
+      {sectionGroups.map((sectionGroup, sectionIndex) => (
+        <SummarySectionBlock
+          key={sectionGroup.title}
+          sectionTitle={sectionGroup.title}
+          className={sectionIndex > 0 ? "mt-12" : undefined}
+        >
+          <div className="divide-y divide-slate-200">
+            {sectionGroup.items.map((summary) => (
+              <div key={summary.key} className="py-3 first:pt-0 last:pb-0">
+                <SummaryQuestionCard
+                  summary={summary}
+                  numberFormatter={numberFormatter}
+                  t={t}
+                  showTypeLabel={showTypeLabel}
+                  showResponseCount={showResponseCount}
+                />
+              </div>
+            ))}
+          </div>
+        </SummarySectionBlock>
+      ))}
+    </div>
+  );
 }
 
-export default function SummaryVizualizer({
+export function SummaryQuestionCard({
   summary,
   numberFormatter,
   t,
   showSectionLabel = false,
   showTypeLabel = false,
   showResponseCount = true,
-}: SummaryVizualizerProps) {
+}: SummaryQuestionCardProps) {
   const metadataItems: string[] = [];
 
   if (showResponseCount) {
@@ -128,5 +173,25 @@ export default function SummaryVizualizer({
         />
       </div>
     </article>
+  );
+}
+
+function SummarySectionBlock({
+  sectionTitle,
+  className,
+  children,
+}: {
+  sectionTitle: string;
+  className?: string;
+  children: ReactNode;
+}) {
+  const parsed = splitSummarySectionGroupTitle(sectionTitle);
+
+  return (
+    <div className={className}>
+      <SectionVizualizer title={parsed.title} sectionLabel={parsed.sectionLabel}>
+        {children}
+      </SectionVizualizer>
+    </div>
   );
 }

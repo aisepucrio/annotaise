@@ -43,7 +43,7 @@ export default function ContextVizualizer({
       ) : null}
 
       {shouldRenderAnswer ? (
-        <div className="mt-2 break-words rounded-md bg-blueberry-700-25 px-3 py-2 text-sm text-metal-700">
+        <div className="mt-2 wrap-break-word rounded-md bg-blueberry-700-25 px-3 py-2 text-sm text-metal-700">
           {contextType === "image" ? (
             <ContextImageValue
               value={value}
@@ -86,7 +86,7 @@ function ContextImageValue({
         <p className="text-xs font-semibold uppercase tracking-wide text-red-600">
           {invalidImageText}
         </p>
-        <p className="break-words text-sm text-gray-700">{raw}</p>
+        <p className="wrap-break-word text-sm text-gray-700">{raw}</p>
       </div>
     );
   }
@@ -95,7 +95,7 @@ function ContextImageValue({
     <img
       src={normalizeImageSrc(raw)}
       alt={imageAlt}
-      className="mx-auto max-h-[22rem] w-auto max-w-full rounded-md border border-blue-100 object-contain"
+      className="mx-auto max-h-88 w-auto max-w-full rounded-md border border-blue-100 object-contain"
       loading="lazy"
       onError={() => setHasError(true)}
     />

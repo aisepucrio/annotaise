@@ -10,7 +10,7 @@ import type {
 } from "@/modules/labelings/labelingsTypes";
 import { useTranslations } from "@/i18n/use-translations";
 import ItemTab from "./items/ItemTab";
-import { groupAnswersByItem, resolveItemLabel } from "../utils";
+import { resolveItemLabel } from "../answer-utils";
 
 type ResponderOption = { id: number; label: string };
 
@@ -176,4 +176,69 @@ export default function AnswersTab({
       )}
     </div>
   );
+}
+
+function getCreatedAtMs(answer: AnswerResponse) {
+  return new Date(answer.created_at).getTime();
+}
+
+function sortByCreatedAtDesc(a: AnswerResponse, b: AnswerResponse) {
+  return getCreatedAtMs(b) - getCreatedAtMs(a);
+}
+
+function getItemGroupKey(answer: AnswerResponse): string {
+  const detailId = answer.item_detail?.id;
+  return detailId !== undefined && detailId !== null
+    ? `detail-${detailId}`
+    : `item-${answer.item}`;
+}
+
+function groupAnswersByItem(answers: AnswerResponse[]) {
+  const groups = new Map<
+    string,
+    {
+      key: string;
+      itemId: number;
+      rowIndex: number | null;
+      answers: AnswerResponse[];
+    }
+  >();
+
+  for (const answer of answers) {
+    const key = getItemGroupKey(answer);
+    const existing = groups.get(key);
+
+    if (existing) {
+      existing.answers.push(answer);
+
+      if (
+        existing.rowIndex === null &&
+        answer.item_detail?.row_index !== undefined &&
+        answer.item_detail?.row_index !== null
+      ) {
+        existing.rowIndex = answer.item_detail.row_index;
+      }
+
+      continue;
+    }
+
+    groups.set(key, {
+      key,
+      itemId: answer.item_detail?.id ?? answer.item,
+      rowIndex: answer.item_detail?.row_index ?? null,
+      answers: [answer],
+    });
+  }
+
+  const grouped = Array.from(groups.values()).map((group) => ({
+    ...group,
+    answers: [...group.answers].sort(sortByCreatedAtDesc),
+  }));
+
+  return grouped.sort((a, b) => {
+    if (a.rowIndex !== null && b.rowIndex !== null) return a.rowIndex - b.rowIndex;
+    if (a.rowIndex !== null) return -1;
+    if (b.rowIndex !== null) return 1;
+    return a.itemId - b.itemId;
+  });
 }

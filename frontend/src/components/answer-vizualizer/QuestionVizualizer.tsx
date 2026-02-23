@@ -40,7 +40,7 @@ export default function QuestionVizualizer({
         ) : null}
       </div>
 
-      <div className="mt-2 rounded-md bg-gray-50 px-3 py-2 text-sm text-metal-700 break-words whitespace-pre-wrap">
+      <div className="mt-2 rounded-md bg-gray-50 px-3 py-2 text-sm text-metal-700 wrap-break-word whitespace-pre-wrap">
         {answer}
       </div>
     </article>

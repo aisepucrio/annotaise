@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs";
+import ContextVizualizer from "./ContextVizualizer";
 import QuestionVizualizer from "./QuestionVizualizer";
 import SectionVizualizer from "./SectionVizualizer";
 
@@ -6,30 +7,12 @@ const meta = {
   title: "AnswerVizualizer/SectionVizualizer",
   component: SectionVizualizer,
   tags: ["autodocs"],
-  argTypes: {
-    title: {
-      description:
-        "Título da seção (aceita texto simples ou conteúdo em React/Markdown renderizado externamente). Sem `sectionLabel`, é exibido como divisor interno centralizado com linhas laterais.",
-      control: false,
-    },
-    sectionLabel: {
-      description:
-        "Rótulo opcional exibido no cabeçalho superior (ex.: `Seção 1`). Quando presente, o `title` deixa de aparecer como divisor interno e passa a compor o cabeçalho superior acima da caixa com borda azul.",
-      control: false,
-    },
-    children: {
-      description:
-        "Conteúdo da seção, normalmente uma lista de `QuestionVizualizer` e/ou `ContextVizualizer`.",
-      control: false,
-    },
-  },
   parameters: {
     layout: "centered",
     docs: {
       description: {
         component:
-          "Container visual para agrupar perguntas/respostas. " +
-          "Suporta dois modos: divisor interno com `title` centralizado (linhas laterais) ou cabeçalho superior com `sectionLabel` + `title` acima da caixa com borda azul à esquerda.",
+          "Agrupa perguntas/contextos em uma seção, com título interno ou cabeçalho `sectionLabel + title`.",
       },
     },
   },
@@ -38,52 +21,33 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof SectionVizualizer>;
 
-export const Default: Story = {
-  parameters: {
-    docs: {
-      description: {
-        story:
-          "Uso básico sem `sectionLabel`: o `title` é renderizado como divisor interno centralizado, com linhas laterais, dentro da caixa da seção.",
-      },
-    },
-  },
+export const InternalTitle: Story = {
   render: () => (
-    <div className="w-[720px] rounded-xl border border-metal-100 bg-white p-5">
+    <div className="w-[760px] rounded-xl border border-metal-100 bg-white p-5">
       <SectionVizualizer title="Dados profissionais">
         <QuestionVizualizer
-          question="Qual é sua área principal de atuação?"
+          question="Área principal de atuação"
           answer="Ciência de dados aplicada a produtos digitais."
         />
-        <QuestionVizualizer
-          question="Há quanto tempo você atua na área?"
-          answer="5 anos"
-        />
+        <QuestionVizualizer question="Tempo de experiência" answer="5 anos" />
       </SectionVizualizer>
     </div>
   ),
 };
 
-export const WithSectionLabel: Story = {
-  parameters: {
-    docs: {
-      description: {
-        story:
-          "Uso com cabeçalho externo: `sectionLabel` e `title` aparecem juntos no topo, e o divisor interno do título não é exibido.",
-      },
-    },
-  },
+export const HeaderLabelAndMixedContent: Story = {
   render: () => (
-    <div className="w-[720px] rounded-xl border border-metal-100 bg-white p-5">
+    <div className="w-[760px] rounded-xl border border-metal-100 bg-white p-5">
       <SectionVizualizer
         sectionLabel="Seção 1"
-        title={
-          <span>
-            <strong>Contexto</strong> do usuário e experiência prévia
-          </span>
-        }
+        title={<span>Contexto e experiência prévia</span>}
       >
+        <ContextVizualizer
+          text="Contexto do item"
+          answer={<p>Texto de apoio para orientar a resposta.</p>}
+        />
         <QuestionVizualizer
-          question="Descreva brevemente seu contexto."
+          question="Descreva seu contexto"
           answer="Trabalho com revisão de texto e análise de qualidade."
         />
       </SectionVizualizer>

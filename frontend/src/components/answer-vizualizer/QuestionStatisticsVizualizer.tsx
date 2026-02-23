@@ -1,10 +1,9 @@
 "use client";
 
 import type { TranslateFn } from "@/i18n/types";
-import type {
-  BarItem,
-  QuestionSummary,
-} from "@/app/(inside)/labelings/create/[id]/tabs/answer/utils";
+import type { QuestionSummary } from "./SummaryVizualizer";
+
+type BarItem = { label: string; count: number };
 
 export type QuestionStatisticsVizualizerProps = {
   summary: QuestionSummary;
@@ -62,7 +61,7 @@ function TextStatView(props: QuestionStatisticsVizualizerProps) {
               style={{ backgroundColor: "var(--blueberry-700-25)" }}
             >
               <p
-                className="text-sm whitespace-pre-wrap break-words"
+                className="text-sm whitespace-pre-wrap wrap-break-word"
                 style={{ color: BLUEBERRY_COLORS.textStrong }}
               >
                 {response}
