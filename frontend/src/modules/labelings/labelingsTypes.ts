@@ -113,6 +113,13 @@ export type LabelingStructureSection = {
   elements: LabelingStructureElement[];
 };
 
+// Elemento simplificado usado em listagens de questões (ex.: configuração de decisão)
+export type LabelingElementSummary = {
+  id: number;
+  text: string | null;
+  order?: number | null;
+};
+
 // Payload para salvar a estrutura do labeling (formulário) vindo do frontend, com campos opcionais para facilitar a edição
 export type LabelingStructurePayload = {
   sections: SectionDTO[];

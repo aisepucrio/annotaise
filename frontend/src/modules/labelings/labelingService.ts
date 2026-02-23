@@ -8,6 +8,7 @@ import type {
   LabelingMembership,
   LabelingMembershipDashboard,
   LabelingDashboard,
+  LabelingElementSummary,
   AnswerStructure,
   AnswerPayload,
   AnswerResponse,
@@ -125,6 +126,18 @@ export async function fetchLabelingStructure(
     {
       params: { form_type: formType },
     },
+  );
+  return data;
+}
+
+// Busca elementos (questões/contextos) de um labeling com filtro por tipo
+export async function fetchLabelingElements(
+  labelingId: number,
+  params?: { type?: string },
+): Promise<LabelingElementSummary[]> {
+  const { data } = await api.get<LabelingElementSummary[]>(
+    `/labelings/${labelingId}/elements/`,
+    { params },
   );
   return data;
 }

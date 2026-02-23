@@ -4,10 +4,14 @@ import {
   fetchLabelingStructure,
   fetchLabelingMemberships,
   fetchLabelingAnswers,
+  fetchLabelingElements,
 } from "../labelingService";
 import { fetchProject } from "@/modules/projects/projectService";
 import { fetchUsers } from "@/modules/user/userService";
-import type { LabelingStructureSection } from "@/modules/labelings/labelingsTypes";
+import type {
+  LabelingStructureSection,
+  LabelingElementSummary,
+} from "@/modules/labelings/labelingsTypes";
 
 // Utilizada para buscar os dados básicos do labeling + projeto (para o header)
 export function useLabelingHeaderQuery(labelingId: number) {
@@ -119,5 +123,19 @@ export function useLabelingAnswersWithStructureQuery(labelingId: number) {
 
       return { answers, structure };
     },
+  });
+}
+
+// Utilizada para buscar perguntas elegíveis como questão decisiva
+export function useLabelingDecisionQuestionsQuery(labelingId: number) {
+  const enabled = !Number.isNaN(labelingId);
+
+  return useQuery({
+    queryKey: ["labelings", labelingId, "decision-questions"],
+    enabled,
+    queryFn: () =>
+      fetchLabelingElements(labelingId, { type: "multiple_choice" }),
+    select: (questions: LabelingElementSummary[]) =>
+      [...questions].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
   });
 }
