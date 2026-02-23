@@ -582,7 +582,7 @@ class Command(BaseCommand):
         section = LabelingSection.objects.create(
             labeling=labeling,
             form_type=LabelingSection.FormType.MAIN,
-            title="Sessão 1 — Primeira impressão",
+            title="1 - Primeira impressão",
             order=1,
         )
 
@@ -668,7 +668,7 @@ class Command(BaseCommand):
         section = LabelingSection.objects.create(
             labeling=labeling,
             form_type=LabelingSection.FormType.MAIN,
-            title="Sessão 2 — Revisão com evidências",
+            title="2 — Revisão com evidências",
             order=2,
         )
 
