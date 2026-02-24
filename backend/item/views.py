@@ -62,7 +62,10 @@ class ImportItemsCsvView(APIView):
             items.delete()
 
         serializer = UploadItemCSVSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid():
+            labeling = get_object_or_404(Labeling, id=labeling_id)
+            labeling.delete()
+            return Response(serializer.errors, status=400)
 
         labeling = get_object_or_404(Labeling, id=labeling_id)
 

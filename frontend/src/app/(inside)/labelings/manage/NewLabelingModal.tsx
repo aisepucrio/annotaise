@@ -542,10 +542,10 @@ export default function NewLabelingModal({
                   value: "auto",
                   label: t("labelings.upload.distributionStrategy.auto"),
                 },
-                {
-                  value: "specified",
-                  label: t("labelings.upload.distributionStrategy.specified"),
-                },
+                // {
+                //   value: "specified",
+                //   label: t("labelings.upload.distributionStrategy.specified"),
+                // },
                 {
                   value: "per_person",
                   label: t("labelings.upload.distributionStrategy.per_person"),
