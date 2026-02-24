@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs";
-import { Plus, Tag } from "lucide-react";
+import { Tag } from "lucide-react";
 import PageLayout from "./PageLayout";
 import GridItemCard from "@/components/grid/GridItemCard";
 import Button from "@/components/button/Button";
@@ -74,8 +74,6 @@ export const WithActionButton: StoryObj<typeof PageLayout> = {
     filterButtonText: "Filtrar",
     hasButton: true,
     buttonText: "Novo usuário",
-    buttonIcon: <Plus size={16} strokeWidth={3} />,
-    buttonAriaLabel: "Criar novo usuário",
     children: (
       <>
         <GridItemCard index={0}>
@@ -117,7 +115,6 @@ export const Loading: StoryObj<typeof PageLayout> = {
     searchPlaceholder: "Buscar rotulações...",
     filterButtonText: "Filtrar",
     isLoading: true,
-    loadingMessage: "Carregando rotulações...",
     children: null,
   },
   parameters: {
@@ -126,7 +123,7 @@ export const Loading: StoryObj<typeof PageLayout> = {
         story: `
 Estado de **carregamento**.
 
-Use \`isLoading={true}\` e forneça \`loadingMessage\` para exibir.
+Use \`isLoading={true}\` para exibir o loader.
         `,
       },
     },
@@ -143,8 +140,7 @@ export const Empty: StoryObj<typeof PageLayout> = {
     description: "Nenhum projeto encontrado",
     searchPlaceholder: "Buscar projetos...",
     filterButtonText: "Filtrar",
-    isEmpty: true,
-    emptyMessage: "Nenhum projeto disponível. Crie seu primeiro projeto!",
+    message: "Nenhum projeto disponível. Crie seu primeiro projeto!",
     children: null,
   },
   parameters: {
@@ -153,7 +149,7 @@ export const Empty: StoryObj<typeof PageLayout> = {
         story: `
 Estado **vazio** quando não há dados.
 
-Use \`isEmpty={true}\` e forneça \`emptyMessage\`.
+Use \`message\` para exibir um texto quando não houver dados.
         `,
       },
     },
@@ -170,13 +166,15 @@ export const WithInfoText: StoryObj<typeof PageLayout> = {
     description: "Veja suas tarefas de rotulação atribuídas",
     searchPlaceholder: "Buscar rotulações...",
     filterButtonText: "Filtrar",
-    infoText: "Nota: Somente administradores podem criar e editar rotulações.",
     children: (
       <>
         <GridItemCard index={0}>
           <div className="p-4 bg-white rounded-lg">
             <h3 className="font-semibold">Tarefa nº 1</h3>
             <p className="text-sm text-gray-600">50% concluída</p>
+            <p className="mt-2 text-xs text-amber-700">
+              Nota: Somente administradores podem criar e editar rotulações.
+            </p>
           </div>
         </GridItemCard>
       </>
@@ -253,11 +251,7 @@ export const Complete: StoryObj<typeof PageLayout> = {
     filterButtonText: "Filtrar",
     hasButton: true,
     buttonText: "Nova rotulação",
-    buttonIcon: <Plus size={16} strokeWidth={3} />,
-    buttonAriaLabel: "Criar nova rotulação",
     buttonDisabled: false,
-    infoText:
-      "Dica: Use filtros para encontrar rotulações específicas mais rápido.",
     minColumnWidth: "420px",
     children: (
       <>
@@ -299,7 +293,7 @@ Exemplo **completo** com todos os recursos:
 - Campo de busca com debounce automático
 - Botão de ação configurável
 - Grid responsiva com cards de conteúdo
-- Texto informativo adicional exibido abaixo da grade
+- Conteúdo customizado nos cards (incluindo mensagens auxiliares)
 
 Este é o layout padrão utilizado nas páginas de listagem do sistema.
         `,

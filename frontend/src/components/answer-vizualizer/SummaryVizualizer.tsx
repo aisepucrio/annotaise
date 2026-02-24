@@ -36,7 +36,7 @@ export type SummaryVizualizerProps = {
 
 export type SummaryQuestionCardProps = SummaryVizualizerProps;
 
-export default function SummaryVizualizer({
+export function SummaryQuestionCard({
   summary,
   numberFormatter,
   t,
@@ -106,3 +106,5 @@ export default function SummaryVizualizer({
     </article>
   );
 }
+
+export default SummaryQuestionCard;
