@@ -4,10 +4,15 @@ import type {
   AnswerResponse,
   LabelingStructureSection,
 } from "@/modules/labelings/labelingsTypes";
+import SectionVizualizer from "./SectionVizualizer";
 import SummaryVizualizer, {
   SummaryQuestionCard,
   type QuestionSummary,
 } from "./SummaryVizualizer";
+import {
+  buildSummarySections,
+  splitSummarySectionGroupTitle,
+} from "./summary-vizualizer-utils";
 
 const t: TranslateFn = (key, params) => {
   switch (key) {
@@ -183,7 +188,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "Renderiza o resumo completo por seções a partir de `answers + structureSections` e também exporta o card `SummaryQuestionCard`.",
+          "Renderiza um card individual de resumo de pergunta. Para listas por seção, use `SectionVizualizer` e `buildSummarySections`.",
       },
     },
   },
@@ -192,16 +197,57 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof SummaryVizualizer>;
 
+function SummarySectionsPreview({
+  showResponseCount = true,
+}: {
+  showResponseCount?: boolean;
+}) {
+  const numberFormatter = new Intl.NumberFormat("pt-BR", {
+    maximumFractionDigits: 2,
+  });
+  const sectionGroups = buildSummarySections({
+    answers,
+    structureSections,
+    t,
+    numberFormatter,
+  });
+
+  return (
+    <div>
+      {sectionGroups.map((sectionGroup, sectionIndex) => {
+        const parsed = splitSummarySectionGroupTitle(sectionGroup.title);
+
+        return (
+          <div
+            key={sectionGroup.title}
+            className={sectionIndex > 0 ? "mt-12" : undefined}
+          >
+            <SectionVizualizer
+              title={parsed.title}
+              sectionLabel={parsed.sectionLabel}
+            >
+              {sectionGroup.items.map((summary) => (
+                <SummaryVizualizer
+                  key={summary.key}
+                  summary={summary}
+                  numberFormatter={numberFormatter}
+                  t={t}
+                  showTypeLabel
+                  showResponseCount={showResponseCount}
+                />
+              ))}
+            </SectionVizualizer>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export const ListDefault: Story = {
   render: () => (
     <div className="w-[960px] rounded-xl border border-metal-100 bg-white p-5">
-      <SummaryVizualizer
-        answers={answers}
-        structureSections={structureSections}
-        t={t}
-        locale="pt-BR"
-        showTypeLabel
-      />
+      <SummarySectionsPreview />
     </div>
   ),
 };
@@ -209,14 +255,7 @@ export const ListDefault: Story = {
 export const ItemModeWithoutResponseCount: Story = {
   render: () => (
     <div className="w-[960px] rounded-xl border border-metal-100 bg-white p-5">
-      <SummaryVizualizer
-        answers={answers}
-        structureSections={structureSections}
-        t={t}
-        locale="pt-BR"
-        showTypeLabel
-        showResponseCount={false}
-      />
+      <SummarySectionsPreview showResponseCount={false} />
     </div>
   ),
 };
@@ -224,13 +263,7 @@ export const ItemModeWithoutResponseCount: Story = {
 export const EmptyState: Story = {
   render: () => (
     <div className="w-[960px] rounded-xl border border-metal-100 bg-white p-5">
-      <SummaryVizualizer
-        answers={[]}
-        structureSections={structureSections}
-        t={t}
-        locale="pt-BR"
-        emptyState={<p className="text-sm text-gray-600">Sem respostas para resumir.</p>}
-      />
+      <p className="text-sm text-gray-600">Sem respostas para resumir.</p>
     </div>
   ),
 };
@@ -239,7 +272,31 @@ export const QuestionCardPreview: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Preview isolado do card exportado `SummaryQuestionCard`.",
+        story: "Preview isolado do card via default export `SummaryVizualizer`.",
+      },
+    },
+  },
+  render: () => (
+    <div className="w-[860px] rounded-xl border border-metal-100 bg-white p-5">
+      <SummaryVizualizer
+        summary={sampleCardSummary}
+        numberFormatter={new Intl.NumberFormat("pt-BR", {
+          maximumFractionDigits: 2,
+        })}
+        t={t}
+        showSectionLabel
+        showTypeLabel
+        showResponseCount
+      />
+    </div>
+  ),
+};
+
+export const QuestionCardPreviewNamedExport: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "Mesmo preview usando o named export `SummaryQuestionCard`.",
       },
     },
   },
