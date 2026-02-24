@@ -406,7 +406,6 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.edit.placeholderProject": "Selecione um projeto",
     "labelings.create.edit.labelStartDate": "Data inicial",
     "labelings.create.edit.labelFinalDate": "Data final",
-    "labelings.create.edit.labelStatus": "Status",
     "labelings.create.edit.updateSuccess": "Rotulação atualizada com sucesso.",
     "labelings.create.edit.updateError":
       "Não foi possível atualizar a rotulação.",
@@ -1057,7 +1056,6 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.edit.placeholderProject": "Select a project",
     "labelings.create.edit.labelStartDate": "Start date",
     "labelings.create.edit.labelFinalDate": "End date",
-    "labelings.create.edit.labelStatus": "Status",
     "labelings.create.edit.updateSuccess": "Labeling updated successfully.",
     "labelings.create.edit.updateError": "Unable to update the labeling.",
     "labelings.create.errors.invalidId": "Invalid labeling ID.",

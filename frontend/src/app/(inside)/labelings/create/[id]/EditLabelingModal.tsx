@@ -22,13 +22,6 @@ type EditLabelingModalProps = {
   isSaving?: boolean;
 };
 
-const STATUS_OPTIONS: Labeling["status"][] = [
-  "draft",
-  "active",
-  "archived",
-  "finished",
-];
-
 export default function EditLabelingModal({
   open,
   labeling,
@@ -41,7 +34,6 @@ export default function EditLabelingModal({
 
   // Estados do formulário
   const [title, setTitle] = useState("");
-  const [status, setStatus] = useState<Labeling["status"]>("draft");
   const [startDate, setStartDate] = useState("");
   const [finalDate, setFinalDate] = useState("");
   const [projectId, setProjectId] = useState<number | null>(null);
@@ -51,7 +43,6 @@ export default function EditLabelingModal({
     if (!labeling) return;
 
     setTitle(labeling.title);
-    setStatus(labeling.status);
     setStartDate(labeling.start_date ?? "");
     setFinalDate(labeling.final_date ?? "");
     setProjectId(labeling.project ?? null);
@@ -63,7 +54,6 @@ export default function EditLabelingModal({
 
     onSave({
       title: title.trim() || labeling.title,
-      status,
       start_date: startDate || undefined,
       final_date: finalDate || undefined,
       project: projectId ?? labeling.project,
@@ -76,11 +66,6 @@ export default function EditLabelingModal({
   const projectOptions = project
     ? [{ value: String(project.id), label: project.name }]
     : [];
-
-  const statusOptions = STATUS_OPTIONS.map((s) => ({
-    value: s,
-    label: t(`status.${s}`),
-  }));
 
   return (
     <Modal
@@ -129,15 +114,6 @@ export default function EditLabelingModal({
                 onChange={(e) => setFinalDate(e.target.value)}
               />
             </div>
-
-            {/* Campo: Status */}
-            <Select
-              disabled
-              label={t("labelings.create.edit.labelStatus")}
-              value={status}
-              onChange={(e) => setStatus(e.target.value as Labeling["status"])}
-              options={statusOptions}
-            />
           </div>
 
           {/* Botao de salvar */}

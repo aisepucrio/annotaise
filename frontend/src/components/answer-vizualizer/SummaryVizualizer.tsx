@@ -1,20 +1,10 @@
 "use client";
 
-import { type ReactNode, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { TranslateFn } from "@/i18n/types";
-import type {
-  AnswerResponse,
-  LabelingStructureSection,
-} from "@/modules/labelings/labelingsTypes";
-import SectionVizualizer from "@/components/answer-vizualizer/SectionVizualizer";
 import QuestionStatisticsVizualizer from "./QuestionStatisticsVizualizer";
-import {
-  buildSummarySections,
-  splitSummarySectionGroupTitle,
-  type QuestionSummary,
-} from "./summary-vizualizer-utils";
+import type { QuestionSummary } from "./summary-vizualizer-utils";
 
 export type {
   BarItem,
@@ -36,16 +26,6 @@ function resolveQuestionTypeLabel(type: string, t: TranslateFn): string {
 }
 
 export type SummaryVizualizerProps = {
-  answers: AnswerResponse[];
-  structureSections: LabelingStructureSection[];
-  t: TranslateFn;
-  locale: string;
-  emptyState?: ReactNode;
-  showTypeLabel?: boolean;
-  showResponseCount?: boolean;
-};
-
-export type SummaryQuestionCardProps = {
   summary: QuestionSummary;
   numberFormatter: Intl.NumberFormat;
   t: TranslateFn;
@@ -54,63 +34,9 @@ export type SummaryQuestionCardProps = {
   showResponseCount?: boolean;
 };
 
+export type SummaryQuestionCardProps = SummaryVizualizerProps;
+
 export default function SummaryVizualizer({
-  answers,
-  structureSections,
-  t,
-  locale,
-  emptyState,
-  showTypeLabel = false,
-  showResponseCount = true,
-}: SummaryVizualizerProps) {
-  const numberFormatter = useMemo(
-    () => new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }),
-    [locale],
-  );
-
-  const sectionGroups = useMemo(
-    () =>
-      buildSummarySections({
-        answers,
-        structureSections,
-        t,
-        numberFormatter,
-      }),
-    [answers, numberFormatter, structureSections, t],
-  );
-
-  if (sectionGroups.length === 0) {
-    return emptyState ? <>{emptyState}</> : null;
-  }
-
-  return (
-    <div>
-      {sectionGroups.map((sectionGroup, sectionIndex) => (
-        <SummarySectionBlock
-          key={sectionGroup.title}
-          sectionTitle={sectionGroup.title}
-          className={sectionIndex > 0 ? "mt-12" : undefined}
-        >
-          <div className="divide-y divide-slate-200">
-            {sectionGroup.items.map((summary) => (
-              <div key={summary.key} className="py-3 first:pt-0 last:pb-0">
-                <SummaryQuestionCard
-                  summary={summary}
-                  numberFormatter={numberFormatter}
-                  t={t}
-                  showTypeLabel={showTypeLabel}
-                  showResponseCount={showResponseCount}
-                />
-              </div>
-            ))}
-          </div>
-        </SummarySectionBlock>
-      ))}
-    </div>
-  );
-}
-
-export function SummaryQuestionCard({
   summary,
   numberFormatter,
   t,
@@ -156,8 +82,13 @@ export function SummaryQuestionCard({
             <div className="shrink-0 text-right text-xs text-gray-500">
               <div className="flex flex-wrap justify-end gap-2">
                 {metadataItems.map((item, index) => (
-                  <span key={`${index}-${item}`} className="flex items-center gap-2">
-                    {index > 0 ? <span className="text-gray-300">•</span> : null}
+                  <span
+                    key={`${index}-${item}`}
+                    className="flex items-center gap-2"
+                  >
+                    {index > 0 ? (
+                      <span className="text-gray-300">•</span>
+                    ) : null}
                     <span>{item}</span>
                   </span>
                 ))}
@@ -173,25 +104,5 @@ export function SummaryQuestionCard({
         />
       </div>
     </article>
-  );
-}
-
-function SummarySectionBlock({
-  sectionTitle,
-  className,
-  children,
-}: {
-  sectionTitle: string;
-  className?: string;
-  children: ReactNode;
-}) {
-  const parsed = splitSummarySectionGroupTitle(sectionTitle);
-
-  return (
-    <div className={className}>
-      <SectionVizualizer title={parsed.title} sectionLabel={parsed.sectionLabel}>
-        {children}
-      </SectionVizualizer>
-    </div>
   );
 }
