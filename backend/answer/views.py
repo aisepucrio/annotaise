@@ -162,9 +162,7 @@ class AnswerViewset(viewsets.ModelViewSet):
                 return Response(serializer.data, status=201)
 
             else:
-
                 obj = Item.objects.select_related('labeling').get(id=item_id)
-                
 
                 if obj.labeling.users_per_item <= Answer.objects.filter(item__id=item_id).count():
                     obj.status = 'finished'
