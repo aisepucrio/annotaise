@@ -5,7 +5,9 @@ import type { LabelingStructureElement } from "@/modules/labelings/labelingsType
 import { formatPayloadValue } from "./answer_utils";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import hljs from "highlight.js";
+import "highlight.js/styles/github.css";
 
 type ContextRowProps = {
   element: LabelingStructureElement;
@@ -92,6 +94,24 @@ function ImageContext({
   );
 }
 
+function CodeContext({ value }: { value: string }) {
+  const codeRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (codeRef.current) {
+      codeRef.current.removeAttribute("data-highlighted");
+      codeRef.current.textContent = value;
+      hljs.highlightElement(codeRef.current);
+    }
+  }, [value]);
+
+  return (
+    <pre className="rounded-md overflow-x-auto text-sm m-0">
+      <code ref={codeRef} />
+    </pre>
+  );
+}
+
 export default function ContextRow({ element, payload, t }: ContextRowProps) {
   const value = element.column_name ? payload[element.column_name] : undefined;
   const hasValue = value !== undefined && value !== null;
@@ -112,15 +132,14 @@ export default function ContextRow({ element, payload, t }: ContextRowProps) {
       );
     }
 
-    const markdownValue =
-      element.context_type === "code"
-        ? `\`\`\`\n${formattedValue}\n\`\`\``
-        : formattedValue;
+    if (element.context_type === "code") {
+      return <CodeContext value={formattedValue} />;
+    }
 
     return (
       <div className="prose prose-sm max-w-none text-gray-800">
         <ReactMarkdown remarkPlugins={[remarkGfm]}>
-          {markdownValue}
+          {formattedValue}
         </ReactMarkdown>
       </div>
     );
