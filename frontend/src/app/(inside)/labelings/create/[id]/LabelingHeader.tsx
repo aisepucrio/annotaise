@@ -1,5 +1,5 @@
 import type { RefObject } from "react";
-import { ArrowLeft, Edit, Calendar, Save } from "lucide-react";
+import { ArrowLeft, Download, Edit, Calendar, Save } from "lucide-react";
 import Button from "@/components/button/Button";
 import DeleteIconButton from "@/components/button/DeleteIconButton";
 import { useTranslations } from "@/i18n/use-translations";
@@ -27,6 +27,8 @@ interface LabelingHeaderProps {
   showSaveButton?: boolean;
   onSave?: () => void;
   isSaving?: boolean;
+  onDownloadCsv?: () => void;
+  isDownloadingCsv?: boolean;
 }
 
 function formatDate(dateStr: string | null, locale: string) {
@@ -49,6 +51,8 @@ export default function LabelingHeader({
   showSaveButton = false,
   onSave,
   isSaving = false,
+  onDownloadCsv,
+  isDownloadingCsv = false,
 }: LabelingHeaderProps) {
   const { t, locale } = useTranslations();
 
@@ -129,8 +133,23 @@ export default function LabelingHeader({
           </button>
         </div>
 
-        {/* Direita: botão de salvar (opcional) e botão de excluir */}
+        {/*botão de salvar (opcional) e botão de excluir */}
         <div className="flex items-center gap-2">
+          {onDownloadCsv && (
+            <Button
+              variant="white"
+              fill={false}
+              onClick={onDownloadCsv}
+              disabled={isDownloadingCsv || isLoading}
+              icon={<Download size={20} />}
+              className="bg-white/20 hover:bg-white/30"
+              ariaLabel={t("labelings.create.header.downloadCsvAria")}
+            >
+              {isDownloadingCsv
+                ? t("labelings.create.header.downloadingCsv")
+                : t("labelings.create.header.downloadCsv")}
+            </Button>
+          )}
           {showSaveButton && onSave && (
             <Button
               variant="white"

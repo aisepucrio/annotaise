@@ -303,6 +303,10 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.header.usersPerItem": "Usuários por Rotulação: {{count}}",
     "labelings.create.header.decisionLabel": "Decisão: {{value}}",
     "labelings.create.header.editAria": "Editar informações da rotulação",
+    "labelings.create.header.downloadCsv": "Download CSV",
+    "labelings.create.header.downloadCsvAria":
+      "Baixar CSV importado da rotulação",
+    "labelings.create.header.downloadingCsv": "Baixando...",
     "labelings.create.header.deleting": "Deletando...",
     "labelings.create.header.deleteButton": "Excluir rotulação",
     "labelings.create.actions.addQuestion": "Adicionar pergunta",
@@ -427,12 +431,16 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.errors.deleteLabeling":
       "Não foi possível excluir a rotulação.",
     "labelings.create.errors.saveGuide": "Não foi possível salvar o guia.",
+    "labelings.create.header.downloadCsvError":
+      "Não foi possível baixar o CSV importado.",
     "labelings.create.success.formSaved":
       "Formulário da rotulação salvo com sucesso.",
     "labelings.create.success.guideSaved": "Guia atualizado com sucesso.",
     "labelings.create.success.memberAdded": "Membro adicionado com sucesso.",
     "labelings.create.success.memberRemoved": "Membro removido com sucesso.",
     "labelings.create.success.deleted": "Rotulação excluída com sucesso.",
+    "labelings.create.header.downloadCsvSuccess":
+      "CSV importado baixado com sucesso.",
     "labelings.create.confirmRemoveMember": "Remover este membro da rotulação?",
     "labelings.create.userFallback": "Usuário #{{id}}",
     "labelings.create.delete.title": "Excluir rotulação",
@@ -957,6 +965,10 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.header.usersPerItem": "Users per labeling: {{count}}",
     "labelings.create.header.decisionLabel": "Decision: {{value}}",
     "labelings.create.header.editAria": "Edit labeling information",
+    "labelings.create.header.downloadCsv": "Download CSV",
+    "labelings.create.header.downloadCsvAria":
+      "Download the imported labeling CSV",
+    "labelings.create.header.downloadingCsv": "Downloading...",
     "labelings.create.header.deleting": "Deleting...",
     "labelings.create.header.deleteButton": "Delete labeling",
     "labelings.create.actions.addQuestion": "Add question",
@@ -1071,11 +1083,15 @@ export const translations: Record<Language, TranslationMap> = {
       "Invalid form structure. Check for empty fields or errors.",
     "labelings.create.errors.deleteLabeling": "Unable to delete the labeling.",
     "labelings.create.errors.saveGuide": "Unable to save the guide.",
+    "labelings.create.header.downloadCsvError":
+      "Unable to download the imported CSV.",
     "labelings.create.success.formSaved": "Labeling form saved successfully.",
     "labelings.create.success.guideSaved": "Guide updated successfully.",
     "labelings.create.success.memberAdded": "Member added successfully.",
     "labelings.create.success.memberRemoved": "Member removed successfully.",
     "labelings.create.success.deleted": "Labeling deleted successfully.",
+    "labelings.create.header.downloadCsvSuccess":
+      "Imported CSV downloaded successfully.",
     "labelings.create.confirmRemoveMember":
       "Remove this member from the labeling?",
     "labelings.create.userFallback": "User #{{id}}",

@@ -6,6 +6,9 @@ from user.permissions import IsAdminAccount
 from .permissions import CanEditProjectPermission
 
 from datetime import timedelta
+import csv
+import io
+import json
 import pandas as pd
 
 from rest_framework.views import APIView
@@ -19,6 +22,8 @@ from django.db.models import Count, Exists, F, OuterRef, Value
 from django.db.models.functions import Coalesce
 from django.db import transaction
 from django.utils import timezone
+from django.http import HttpResponse
+from django.utils.text import slugify
 
 
 
@@ -107,6 +112,57 @@ class ImportItemsCsvView(APIView):
         Item.objects.bulk_create(items)
         
         return Response({"detail": "Arquivo recebido"}, status=200)
+
+
+class ExportImportedItemsCsvView(APIView):
+    permission_classes = [IsAdminAccount, CanEditProjectPermission]
+
+    @extend_schema(
+        responses={
+            200: OpenApiResponse(description="CSV original reconstruído com sucesso"),
+            400: OpenApiResponse(description="Rotulação sem colunas importadas para exportação"),
+        },
+    )
+    def get(self, request, labeling_id):
+        labeling = get_object_or_404(Labeling, id=labeling_id)
+        columns = labeling.column_names if isinstance(labeling.column_names, list) else []
+
+        if not columns:
+            return Response(
+                {
+                    "detail": "Esta rotulação não possui colunas importadas para exportação.",
+                    "code": "IMPORTED_CSV_UNAVAILABLE",
+                },
+                status=400,
+            )
+
+        items = Item.objects.filter(labeling=labeling).order_by("row_index", "id")
+        buffer = io.StringIO(newline="")
+        writer = csv.writer(buffer)
+        writer.writerow(columns)
+
+        for item in items:
+            payload = item.payload or {}
+            row = []
+            for column in columns:
+                value = payload.get(column, "")
+                if value is None:
+                    row.append("")
+                elif isinstance(value, (dict, list)):
+                    row.append(json.dumps(value, ensure_ascii=False))
+                else:
+                    row.append(value)
+            writer.writerow(row)
+
+        filename_base = slugify(labeling.title) or f"labeling_{labeling.id}"
+        response = HttpResponse(
+            buffer.getvalue(),
+            content_type="text/csv; charset=utf-8",
+        )
+        response["Content-Disposition"] = (
+            f'attachment; filename="{filename_base}_imported.csv"'
+        )
+        return response
     
 
 class NextItemView(RetrieveAPIView):
