@@ -27,6 +27,7 @@ import {
 } from "@/modules/labelings/create/labelingManagerMutations";
 import { getApiErrorMessage } from "@/lib/getApiErrorMessage";
 import { useTranslations } from "@/i18n/use-translations";
+import { exportImportedLabelingCsv } from "@/modules/labelings/labelingService";
 import type { LabelingPayload } from "@/modules/labelings/labelingsTypes";
 import type {
   LabelingMembershipRole,
@@ -44,6 +45,7 @@ export default function LabelingCreationPage() {
   const [activeTab, setActiveTab] = useState<string>("form");
   const [isEditInfoOpen, setIsEditInfoOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isDownloadingCsv, setIsDownloadingCsv] = useState(false);
   const [guideText, setGuideText] = useState<string>("");
   const [newMemberId, setNewMemberId] = useState<string>("");
   const [newMemberRole, setNewMemberRole] =
@@ -137,6 +139,28 @@ export default function LabelingCreationPage() {
       },
     );
   };
+
+  const handleDownloadCsv = useCallback(async () => {
+    if (Number.isNaN(labelingId)) return;
+
+    setIsDownloadingCsv(true);
+    try {
+      const { blob, filename } = await exportImportedLabelingCsv(labelingId);
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = filename ?? `labeling_${labelingId}_imported.csv`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      toast.success(t("labelings.create.header.downloadCsvSuccess"));
+    } catch (error) {
+      toast.error(
+        getApiErrorMessage(error, t("labelings.create.header.downloadCsvError")),
+      );
+    } finally {
+      setIsDownloadingCsv(false);
+    }
+  }, [labelingId, t]);
 
   // Handler de adição de membro
   const handleAddMember = () => {
@@ -338,6 +362,8 @@ export default function LabelingCreationPage() {
         showSaveButton={showSaveButton}
         onSave={handleHeaderSave}
         isSaving={isSaving}
+        onDownloadCsv={() => void handleDownloadCsv()}
+        isDownloadingCsv={isDownloadingCsv}
       />
 
       {/* Renderização do componente */}

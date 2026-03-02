@@ -114,6 +114,29 @@ export async function exportLabelingAnswersCsv(
   return { blob: response.data, filename };
 }
 
+export async function exportImportedLabelingCsv(
+  labelingId: number,
+): Promise<{ blob: Blob; filename?: string }> {
+  const response = await api.get<Blob>(
+    `/labelings/${labelingId}/imported-items-csv/`,
+    {
+      responseType: "blob",
+    },
+  );
+
+  const disposition = response.headers["content-disposition"];
+  let filename: string | undefined;
+
+  if (typeof disposition === "string") {
+    const match = disposition.match(/filename=\"?([^\";]+)\"?/i);
+    if (match?.[1]) {
+      filename = match[1];
+    }
+  }
+
+  return { blob: response.data, filename };
+}
+
 // Funções relacionadas a estrutura do labeling
 
 // Busca a estrutura de seções e questões de um labeling
