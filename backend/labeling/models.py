@@ -155,6 +155,9 @@ class MultipleChoiceItem(models.Model):
     value = models.BooleanField(default=False)
     order = models.PositiveIntegerField(default=1)
 
+    optional_section = models.ForeignKey(
+        LabelingSection, on_delete=models.SET_NULL, null=True, blank=True, related_name="multiple_choice_item_sections")
+
     class Meta:
         ordering = ["labeling_element_id", "order", "id"]
         constraints = [

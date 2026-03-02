@@ -11,7 +11,6 @@ from .serializers import CustomTokenObtainPairSerializer
 from rest_framework.permissions import AllowAny
 
 class RegisterAPIView(APIView):
-
     permission_classes = [AllowAny]
     @extend_schema(
         request=CustomUserCreateSerializer,         # corpo esperado
