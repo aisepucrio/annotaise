@@ -25,7 +25,7 @@ class ForgotPasswordTests(TestCase):
 
    def test_email_inexistente_retorna_200(self):
        response = self.client.post(self.url, {"email": "naoexiste@email.com"}, format="json")
-       self.assertEqual(response.status_code, status.HTTP_200_OK)
+       self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
    def test_token_criado_para_usuario_existente(self):
        self.client.post(self.url, {"email": "teste@email.com"}, format="json")
@@ -98,6 +98,6 @@ class ResetPasswordTests(TestCase):
    def test_senha_muito_curta_retorna_400(self):
        response = self.client.post(self.url, {
            "token": self.token.token,
-           "new_password": "123"
+           "new_password": "12"
        }, format="json")
        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

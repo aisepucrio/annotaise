@@ -21,7 +21,7 @@ class Labeling(models.Model):
     status = models.CharField(choices=Status.choices,default="draft")
     project = models.ForeignKey("project.Project", on_delete=models.CASCADE, related_name="labelings", db_index=True)
     created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING, related_name="labelings_created"
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, related_name="labelings_created", null=True
     )
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)

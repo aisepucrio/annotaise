@@ -9,12 +9,14 @@ import Modal from "@/components/modal/Modal";
 import Input from "@/components/form/Input";
 import Select from "@/components/form/Select";
 import Button from "@/components/button/Button";
+import ConfirmDeleteModal from "@/components/ConfirmDeleteModal";
 
 type EditUserModalProps = {
   open: boolean;
   user: User | null;
   onClose: () => void;
   onSubmit: (payload: UpdateUserPayload) => Promise<void>;
+  onDelete: () => Promise<void>;
 };
 
 export default function EditUserModal({
@@ -22,6 +24,7 @@ export default function EditUserModal({
   user,
   onClose,
   onSubmit,
+  onDelete,
 }: EditUserModalProps) {
   // i18n
   const { t } = useTranslations();
@@ -35,6 +38,8 @@ export default function EditUserModal({
     "standard" | "editor" | "admin"
   >("standard");
   const [submitting, setSubmitting] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // Opções do select
   const accountOptions = useMemo(
@@ -54,6 +59,8 @@ export default function EditUserModal({
       setPassword("");
       setAccountType("standard");
       setSubmitting(false);
+      setConfirmDeleteOpen(false);
+      setDeleting(false);
       return;
     }
 
@@ -104,82 +111,131 @@ export default function EditUserModal({
     }
   };
 
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await onDelete();
+      toast.success(t("users.edit.deleteSuccess"));
+      setConfirmDeleteOpen(false);
+      onClose();
+    } catch (err) {
+      const message =
+        (err as { response?: { data?: { detail?: string } } })?.response?.data
+          ?.detail ??
+        (err instanceof Error ? err.message : t("users.edit.deleteError"));
+      toast.error(message);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (!open || !user) return null;
 
+  const userName =
+    `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() || user.email;
+
   return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title={t("users.edit.title")}
-      description={t("users.edit.description")}
-      maxWidth="lg"
-    >
-      {/* Form */}
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Email */}
-        <Input
-          id="edit-email"
-          label={t("users.edit.emailLabel")}
-          type="email"
-          placeholder={t("users.edit.emailPlaceholder")}
-          value={email}
-          onChange={(e) => setEmail((e.target as HTMLInputElement).value)}
-          required
-        />
-
-        {/* Nome */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+    <>
+      <Modal
+        open={open}
+        onClose={onClose}
+        title={t("users.edit.title")}
+        description={t("users.edit.description")}
+        maxWidth="lg"
+      >
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Email */}
           <Input
-            id="edit-first"
-            label={t("users.edit.firstNameLabel")}
-            placeholder={t("users.edit.firstNamePlaceholder")}
-            value={firstName}
-            onChange={(e) => setFirstName((e.target as HTMLInputElement).value)}
+            id="edit-email"
+            label={t("users.edit.emailLabel")}
+            type="email"
+            placeholder={t("users.edit.emailPlaceholder")}
+            value={email}
+            onChange={(e) => setEmail((e.target as HTMLInputElement).value)}
+            required
           />
-          <Input
-            id="edit-last"
-            label={t("users.edit.lastNameLabel")}
-            placeholder={t("users.edit.lastNamePlaceholder")}
-            value={lastName}
-            onChange={(e) => setLastName((e.target as HTMLInputElement).value)}
+
+          {/* Nome */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <Input
+              id="edit-first"
+              label={t("users.edit.firstNameLabel")}
+              placeholder={t("users.edit.firstNamePlaceholder")}
+              value={firstName}
+              onChange={(e) =>
+                setFirstName((e.target as HTMLInputElement).value)
+              }
+            />
+            <Input
+              id="edit-last"
+              label={t("users.edit.lastNameLabel")}
+              placeholder={t("users.edit.lastNamePlaceholder")}
+              value={lastName}
+              onChange={(e) =>
+                setLastName((e.target as HTMLInputElement).value)
+              }
+            />
+          </div>
+
+          {/* Senha */}
+          <div>
+            <Input
+              id="edit-password"
+              label={t("users.edit.passwordLabel")}
+              type="password"
+              placeholder={t("users.edit.passwordPlaceholder")}
+              value={password}
+              onChange={(e) =>
+                setPassword((e.target as HTMLInputElement).value)
+              }
+            />
+          </div>
+
+          {/* Tipo de conta */}
+          <Select
+            id="edit-account"
+            label={t("users.edit.accountTypeLabel")}
+            options={accountOptions}
+            value={accountType}
+            onChange={(e) =>
+              setAccountType(
+                (e.target as HTMLSelectElement).value as
+                  | "standard"
+                  | "editor"
+                  | "admin",
+              )
+            }
           />
-        </div>
 
-        {/* Senha */}
-        <div>
-          <Input
-            id="edit-password"
-            label={t("users.edit.passwordLabel")}
-            type="password"
-            placeholder={t("users.edit.passwordPlaceholder")}
-            value={password}
-            onChange={(e) => setPassword((e.target as HTMLInputElement).value)}
-          />
-        </div>
+          {/* Ações */}
+          <div className="flex items-center justify-between gap-3 pt-2">
+            <Button
+              type="button"
+              variant="red"
+              onClick={() => setConfirmDeleteOpen(true)}
+              disabled={submitting}
+            >
+              {t("users.edit.deleteButton")}
+            </Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting
+                ? t("users.edit.submitting")
+                : t("users.edit.submit")}
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
-        {/* Tipo de conta */}
-        <Select
-          id="edit-account"
-          label={t("users.edit.accountTypeLabel")}
-          options={accountOptions}
-          value={accountType}
-          onChange={(e) =>
-            setAccountType(
-              (e.target as HTMLSelectElement).value as
-                | "standard"
-                | "editor"
-                | "admin",
-            )
-          }
-        />
-
-        {/* Ação */}
-        <div className="flex items-center justify-end gap-3 pt-2 w-[70%] mx-auto">
-          <Button type="submit" disabled={submitting}>
-            {submitting ? t("users.edit.submitting") : t("users.edit.submit")}
-          </Button>
-        </div>
-      </form>
-    </Modal>
+      <ConfirmDeleteModal
+        open={confirmDeleteOpen}
+        onClose={() => setConfirmDeleteOpen(false)}
+        onConfirm={handleDelete}
+        isDeleting={deleting}
+        title={t("users.edit.deleteTitle")}
+        itemName={userName}
+        description={t("users.edit.deleteDescription")}
+      />
+    </>
   );
 }

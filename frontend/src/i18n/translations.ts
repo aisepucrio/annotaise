@@ -543,6 +543,11 @@ export const translations: Record<Language, TranslationMap> = {
     "users.edit.submitting": "Salvando...",
     "users.edit.success": "Usuário atualizado com sucesso.",
     "users.edit.error": "Não foi possível atualizar o usuário.",
+    "users.edit.deleteButton": "Excluir usuário",
+    "users.edit.deleteTitle": "Excluir usuário",
+    "users.edit.deleteDescription": "Esta ação é permanente e não pode ser desfeita. Todos os dados do usuário serão removidos.",
+    "users.edit.deleteSuccess": "Usuário excluído com sucesso.",
+    "users.edit.deleteError": "Não foi possível excluir o usuário.",
     "projects.new.title": "Novo Projeto",
     "projects.new.description":
       "Preencha as informações abaixo para criar um novo projeto.",
@@ -1186,6 +1191,11 @@ export const translations: Record<Language, TranslationMap> = {
     "users.edit.submitting": "Saving...",
     "users.edit.success": "User updated successfully.",
     "users.edit.error": "Unable to update the user.",
+    "users.edit.deleteButton": "Delete user",
+    "users.edit.deleteTitle": "Delete user",
+    "users.edit.deleteDescription": "This action is permanent and cannot be undone. All user data will be removed.",
+    "users.edit.deleteSuccess": "User deleted successfully.",
+    "users.edit.deleteError": "Unable to delete the user.",
     "projects.new.title": "New Project",
     "projects.new.description":
       "Fill in the information below to create a new project.",

@@ -58,7 +58,7 @@ class AdminUserViewSet(viewsets.ModelViewSet):
 
         return super().partial_update(request, *args, **kwargs)
 
-    def delete(self, request, *args, **kwargs):
+    def destroy(self, request, *args, **kwargs):
         target_user = self.get_object()
 
         if target_user.account_type == "admin" and target_user != request.user:
@@ -66,7 +66,7 @@ class AdminUserViewSet(viewsets.ModelViewSet):
             if not IsMasterAdminAccount().has_permission(request, self):
                 raise PermissionDenied("Apenas um master admin pode deletar outro admin.")
 
-        return super().delete(request, *args, **kwargs)
+        return super().destroy(request, *args, **kwargs)
 
 
     def get_serializer_class(self):

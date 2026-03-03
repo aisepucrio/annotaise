@@ -54,3 +54,8 @@ export async function updateUser(
   });
   return data;
 }
+
+// Deleta um usuário
+export async function deleteUser(id: number): Promise<void> {
+  await api.delete(`/users/${id}/`);
+}
