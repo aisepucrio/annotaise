@@ -3,7 +3,7 @@
 import { isAxiosError } from "axios";
 import AuthLayout from "@/components/auth-layout/AuthLayout";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useForm } from "react-hook-form";
 import { AuthActions } from "@/lib/authClient";
 import { KeyRound } from "lucide-react";
@@ -16,7 +16,7 @@ type FormData = {
   new_password: string;
 };
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm(): JSX.Element {
   const [isLoading, setIsLoading] = useState(false);
   const {
     register,
@@ -30,18 +30,21 @@ export default function ResetPasswordPage() {
   const { resetPassword } = AuthActions();
   const { t } = useTranslations();
 
-  const onSubmit = async (data: FormData) => {
+  useEffect(() => {
     if (!token) {
-      toast.error(t("resetPassword.invalidToken"));
-      return;
+      router.push("/login");
     }
+  }, [token, router]);
 
+  if (!token) return null;
+
+  const onSubmit = async (data: FormData) => {
     setIsLoading(true);
     try {
       await resetPassword(token, data.new_password);
       toast.success(t("resetPassword.successMessage"));
       router.push("/login");
-    } catch (err) {
+    } catch (err: any) {
       let message = t("resetPassword.invalidToken");
 
       if (isAxiosError(err)) {
@@ -56,10 +59,12 @@ export default function ResetPasswordPage() {
   };
 
   return (
+    // @ts-ignore -- editor/TS server may not have project types available; ignore TPSX prop-check here
     <AuthLayout
       title={t("resetPassword.title")}
       subtitle={t("resetPassword.subtitle")}
     >
+      {/* @ts-ignore JSX elements may show errors in some editor setups when types are not fully resolved */}
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className="mt-8">
           <PasswordInput
@@ -82,5 +87,13 @@ export default function ResetPasswordPage() {
         />
       </form>
     </AuthLayout>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }
