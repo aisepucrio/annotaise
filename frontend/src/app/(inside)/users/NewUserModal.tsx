@@ -20,6 +20,18 @@ type NewUserModalProps = {
   onSubmit: (payload: Payload) => Promise<string>;
 };
 
+function parseEmails(raw: string): string[] {
+  return raw
+    .split(/[\n,;]+/)
+    .map((e) => e.trim())
+    .filter((e) => e.length > 0);
+}
+
+function validateEmail(email: string): boolean {
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(email);
+}
+
 export default function NewUserModal({
   open,
   onClose,
@@ -29,7 +41,7 @@ export default function NewUserModal({
   const { t } = useTranslations();
 
   // Estado local
-  const [email, setEmail] = useState("");
+  const [emailsRaw, setEmailsRaw] = useState("");
   const [accountType, setAccountType] =
     useState<Payload["account_type"]>("standard");
   const [submitting, setSubmitting] = useState(false);
@@ -46,49 +58,59 @@ export default function NewUserModal({
   // Reset do estado quando o modal fecha
   useEffect(() => {
     if (open) return;
-    setEmail("");
+    setEmailsRaw("");
     setAccountType("standard");
     setSubmitting(false);
   }, [open]);
 
   // Submissão do formulário
-  const handleSubmit = async (e: React.FormEvent) => {
+ const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const trimmed = email.trim();
-    if (!trimmed) {
+    const emails = parseEmails(emailsRaw);
+
+    if (emails.length === 0) {
       toast.error(t("users.new.emailRequired"));
       return;
     }
 
+    const invalidEmails = emails.filter((e) => !validateEmail(e));
+    if (invalidEmails.length > 0) {
+      toast.error(`Emails inválidos: ${invalidEmails.join(", ")}`);
+      return;
+    }
+
     setSubmitting(true);
-    try {
-      const link = await onSubmit({
-        email: trimmed,
-        account_type: accountType,
-      });
 
-      toast.success(t("users.new.success"), {
-        description: link,
-        action: {
-          label: t("users.new.copyLink"),
-          onClick: () =>
-            navigator?.clipboard?.writeText?.(link).catch(() => undefined),
-        },
-      });
+    const results = await Promise.allSettled(
+      emails.map((email) => onSubmit({ email, account_type: accountType }))
+    );
 
+    const succeeded = results.filter((r) => r.status === "fulfilled").length;
+    const failed = results
+      .map((r, i) => ({ r, email: emails[i] }))
+      .filter(({ r }) => r.status === "rejected");
+
+    if (succeeded > 0) {
+      toast.success(
+        `${succeeded} convite${succeeded > 1 ? "s" : ""} enviado${succeeded > 1 ? "s" : ""} com sucesso`
+      );
+    }
+
+    if (failed.length > 0) {
+      const failedEmails = failed.map(({ email }) => email).join(", ");
+      const reason =
+        (failed[0].r as PromiseRejectedResult).reason?.response?.data?.detail ?? t("users.new.error");
+      toast.error(`${failed.length} email${failed.length > 1 ? "s" : ""} falhou: ${failedEmails} — ${reason}`);
+    }
+
+    setSubmitting(false);
+
+    if (failed.length === 0) {
       onClose();
-    } catch (err) {
-      const message =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data
-          ?.detail ??
-        (err instanceof Error ? err.message : t("users.new.error"));
-
-      toast.error(message);
-    } finally {
-      setSubmitting(false);
     }
   };
+
 
   return (
     <Modal
@@ -100,16 +122,23 @@ export default function NewUserModal({
     >
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Email */}
-        <Input
-          id="invite-email"
-          label={t("users.new.emailLabel")}
-          type="email"
-          placeholder={t("users.new.emailPlaceholder")}
-          value={email}
-          onChange={(e) => setEmail((e.target as HTMLInputElement).value)}
-          required
-        />
+        {/* Emails */}
+      <div className="flex flex-col gap-1">
+            <label htmlFor="invite-emails" className="text-sm font-medium">
+              {t("users.new.emailLabel")}
+            </label>
+            <textarea
+              id="invite-emails"
+              rows={4}
+              placeholder={t("users.new.emailPlaceholder")}
+              value={emailsRaw}
+              onChange={(e) => setEmailsRaw(e.target.value)}
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blueberry-600 resize-none"
+            />
+            <span className="text-xs text-gray-400">
+              Separe múltiplos emails por vírgula, ponto e vírgula ou quebra de linha.
+            </span>
+          </div>
 
         {/* Tipo de conta */}
         <div>

@@ -12,6 +12,9 @@ from rest_framework.permissions import AllowAny
 from .models import PasswordResetToken
 from django.core.mail import send_mail
 from django.contrib.auth import get_user_model
+import logging
+
+logger = logging.getLogger(__name__)
 
 class RegisterAPIView(APIView):
    permission_classes = [AllowAny]
@@ -55,12 +58,16 @@ class ForgotPasswordView(APIView):
 
        reset_link = f"{settings.FRONTEND_URL}/reset-password?token={reset_token.token}"
 
-       send_mail(
-           subject="Recuperação de senha",
-           message=f"Clique no link para redefinir sua senha: {reset_link}\n\nO link expira em 2 horas.",
-           from_email=settings.DEFAULT_FROM_EMAIL,
-           recipient_list=[email],
-       )
+       try:
+           send_mail(
+               subject="Recuperação de senha",
+               message=f"Clique no link para redefinir sua senha: {reset_link}\n\nO link expira em 2 horas.",
+               from_email=settings.DEFAULT_FROM_EMAIL,
+               recipient_list=[email],
+           )
+           logger.info(f"Password reset email sent to {email}")
+       except Exception as e:
+           logger.error(f"Failed to send password reset email to {email}: {str(e)}")
 
        return Response({"detail": "Se o email existir, você receberá um link."}, status=status.HTTP_200_OK)
 

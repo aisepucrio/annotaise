@@ -12,6 +12,7 @@ import AuthFormButton from "@/components/auth-layout/AuthFormButton";
 import Input from "@/components/form/Input";
 import PasswordInput from "@/components/form/PasswordInput";
 import { useTranslations } from "@/i18n/use-translations";
+import Link from "next/link";
 
 // === Tipos ===
 type FormData = {
@@ -98,11 +99,12 @@ export default function LoginPage() {
             })}
           />
         </div>
+
         {/* Ação: Esqueceu senha */}
         <div className="flex w-full justify-end mt-3">
-          <a className="text-sm sm:text-md text-blueberry-900 underline cursor-pointer hover:text-blueberry-700">
+          <Link href="/forgot-password" className="text-sm sm:text-md text-blueberry-900 underline cursor-pointer hover:text-blueberry-700">
             {t("login.forgotPassword")}
-          </a>
+          </Link>
         </div>
 
         {/* Ação: Enviar formulário */}
