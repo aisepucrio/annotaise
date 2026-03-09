@@ -10,7 +10,16 @@ então ele permanece e vai ser um id aleatorio.'''
 class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ["id", "email", "first_name", "last_name", "date_joined", "account_type", "is_staff"]
+        fields = [
+            "id",
+            "email",
+            "first_name",
+            "last_name",
+            "date_joined",
+            "account_type",
+            "onboarding_status",
+            "is_staff",
+        ]
         read_only_fields = ["id", "date_joined", "is_staff"]
 
 class CustomUserCreateSerializer(serializers.ModelSerializer):
@@ -55,6 +64,7 @@ class AdminUserReadSerializer(serializers.ModelSerializer):
             "is_active",
             "is_staff",
             "account_type",
+            "onboarding_status",
             "date_joined",
             "projects_count",
             "labelings_total",
@@ -102,6 +112,11 @@ class InvitationSerializer(serializers.ModelSerializer):
         source="invited_by.email", read_only=True
     )
     is_expired = serializers.SerializerMethodField()
+    project_ids = serializers.ListField(
+        child=serializers.IntegerField(min_value=1),
+        required=False,
+        write_only=True,
+    )
 
     class Meta:
         model = Invitation
@@ -115,6 +130,8 @@ class InvitationSerializer(serializers.ModelSerializer):
             "is_expired",
             "invited_by",
             "invited_by_email",
+            "user",
+            "project_ids",
         ]
         read_only_fields = [
             "token",
@@ -124,12 +141,14 @@ class InvitationSerializer(serializers.ModelSerializer):
             "invited_by_email",
             "expires_at",
             "is_expired",
+            "user",
         ]
 
     def get_is_expired(self, obj: Invitation) -> bool:
         return obj.is_expired
 
     def create(self, validated_data):
+        validated_data.pop("project_ids", None)
         invited_by = validated_data.pop(
             "invited_by", getattr(self.context.get("request"), "user", None)
         )

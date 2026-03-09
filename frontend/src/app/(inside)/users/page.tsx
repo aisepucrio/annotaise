@@ -106,15 +106,16 @@ export default function UsersPage() {
       }
     >
       {filteredUsers.map((user, index) => {
-        const name =
-          `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() ||
-          user.username;
+        const isPending = user.onboarding_status === "pending";
+        const fullName = `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim();
+        const name = isPending ? user.email : fullName || user.username;
 
         return (
           <GridItemCard key={user.id} index={index}>
             <IndividualUserCard
               name={name}
               email={user.email}
+              onboardingStatus={user.onboarding_status}
               projects={user.projects_count ?? 0}
               labelings_done={user.answers_count ?? 0}
               labelings_pending={user.pending_items_count ?? 0}

@@ -4,6 +4,8 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from .serializers import CustomUserSerializer, CustomUserCreateSerializer
+from project.models import Project, ProjectMembership
+from .models import Invitation
 
 
 class CustomUserSerializerTest(TestCase):
@@ -191,3 +193,89 @@ class AdminUserViewSetTest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["username"], "searchtarget")
+
+
+class InvitationPendingUserFlowTest(TestCase):
+    def setUp(self):
+        User = get_user_model()
+        self.admin = User.objects.create_user(
+            username="owneradmin",
+            email="owneradmin@example.com",
+            password="pass123",
+            account_type="admin",
+        )
+        self.project = Project.objects.create(
+            name="Projeto Convite",
+            description="Projeto para testar convite com vínculo",
+            created_by=self.admin,
+        )
+        ProjectMembership.objects.create(
+            project=self.project,
+            user=self.admin,
+            role=ProjectMembership.RoleChoices.OWNER,
+        )
+
+        self.client = APIClient()
+        self.client.force_authenticate(self.admin)
+
+    def test_create_invitation_creates_pending_user_and_project_membership(self):
+        payload = {
+            "email": "pending.user@example.com",
+            "role": "standard",
+            "project_ids": [self.project.id],
+        }
+        response = self.client.post("/invitations/", payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIn("link", response.data)
+        self.assertIn("invitation", response.data)
+
+        User = get_user_model()
+        invited_user = User.objects.get(email="pending.user@example.com")
+        self.assertEqual(invited_user.onboarding_status, "pending")
+        self.assertFalse(invited_user.is_active)
+        self.assertEqual(invited_user.account_type, "standard")
+
+        invitation = Invitation.objects.get(token=response.data["invitation"]["token"])
+        self.assertEqual(invitation.user_id, invited_user.id)
+
+        membership = ProjectMembership.objects.get(
+            project=self.project,
+            user=invited_user,
+        )
+        self.assertEqual(
+            membership.role,
+            ProjectMembership.RoleChoices.CONTRIBUTOR,
+        )
+
+    def test_accept_invitation_activates_existing_pending_user(self):
+        create_response = self.client.post(
+            "/invitations/",
+            {"email": "pending.accept@example.com", "role": "standard"},
+            format="json",
+        )
+        self.assertEqual(create_response.status_code, status.HTTP_201_CREATED)
+
+        invitation_token = create_response.data["invitation"]["token"]
+        User = get_user_model()
+        invited_user = User.objects.get(email="pending.accept@example.com")
+        pending_user_id = invited_user.id
+
+        accept_payload = {
+            "first_name": "Pending",
+            "last_name": "Accepted",
+            "password": "accepted-pass-123",
+        }
+        accept_response = self.client.post(
+            f"/invitations/accept/{invitation_token}/",
+            accept_payload,
+            format="json",
+        )
+        self.assertEqual(accept_response.status_code, status.HTTP_201_CREATED)
+
+        invited_user.refresh_from_db()
+        self.assertEqual(invited_user.id, pending_user_id)
+        self.assertEqual(invited_user.onboarding_status, "active")
+        self.assertTrue(invited_user.is_active)
+        self.assertEqual(invited_user.first_name, "Pending")
+        self.assertEqual(invited_user.last_name, "Accepted")
+        self.assertTrue(invited_user.check_password("accepted-pass-123"))
