@@ -7,6 +7,7 @@ export type User = {
   is_active: boolean;
   is_staff: boolean;
   account_type: "standard" | "editor" | "admin";
+  onboarding_status?: "pending" | "active";
   date_joined: string;
   projects_count?: number;
   labelings_total?: number;
@@ -25,6 +26,7 @@ export type CreateUserPayload = {
 export type CreateInvitationPayload = {
   email: string;
   account_type: User["account_type"];
+  project_ids?: number[];
 };
 
 export type UpdateUserPayload = Partial<{

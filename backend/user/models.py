@@ -13,6 +13,10 @@ class CustomUser(AbstractUser):
         EDITOR = "editor", "Editor"
         ADMIN = "admin", "Administrador"
 
+    class OnboardingStatus(models.TextChoices):
+        PENDING = "pending", "Pendente"
+        ACTIVE = "active", "Ativo"
+
     email = models.EmailField(unique=True, null=False, blank=False)
     first_name = models.CharField(max_length=150, blank=True)
     last_name = models.CharField(max_length=150, blank=True)
@@ -22,10 +26,16 @@ class CustomUser(AbstractUser):
         choices=AccountType.choices,
         default=AccountType.STANDARD,
     )
+    onboarding_status = models.CharField(
+        max_length=32,
+        choices=OnboardingStatus.choices,
+        default=OnboardingStatus.ACTIVE,
+    )
 
     def save(self, *args, **kwargs):
         if self.is_superuser:
             self.account_type = self.AccountType.ADMIN
+            self.onboarding_status = self.OnboardingStatus.ACTIVE
         return super().save(*args, **kwargs)
 
     @property
@@ -36,7 +46,8 @@ class CustomUser(AbstractUser):
         }
 
     def __str__(self):
-        return f"{self.first_name} {self.last_name}"
+        full_name = f"{self.first_name} {self.last_name}".strip()
+        return full_name or self.email
 
 class Invitation(models.Model):
     email = models.EmailField()
@@ -53,6 +64,13 @@ class Invitation(models.Model):
         null=True,
         blank=True,
         related_name="sent_invitations",
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="received_invitations",
     )
 
     def save(self, *args, **kwargs):
