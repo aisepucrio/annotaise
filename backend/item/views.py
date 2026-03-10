@@ -59,7 +59,7 @@ class ImportItemsCsvView(APIView):
         },
     )
     def put(self, request, labeling_id):
-        #não sei se vai funcionar sem deletar todas as sections junto
+        #TODO acho que a ideia do put ja ficou meio pra tras.. talvez seja melhor um POST mesmo pra isso
 
         items = Item.objects.filter(labeling_id=labeling_id)
 
@@ -113,6 +113,72 @@ class ImportItemsCsvView(APIView):
         
         return Response({"detail": "Arquivo recebido"}, status=200)
 
+class AddItemsToExistingLabelingView(APIView):
+    permission_classes = [IsAdminAccount, CanEditProjectPermission]
+    parser_classes = (MultiPartParser,)
+    @extend_schema(
+        request=UploadItemCSVSerializer,
+        responses={
+            200: OpenApiResponse(description="Itens adicionados a rotulação com sucesso"),
+            400: OpenApiResponse(description="Erro na validação ou no arquivo enviado"),
+        },
+    )
+    def post(self, request, labeling_id):
+
+        labeling = get_object_or_404(Labeling, id=labeling_id)
+
+        columns_in_labeling = labeling.column_names if isinstance(labeling.column_names, list) else []
+
+        serializer = UploadItemCSVSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=400)
+
+        uploaded_file = serializer.validated_data['file']
+
+        if uploaded_file is None:
+            return Response({"detail": "Nenhum arquivo enviado"}, status=400)
+
+        if not getattr(uploaded_file, "name", "").lower().endswith(".csv"):
+            return Response({"detail": "O arquivo deve ser .csv"}, status=400)
+        
+        df = pd.read_csv(uploaded_file)
+        #TODO tem que averiguar se a pessoa colocar 2 colunas iguais vai dar problema...
+        cols = list(df.columns)
+        non_existent_cols = columns_in_labeling.copy()
+        for col in cols:
+            if col not in columns_in_labeling:
+                df.drop(columns=[col], inplace=True)
+            else:
+                non_existent_cols.remove(col)
+        for col in non_existent_cols:
+            df[col] = "Valor Nulo"
+
+        df.fillna("Valor Nulo", inplace=True)
+
+        if labeling.distribution_strategy == Labeling.DistributionStrategy.PER_PERSON:
+            if "user_id" not in cols:
+                return Response({"detail": "Para a estratégia 'Por pessoa', o arquivo CSV deve conter uma coluna 'user_id' com os IDs dos usuários."}, status=400)
+            
+        existing_count = Item.objects.filter(labeling=labeling).count()
+        items = []
+
+        for idx, row in df.iterrows():
+            items.append(
+                Item(
+                    labeling=labeling,
+                    row_index=existing_count + idx,
+                    payload=row.to_dict(),
+                    status="pending",
+                )
+            )
+
+        Item.objects.bulk_create(items)
+
+        if labeling.status == "finished" and len(items) > 0:
+            labeling.status = "in_progress"
+            labeling.save()
+        
+        return Response({"detail": "Itens adicionados a rotulação com sucesso"}, status=200)
 
 class ExportImportedItemsCsvView(APIView):
     permission_classes = [IsAdminAccount, CanEditProjectPermission]
