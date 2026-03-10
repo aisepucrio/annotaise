@@ -1,5 +1,5 @@
 import type { RefObject } from "react";
-import { ArrowLeft, Download, Edit, Calendar, Save } from "lucide-react";
+import { ArrowLeft, Download, Edit, Calendar, Save, Upload } from "lucide-react";
 import Button from "@/components/button/Button";
 import DeleteIconButton from "@/components/button/DeleteIconButton";
 import { useTranslations } from "@/i18n/use-translations";
@@ -29,6 +29,7 @@ interface LabelingHeaderProps {
   isSaving?: boolean;
   onDownloadCsv?: () => void;
   isDownloadingCsv?: boolean;
+  onImportCsv?: () => void;
 }
 
 function formatDate(dateStr: string | null, locale: string) {
@@ -53,6 +54,7 @@ export default function LabelingHeader({
   isSaving = false,
   onDownloadCsv,
   isDownloadingCsv = false,
+  onImportCsv,
 }: LabelingHeaderProps) {
   const { t, locale } = useTranslations();
 
@@ -135,6 +137,19 @@ export default function LabelingHeader({
 
         {/*botão de salvar (opcional) e botão de excluir */}
         <div className="flex items-center gap-2">
+          {onImportCsv && (
+            <Button
+              variant="white"
+              fill={false}
+              onClick={onImportCsv}
+              disabled={isLoading}
+              icon={<Upload size={20} />}
+              className="bg-white/20 hover:bg-white/30"
+              ariaLabel={t("labelings.addItemsCsv.buttonAria")}
+            >
+              {t("labelings.addItemsCsv.button")}
+            </Button>
+          )}
           {onDownloadCsv && (
             <Button
               variant="white"

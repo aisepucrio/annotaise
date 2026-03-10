@@ -441,6 +441,15 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.success.deleted": "Rotulação excluída com sucesso.",
     "labelings.create.header.downloadCsvSuccess":
       "CSV importado baixado com sucesso.",
+    "labelings.addItemsCsv.title": "Importar itens via CSV",
+    "labelings.addItemsCsv.description":
+      "Selecione um arquivo CSV para adicionar novos itens a esta rotulação. As colunas serão ajustadas automaticamente.",
+    "labelings.addItemsCsv.button": "Importar CSV",
+    "labelings.addItemsCsv.buttonAria": "Importar itens via CSV",
+    "labelings.addItemsCsv.confirm": "Importar",
+    "labelings.addItemsCsv.success": "Itens adicionados com sucesso.",
+    "labelings.addItemsCsv.error":
+      "Não foi possível importar os itens via CSV.",
     "labelings.create.confirmRemoveMember": "Remover este membro da rotulação?",
     "labelings.create.userFallback": "Usuário #{{id}}",
     "labelings.create.delete.title": "Excluir rotulação",
@@ -1117,6 +1126,14 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.success.deleted": "Labeling deleted successfully.",
     "labelings.create.header.downloadCsvSuccess":
       "Imported CSV downloaded successfully.",
+    "labelings.addItemsCsv.title": "Import items via CSV",
+    "labelings.addItemsCsv.description":
+      "Select a CSV file to add new items to this labeling. Columns will be adjusted automatically.",
+    "labelings.addItemsCsv.button": "Import CSV",
+    "labelings.addItemsCsv.buttonAria": "Import items via CSV",
+    "labelings.addItemsCsv.confirm": "Import",
+    "labelings.addItemsCsv.success": "Items added successfully.",
+    "labelings.addItemsCsv.error": "Unable to import items via CSV.",
     "labelings.create.confirmRemoveMember":
       "Remove this member from the labeling?",
     "labelings.create.userFallback": "User #{{id}}",

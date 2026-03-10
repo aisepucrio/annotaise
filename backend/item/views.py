@@ -150,6 +150,10 @@ class AddItemsToExistingLabelingView(APIView):
                 df.drop(columns=[col], inplace=True)
             else:
                 non_existent_cols.remove(col)
+
+        if df.empty:
+            return Response({"detail": "Nenhum item válido encontrado no arquivo CSV. Verifique se as colunas correspondem às colunas da rotulação."}, status=400)
+
         for col in non_existent_cols:
             df[col] = "Valor Nulo"
 
