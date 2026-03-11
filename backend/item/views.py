@@ -83,7 +83,7 @@ class ImportItemsCsvView(APIView):
         if not getattr(uploaded_file, "name", "").lower().endswith(".csv"):
             return Response({"detail": "O arquivo deve ser .csv"}, status=400)
         
-        df = pd.read_csv(uploaded_file)
+        df = pd.read_csv(uploaded_file, dtype=str)
         df.fillna("Valor Nulo", inplace=True)
 
         cols = df.columns
@@ -141,7 +141,7 @@ class AddItemsToExistingLabelingView(APIView):
         if not getattr(uploaded_file, "name", "").lower().endswith(".csv"):
             return Response({"detail": "O arquivo deve ser .csv"}, status=400)
         
-        df = pd.read_csv(uploaded_file)
+        df = pd.read_csv(uploaded_file, dtype=str)
         #TODO tem que averiguar se a pessoa colocar 2 colunas iguais vai dar problema...
         cols = list(df.columns)
         non_existent_cols = columns_in_labeling.copy()
