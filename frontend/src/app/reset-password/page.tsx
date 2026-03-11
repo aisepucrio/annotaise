@@ -16,7 +16,7 @@ type FormData = {
   new_password: string;
 };
 
-function ResetPasswordForm(): JSX.Element {
+function ResetPasswordForm() {
   const [isLoading, setIsLoading] = useState(false);
   const {
     register,
@@ -44,7 +44,7 @@ function ResetPasswordForm(): JSX.Element {
       await resetPassword(token, data.new_password);
       toast.success(t("resetPassword.successMessage"));
       router.push("/login");
-    } catch (err: any) {
+    } catch (err) {
       let message = t("resetPassword.invalidToken");
 
       if (isAxiosError(err)) {
@@ -59,12 +59,10 @@ function ResetPasswordForm(): JSX.Element {
   };
 
   return (
-    // @ts-ignore -- editor/TS server may not have project types available; ignore TPSX prop-check here
     <AuthLayout
       title={t("resetPassword.title")}
       subtitle={t("resetPassword.subtitle")}
     >
-      {/* @ts-ignore JSX elements may show errors in some editor setups when types are not fully resolved */}
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className="mt-8">
           <PasswordInput
