@@ -17,6 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView,SpectacularSwaggerView,SpectacularRedocView
+from health_check.views import HealthCheckView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -31,7 +32,7 @@ urlpatterns = [
     # JWT Auth endpoints em um app separado
     path("", include("authentication.urls")),
     # Health check endpoints
-    path("api/health/", include("health_check.urls")),
+    path("api/health/", HealthCheckView.as_view(), name="health_check"),
 
     path("", include("user.urls")),
     path("", include("project.urls")),

@@ -180,7 +180,7 @@ class QuestionRange(models.Model):
 
     class Meta:
         constraints = [
-            models.CheckConstraint(check=models.Q(end__gt=models.F("start")),#garante que o valor final é maior que o inicial
+            models.CheckConstraint(condition=models.Q(end__gt=models.F("start")),#garante que o valor final é maior que o inicial
                                    name="range_end_gt_start"),
         ]
 

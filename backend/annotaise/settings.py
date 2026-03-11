@@ -60,7 +60,6 @@ INSTALLED_APPS = [
     'labeling',
     'rest_framework',
     'health_check',
-    'health_check.db',
 ]
 
 MIDDLEWARE = [
@@ -215,18 +214,6 @@ AUTHENTICATION_BACKENDS = [
     "authentication.backends.EmailBackend",
 ]
 
-# Configurações do CORS (pra deixar o frontend acessar a API em outro ip)
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://annotaise.devc.uk",
-    "http://annotaise-api.devc.uk",
-    "https://annotaise.devc.uk",
-    "https://annotaise-api.devc.uk",
-]
-
-CORS_ALLOW_CREDENTIALS = True
-
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", 587))
@@ -266,6 +253,17 @@ STORAGES = {
         },
     }
 
+# Configurações do CORS (pra deixar o frontend acessar a API em outro ip)
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://annotaise.devc.uk",
+    "http://annotaise-api.devc.uk",
+    "https://annotaise.devc.uk",
+    "https://annotaise-api.devc.uk",
+]
+
+CORS_ALLOW_CREDENTIALS = True
 
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
