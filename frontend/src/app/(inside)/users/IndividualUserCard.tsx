@@ -7,6 +7,7 @@ import { useTranslations } from "@/i18n/use-translations";
 type IndividualUserCardProps = {
   name: string;
   email: string;
+  onboardingStatus?: "pending" | "active";
   projects: number;
   labelings_done: number;
   labelings_pending: number;
@@ -16,6 +17,7 @@ type IndividualUserCardProps = {
 export default function IndividualUserCard({
   name,
   email,
+  onboardingStatus,
   projects,
   labelings_done,
   labelings_pending,
@@ -29,8 +31,13 @@ export default function IndividualUserCard({
       <div className="flex flex-col">
         {/* Nome e email */}
         <div className="flex flex-col mb-12">
-          <span className="text-black font-semibold leading-tight max-w-40 break-words truncate">
+          <span className="text-black font-semibold leading-tight max-w-40 break-words truncate flex items-center gap-2">
             {name}
+            {onboardingStatus === "pending" ? (
+              <span className="rounded bg-orange-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-orange-700">
+                Pendente
+              </span>
+            ) : null}
           </span>
 
           <span className="text-gray-500 font-semibold leading-tight min-w-40 max-w-40 break-words truncate">

@@ -7,7 +7,7 @@ import PageLayout from "@/components/inside-pages-layout/PageLayout";
 import GridItemCard from "@/components/grid/GridItemCard";
 
 import { useUsersDashboardQuery } from "@/modules/user/userQueries";
-import { useUpdateUserMutation } from "@/modules/user/userMutations";
+import { useDeleteUserMutation, useUpdateUserMutation } from "@/modules/user/userMutations";
 import type { UpdateUserPayload, User } from "@/modules/user/userTypes";
 
 import useInvitationCreator from "./useInvtationCreator";
@@ -33,10 +33,17 @@ export default function UsersPage() {
   const { data: users, error, isLoading } = useUsersDashboardQuery(searchTerm);
 
   const updateUserMutation = useUpdateUserMutation(editingUser?.id);
+  const deleteUserMutation = useDeleteUserMutation(editingUser?.id);
 
   const handleUpdateUser = async (payload: UpdateUserPayload) => {
     if (!editingUser) return;
     await updateUserMutation.mutateAsync(payload);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!editingUser) return;
+    await deleteUserMutation.mutateAsync();
+    setEditingUser(null);
   };
 
   // Filtro local
@@ -93,20 +100,22 @@ export default function UsersPage() {
             user={editingUser}
             onClose={() => setEditingUser(null)}
             onSubmit={handleUpdateUser}
+            onDelete={handleDeleteUser}
           />
         </>
       }
     >
       {filteredUsers.map((user, index) => {
-        const name =
-          `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() ||
-          user.username;
+        const isPending = user.onboarding_status === "pending";
+        const fullName = `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim();
+        const name = isPending ? user.email : fullName || user.username;
 
         return (
           <GridItemCard key={user.id} index={index}>
             <IndividualUserCard
               name={name}
               email={user.email}
+              onboardingStatus={user.onboarding_status}
               projects={user.projects_count ?? 0}
               labelings_done={user.answers_count ?? 0}
               labelings_pending={user.pending_items_count ?? 0}

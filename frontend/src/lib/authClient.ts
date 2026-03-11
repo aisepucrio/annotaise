@@ -57,5 +57,17 @@ export const AuthActions = () => {
     logout,
     removeTokens,
     forceLogoutAndRedirect,
+    forgotPassword,
+    resetPassword,
   };
 };
+
+/* esqueceu a senha e reset */ 
+
+const forgotPassword = (email: string) => {
+  return api.post("/api/auth/forgot-password/", { email });
+};
+
+const resetPassword = (token: string, newPassword: string) => {
+  return api.post("/api/auth/reset-password/", { token, new_password: newPassword });
+}

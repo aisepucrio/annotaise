@@ -90,6 +90,19 @@ export async function importLabelingItemsCsv(
   });
 }
 
+// Adiciona itens a um labeling existente via arquivo CSV
+export async function addItemsCsvToLabeling(
+  labelingId: number,
+  file: File,
+): Promise<void> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  await api.post(`/labelings/${labelingId}/add-items-csv/`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+}
+
 // Exporta respostas do labeling em formato CSV
 export async function exportLabelingAnswersCsv(
   labelingId: number,

@@ -6,6 +6,7 @@ import {
   createLabelingMembership,
   updateLabelingMembership,
   deleteLabelingMembership,
+  addItemsCsvToLabeling,
 } from "../labelingService";
 import type {
   LabelingPayload,
@@ -102,6 +103,20 @@ export function useUpdateMembershipMutation() {
       qc.invalidateQueries({
         queryKey: ["labelings", labelingId, "memberships"],
       });
+    },
+  });
+}
+
+// Utilizada para adicionar itens via CSV a um labeling existente
+export function useAddItemsCsvMutation() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ labelingId, file }: { labelingId: number; file: File }) =>
+      addItemsCsvToLabeling(labelingId, file),
+    onSuccess: (_data, { labelingId }) => {
+      qc.invalidateQueries({ queryKey: ["labelings", labelingId] });
+      qc.invalidateQueries({ queryKey: ["labelings"] });
     },
   });
 }

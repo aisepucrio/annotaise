@@ -38,7 +38,11 @@ export async function createInvitation(
 ): Promise<{ link: string; invitation: Invitation }> {
   const { data } = await api.post<{ link: string; invitation: Invitation }>(
     "/invitations/",
-    { email: payload.email, role: payload.account_type },
+    {
+      email: payload.email,
+      role: payload.account_type,
+      project_ids: payload.project_ids ?? [],
+    },
   );
   return data;
 }
@@ -53,4 +57,9 @@ export async function updateUser(
     ...(payload.email ? { username: payload.email } : {}),
   });
   return data;
+}
+
+// Deleta um usuário
+export async function deleteUser(id: number): Promise<void> {
+  await api.delete(`/users/${id}/`);
 }

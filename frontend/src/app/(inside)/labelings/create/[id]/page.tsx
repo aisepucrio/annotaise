@@ -11,6 +11,7 @@ import AnswerTab from "./tabs/answer/AnswerTab";
 import GuideTab, { type GuideTabHandle } from "./tabs/guide/GuideTab";
 import DecisionTab from "./tabs/decision/decision_tab";
 import EditLabelingModal from "./EditLabelingModal";
+import AddItemsCsvModal from "./AddItemsCsvModal";
 import ConfirmDeleteModal from "@/components/ConfirmDeleteModal";
 import {
   useLabelingHeaderQuery,
@@ -24,6 +25,7 @@ import {
   useUpdateMembershipMutation,
   useDeleteMembershipMutation,
   useSaveLabelingStructureMutation,
+  useAddItemsCsvMutation,
 } from "@/modules/labelings/create/labelingManagerMutations";
 import { getApiErrorMessage } from "@/lib/getApiErrorMessage";
 import { useTranslations } from "@/i18n/use-translations";
@@ -45,6 +47,7 @@ export default function LabelingCreationPage() {
   const [activeTab, setActiveTab] = useState<string>("form");
   const [isEditInfoOpen, setIsEditInfoOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isImportCsvOpen, setIsImportCsvOpen] = useState(false);
   const [isDownloadingCsv, setIsDownloadingCsv] = useState(false);
   const [guideText, setGuideText] = useState<string>("");
   const [newMemberId, setNewMemberId] = useState<string>("");
@@ -68,6 +71,7 @@ export default function LabelingCreationPage() {
   const createMembershipMutation = useCreateMembershipMutation();
   const updateMembershipMutation = useUpdateMembershipMutation();
   const deleteMembershipMutation = useDeleteMembershipMutation();
+  const addItemsCsvMutation = useAddItemsCsvMutation();
 
   // Sincroniza o guideText com os dados do labeling
   useEffect(() => {
@@ -139,6 +143,32 @@ export default function LabelingCreationPage() {
       },
     );
   };
+
+  const handleImportCsv = useCallback(
+    async (file: File) => {
+      await new Promise<void>((resolve, reject) => {
+        addItemsCsvMutation.mutate(
+          { labelingId, file },
+          {
+            onSuccess: () => {
+              toast.success(t("labelings.addItemsCsv.success"));
+              setIsImportCsvOpen(false);
+              void headerQuery.refetch();
+              resolve();
+            },
+            onError: (error) => {
+              reject(
+                new Error(
+                  getApiErrorMessage(error, t("labelings.addItemsCsv.error")),
+                ),
+              );
+            },
+          },
+        );
+      });
+    },
+    [labelingId, addItemsCsvMutation, headerQuery, t],
+  );
 
   const handleDownloadCsv = useCallback(async () => {
     if (Number.isNaN(labelingId)) return;
@@ -364,10 +394,18 @@ export default function LabelingCreationPage() {
         isSaving={isSaving}
         onDownloadCsv={() => void handleDownloadCsv()}
         isDownloadingCsv={isDownloadingCsv}
+        onImportCsv={() => setIsImportCsvOpen(true)}
       />
 
       {/* Renderização do componente */}
       <div className="flex-1 min-h-0 overflow-y-auto">{renderTabContent()}</div>
+
+      {/* Modal de importação de CSV */}
+      <AddItemsCsvModal
+        open={isImportCsvOpen}
+        onClose={() => setIsImportCsvOpen(false)}
+        onConfirm={handleImportCsv}
+      />
 
       {/* Modal de edição */}
       <EditLabelingModal
