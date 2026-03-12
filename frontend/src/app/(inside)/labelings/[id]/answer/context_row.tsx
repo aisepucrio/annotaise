@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import hljs from "highlight.js";
 import "highlight.js/styles/github.css";
 
+
 type ContextRowProps = {
   element: LabelingStructureElement;
   payload: Record<string, unknown>;
@@ -112,6 +113,42 @@ function CodeContext({ value }: { value: string }) {
   );
 }
 
+function AudioContext({
+  value,
+  errorMessage,
+}: {
+  value: string;
+  errorMessage: string;
+}) {
+  const [hasError, setHasError] = useState(false);
+
+  if (!value || typeof value !== "string" || value.trim() === "") {
+    return (
+      <div className="flex items-center justify-center rounded-lg border border-red-200 bg-red-50 p-4 text-red-600">
+        {errorMessage}
+      </div>
+    );
+  }
+
+  if (hasError) {
+    return (
+      <div className="flex items-center justify-center rounded-lg border border-red-200 bg-red-50 p-4 text-red-600">
+        {errorMessage}
+      </div>
+    );
+  }
+
+  return (
+    <audio
+      controls
+      className="w-full"
+      onError={() => setHasError(true)}
+    >
+      <source src={value} />
+    </audio>
+  );
+}
+
 export default function ContextRow({ element, payload, t }: ContextRowProps) {
   const value = element.column_name ? payload[element.column_name] : undefined;
   const hasValue = value !== undefined && value !== null;
@@ -123,6 +160,15 @@ export default function ContextRow({ element, payload, t }: ContextRowProps) {
     : t("answer.context.noValue");
 
   const renderContent = () => {
+      if (element.context_type === "audio" && hasValue) {
+        return (
+          <AudioContext
+            value={formattedValue}
+            errorMessage={t("answer.context.invalidAudio")}
+          />
+        );
+      }
+
     if (element.context_type === "image" && hasValue) {
       return (
         <ImageContext
@@ -169,3 +215,4 @@ export default function ContextRow({ element, payload, t }: ContextRowProps) {
     </>
   );
 }
+
