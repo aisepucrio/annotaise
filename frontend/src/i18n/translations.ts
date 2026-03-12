@@ -498,6 +498,35 @@ export const translations: Record<Language, TranslationMap> = {
       "Visão consolidada das respostas deste item.",
     "labelings.create.answers.modal.itemSummaryEmpty":
       "Sem dados suficientes para gerar análise deste item.",
+    "labelings.create.answers.modal.itemAgreementTitle":
+      "Análise de agreement por item",
+    "labelings.create.answers.modal.itemAgreementDescription":
+      "Para perguntas de múltipla escolha, mostra quem marcou cada opção e o nível de concordância.",
+    "labelings.create.answers.modal.itemAgreementEmpty":
+      "Sem perguntas de múltipla escolha para análise de agreement neste item.",
+    "labelings.create.answers.modal.itemAgreementAgreedUsers":
+      "Nº de usuários que concordaram",
+    "labelings.create.answers.modal.itemAgreementTotalUsers":
+      "Total de usuários",
+    "labelings.create.answers.modal.itemAgreementRate":
+      "Taxa de agreement",
+    "labelings.create.answers.modal.itemAgreementLeading":
+      "Resposta líder",
+    "labelings.create.answers.modal.itemAgreementTie":
+      "Empate entre opções",
+    "labelings.create.answers.modal.itemAgreementNoAnswers":
+      "Sem respostas para esta pergunta.",
+    "labelings.create.answers.modal.itemAgreementSingle":
+      "Seleção única",
+    "labelings.create.answers.modal.itemAgreementMulti":
+      "Múltiplas seleções",
+    "labelings.create.answers.modal.itemAgreementOption": "Opção",
+    "labelings.create.answers.modal.itemAgreementUsers":
+      "Usuários que marcaram",
+    "labelings.create.answers.modal.itemAgreementNoUsers":
+      "Nenhum usuário",
+    "labelings.create.answers.modal.itemAgreementMissing":
+      "{{count}} usuário(s) não responderam esta pergunta.",
     "labelings.create.answers.modal.selectUserLabel": "Usuário para visualizar",
     "labelings.create.answers.modal.tabItemSummary": "Análise geral do item",
     "labelings.create.answers.modal.tabUserAnswer":
@@ -1178,6 +1207,30 @@ export const translations: Record<Language, TranslationMap> = {
       "Consolidated view of answers for this item.",
     "labelings.create.answers.modal.itemSummaryEmpty":
       "Not enough data to build this item's analysis.",
+    "labelings.create.answers.modal.itemAgreementTitle":
+      "Item agreement analysis",
+    "labelings.create.answers.modal.itemAgreementDescription":
+      "For multiple-choice questions, shows who selected each option and the agreement level.",
+    "labelings.create.answers.modal.itemAgreementEmpty":
+      "No multiple-choice questions available for agreement analysis in this item.",
+    "labelings.create.answers.modal.itemAgreementAgreedUsers":
+      "Number of agreeing users",
+    "labelings.create.answers.modal.itemAgreementTotalUsers":
+      "Total users",
+    "labelings.create.answers.modal.itemAgreementRate": "Agreement rate",
+    "labelings.create.answers.modal.itemAgreementLeading": "Leading answer",
+    "labelings.create.answers.modal.itemAgreementTie":
+      "Tie between options",
+    "labelings.create.answers.modal.itemAgreementNoAnswers":
+      "No answers for this question.",
+    "labelings.create.answers.modal.itemAgreementSingle": "Single selection",
+    "labelings.create.answers.modal.itemAgreementMulti":
+      "Multiple selections",
+    "labelings.create.answers.modal.itemAgreementOption": "Option",
+    "labelings.create.answers.modal.itemAgreementUsers": "Users who selected",
+    "labelings.create.answers.modal.itemAgreementNoUsers": "No users",
+    "labelings.create.answers.modal.itemAgreementMissing":
+      "{{count}} user(s) did not answer this question.",
     "labelings.create.answers.modal.selectUserLabel": "User to inspect",
     "labelings.create.answers.modal.tabItemSummary": "Item overview",
     "labelings.create.answers.modal.tabUserAnswer": "User context and answers",
