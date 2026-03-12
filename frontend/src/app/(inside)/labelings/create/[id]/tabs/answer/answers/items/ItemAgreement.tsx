@@ -46,31 +46,11 @@ export default function ItemAgreement({
   );
 
   if (agreementSections.length === 0) {
-    return (
-      <div className="mb-10">
-        <div className="mb-4">
-          <h4 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
-            {t("labelings.create.answers.modal.itemAgreementTitle")}
-          </h4>
-          <p className="mt-1 text-sm text-gray-600">
-            {t("labelings.create.answers.modal.itemAgreementEmpty")}
-          </p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (
     <div className="mb-12">
-      <div className="mb-5">
-        <h4 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
-          {t("labelings.create.answers.modal.itemAgreementTitle")}
-        </h4>
-        <p className="mt-1 text-sm text-gray-600">
-          {t("labelings.create.answers.modal.itemAgreementDescription")}
-        </p>
-      </div>
-
       {agreementSections.map((sectionGroup, sectionIndex) => {
         const parsed = splitSummarySectionGroupTitle(sectionGroup.title);
 
