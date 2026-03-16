@@ -7,8 +7,19 @@ import type {
 
 export type BarItem = { label: string; count: number };
 
+export type AgreementBarItem = BarItem & {
+  agreementCount?: number;
+  agreementRate?: number;
+};
+
 export type QuestionSummaryChart =
-  | { kind: "bar"; title: string; items: BarItem[]; total: number }
+  | {
+      kind: "bar";
+      title: string;
+      items: AgreementBarItem[];
+      total: number;
+      possiblePairs?: number;
+    }
   | {
       kind: "hist";
       title: string;
@@ -135,7 +146,9 @@ function buildQuestionSummaries({
         );
         const answerKey = element.id ? String(element.id) : null;
         const values = answerKey
-          ? answers.map((answer) => (answer.answer_payload ?? {})[answerKey])
+          ? answers.map((answer) =>
+              resolveAnswerPayloadValue(answer.answer_payload ?? {}, answerKey),
+            )
           : [];
 
         summaries.push({
@@ -151,6 +164,8 @@ function buildQuestionSummaries({
           chart: buildChartForElement({
             element,
             values,
+            answers,
+            answerKey,
             t,
             numberFormatter,
           }),
@@ -164,11 +179,15 @@ function buildQuestionSummaries({
 function buildChartForElement({
   element,
   values,
+  answers,
+  answerKey,
   t,
   numberFormatter,
 }: {
   element: LabelingStructureElement;
   values: unknown[];
+  answers: AnswerResponse[];
+  answerKey: string | null;
   t: TranslateFn;
   numberFormatter: Intl.NumberFormat;
 }): QuestionSummaryChart {
@@ -176,14 +195,20 @@ function buildChartForElement({
   if (!cleanValues.length) return noDataChart(t);
 
   if (element.question_type === "multiple_choice") {
-    const items = buildChoiceCounts(element, cleanValues, t);
+    const { items, total, possiblePairs } = buildChoiceCountsWithAgreement({
+      element,
+      answers,
+      answerKey,
+      t,
+    });
     if (!items.length) return noDataChart(t);
 
     return {
       kind: "bar",
       title: t("labelings.create.summary.chart.topResponses"),
       items,
-      total: items.reduce((sum, item) => sum + item.count, 0),
+      total,
+      possiblePairs,
     };
   }
 
@@ -279,50 +304,182 @@ function extractTextResponses(
   return responses;
 }
 
-function buildChoiceCounts(
-  element: LabelingStructureElement,
-  values: unknown[],
-  t: (key: string) => string,
-): BarItem[] {
+function buildChoiceCountsWithAgreement({
+  element,
+  answers,
+  answerKey,
+  t,
+}: {
+  element: LabelingStructureElement;
+  answers: AnswerResponse[];
+  answerKey: string | null;
+  t: (key: string) => string;
+}): {
+  items: AgreementBarItem[];
+  total: number;
+  possiblePairs: number;
+} {
+  if (!answerKey) {
+    return { items: [], total: 0, possiblePairs: 0 };
+  }
+
   const options = [...(element.multiple_choice_items ?? [])]
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-    .map((item) => item.text);
+    .map((item) => item.text)
+    .filter((item) => item.trim().length > 0);
 
   const counts = new Map<string, number>();
+  const agreementCounts = new Map<string, number>();
   const optionSet = new Set(options);
+  const otherLabel = t("labelings.create.summary.chart.other");
 
-  options.forEach((option) => counts.set(option, 0));
+  options.forEach((option) => {
+    counts.set(option, 0);
+    agreementCounts.set(option, 0);
+  });
 
-  let otherCount = 0;
+  const latestAnswers = selectLatestAnswersByItemAndUser(answers);
+  const perItemStats = new Map<
+    string,
+    {
+      answeredUsers: Set<number>;
+      optionUsers: Map<string, Set<number>>;
+    }
+  >();
 
-  values.forEach((value) => {
-    const entries = Array.isArray(value) ? value : [value];
+  latestAnswers.forEach((answer) => {
+    const rawValue = resolveAnswerPayloadValue(answer.answer_payload ?? {}, answerKey);
+    const normalizedChoices = normalizeChoiceEntries(rawValue, t);
+    if (!normalizedChoices.length) return;
 
-    entries.forEach((entry) => {
-      const normalized = normalizeChoiceValue(entry, t);
-      if (!normalized) return;
+    const selectedOptions = Array.from(
+      new Set(
+        normalizedChoices.map((choice) =>
+          optionSet.has(choice) ? choice : otherLabel,
+        ),
+      ),
+    );
+    if (!selectedOptions.length) return;
 
-      if (optionSet.has(normalized)) {
-        counts.set(normalized, (counts.get(normalized) ?? 0) + 1);
-      } else {
-        otherCount += 1;
-      }
+    const itemKey = getAnswerItemKey(answer);
+    const itemState =
+      perItemStats.get(itemKey) ??
+      {
+        answeredUsers: new Set<number>(),
+        optionUsers: new Map<string, Set<number>>(),
+      };
+
+    itemState.answeredUsers.add(answer.answered_by);
+
+    selectedOptions.forEach((option) => {
+      counts.set(option, (counts.get(option) ?? 0) + 1);
+
+      const users = itemState.optionUsers.get(option) ?? new Set<number>();
+      users.add(answer.answered_by);
+      itemState.optionUsers.set(option, users);
+    });
+
+    perItemStats.set(itemKey, itemState);
+  });
+
+  let possiblePairs = 0;
+  perItemStats.forEach((itemState) => {
+    possiblePairs += pairCombinations(itemState.answeredUsers.size);
+
+    itemState.optionUsers.forEach((users, option) => {
+      agreementCounts.set(
+        option,
+        (agreementCounts.get(option) ?? 0) + pairCombinations(users.size),
+      );
     });
   });
 
-  const items: BarItem[] = options.map((option) => ({
-    label: option,
-    count: counts.get(option) ?? 0,
-  }));
-
-  if (otherCount > 0) {
-    items.push({
-      label: t("labelings.create.summary.chart.other"),
-      count: otherCount,
-    });
+  const orderedLabels = [...options];
+  if ((counts.get(otherLabel) ?? 0) > 0) {
+    orderedLabels.push(otherLabel);
   }
 
-  return items.filter((item) => item.count > 0);
+  const items: AgreementBarItem[] = orderedLabels
+    .map((option) => ({
+      label: option,
+      count: counts.get(option) ?? 0,
+      agreementCount: agreementCounts.get(option) ?? 0,
+      agreementRate:
+        possiblePairs > 0 ? (agreementCounts.get(option) ?? 0) / possiblePairs : 0,
+    }))
+    .filter((item) => item.count > 0);
+
+  return {
+    items,
+    total: items.reduce((sum, item) => sum + item.count, 0),
+    possiblePairs,
+  };
+}
+
+function normalizeChoiceEntries(
+  value: unknown,
+  t: (key: string) => string,
+): string[] {
+  const entries = Array.isArray(value) ? value : [value];
+  const normalized: string[] = [];
+
+  entries.forEach((entry) => {
+    const normalizedValue = normalizeChoiceValue(entry, t);
+    if (!normalizedValue) return;
+    normalized.push(normalizedValue);
+  });
+
+  return normalized;
+}
+
+function resolveAnswerPayloadValue(
+  payload: Record<string, unknown>,
+  answerKey: string,
+): unknown {
+  if (Object.prototype.hasOwnProperty.call(payload, answerKey)) {
+    return payload[answerKey];
+  }
+
+  const numericKey = Number(answerKey);
+  if (!Number.isFinite(numericKey)) return undefined;
+
+  const numericKeyAsString = String(numericKey);
+  if (Object.prototype.hasOwnProperty.call(payload, numericKeyAsString)) {
+    return payload[numericKeyAsString];
+  }
+
+  return undefined;
+}
+
+function getAnswerItemKey(answer: AnswerResponse): string {
+  if (answer.item_detail?.id !== undefined && answer.item_detail?.id !== null) {
+    return `detail-${answer.item_detail.id}`;
+  }
+  return `item-${answer.item}`;
+}
+
+function selectLatestAnswersByItemAndUser(
+  answers: AnswerResponse[],
+): AnswerResponse[] {
+  const sorted = [...answers].sort(
+    (a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+  );
+
+  const latestByItemAndUser = new Map<string, AnswerResponse>();
+  sorted.forEach((answer) => {
+    const key = `${getAnswerItemKey(answer)}:${answer.answered_by}`;
+    if (!latestByItemAndUser.has(key)) {
+      latestByItemAndUser.set(key, answer);
+    }
+  });
+
+  return Array.from(latestByItemAndUser.values());
+}
+
+function pairCombinations(size: number): number {
+  if (size < 2) return 0;
+  return (size * (size - 1)) / 2;
 }
 
 function buildTextCounts(values: unknown[], t: (key: string) => string): BarItem[] {

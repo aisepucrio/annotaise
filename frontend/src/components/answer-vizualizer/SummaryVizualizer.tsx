@@ -32,6 +32,7 @@ export type SummaryVizualizerProps = {
   showSectionLabel?: boolean;
   showTypeLabel?: boolean;
   showResponseCount?: boolean;
+  showMultipleChoiceAgreement?: boolean;
 };
 
 export type SummaryQuestionCardProps = SummaryVizualizerProps;
@@ -43,6 +44,7 @@ export function SummaryQuestionCard({
   showSectionLabel = false,
   showTypeLabel = false,
   showResponseCount = true,
+  showMultipleChoiceAgreement = false,
 }: SummaryQuestionCardProps) {
   const metadataItems: string[] = [];
 
@@ -101,6 +103,7 @@ export function SummaryQuestionCard({
           summary={summary}
           numberFormatter={numberFormatter}
           t={t}
+          showMultipleChoiceAgreement={showMultipleChoiceAgreement}
         />
       </div>
     </article>

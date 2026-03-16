@@ -180,7 +180,6 @@ export default function ItemTab({
               sections={sections}
               t={t}
               locale={locale}
-              getUserLabel={getUserLabel}
             />
           ) : (
             <ItemAnswers

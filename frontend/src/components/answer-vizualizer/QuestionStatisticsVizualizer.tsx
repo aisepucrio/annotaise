@@ -3,13 +3,19 @@
 import type { TranslateFn } from "@/i18n/types";
 import type { QuestionSummary } from "./SummaryVizualizer";
 
-type BarItem = { label: string; count: number };
+type BarItem = {
+  label: string;
+  count: number;
+  agreementCount?: number;
+  agreementRate?: number;
+};
 
 export type QuestionStatisticsVizualizerProps = {
   summary: QuestionSummary;
   t: TranslateFn;
   numberFormatter: Intl.NumberFormat;
   className?: string;
+  showMultipleChoiceAgreement?: boolean;
 };
 
 const BLUEBERRY_COLORS = {
@@ -78,7 +84,9 @@ function MultipleChoiceStatView(props: QuestionStatisticsVizualizerProps) {
   return (
     <CategoricalQuestionStatView
       summary={props.summary}
+      t={props.t}
       className={props.className}
+      showMultipleChoiceAgreement={props.showMultipleChoiceAgreement ?? false}
     />
   );
 }
@@ -93,10 +101,14 @@ function NumericRangeStatView(props: QuestionStatisticsVizualizerProps) {
 
 function CategoricalQuestionStatView({
   summary,
+  t,
   className = "",
+  showMultipleChoiceAgreement = false,
 }: {
   summary: QuestionSummary;
+  t: TranslateFn;
   className?: string;
+  showMultipleChoiceAgreement?: boolean;
 }) {
   if (summary.chart.kind !== "bar") {
     return (
@@ -116,6 +128,71 @@ function CategoricalQuestionStatView({
         items={summary.chart.items}
         total={summary.chart.total}
       />
+
+      {showMultipleChoiceAgreement ? (
+        <MultipleChoiceAgreementBars
+          items={summary.chart.items}
+          possiblePairs={summary.chart.possiblePairs ?? 0}
+          t={t}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function MultipleChoiceAgreementBars({
+  items,
+  possiblePairs,
+  t,
+}: {
+  items: BarItem[];
+  possiblePairs: number;
+  t: TranslateFn;
+}) {
+  const agreementItems = items
+    .filter(
+      (item) =>
+        typeof item.agreementCount === "number" &&
+        typeof item.agreementRate === "number",
+    )
+    .map((item) => ({
+      label: item.label,
+      count: item.agreementCount ?? 0,
+    }))
+    .filter((item) => item.count > 0);
+
+  const hasAgreementData = items.some(
+    (item) =>
+      typeof item.agreementCount === "number" &&
+      (item.agreementCount ?? 0) > 0,
+  );
+
+  if (!hasAgreementData) return null;
+
+  return (
+    <div className="space-y-2">
+      <p
+        className="text-xs font-semibold"
+        style={{ color: BLUEBERRY_COLORS.textStrong }}
+      >
+        {t("labelings.create.summary.agreement.title")}
+      </p>
+      <SummaryBarChart
+        items={agreementItems}
+        total={possiblePairs}
+      />
+
+      {possiblePairs > 0 ? (
+        <p className="text-xs text-gray-500">
+          {t("labelings.create.summary.agreement.possiblePairs", {
+            count: String(possiblePairs),
+          })}
+        </p>
+      ) : (
+        <p className="text-xs text-gray-500">
+          {t("labelings.create.summary.agreement.noPairs")}
+        </p>
+      )}
     </div>
   );
 }

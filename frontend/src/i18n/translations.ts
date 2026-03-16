@@ -290,6 +290,16 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.summary.chart.topResponses": "Respostas mais frequentes",
     "labelings.create.summary.chart.histogram": "Distribuição",
     "labelings.create.summary.chart.other": "Outros",
+    "labelings.create.summary.agreement.title":
+      "Agreement entre rotuladores",
+    "labelings.create.summary.agreement.option": "Opção",
+    "labelings.create.summary.agreement.frequency": "Frequência",
+    "labelings.create.summary.agreement.count": "Nº de agreements",
+    "labelings.create.summary.agreement.rate": "Taxa de agreement",
+    "labelings.create.summary.agreement.possiblePairs":
+      "{{count}} pares comparáveis na base.",
+    "labelings.create.summary.agreement.noPairs":
+      "Sem pares suficientes para calcular agreement.",
     "labelings.create.summary.stats.average": "Média",
     "labelings.create.summary.stats.median": "Mediana",
     "labelings.create.summary.stats.min": "Mínimo",
@@ -1015,6 +1025,15 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.summary.chart.topResponses": "Top responses",
     "labelings.create.summary.chart.histogram": "Distribution",
     "labelings.create.summary.chart.other": "Other",
+    "labelings.create.summary.agreement.title": "Agreement between labelers",
+    "labelings.create.summary.agreement.option": "Option",
+    "labelings.create.summary.agreement.frequency": "Frequency",
+    "labelings.create.summary.agreement.count": "Agreement count",
+    "labelings.create.summary.agreement.rate": "Agreement rate",
+    "labelings.create.summary.agreement.possiblePairs":
+      "{{count}} comparable pairs in the dataset.",
+    "labelings.create.summary.agreement.noPairs":
+      "Not enough pairs to calculate agreement.",
     "labelings.create.summary.stats.average": "Average",
     "labelings.create.summary.stats.median": "Median",
     "labelings.create.summary.stats.min": "Min",

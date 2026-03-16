@@ -77,6 +77,7 @@ export default function SummaryTab({
                       numberFormatter={numberFormatter}
                       t={t}
                       showTypeLabel
+                      showMultipleChoiceAgreement
                     />
                   ))}
                 </SectionVizualizer>
