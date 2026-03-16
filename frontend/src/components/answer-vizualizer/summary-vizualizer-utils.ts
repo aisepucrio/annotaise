@@ -18,7 +18,7 @@ export type QuestionSummaryChart =
       title: string;
       items: AgreementBarItem[];
       total: number;
-      possiblePairs?: number;
+      possibleAgreements?: number;
     }
   | {
       kind: "hist";
@@ -195,7 +195,7 @@ function buildChartForElement({
   if (!cleanValues.length) return noDataChart(t);
 
   if (element.question_type === "multiple_choice") {
-    const { items, total, possiblePairs } = buildChoiceCountsWithAgreement({
+    const { items, total, possibleAgreements } = buildChoiceCountsWithAgreement({
       element,
       answers,
       answerKey,
@@ -208,7 +208,7 @@ function buildChartForElement({
       title: t("labelings.create.summary.chart.topResponses"),
       items,
       total,
-      possiblePairs,
+      possibleAgreements,
     };
   }
 
@@ -317,10 +317,10 @@ function buildChoiceCountsWithAgreement({
 }): {
   items: AgreementBarItem[];
   total: number;
-  possiblePairs: number;
+  possibleAgreements: number;
 } {
   if (!answerKey) {
-    return { items: [], total: 0, possiblePairs: 0 };
+    return { items: [], total: 0, possibleAgreements: 0 };
   }
 
   const options = [...(element.multiple_choice_items ?? [])]
@@ -382,14 +382,16 @@ function buildChoiceCountsWithAgreement({
     perItemStats.set(itemKey, itemState);
   });
 
-  let possiblePairs = 0;
+  let possibleAgreements = 0;
   perItemStats.forEach((itemState) => {
-    possiblePairs += pairCombinations(itemState.answeredUsers.size);
+    if (itemState.answeredUsers.size > 0) {
+      possibleAgreements += 1;
+    }
 
     itemState.optionUsers.forEach((users, option) => {
       agreementCounts.set(
         option,
-        (agreementCounts.get(option) ?? 0) + pairCombinations(users.size),
+        (agreementCounts.get(option) ?? 0) + (users.size >= 2 ? 1 : 0),
       );
     });
   });
@@ -405,14 +407,16 @@ function buildChoiceCountsWithAgreement({
       count: counts.get(option) ?? 0,
       agreementCount: agreementCounts.get(option) ?? 0,
       agreementRate:
-        possiblePairs > 0 ? (agreementCounts.get(option) ?? 0) / possiblePairs : 0,
+        possibleAgreements > 0
+          ? (agreementCounts.get(option) ?? 0) / possibleAgreements
+          : 0,
     }))
     .filter((item) => item.count > 0);
 
   return {
     items,
     total: items.reduce((sum, item) => sum + item.count, 0),
-    possiblePairs,
+    possibleAgreements,
   };
 }
 
@@ -475,11 +479,6 @@ function selectLatestAnswersByItemAndUser(
   });
 
   return Array.from(latestByItemAndUser.values());
-}
-
-function pairCombinations(size: number): number {
-  if (size < 2) return 0;
-  return (size * (size - 1)) / 2;
 }
 
 function buildTextCounts(values: unknown[], t: (key: string) => string): BarItem[] {

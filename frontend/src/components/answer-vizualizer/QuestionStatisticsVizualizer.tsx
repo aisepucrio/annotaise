@@ -132,7 +132,7 @@ function CategoricalQuestionStatView({
       {showMultipleChoiceAgreement ? (
         <MultipleChoiceAgreementBars
           items={summary.chart.items}
-          possiblePairs={summary.chart.possiblePairs ?? 0}
+          possibleAgreements={summary.chart.possibleAgreements ?? 0}
           t={t}
         />
       ) : null}
@@ -142,11 +142,11 @@ function CategoricalQuestionStatView({
 
 function MultipleChoiceAgreementBars({
   items,
-  possiblePairs,
+  possibleAgreements,
   t,
 }: {
   items: BarItem[];
-  possiblePairs: number;
+  possibleAgreements: number;
   t: TranslateFn;
 }) {
   const agreementItems = items
@@ -179,13 +179,13 @@ function MultipleChoiceAgreementBars({
       </p>
       <SummaryBarChart
         items={agreementItems}
-        total={possiblePairs}
+        total={possibleAgreements}
       />
 
-      {possiblePairs > 0 ? (
+      {possibleAgreements > 0 ? (
         <p className="text-xs text-gray-500">
-          {t("labelings.create.summary.agreement.possiblePairs", {
-            count: String(possiblePairs),
+          {t("labelings.create.summary.agreement.possibleItems", {
+            count: String(possibleAgreements),
           })}
         </p>
       ) : (
