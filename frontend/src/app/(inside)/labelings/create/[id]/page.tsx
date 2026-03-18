@@ -342,7 +342,13 @@ export default function LabelingCreationPage() {
           />
         );
       case "answers":
-        return <AnswerTab labelingId={labelingId} users={availableUsers} />;
+        return (
+          <AnswerTab
+            labelingId={labelingId}
+            users={availableUsers}
+            usersPerItem={labeling?.users_per_item}
+          />
+        );
       case "guide":
         return (
           <GuideTab

@@ -9,6 +9,7 @@ import type {
   LabelingMembershipDashboard,
   LabelingDashboard,
   LabelingElementSummary,
+  LabelingAgreementSummary,
   AnswerStructure,
   AnswerPayload,
   AnswerResponse,
@@ -240,6 +241,19 @@ export async function fetchLabelingAnswers(
   const { data } = await api.get<AnswerResponse[]>("/answers/", {
     params: { labeling: labelingId },
   });
+  return data;
+}
+
+export async function fetchLabelingAgreementSummary(
+  labelingId: number,
+  minAgreement = 2,
+): Promise<LabelingAgreementSummary> {
+  const { data } = await api.get<LabelingAgreementSummary>(
+    `/labelings/${labelingId}/agreement-summary/`,
+    {
+      params: { min_agreement: minAgreement },
+    },
+  );
   return data;
 }
 

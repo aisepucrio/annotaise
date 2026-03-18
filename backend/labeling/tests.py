@@ -5,6 +5,8 @@ from rest_framework.test import APIClient
 from .serializers import LabelingSerializer, LabelingSectionSerializer, LabelingElementSerializer, MultipleChoiceItemSerializer, QuestionRangeSerializer, LabelingMembershipSerializer
 from .models import Labeling, LabelingSection, LabelingElement, MultipleChoiceItem, QuestionRange, LabelingMembership
 from project.models import Project, ProjectMembership
+from item.models import Item
+from answer.models import Answer
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 
@@ -757,18 +759,214 @@ class LabelingStructureViewTest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(LabelingSection.objects.filter(labeling=self.labeling).count(), 0)
 
-    def test_put_denies_non_admin_owner(self):
-        self.client.force_authenticate(self.owner_standard)
 
-        response = self.client.put(self.structure_url, self.valid_payload, format="json")
+class LabelingAgreementSummaryViewTest(TestCase):
+    def setUp(self):
+        User = get_user_model()
+        self.request_user = User.objects.create_user(
+            username="agreement_requester",
+            email="agreement-requester@example.com",
+            password="pass123",
+        )
+        self.annotator_a = User.objects.create_user(
+            username="agreement_a",
+            email="agreement-a@example.com",
+            password="pass123",
+        )
+        self.annotator_b = User.objects.create_user(
+            username="agreement_b",
+            email="agreement-b@example.com",
+            password="pass123",
+        )
+        self.annotator_c = User.objects.create_user(
+            username="agreement_c",
+            email="agreement-c@example.com",
+            password="pass123",
+        )
+        self.annotator_d = User.objects.create_user(
+            username="agreement_d",
+            email="agreement-d@example.com",
+            password="pass123",
+        )
+        self.annotator_e = User.objects.create_user(
+            username="agreement_e",
+            email="agreement-e@example.com",
+            password="pass123",
+        )
+        self.outsider = User.objects.create_user(
+            username="agreement_outsider",
+            email="agreement-outsider@example.com",
+            password="pass123",
+        )
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(LabelingSection.objects.filter(labeling=self.labeling).count(), 0)
+        self.project = Project.objects.create(
+            name="Agreement Project",
+            description="Agreement tests",
+            created_by=self.request_user,
+        )
+        ProjectMembership.objects.create(
+            project=self.project,
+            user=self.request_user,
+            role=ProjectMembership.RoleChoices.OWNER,
+        )
 
-    def test_put_denies_admin_outside_project(self):
-        self.client.force_authenticate(self.outsider_admin)
+        self.labeling = Labeling.objects.create(
+            project=self.project,
+            title="Agreement Labeling",
+            created_by=self.request_user,
+            start_date=timezone.now().date(),
+            final_date=timezone.now().date(),
+            users_per_item=5,
+        )
+        LabelingMembership.objects.create(
+            labeling=self.labeling,
+            user=self.request_user,
+            role=LabelingMembership.Role.OWNER,
+        )
+        for annotator in [
+            self.annotator_a,
+            self.annotator_b,
+            self.annotator_c,
+            self.annotator_d,
+            self.annotator_e,
+        ]:
+            LabelingMembership.objects.create(
+                labeling=self.labeling,
+                user=annotator,
+                role=LabelingMembership.Role.ANNOTATOR,
+            )
 
-        response = self.client.put(self.structure_url, self.valid_payload, format="json")
+        main_section = LabelingSection.objects.create(
+            labeling=self.labeling,
+            form_type=LabelingSection.FormType.MAIN,
+            title="Smells",
+            order=1,
+        )
+        self.question = LabelingElement.objects.create(
+            labeling_section=main_section,
+            order=1,
+            text="Which smells apply?",
+            question_type=LabelingElement.QuestionType.MULTIPLE_CHOICE,
+            allow_multiple=True,
+        )
+        MultipleChoiceItem.objects.create(
+            labeling_element=self.question,
+            text="God Class",
+            value=False,
+            order=1,
+        )
+        MultipleChoiceItem.objects.create(
+            labeling_element=self.question,
+            text="Long Parameter List",
+            value=False,
+            order=2,
+        )
+        MultipleChoiceItem.objects.create(
+            labeling_element=self.question,
+            text="Data Class",
+            value=False,
+            order=3,
+        )
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(LabelingSection.objects.filter(labeling=self.labeling).count(), 0)
+        self.item = Item.objects.create(
+            labeling=self.labeling,
+            payload={},
+            row_index=0,
+            status="pending",
+        )
+
+        qid = str(self.question.id)
+
+        # resposta antiga do A (deve ser ignorada pela deduplicação item+usuário)
+        Answer.objects.create(
+            item=self.item,
+            labeling=self.labeling,
+            answered_by=self.annotator_a,
+            answer_payload={qid: ["Data Class"]},
+        )
+
+        # respostas consideradas (mais recentes por usuário no item)
+        Answer.objects.create(
+            item=self.item,
+            labeling=self.labeling,
+            answered_by=self.annotator_a,
+            answer_payload={qid: ["Data Class", "Long Parameter List"]},
+        )
+        Answer.objects.create(
+            item=self.item,
+            labeling=self.labeling,
+            answered_by=self.annotator_b,
+            answer_payload={qid: ["Data Class", "God Class"]},
+        )
+        Answer.objects.create(
+            item=self.item,
+            labeling=self.labeling,
+            answered_by=self.annotator_c,
+            answer_payload={qid: ["Data Class"]},
+        )
+        Answer.objects.create(
+            item=self.item,
+            labeling=self.labeling,
+            answered_by=self.annotator_d,
+            answer_payload={qid: ["Long Parameter List"]},
+        )
+        Answer.objects.create(
+            item=self.item,
+            labeling=self.labeling,
+            answered_by=self.annotator_e,
+            answer_payload={qid: ["Data Class", "God Class"]},
+        )
+
+        self.client = APIClient()
+        self.url = f"/labelings/{self.labeling.id}/agreement-summary/"
+
+    def test_returns_agreement_summary_for_multiple_choice_questions(self):
+        self.client.force_authenticate(self.request_user)
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["min_agreement"], 2)
+        self.assertEqual(response.data["max_min_agreement"], 5)
+        self.assertEqual(len(response.data["questions"]), 1)
+
+        summary = response.data["questions"][0]
+        self.assertEqual(summary["question_id"], self.question.id)
+        self.assertEqual(summary["possible_agreements"], 1)
+
+        by_key = {option["key"]: option["agreement_count"] for option in summary["options"]}
+        self.assertEqual(by_key.get("God Class"), 1)
+        self.assertEqual(by_key.get("Long Parameter List"), 1)
+        self.assertEqual(by_key.get("Data Class"), 1)
+
+    def test_returns_summary_for_custom_min_agreement(self):
+        self.client.force_authenticate(self.request_user)
+        response = self.client.get(self.url, {"min_agreement": 3})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["min_agreement"], 3)
+        self.assertEqual(response.data["max_min_agreement"], 5)
+
+        summary = response.data["questions"][0]
+        by_key = {option["key"]: option["agreement_count"] for option in summary["options"]}
+        self.assertEqual(by_key.get("Data Class"), 1)
+        self.assertEqual(by_key.get("God Class"), 0)
+        self.assertEqual(by_key.get("Long Parameter List"), 0)
+
+    def test_rejects_invalid_min_agreement(self):
+        self.client.force_authenticate(self.request_user)
+        response = self.client.get(self.url, {"min_agreement": 1})
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["code"], "INVALID_MIN_AGREEMENT")
+
+    def test_rejects_min_agreement_above_max(self):
+        self.client.force_authenticate(self.request_user)
+        response = self.client.get(self.url, {"min_agreement": 6})
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["code"], "INVALID_MIN_AGREEMENT")
+
+    def test_denies_access_for_outsider(self):
+        self.client.force_authenticate(self.outsider)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

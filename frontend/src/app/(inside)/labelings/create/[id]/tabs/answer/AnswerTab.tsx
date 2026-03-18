@@ -14,9 +14,14 @@ import type { User } from "@/modules/user/userTypes";
 type AnswerTabProps = {
   labelingId: number;
   users: User[];
+  usersPerItem?: number;
 };
 
-export default function AnswerTab({ labelingId, users }: AnswerTabProps) {
+export default function AnswerTab({
+  labelingId,
+  users,
+  usersPerItem,
+}: AnswerTabProps) {
   const { t } = useTranslations();
   const [activeView, setActiveView] = useState<AnswerView>("answers");
   const [isInspectingItem, setIsInspectingItem] = useState(false);
@@ -124,6 +129,8 @@ export default function AnswerTab({ labelingId, users }: AnswerTabProps) {
           />
         ) : (
           <SummaryTab
+            labelingId={labelingId}
+            usersPerItem={usersPerItem}
             answers={answers}
             answersLoading={isLoading}
             structureSections={structureSections}
