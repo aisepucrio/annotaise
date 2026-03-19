@@ -342,6 +342,7 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.context.type.date": "Data",
     "labelings.create.context.type.category": "Categoria",
     "labelings.create.context.type.code": "Código",
+    "labelings.create.context.type.audio": "Áudio",
     "labelings.create.context.type.image": "Imagem",
     "labelings.create.question.title": "Pergunta",
     "labelings.create.question.removeAria": "Remover pergunta",
@@ -721,6 +722,8 @@ export const translations: Record<Language, TranslationMap> = {
     "answer.context.title": "Contexto",
     "answer.context.invalidImage":
       "Imagem inválida. Contate o dono da rotulação.",
+    "answer.context.invalidAudio":
+      "Áudio inválido. Contate o dono da rotulação.",
     "guide.pageTitle": "Guia da rotulação",
     "guide.title": "Guia",
     "guide.invalidId": "ID da rotulação inválido.",
@@ -1076,6 +1079,7 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.context.type.category": "Category",
     "labelings.create.context.type.code": "Code",
     "labelings.create.context.type.image": "Image",
+    "labelings.create.context.type.audio": "Audio",
     "labelings.create.question.title": "Question",
     "labelings.create.question.removeAria": "Remove question",
     "labelings.create.question.placeholder": "Question text",
@@ -1426,6 +1430,7 @@ export const translations: Record<Language, TranslationMap> = {
     "answer.context.noValue": "Value not found for this item.",
     "answer.context.title": "Context",
     "answer.context.invalidImage": "Invalid image. Contact the labeling owner.",
+    "answer.context.invalidAudio": "Invalid audio. Contact the labeling owner.",
     "guide.pageTitle": "Labeling guide",
     "guide.title": "Guide",
     "guide.invalidId": "Invalid labeling ID.",

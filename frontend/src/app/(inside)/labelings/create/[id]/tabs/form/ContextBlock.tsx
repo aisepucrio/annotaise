@@ -10,7 +10,8 @@ export type ContextType =
   | "date"
   | "category"
   | "code"
-  | "image";
+  | "image"
+  | "audio";
 
 export type ContextElement = {
   id: string;
@@ -110,6 +111,7 @@ export default function ContextBlock({
                 value: "image",
                 label: t("labelings.create.context.type.image"),
               },
+              { value: "audio", label: t("labelings.create.context.type.audio") },
             ]}
           />
         </div>
