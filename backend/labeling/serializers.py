@@ -228,3 +228,21 @@ class LabelingMembershipDashboardSerializer(serializers.Serializer):
     background_answered = serializers.BooleanField(required=False)
 
     joined_at = serializers.DateTimeField()
+
+
+class LabelingAgreementOptionSerializer(serializers.Serializer):
+    key = serializers.CharField()
+    label = serializers.CharField()
+    agreement_count = serializers.IntegerField(min_value=0)
+
+
+class LabelingAgreementQuestionSerializer(serializers.Serializer):
+    question_id = serializers.IntegerField()
+    possible_agreements = serializers.IntegerField(min_value=0)
+    options = LabelingAgreementOptionSerializer(many=True)
+
+
+class LabelingAgreementSummarySerializer(serializers.Serializer):
+    min_agreement = serializers.IntegerField(min_value=2)
+    max_min_agreement = serializers.IntegerField(min_value=2)
+    questions = LabelingAgreementQuestionSerializer(many=True)

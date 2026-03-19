@@ -16,6 +16,9 @@ export type QuestionStatisticsVizualizerProps = {
   numberFormatter: Intl.NumberFormat;
   className?: string;
   showMultipleChoiceAgreement?: boolean;
+  minAgreement?: number;
+  agreementThresholdOptions?: number[];
+  onMinAgreementChange?: (value: number) => void;
 };
 
 const BLUEBERRY_COLORS = {
@@ -87,6 +90,9 @@ function MultipleChoiceStatView(props: QuestionStatisticsVizualizerProps) {
       t={props.t}
       className={props.className}
       showMultipleChoiceAgreement={props.showMultipleChoiceAgreement ?? false}
+      minAgreement={props.minAgreement}
+      agreementThresholdOptions={props.agreementThresholdOptions}
+      onMinAgreementChange={props.onMinAgreementChange}
     />
   );
 }
@@ -104,11 +110,17 @@ function CategoricalQuestionStatView({
   t,
   className = "",
   showMultipleChoiceAgreement = false,
+  minAgreement,
+  agreementThresholdOptions,
+  onMinAgreementChange,
 }: {
   summary: QuestionSummary;
   t: TranslateFn;
   className?: string;
   showMultipleChoiceAgreement?: boolean;
+  minAgreement?: number;
+  agreementThresholdOptions?: number[];
+  onMinAgreementChange?: (value: number) => void;
 }) {
   if (summary.chart.kind !== "bar") {
     return (
@@ -119,22 +131,37 @@ function CategoricalQuestionStatView({
   return (
     <div className={`space-y-3 ${className}`}>
       <div
-        className="text-xs font-semibold"
-        style={{ color: BLUEBERRY_COLORS.textStrong }}
+        className="rounded-lg border p-3 space-y-2"
+        style={{
+          borderColor: BLUEBERRY_COLORS.surfaceMuted,
+        }}
       >
-        {summary.chart.title}
+        <div
+          className="text-xs font-semibold"
+          style={{ color: BLUEBERRY_COLORS.textStrong }}
+        >
+          {summary.chart.title}
+        </div>
+        <SummaryBarChart
+          items={summary.chart.items}
+          total={summary.chart.total}
+        />
       </div>
-      <SummaryBarChart
-        items={summary.chart.items}
-        total={summary.chart.total}
-      />
 
       {showMultipleChoiceAgreement ? (
-        <MultipleChoiceAgreementBars
-          items={summary.chart.items}
-          possiblePairs={summary.chart.possiblePairs ?? 0}
-          t={t}
-        />
+        <div
+          className="rounded-lg border p-3"
+          style={{ borderColor: BLUEBERRY_COLORS.surfaceMuted }}
+        >
+          <MultipleChoiceAgreementBars
+            items={summary.chart.items}
+            possibleAgreements={summary.chart.possibleAgreements ?? 0}
+            t={t}
+            minAgreement={minAgreement}
+            agreementThresholdOptions={agreementThresholdOptions}
+            onMinAgreementChange={onMinAgreementChange}
+          />
+        </div>
       ) : null}
     </div>
   );
@@ -142,12 +169,18 @@ function CategoricalQuestionStatView({
 
 function MultipleChoiceAgreementBars({
   items,
-  possiblePairs,
+  possibleAgreements,
   t,
+  minAgreement,
+  agreementThresholdOptions,
+  onMinAgreementChange,
 }: {
   items: BarItem[];
-  possiblePairs: number;
+  possibleAgreements: number;
   t: TranslateFn;
+  minAgreement?: number;
+  agreementThresholdOptions?: number[];
+  onMinAgreementChange?: (value: number) => void;
 }) {
   const agreementItems = items
     .filter(
@@ -158,34 +191,58 @@ function MultipleChoiceAgreementBars({
     .map((item) => ({
       label: item.label,
       count: item.agreementCount ?? 0,
-    }))
-    .filter((item) => item.count > 0);
+    }));
 
-  const hasAgreementData = items.some(
+  const hasAgreementContext = items.some(
     (item) =>
       typeof item.agreementCount === "number" &&
-      (item.agreementCount ?? 0) > 0,
+      typeof item.agreementRate === "number",
   );
 
-  if (!hasAgreementData) return null;
+  if (!hasAgreementContext) return null;
 
   return (
     <div className="space-y-2">
-      <p
-        className="text-xs font-semibold"
-        style={{ color: BLUEBERRY_COLORS.textStrong }}
-      >
-        {t("labelings.create.summary.agreement.title")}
-      </p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <p
+          className="text-xs font-semibold"
+          style={{ color: BLUEBERRY_COLORS.textStrong }}
+        >
+          {t("labelings.create.summary.agreement.title")}
+        </p>
+
+        {typeof minAgreement === "number" &&
+        Array.isArray(agreementThresholdOptions) &&
+        agreementThresholdOptions.length > 0 &&
+        onMinAgreementChange ? (
+          <div className="flex flex-col">
+            <label className="text-[11px] font-semibold text-gray-700">
+              {t("labelings.create.summary.agreement.minAgreementLabel")}
+            </label>
+            <select
+              value={String(minAgreement)}
+              onChange={(event) => onMinAgreementChange(Number(event.target.value))}
+              className="mt-1 rounded-md border border-gray-300 bg-white px-2 py-1 text-xs text-gray-800 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200"
+            >
+              {agreementThresholdOptions.map((threshold) => (
+                <option key={threshold} value={threshold}>
+                  {threshold}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : null}
+      </div>
+
       <SummaryBarChart
         items={agreementItems}
-        total={possiblePairs}
+        total={possibleAgreements}
       />
 
-      {possiblePairs > 0 ? (
+      {possibleAgreements > 0 ? (
         <p className="text-xs text-gray-500">
-          {t("labelings.create.summary.agreement.possiblePairs", {
-            count: String(possiblePairs),
+          {t("labelings.create.summary.agreement.possibleItems", {
+            count: String(possibleAgreements),
           })}
         </p>
       ) : (

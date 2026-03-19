@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type {
   AnswerResponse,
   LabelingStructureSection,
@@ -8,23 +8,90 @@ import type {
 import { useTranslations } from "@/i18n/use-translations";
 import SectionVizualizer from "@/components/answer-vizualizer/SectionVizualizer";
 import SummaryVizualizer from "@/components/answer-vizualizer/SummaryVizualizer";
+import { useLabelingAgreementSummaryQuery } from "@/modules/labelings/create/labelingManagerQueries";
 import {
   buildSummarySections,
   splitSummarySectionGroupTitle,
 } from "@/components/answer-vizualizer/summary-vizualizer-utils";
 
 type SummaryTabProps = {
+  labelingId: number;
+  usersPerItem?: number;
   answers: AnswerResponse[];
   answersLoading: boolean;
   structureSections: LabelingStructureSection[];
 };
 
 export default function SummaryTab({
+  labelingId,
+  usersPerItem,
   answers,
   answersLoading,
   structureSections,
 }: SummaryTabProps) {
   const { t, locale } = useTranslations();
+  const hasMultipleChoiceQuestions = useMemo(
+    () =>
+      structureSections.some((section) =>
+        section.elements.some(
+          (element) => element.question_type === "multiple_choice",
+        ),
+      ),
+    [structureSections],
+  );
+  const hasComparableItemsForAgreement = useMemo(() => {
+    const respondersByItem = new Map<number, Set<number>>();
+
+    answers.forEach((answer) => {
+      const itemId = answer.item_detail?.id ?? answer.item;
+      const userId = answer.answered_by;
+
+      if (!respondersByItem.has(itemId)) {
+        respondersByItem.set(itemId, new Set<number>());
+      }
+      respondersByItem.get(itemId)?.add(userId);
+    });
+
+    return Array.from(respondersByItem.values()).some(
+      (responders) => responders.size >= 2,
+    );
+  }, [answers]);
+  const shouldShowAgreement =
+    hasMultipleChoiceQuestions &&
+    (usersPerItem !== 1 || hasComparableItemsForAgreement);
+  const [minAgreement, setMinAgreement] = useState(2);
+  const { data: agreementData } = useLabelingAgreementSummaryQuery(
+    labelingId,
+    minAgreement,
+    shouldShowAgreement,
+  );
+
+  const maxMinAgreement = useMemo(
+    () => Math.max(2, agreementData?.max_min_agreement ?? 2),
+    [agreementData?.max_min_agreement],
+  );
+  const agreementSummary = useMemo(
+    () => (shouldShowAgreement ? agreementData?.questions ?? [] : []),
+    [agreementData?.questions, shouldShowAgreement],
+  );
+  const thresholdOptions = useMemo(() => {
+    const options: number[] = [];
+    for (let threshold = 2; threshold <= maxMinAgreement; threshold += 1) {
+      options.push(threshold);
+    }
+    return options.length > 0 ? options : [2];
+  }, [maxMinAgreement]);
+
+  useEffect(() => {
+    if (minAgreement > maxMinAgreement) {
+      setMinAgreement(maxMinAgreement);
+    }
+  }, [maxMinAgreement, minAgreement]);
+
+  useEffect(() => {
+    setMinAgreement(2);
+  }, [labelingId]);
+
   const numberFormatter = useMemo(
     () => new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }),
     [locale],
@@ -34,10 +101,11 @@ export default function SummaryTab({
       buildSummarySections({
         answers,
         structureSections,
+        agreementSummary,
         t,
         numberFormatter,
       }),
-    [answers, numberFormatter, structureSections, t],
+    [agreementSummary, answers, numberFormatter, structureSections, t],
   );
 
   if (answersLoading) {
@@ -77,7 +145,10 @@ export default function SummaryTab({
                       numberFormatter={numberFormatter}
                       t={t}
                       showTypeLabel
-                      showMultipleChoiceAgreement
+                      showMultipleChoiceAgreement={shouldShowAgreement}
+                      minAgreement={minAgreement}
+                      agreementThresholdOptions={thresholdOptions}
+                      onMinAgreementChange={setMinAgreement}
                     />
                   ))}
                 </SectionVizualizer>

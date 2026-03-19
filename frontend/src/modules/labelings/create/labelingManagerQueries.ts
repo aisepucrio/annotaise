@@ -5,10 +5,12 @@ import {
   fetchLabelingMemberships,
   fetchLabelingAnswers,
   fetchLabelingElements,
+  fetchLabelingAgreementSummary,
 } from "../labelingService";
 import { fetchProject } from "@/modules/projects/projectService";
 import { fetchUsers } from "@/modules/user/userService";
 import type {
+  LabelingAgreementSummary,
   LabelingStructureSection,
   LabelingElementSummary,
 } from "@/modules/labelings/labelingsTypes";
@@ -123,6 +125,25 @@ export function useLabelingAnswersWithStructureQuery(labelingId: number) {
 
       return { answers, structure };
     },
+  });
+}
+
+export function useLabelingAgreementSummaryQuery(
+  labelingId: number,
+  minAgreement: number,
+  shouldFetch = true,
+) {
+  const enabled = !Number.isNaN(labelingId) && shouldFetch;
+
+  return useQuery({
+    queryKey: ["labelings", labelingId, "agreement-summary", minAgreement],
+    enabled,
+    queryFn: async (): Promise<LabelingAgreementSummary> =>
+      fetchLabelingAgreementSummary(labelingId, minAgreement).catch(() => ({
+        min_agreement: minAgreement,
+        max_min_agreement: 2,
+        questions: [],
+      })),
   });
 }
 

@@ -211,3 +211,21 @@ export type BackgroundAnswerResponse = {
   created_at: string;
   updated_at: string;
 };
+
+export type LabelingAgreementOptionSummary = {
+  key: string;
+  label: string;
+  agreement_count: number;
+};
+
+export type LabelingAgreementQuestionSummary = {
+  question_id: number;
+  possible_agreements: number;
+  options: LabelingAgreementOptionSummary[];
+};
+
+export type LabelingAgreementSummary = {
+  min_agreement: number;
+  max_min_agreement: number;
+  questions: LabelingAgreementQuestionSummary[];
+};

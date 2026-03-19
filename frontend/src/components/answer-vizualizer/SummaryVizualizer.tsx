@@ -33,6 +33,9 @@ export type SummaryVizualizerProps = {
   showTypeLabel?: boolean;
   showResponseCount?: boolean;
   showMultipleChoiceAgreement?: boolean;
+  minAgreement?: number;
+  agreementThresholdOptions?: number[];
+  onMinAgreementChange?: (value: number) => void;
 };
 
 export type SummaryQuestionCardProps = SummaryVizualizerProps;
@@ -45,6 +48,9 @@ export function SummaryQuestionCard({
   showTypeLabel = false,
   showResponseCount = true,
   showMultipleChoiceAgreement = false,
+  minAgreement,
+  agreementThresholdOptions,
+  onMinAgreementChange,
 }: SummaryQuestionCardProps) {
   const metadataItems: string[] = [];
 
@@ -104,6 +110,9 @@ export function SummaryQuestionCard({
           numberFormatter={numberFormatter}
           t={t}
           showMultipleChoiceAgreement={showMultipleChoiceAgreement}
+          minAgreement={minAgreement}
+          agreementThresholdOptions={agreementThresholdOptions}
+          onMinAgreementChange={onMinAgreementChange}
         />
       </div>
     </article>

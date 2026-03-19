@@ -1,6 +1,7 @@
 import type { TranslateFn } from "@/i18n/types";
 import type {
   AnswerResponse,
+  LabelingAgreementQuestionSummary,
   LabelingStructureElement,
   LabelingStructureSection,
 } from "@/modules/labelings/labelingsTypes";
@@ -18,7 +19,7 @@ export type QuestionSummaryChart =
       title: string;
       items: AgreementBarItem[];
       total: number;
-      possiblePairs?: number;
+      possibleAgreements?: number;
     }
   | {
       kind: "hist";
@@ -49,16 +50,24 @@ const MAX_TEXT_BARS = 6;
 export function buildSummarySections({
   answers,
   structureSections,
+  agreementSummary = [],
   t,
   numberFormatter,
 }: {
   answers: AnswerResponse[];
   structureSections: LabelingStructureSection[];
+  agreementSummary?: LabelingAgreementQuestionSummary[];
   t: TranslateFn;
   numberFormatter: Intl.NumberFormat;
 }): SummarySectionGroup[] {
   return groupSummariesBySection(
-    buildQuestionSummaries({ answers, structureSections, t, numberFormatter }),
+    buildQuestionSummaries({
+      answers,
+      structureSections,
+      agreementSummary,
+      t,
+      numberFormatter,
+    }),
   );
 }
 
@@ -104,14 +113,26 @@ function groupSummariesBySection(
   return orderedGroups;
 }
 
+function buildAgreementLookup(
+  agreementSummary: LabelingAgreementQuestionSummary[],
+): Map<string, LabelingAgreementQuestionSummary> {
+  const lookup = new Map<string, LabelingAgreementQuestionSummary>();
+  agreementSummary.forEach((question) => {
+    lookup.set(String(question.question_id), question);
+  });
+  return lookup;
+}
+
 function buildQuestionSummaries({
   answers,
   structureSections,
+  agreementSummary,
   t,
   numberFormatter,
 }: {
   answers: AnswerResponse[];
   structureSections: LabelingStructureSection[];
+  agreementSummary: LabelingAgreementQuestionSummary[];
   t: TranslateFn;
   numberFormatter: Intl.NumberFormat;
 }): QuestionSummary[] {
@@ -120,6 +141,7 @@ function buildQuestionSummaries({
   );
 
   const summaries: QuestionSummary[] = [];
+  const agreementByQuestion = buildAgreementLookup(agreementSummary);
 
   orderedSections.forEach((section, sectionIndex) => {
     const orderedElements = [...(section.elements ?? [])].sort(
@@ -164,8 +186,8 @@ function buildQuestionSummaries({
           chart: buildChartForElement({
             element,
             values,
-            answers,
             answerKey,
+            agreementByQuestion,
             t,
             numberFormatter,
           }),
@@ -179,15 +201,15 @@ function buildQuestionSummaries({
 function buildChartForElement({
   element,
   values,
-  answers,
   answerKey,
+  agreementByQuestion,
   t,
   numberFormatter,
 }: {
   element: LabelingStructureElement;
   values: unknown[];
-  answers: AnswerResponse[];
   answerKey: string | null;
+  agreementByQuestion: Map<string, LabelingAgreementQuestionSummary>;
   t: TranslateFn;
   numberFormatter: Intl.NumberFormat;
 }): QuestionSummaryChart {
@@ -195,10 +217,11 @@ function buildChartForElement({
   if (!cleanValues.length) return noDataChart(t);
 
   if (element.question_type === "multiple_choice") {
-    const { items, total, possiblePairs } = buildChoiceCountsWithAgreement({
+    const { items, total, possibleAgreements } = buildChoiceCountsWithAgreement({
       element,
-      answers,
+      values: cleanValues,
       answerKey,
+      agreementByQuestion,
       t,
     });
     if (!items.length) return noDataChart(t);
@@ -208,7 +231,7 @@ function buildChartForElement({
       title: t("labelings.create.summary.chart.topResponses"),
       items,
       total,
-      possiblePairs,
+      possibleAgreements,
     };
   }
 
@@ -304,132 +327,108 @@ function extractTextResponses(
   return responses;
 }
 
+function buildChoiceCounts(
+  element: LabelingStructureElement,
+  values: unknown[],
+  t: (key: string) => string,
+): BarItem[] {
+  const options = [...(element.multiple_choice_items ?? [])]
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+    .map((item) => item.text);
+
+  const counts = new Map<string, number>();
+  const optionSet = new Set(options);
+
+  options.forEach((option) => counts.set(option, 0));
+
+  let otherCount = 0;
+
+  values.forEach((value) => {
+    const entries = Array.isArray(value) ? value : [value];
+
+    entries.forEach((entry) => {
+      const normalized = normalizeChoiceValue(entry, t);
+      if (!normalized) return;
+
+      if (optionSet.has(normalized)) {
+        counts.set(normalized, (counts.get(normalized) ?? 0) + 1);
+      } else {
+        otherCount += 1;
+      }
+    });
+  });
+
+  const items: BarItem[] = options.map((option) => ({
+    label: option,
+    count: counts.get(option) ?? 0,
+  }));
+
+  if (otherCount > 0) {
+    items.push({
+      label: t("labelings.create.summary.chart.other"),
+      count: otherCount,
+    });
+  }
+
+  return items.filter((item) => item.count > 0);
+}
+
 function buildChoiceCountsWithAgreement({
   element,
-  answers,
+  values,
   answerKey,
+  agreementByQuestion,
   t,
 }: {
   element: LabelingStructureElement;
-  answers: AnswerResponse[];
+  values: unknown[];
   answerKey: string | null;
+  agreementByQuestion: Map<string, LabelingAgreementQuestionSummary>;
   t: (key: string) => string;
 }): {
   items: AgreementBarItem[];
   total: number;
-  possiblePairs: number;
+  possibleAgreements: number;
 } {
+  const frequencyItems = buildChoiceCounts(element, values, t);
   if (!answerKey) {
-    return { items: [], total: 0, possiblePairs: 0 };
+    return {
+      items: frequencyItems.map((item) => ({
+        ...item,
+        agreementCount: 0,
+        agreementRate: 0,
+      })),
+      total: frequencyItems.reduce((sum, item) => sum + item.count, 0),
+      possibleAgreements: 0,
+    };
   }
 
-  const options = [...(element.multiple_choice_items ?? [])]
-    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-    .map((item) => item.text)
-    .filter((item) => item.trim().length > 0);
+  const agreement = agreementByQuestion.get(answerKey);
+  const possibleAgreements = agreement?.possible_agreements ?? 0;
+  const agreementByOptionKey = new Map<string, number>();
 
-  const counts = new Map<string, number>();
-  const agreementCounts = new Map<string, number>();
-  const optionSet = new Set(options);
+  agreement?.options.forEach((option) => {
+    agreementByOptionKey.set(option.key, option.agreement_count ?? 0);
+  });
+
   const otherLabel = t("labelings.create.summary.chart.other");
-
-  options.forEach((option) => {
-    counts.set(option, 0);
-    agreementCounts.set(option, 0);
-  });
-
-  const latestAnswers = selectLatestAnswersByItemAndUser(answers);
-  const perItemStats = new Map<
-    string,
-    {
-      answeredUsers: Set<number>;
-      optionUsers: Map<string, Set<number>>;
-    }
-  >();
-
-  latestAnswers.forEach((answer) => {
-    const rawValue = resolveAnswerPayloadValue(answer.answer_payload ?? {}, answerKey);
-    const normalizedChoices = normalizeChoiceEntries(rawValue, t);
-    if (!normalizedChoices.length) return;
-
-    const selectedOptions = Array.from(
-      new Set(
-        normalizedChoices.map((choice) =>
-          optionSet.has(choice) ? choice : otherLabel,
-        ),
-      ),
-    );
-    if (!selectedOptions.length) return;
-
-    const itemKey = getAnswerItemKey(answer);
-    const itemState =
-      perItemStats.get(itemKey) ??
-      {
-        answeredUsers: new Set<number>(),
-        optionUsers: new Map<string, Set<number>>(),
-      };
-
-    itemState.answeredUsers.add(answer.answered_by);
-
-    selectedOptions.forEach((option) => {
-      counts.set(option, (counts.get(option) ?? 0) + 1);
-
-      const users = itemState.optionUsers.get(option) ?? new Set<number>();
-      users.add(answer.answered_by);
-      itemState.optionUsers.set(option, users);
-    });
-
-    perItemStats.set(itemKey, itemState);
-  });
-
-  let possiblePairs = 0;
-  perItemStats.forEach((itemState) => {
-    possiblePairs += pairCombinations(itemState.answeredUsers.size);
-
-    itemState.optionUsers.forEach((users, option) => {
-      agreementCounts.set(
-        option,
-        (agreementCounts.get(option) ?? 0) + pairCombinations(users.size),
-      );
-    });
-  });
-
-  const orderedLabels = [...options];
-  if ((counts.get(otherLabel) ?? 0) > 0) {
-    orderedLabels.push(otherLabel);
-  }
-
-  const items: AgreementBarItem[] = orderedLabels
-    .map((option) => ({
-      label: option,
-      count: counts.get(option) ?? 0,
-      agreementCount: agreementCounts.get(option) ?? 0,
+  const items: AgreementBarItem[] = frequencyItems.map((item) => {
+    const optionKey = item.label === otherLabel ? "__other__" : item.label;
+    const agreementCount = agreementByOptionKey.get(optionKey) ?? 0;
+    return {
+      label: item.label,
+      count: item.count,
+      agreementCount,
       agreementRate:
-        possiblePairs > 0 ? (agreementCounts.get(option) ?? 0) / possiblePairs : 0,
-    }))
-    .filter((item) => item.count > 0);
+        possibleAgreements > 0 ? agreementCount / possibleAgreements : 0,
+    };
+  });
 
   return {
     items,
     total: items.reduce((sum, item) => sum + item.count, 0),
-    possiblePairs,
+    possibleAgreements,
   };
-}
-
-function normalizeChoiceEntries(
-  value: unknown,
-  t: (key: string) => string,
-): string[] {
-  const entries = Array.isArray(value) ? value : [value];
-  const normalized: string[] = [];
-
-  entries.forEach((entry) => {
-    const normalizedValue = normalizeChoiceValue(entry, t);
-    if (!normalizedValue) return;
-    normalized.push(normalizedValue);
-  });
-
-  return normalized;
 }
 
 function resolveAnswerPayloadValue(
@@ -449,37 +448,6 @@ function resolveAnswerPayloadValue(
   }
 
   return undefined;
-}
-
-function getAnswerItemKey(answer: AnswerResponse): string {
-  if (answer.item_detail?.id !== undefined && answer.item_detail?.id !== null) {
-    return `detail-${answer.item_detail.id}`;
-  }
-  return `item-${answer.item}`;
-}
-
-function selectLatestAnswersByItemAndUser(
-  answers: AnswerResponse[],
-): AnswerResponse[] {
-  const sorted = [...answers].sort(
-    (a, b) =>
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-  );
-
-  const latestByItemAndUser = new Map<string, AnswerResponse>();
-  sorted.forEach((answer) => {
-    const key = `${getAnswerItemKey(answer)}:${answer.answered_by}`;
-    if (!latestByItemAndUser.has(key)) {
-      latestByItemAndUser.set(key, answer);
-    }
-  });
-
-  return Array.from(latestByItemAndUser.values());
-}
-
-function pairCombinations(size: number): number {
-  if (size < 2) return 0;
-  return (size * (size - 1)) / 2;
 }
 
 function buildTextCounts(values: unknown[], t: (key: string) => string): BarItem[] {

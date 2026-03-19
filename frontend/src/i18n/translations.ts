@@ -296,10 +296,12 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.summary.agreement.frequency": "Frequência",
     "labelings.create.summary.agreement.count": "Nº de agreements",
     "labelings.create.summary.agreement.rate": "Taxa de agreement",
-    "labelings.create.summary.agreement.possiblePairs":
-      "{{count}} pares comparáveis na base.",
+    "labelings.create.summary.agreement.possibleItems":
+      "{{count}} itens comparáveis na base.",
     "labelings.create.summary.agreement.noPairs":
-      "Sem pares suficientes para calcular agreement.",
+      "Sem itens suficientes para calcular agreement.",
+    "labelings.create.summary.agreement.minAgreementLabel":
+      "Mínimo de usuários para agreement",
     "labelings.create.summary.stats.average": "Média",
     "labelings.create.summary.stats.median": "Mediana",
     "labelings.create.summary.stats.min": "Mínimo",
@@ -1038,10 +1040,12 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.summary.agreement.frequency": "Frequency",
     "labelings.create.summary.agreement.count": "Agreement count",
     "labelings.create.summary.agreement.rate": "Agreement rate",
-    "labelings.create.summary.agreement.possiblePairs":
-      "{{count}} comparable pairs in the dataset.",
+    "labelings.create.summary.agreement.possibleItems":
+      "{{count}} comparable items in the dataset.",
     "labelings.create.summary.agreement.noPairs":
-      "Not enough pairs to calculate agreement.",
+      "Not enough items to calculate agreement.",
+    "labelings.create.summary.agreement.minAgreementLabel":
+      "Minimum users for agreement",
     "labelings.create.summary.stats.average": "Average",
     "labelings.create.summary.stats.median": "Median",
     "labelings.create.summary.stats.min": "Min",
