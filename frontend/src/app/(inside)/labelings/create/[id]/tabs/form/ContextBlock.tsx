@@ -11,7 +11,9 @@ export type ContextType =
   | "category"
   | "code"
   | "image"
-  | "audio";
+  | "audio"
+  | "video"
+  | "pdf";
 
 export type ContextElement = {
   id: string;
@@ -112,6 +114,8 @@ export default function ContextBlock({
                 label: t("labelings.create.context.type.image"),
               },
               { value: "audio", label: t("labelings.create.context.type.audio") },
+              { value: "video", label: t("labelings.create.context.type.video") },
+              { value: "pdf", label: t("labelings.create.context.type.pdf") },
             ]}
           />
         </div>
