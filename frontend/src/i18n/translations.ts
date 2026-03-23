@@ -351,13 +351,19 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.question.selectType": "Selecione um tipo",
     "labelings.create.question.type.text": "Texto",
     "labelings.create.question.type.number": "Número",
-    "labelings.create.question.type.range": "Intervalo numérico",
+    "labelings.create.question.type.range": "Escala linear",
     "labelings.create.question.type.multipleChoice": "Seleção múltipla",
     "labelings.create.question.required": "Obrigatória",
     "labelings.create.questionType.text.noConfig":
       "Perguntas de texto não possuem configurações adicionais.",
-    "labelings.create.questionType.number.noConfig":
-      "Perguntas numéricas não possuem configurações adicionais.",
+    "labelings.create.questionType.number.minLabel": "Valor mínimo",
+    "labelings.create.questionType.number.maxLabel": "Valor máximo",
+    "labelings.create.questionType.number.basicMode":
+      "Sem restrições adicionais. O respondente verá apenas um campo numérico.",
+    "labelings.create.questionType.number.summaryMin":
+      "Mínimo ativo: {{min}}",
+    "labelings.create.questionType.number.summaryMax":
+      "Máximo ativo: {{max}}",
     "labelings.create.questionType.multipleChoice.optionsLabel": "Opções",
     "labelings.create.questionType.multipleChoice.addOption": "Adicionar opção",
     "labelings.create.questionType.multipleChoice.optionLabel":
@@ -365,11 +371,16 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.questionType.multipleChoice.allowMultiple":
       "Permitir múltiplas respostas (Checkbox)",
     "labelings.create.questionType.multipleChoice.dragOption": "Arrastar opção",
-    "labelings.create.questionType.range.minLabel": "Valor mínimo",
-    "labelings.create.questionType.range.maxLabel": "Valor máximo",
-    "labelings.create.questionType.range.stepLabel": "Passo",
+    "labelings.create.questionType.range.startValueLabel": "Valor inicial",
+    "labelings.create.questionType.range.endValueLabel": "Valor final",
+    "labelings.create.questionType.range.to": "a",
+    "labelings.create.questionType.range.startLabel": "Rótulo inicial",
+    "labelings.create.questionType.range.endLabel": "Rótulo final",
+    "labelings.create.questionType.range.startLabelPlaceholder":
+      "Ex.: Muito",
+    "labelings.create.questionType.range.endLabelPlaceholder": "Ex.: Pouco",
     "labelings.create.questionType.range.summary":
-      "Faixa configurada: {{min}} até {{max}} (passo {{step}})",
+      "Escala configurada: {{min}} até {{max}}",
     "labelings.create.assign.loading": "Carregando membros...",
     "labelings.create.assign.empty": "Nenhum membro atribuído.",
     "labelings.create.assign.remove": "Remover",
@@ -714,7 +725,7 @@ export const translations: Record<Language, TranslationMap> = {
     "answer.question.required": "Obrigatória",
     "answer.question.type.text": "Texto",
     "answer.question.type.number": "Número",
-    "answer.question.type.range": "Intervalo",
+    "answer.question.type.range": "Escala linear",
     "answer.question.type.multipleChoice": "Seleção múltipla",
     "answer.question.rangeLabel": "de {{start}} a {{end}}",
     "answer.context.column": "Coluna: ",
@@ -1086,13 +1097,19 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.question.selectType": "Select a type",
     "labelings.create.question.type.text": "Text",
     "labelings.create.question.type.number": "Number",
-    "labelings.create.question.type.range": "Numeric range",
+    "labelings.create.question.type.range": "Linear scale",
     "labelings.create.question.type.multipleChoice": "Multiple choice",
     "labelings.create.question.required": "Required",
     "labelings.create.questionType.text.noConfig":
       "Text questions have no additional settings.",
-    "labelings.create.questionType.number.noConfig":
-      "Numeric questions have no additional settings.",
+    "labelings.create.questionType.number.minLabel": "Minimum value",
+    "labelings.create.questionType.number.maxLabel": "Maximum value",
+    "labelings.create.questionType.number.basicMode":
+      "No additional restrictions. Respondents will see a plain numeric field.",
+    "labelings.create.questionType.number.summaryMin":
+      "Minimum active: {{min}}",
+    "labelings.create.questionType.number.summaryMax":
+      "Maximum active: {{max}}",
     "labelings.create.questionType.multipleChoice.optionsLabel": "Options",
     "labelings.create.questionType.multipleChoice.addOption": "Add option",
     "labelings.create.questionType.multipleChoice.optionLabel":
@@ -1100,11 +1117,17 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.questionType.multipleChoice.allowMultiple":
       "Allow multiple answers (Checkbox)",
     "labelings.create.questionType.multipleChoice.dragOption": "Drag option",
-    "labelings.create.questionType.range.minLabel": "Minimum value",
-    "labelings.create.questionType.range.maxLabel": "Maximum value",
-    "labelings.create.questionType.range.stepLabel": "Step",
+    "labelings.create.questionType.range.startValueLabel": "Start value",
+    "labelings.create.questionType.range.endValueLabel": "End value",
+    "labelings.create.questionType.range.to": "to",
+    "labelings.create.questionType.range.startLabel": "Start label",
+    "labelings.create.questionType.range.endLabel": "End label",
+    "labelings.create.questionType.range.startLabelPlaceholder":
+      "e.g. Very",
+    "labelings.create.questionType.range.endLabelPlaceholder":
+      "e.g. Little",
     "labelings.create.questionType.range.summary":
-      "Configured range: {{min}} to {{max}} (step {{step}})",
+      "Configured scale: {{min}} to {{max}}",
     "labelings.create.assign.loading": "Loading members...",
     "labelings.create.assign.empty": "No members assigned.",
     "labelings.create.assign.remove": "Remove",
@@ -1422,7 +1445,7 @@ export const translations: Record<Language, TranslationMap> = {
     "answer.question.required": "Required",
     "answer.question.type.text": "Text",
     "answer.question.type.number": "Number",
-    "answer.question.type.range": "Range",
+    "answer.question.type.range": "Linear scale",
     "answer.question.type.multipleChoice": "Multiple choice",
     "answer.question.rangeLabel": "from {{start}} to {{end}}",
     "answer.context.column": "Column: {{name}}",

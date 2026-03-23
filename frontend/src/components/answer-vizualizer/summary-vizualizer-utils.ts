@@ -503,13 +503,19 @@ function buildHistogram({
   numberFormatter,
 }: {
   values: number[];
-  range?: { start: number; end: number; step: number };
+  range?: { start?: number | null; end?: number | null };
   numberFormatter: Intl.NumberFormat;
 }): BarItem[] {
   const minValue = Math.min(...values);
   const maxValue = Math.max(...values);
-  const minRange = range ? Math.min(range.start, minValue) : minValue;
-  const maxRange = range ? Math.max(range.end, maxValue) : maxValue;
+  const minRange =
+    range?.start !== undefined && range.start !== null
+      ? Math.min(range.start, minValue)
+      : minValue;
+  const maxRange =
+    range?.end !== undefined && range.end !== null
+      ? Math.max(range.end, maxValue)
+      : maxValue;
 
   if (minRange === maxRange) {
     return [

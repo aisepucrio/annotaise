@@ -31,35 +31,104 @@ export default function QuestionInput({
 
     case "number": {
       const displayValue = value ?? "";
+      const min = element.question_range?.start;
+      const max = element.question_range?.end;
+      const hasMin = min !== undefined && min !== null;
+      const hasMax = max !== undefined && max !== null;
+      const hasConstraints = hasMin || hasMax;
+
       return (
         <NumberInput
-          placeholder="Digite um número..."
+          placeholder={
+            hasMin && hasMax
+              ? `Entre ${min} e ${max}`
+              : hasMin
+                ? `Mínimo ${min}`
+                : hasMax
+                  ? `Máximo ${max}`
+              : "Digite um número..."
+          }
           value={displayValue as number | string}
           onChange={onChange}
+          min={hasMin ? min : undefined}
+          max={hasMax ? max : undefined}
+          autoValidate={hasConstraints}
           containerClassName="w-48"
         />
       );
     }
 
     case "range": {
-      const min = element.question_range?.start ?? 0;
-      const max = element.question_range?.end ?? 10;
-      const step = element.question_range?.step ?? 1;
-      const displayValue = value ?? "";
+      const start = Math.trunc(element.question_range?.start ?? 1);
+      const end = Math.trunc(element.question_range?.end ?? 5);
+      const startLabel = element.question_range?.start_label?.trim() ?? "";
+      const endLabel = element.question_range?.end_label?.trim() ?? "";
+      const options = Array.from(
+        { length: Math.max(0, end - start + 1) },
+        (_, index) => start + index,
+      );
+      const parsedValue =
+        typeof value === "number"
+          ? value
+          : typeof value === "string" && value.trim() !== ""
+            ? Number(value)
+            : null;
+      const selectedValue =
+        parsedValue !== null && !Number.isNaN(parsedValue) ? parsedValue : null;
+      const groupName = `scale-${element.id ?? element.order ?? "question"}`;
+      const gridTemplateColumns = [
+        startLabel ? "minmax(5rem,auto)" : null,
+        ...options.map(() => "minmax(2.75rem, 1fr)"),
+        endLabel ? "minmax(5rem,auto)" : null,
+      ]
+        .filter(Boolean)
+        .join(" ");
 
       return (
-        <NumberInput
-          placeholder={`Entre ${min} e ${max}`}
-          min={min}
-          max={max}
-          step={step}
-          value={displayValue as number | string}
-          onChange={(newValue) => {
-            onChange(newValue === "" ? null : newValue);
-          }}
-          autoValidate
-          containerClassName="w-[25%]"
-        />
+        <div className="overflow-x-auto">
+          <div
+            className="inline-grid min-w-full items-center gap-x-3 gap-y-4"
+            style={{ gridTemplateColumns }}
+          >
+            {startLabel ? <div /> : null}
+            {options.map((option) => (
+              <div
+                key={`scale-label-${option}`}
+                className="text-center text-sm font-medium text-metal-900"
+              >
+                {option}
+              </div>
+            ))}
+            {endLabel ? <div /> : null}
+
+            {startLabel ? (
+              <div className="text-right text-base text-metal-900">
+                {startLabel}
+              </div>
+            ) : null}
+            {options.map((option) => (
+              <div
+                key={`scale-option-${option}`}
+                className="flex items-center justify-center"
+              >
+                <Checkbox
+                  id={`${groupName}-${option}`}
+                  name={groupName}
+                  variant="circle"
+                  checked={selectedValue === option}
+                  onChange={() => onChange(option)}
+                  checkedColor="var(--blueberry-500)"
+                  className="shrink-0"
+                />
+              </div>
+            ))}
+            {endLabel ? (
+              <div className="text-left text-base text-metal-900">
+                {endLabel}
+              </div>
+            ) : null}
+          </div>
+        </div>
       );
     }
 

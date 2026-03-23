@@ -53,14 +53,14 @@ LABELING_GUIDE_MARKDOWN = dedent(
     **Sessão 1**
     - Percepção de preço (de muito caro a muito barato)
     - Sinais no texto
-    - Risco (0–100)
+    - Risco em escala linear
     - O que falta para confiar
 
     **Sessão 2**
     - Percepção de preço novamente
     - Se as evidências sustentam o anúncio
     - Alertas visuais
-    - Condição geral e justificativa curta
+    - Condição geral em escala linear e justificativa curta
 
     Dica: use **Parcialmente** quando o anúncio parecer real, mas sem prova de algum ponto importante.
     """
@@ -541,15 +541,18 @@ class Command(BaseCommand):
             order=1,
             text="Idade",
             required=True,
+            start=0,
+            end=120,
         )
         self._create_range_question(
             section=section,
             order=2,
-            text="Familiaridade com compra/venda online (0 a 10)",
+            text="Familiaridade com compra/venda online",
             start=0,
             end=10,
-            step=1,
             required=True,
+            start_label="Nada familiar",
+            end_label="Muito familiar",
         )
         self._create_multiple_choice_question(
             section=section,
@@ -647,15 +650,17 @@ class Command(BaseCommand):
             order=7,
             text="Quantos itens o vendedor diz que inclui no pacote? (0 se não fala)",
             required=True,
+            start=0,
         )
         self._create_range_question(
             section=section,
             order=8,
-            text="Risco do anúncio ser problemático só pelo texto (0 a 100)",
-            start=0,
-            end=100,
-            step=1,
+            text="Risco do anúncio ser problemático só pelo texto",
+            start=1,
+            end=5,
             required=True,
+            start_label="Muito baixo",
+            end_label="Muito alto",
         )
         self._create_text_question(
             section=section,
@@ -738,15 +743,18 @@ class Command(BaseCommand):
             order=8,
             text="Quantos itens físicos aparecem claramente nas fotos?",
             required=True,
+            start=0,
+            end=10,
         )
         self._create_range_question(
             section=section,
             order=9,
-            text="Condição geral (0 quebrado, 100 cara de novo)",
-            start=0,
-            end=100,
-            step=1,
+            text="Condição geral percebida",
+            start=1,
+            end=5,
             required=True,
+            start_label="Muito ruim",
+            end_label="Muito boa",
         )
         self._create_text_question(
             section=section,
@@ -798,8 +806,10 @@ class Command(BaseCommand):
         order: int,
         text: str,
         required: bool,
+        start: float | None = None,
+        end: float | None = None,
     ) -> LabelingElement:
-        return LabelingElement.objects.create(
+        element = LabelingElement.objects.create(
             labeling_section=section,
             order=order,
             text=text,
@@ -807,6 +817,13 @@ class Command(BaseCommand):
             question_type=LabelingElement.QuestionType.NUMBER,
             allow_multiple=False,
         )
+        if start is not None or end is not None:
+            QuestionRange.objects.create(
+                labeling_element=element,
+                start=start,
+                end=end,
+            )
+        return element
 
     def _create_range_question(
         self,
@@ -816,8 +833,9 @@ class Command(BaseCommand):
         text: str,
         start: float,
         end: float,
-        step: float,
         required: bool,
+        start_label: str = "",
+        end_label: str = "",
     ) -> LabelingElement:
         element = LabelingElement.objects.create(
             labeling_section=section,
@@ -831,7 +849,8 @@ class Command(BaseCommand):
             labeling_element=element,
             start=start,
             end=end,
-            step=step,
+            start_label=start_label,
+            end_label=end_label,
         )
         return element
 
@@ -1001,7 +1020,7 @@ class Command(BaseCommand):
                         "“Testado/funcionando”",
                     ],
                     question_ids["s1_items"]: 6,
-                    question_ids["s1_risk"]: 62,
+                    question_ids["s1_risk"]: 4,
                     question_ids["s1_missing"]: (
                         "Falta comprovar origem e mostrar melhor o estado dos controles."
                     ),
@@ -1009,7 +1028,7 @@ class Command(BaseCommand):
                     question_ids["s2_supports"]: "Parcialmente",
                     question_ids["s2_alerts"]: ["Nada disso"],
                     question_ids["s2_visible_items"]: 4,
-                    question_ids["s2_condition"]: 78,
+                    question_ids["s2_condition"]: 4,
                     question_ids["s2_reason"]: (
                         "As fotos parecem coerentes, mas não provam tudo do anúncio."
                     ),
@@ -1024,7 +1043,7 @@ class Command(BaseCommand):
                         "Vendedor evita detalhes",
                     ],
                     question_ids["s1_items"]: 0,
-                    question_ids["s1_risk"]: 74,
+                    question_ids["s1_risk"]: 5,
                     question_ids["s1_missing"]: (
                         "Faltam grupo, numeração do quadro e detalhes de desgaste."
                     ),
@@ -1032,7 +1051,7 @@ class Command(BaseCommand):
                     question_ids["s2_supports"]: "Parcialmente",
                     question_ids["s2_alerts"]: ["Marca/modelo não visível"],
                     question_ids["s2_visible_items"]: 1,
-                    question_ids["s2_condition"]: 55,
+                    question_ids["s2_condition"]: 3,
                     question_ids["s2_reason"]: (
                         "Parece usada e real, mas falta prova clara dos componentes."
                     ),
@@ -1044,7 +1063,7 @@ class Command(BaseCommand):
                     question_ids["s1_price"]: "Normal",
                     question_ids["s1_signals"]: ["Outro"],
                     question_ids["s1_items"]: 3,
-                    question_ids["s1_risk"]: 45,
+                    question_ids["s1_risk"]: 3,
                     question_ids["s1_missing"]: (
                         "Falta informar shutter count e estado óptico da lente."
                     ),
@@ -1052,7 +1071,7 @@ class Command(BaseCommand):
                     question_ids["s2_supports"]: "Parcialmente",
                     question_ids["s2_alerts"]: ["Marca/modelo não visível"],
                     question_ids["s2_visible_items"]: 2,
-                    question_ids["s2_condition"]: 72,
+                    question_ids["s2_condition"]: 4,
                     question_ids["s2_reason"]: (
                         "Fotos mostram o conjunto, mas sem detalhe técnico suficiente."
                     ),
