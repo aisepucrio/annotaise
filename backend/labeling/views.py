@@ -8,7 +8,7 @@ from item.models import Item
 from .serializers import LabelingElementSerializer
 
 from django.shortcuts import render, get_object_or_404
-from django.db import transaction
+from django.db import models, transaction
 
 from rest_framework import viewsets, status
 
@@ -610,7 +610,39 @@ class CreateReadLabelingStructureView(APIView):
                 # ressincroniza múltipla escolha recriando (simplifica)
                 element.multiple_choice_items.all().delete()
                 for item_data in mc_items_data:
-                    MultipleChoiceItem.objects.create(labeling_element=element, **item_data)
+                    follow_up_data = item_data.pop('follow_up_question', None)
+                    follow_up_element = None
+
+                    if follow_up_data:
+                        follow_up_data.pop('id', None)
+                        follow_up_data.pop('order', None)
+                        fu_mc_items = follow_up_data.pop('multiple_choice_items', [])
+                        fu_range = follow_up_data.pop('question_range', None)
+                        # Use max order + 1 to avoid unique constraint collision
+                        max_order = LabelingElement.objects.filter(
+                            labeling_section=section
+                        ).aggregate(models.Max('order'))['order__max'] or 0
+                        follow_up_element = LabelingElement.objects.create(
+                            labeling_section=section,
+                            order=max_order + 1,
+                            **follow_up_data,
+                        )
+                        for fu_item in fu_mc_items:
+                            MultipleChoiceItem.objects.create(
+                                labeling_element=follow_up_element,
+                                **fu_item,
+                            )
+                        if fu_range is not None:
+                            QuestionRange.objects.create(
+                                labeling_element=follow_up_element,
+                                **fu_range,
+                            )
+
+                    MultipleChoiceItem.objects.create(
+                        labeling_element=element,
+                        follow_up_question=follow_up_element,
+                        **item_data,
+                    )
 
             # remove elementos não enviados
             to_delete_elements = [el_id for el_id in existing_elements.keys() if el_id not in elements_to_keep]

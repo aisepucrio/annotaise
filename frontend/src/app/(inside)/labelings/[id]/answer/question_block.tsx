@@ -1,5 +1,6 @@
 import type { LabelingStructureElement } from "@/modules/labelings/labelingsTypes";
 import type { TranslateFn } from "@/i18n/types";
+import type { AnswerMap } from "./answer_types";
 import QuestionInput from "./question_input";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -8,6 +9,8 @@ type QuestionBlockProps = {
   element: LabelingStructureElement;
   value: unknown;
   onChange: (value: unknown) => void;
+  answers?: AnswerMap;
+  onAnswerChange?: (questionId: string | number, value: unknown) => void;
   t: TranslateFn;
 };
 
@@ -15,6 +18,8 @@ export default function QuestionBlock({
   element,
   value,
   onChange,
+  answers,
+  onAnswerChange,
   t,
 }: QuestionBlockProps) {
   const questionText = element.text?.trim()
@@ -42,7 +47,7 @@ export default function QuestionBlock({
           borderLeftColor: "var(--blueberry-500)",
         }}
       >
-        <QuestionInput element={element} value={value} onChange={onChange} />
+        <QuestionInput element={element} value={value} onChange={onChange} answers={answers} onAnswerChange={onAnswerChange} />
       </div>
     </>
   );

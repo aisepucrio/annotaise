@@ -368,6 +368,9 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.questionType.multipleChoice.allowMultiple":
       "Permitir múltiplas respostas (Checkbox)",
     "labelings.create.questionType.multipleChoice.dragOption": "Arrastar opção",
+    "labelings.create.questionType.multipleChoice.followUp.toggle": "Pergunta de acompanhamento",
+    "labelings.create.questionType.multipleChoice.followUp.title": "Pergunta de acompanhamento",
+    "labelings.create.questionType.multipleChoice.followUp.placeholder": "Texto da pergunta de acompanhamento...",
     "labelings.create.questionType.range.minLabel": "Valor mínimo",
     "labelings.create.questionType.range.maxLabel": "Valor máximo",
     "labelings.create.questionType.range.stepLabel": "Passo",
@@ -1111,6 +1114,9 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.questionType.multipleChoice.allowMultiple":
       "Allow multiple answers (Checkbox)",
     "labelings.create.questionType.multipleChoice.dragOption": "Drag option",
+    "labelings.create.questionType.multipleChoice.followUp.toggle": "Follow-up question",
+    "labelings.create.questionType.multipleChoice.followUp.title": "Follow-up question",
+    "labelings.create.questionType.multipleChoice.followUp.placeholder": "Follow-up question text...",
     "labelings.create.questionType.range.minLabel": "Minimum value",
     "labelings.create.questionType.range.maxLabel": "Maximum value",
     "labelings.create.questionType.range.stepLabel": "Step",

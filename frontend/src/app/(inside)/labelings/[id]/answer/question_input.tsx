@@ -1,7 +1,11 @@
 import Input from "@/components/form/Input";
 import NumberInput from "@/components/form/NumberInput";
 import Checkbox from "@/components/form/Checkbox";
-import type { LabelingStructureElement } from "@/modules/labelings/labelingsTypes";
+import type {
+  LabelingStructureElement,
+  ElementDTO,
+} from "@/modules/labelings/labelingsTypes";
+import type { AnswerMap } from "./answer_types";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -9,12 +13,16 @@ type QuestionInputProps = {
   element: LabelingStructureElement;
   value: unknown;
   onChange: (value: unknown) => void;
+  answers?: AnswerMap;
+  onAnswerChange?: (questionId: string | number, value: unknown) => void;
 };
 
 export default function QuestionInput({
   element,
   value,
   onChange,
+  answers,
+  onAnswerChange,
 }: QuestionInputProps) {
   switch (element.question_type) {
     case "text":
@@ -81,24 +89,61 @@ export default function QuestionInput({
         <div className="space-y-2">
           {items.map((item, index) => {
             const optionValue = item.text;
+            const isChecked = allowMultiple
+              ? selectedList.includes(optionValue)
+              : selected === optionValue;
+            const followUp = item.follow_up_question;
+            const followUpKey = followUp
+              ? `followup_${element.id}_${item.id ?? index}`
+              : null;
+
             if (allowMultiple) {
-              const isChecked = selectedList.includes(optionValue);
               const optionId = `${groupName}-option-${item.id ?? index}`;
               return (
-                <div
-                  key={item.id ?? index}
-                  className="flex items-start gap-2 text-sm text-metal-900"
-                >
+                <div key={item.id ?? index}>
+                  <div className="flex items-start gap-2 text-sm text-metal-900">
+                    <Checkbox
+                      id={optionId}
+                      variant="square"
+                      checked={isChecked}
+                      onChange={() => {
+                        const next = isChecked
+                          ? selectedList.filter((val) => val !== optionValue)
+                          : [...selectedList, optionValue];
+                        onChange(next);
+                      }}
+                      checkedColor="var(--blueberry-500)"
+                      className="mt-0.5 shrink-0"
+                    />
+                    <label htmlFor={optionId} className="cursor-pointer">
+                      <span className="prose prose-sm max-w-none">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {optionValue}
+                        </ReactMarkdown>
+                      </span>
+                    </label>
+                  </div>
+                  {isChecked && followUp && followUpKey && onAnswerChange && (
+                    <FollowUpQuestionBlock
+                      followUp={followUp}
+                      answerKey={followUpKey}
+                      answers={answers}
+                      onAnswerChange={onAnswerChange}
+                    />
+                  )}
+                </div>
+              );
+            }
+
+            const optionId = `${groupName}-single-option-${item.id ?? index}`;
+            return (
+              <div key={item.id ?? index}>
+                <div className="flex items-start gap-2 text-sm text-metal-900">
                   <Checkbox
                     id={optionId}
-                    variant="square"
+                    variant="circle"
                     checked={isChecked}
-                    onChange={() => {
-                      const next = isChecked
-                        ? selectedList.filter((val) => val !== optionValue)
-                        : [...selectedList, optionValue];
-                      onChange(next);
-                    }}
+                    onChange={() => onChange(optionValue)}
                     checkedColor="var(--blueberry-500)"
                     className="mt-0.5 shrink-0"
                   />
@@ -110,30 +155,14 @@ export default function QuestionInput({
                     </span>
                   </label>
                 </div>
-              );
-            }
-
-            const optionId = `${groupName}-single-option-${item.id ?? index}`;
-            return (
-              <div
-                key={item.id ?? index}
-                className="flex items-start gap-2 text-sm text-metal-900"
-              >
-                <Checkbox
-                  id={optionId}
-                  variant="circle"
-                  checked={selected === optionValue}
-                  onChange={() => onChange(optionValue)}
-                  checkedColor="var(--blueberry-500)"
-                  className="mt-0.5 shrink-0"
-                />
-                <label htmlFor={optionId} className="cursor-pointer">
-                  <span className="prose prose-sm max-w-none">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {optionValue}
-                    </ReactMarkdown>
-                  </span>
-                </label>
+                {isChecked && followUp && followUpKey && onAnswerChange && (
+                  <FollowUpQuestionBlock
+                    followUp={followUp}
+                    answerKey={followUpKey}
+                    answers={answers}
+                    onAnswerChange={onAnswerChange}
+                  />
+                )}
               </div>
             );
           })}
@@ -151,5 +180,58 @@ export default function QuestionInput({
           {element.question_type ?? "desconhecido"}
         </p>
       );
+  }
+}
+
+type FollowUpQuestionBlockProps = {
+  followUp: ElementDTO;
+  answerKey: string;
+  answers?: AnswerMap;
+  onAnswerChange: (questionId: string | number, value: unknown) => void;
+};
+
+function FollowUpQuestionBlock({
+  followUp,
+  answerKey,
+  answers,
+  onAnswerChange,
+}: FollowUpQuestionBlockProps) {
+  const followUpElement: LabelingStructureElement = {
+    ...followUp,
+    multiple_choice_items: (followUp.multiple_choice_items ?? []).map(
+      (item, i) => ({ ...item, id: i }),
+    ),
+    question_range: followUp.question_range ?? null,
+  };
+
+  const currentValue = answers?.[answerKey] ?? getDefaultValue(followUpElement);
+
+  return (
+    <div className="ml-8 mt-2 mb-1 rounded-lg border border-blue-200 bg-blue-50/50 p-3">
+      {followUp.text && (
+        <div className="mb-2 text-sm font-medium text-blue-800 flex items-center gap-1">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            {followUp.text}
+          </ReactMarkdown>
+          {followUp.required && <span className="text-red-400">*</span>}
+        </div>
+      )}
+      <QuestionInput
+        element={followUpElement}
+        value={currentValue}
+        onChange={(val) => onAnswerChange(answerKey, val)}
+      />
+    </div>
+  );
+}
+
+function getDefaultValue(element: LabelingStructureElement): unknown {
+  switch (element.question_type) {
+    case "multiple_choice":
+      return element.allow_multiple ? [] : "";
+    case "range":
+      return element.question_range?.start ?? 0;
+    default:
+      return "";
   }
 }

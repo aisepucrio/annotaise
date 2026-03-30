@@ -95,6 +95,8 @@ export default function SectionCard({
                       onChange={(val) =>
                         onChange(question.id ?? questionIndex, val)
                       }
+                      answers={answers}
+                      onAnswerChange={onChange}
                       t={t}
                     />
                   );

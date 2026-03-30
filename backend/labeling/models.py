@@ -130,7 +130,6 @@ class LabelingElement(models.Model):
     column_name = models.CharField(max_length=200, blank=True)
     allow_multiple = models.BooleanField(default=False)
     
-
     class Meta:
         ordering = ["labeling_section_id", "order", "id"]
         constraints = [
@@ -139,8 +138,6 @@ class LabelingElement(models.Model):
                 name="unique_element_order_per_section"
             ),
         ]
-
-
         
     def save(self, *args, **kwargs):
         self.full_clean()
@@ -158,9 +155,9 @@ class MultipleChoiceItem(models.Model):
     value = models.BooleanField(default=False)
     order = models.PositiveIntegerField(default=1)
 
-    optional_section = models.ForeignKey(
-        LabelingSection, on_delete=models.SET_NULL, null=True, blank=True, related_name="multiple_choice_item_sections")
-
+    follow_up_question = models.ForeignKey(
+        LabelingElement, on_delete=models.SET_NULL, null=True, blank=True, related_name="follow_up_for"
+    )
     class Meta:
         ordering = ["labeling_element_id", "order", "id"]
         constraints = [

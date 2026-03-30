@@ -10,7 +10,7 @@ import {
 import { SectionData, SectionElement } from "./SectionForm";
 import { QuestionElement } from "./QuestionBlock";
 import { ContextElement } from "./ContextBlock";
-import { MultipleChoiceQuestionConfig } from "./question-types/QuestionMultipleChoice";
+import { MultipleChoiceQuestionConfig, type FollowUpQuestion } from "./question-types/QuestionMultipleChoice";
 
 type FrontRangeConfig = {
   type: "range";
@@ -113,6 +113,7 @@ const mapQuestionElementToDTO = (
           text: c.text ?? "",
           value: c.value,
           order: index + 1,
+          follow_up_question: mapFollowUpToDTO(c.followUpQuestion),
         })),
       };
 
@@ -138,6 +139,75 @@ const mapQuestionElementToDTO = (
         question_type: questionType || "text",
       };
   }
+};
+
+const mapFollowUpToDTO = (
+  followUp?: FollowUpQuestion | null,
+): ElementDTO | null => {
+  if (!followUp) return null;
+
+  const base: ElementDTO = {
+    text: followUp.text ?? "",
+    required: followUp.required ?? false,
+    question_type: followUp.questionType ?? "text",
+  };
+
+  if (followUp.questionType === "range" && followUp.config?.type === "range") {
+    const rc = followUp.config as FrontRangeConfig;
+    return { ...base, question_range: mapRangeConfig(rc) };
+  }
+
+  if (followUp.questionType === "multiple_choice" && followUp.config?.type === "multiple_choice") {
+    const mc = followUp.config as MultipleChoiceQuestionConfig;
+    return {
+      ...base,
+      allow_multiple: mc.allowMultiple ?? false,
+      multiple_choice_items: mc.choices.map((c, index) => ({
+        text: c.text ?? "",
+        value: c.value,
+        order: index + 1,
+      })),
+    };
+  }
+
+  return base;
+};
+
+const mapFollowUpFromDTO = (
+  dto?: ElementDTO | null,
+): FollowUpQuestion | null => {
+  if (!dto) return null;
+
+  const questionType = (dto.question_type ?? "text") as FollowUpQuestion["questionType"];
+
+  const followUp: FollowUpQuestion = {
+    text: dto.text ?? "",
+    questionType,
+    required: dto.required ?? false,
+  };
+
+  if (questionType === "range" && dto.question_range) {
+    followUp.config = {
+      type: "range",
+      min: dto.question_range.start ?? 0,
+      max: dto.question_range.end ?? 10,
+      step: dto.question_range.step ?? 1,
+    };
+  }
+
+  if (questionType === "multiple_choice" && dto.multiple_choice_items) {
+    followUp.config = {
+      type: "multiple_choice",
+      allowMultiple: dto.allow_multiple ?? false,
+      choices: dto.multiple_choice_items.map((item) => ({
+        id: crypto.randomUUID(),
+        text: item.text,
+        value: item.value,
+      })),
+    };
+  }
+
+  return followUp;
 };
 
 const mapRangeConfig = (config?: FrontRangeConfig): QuestionRangeDTO => ({
@@ -204,6 +274,7 @@ const resolveQuestionConfig = (
             id: crypto.randomUUID(),
             text: item.text,
             value: item.value,
+            followUpQuestion: mapFollowUpFromDTO(item.follow_up_question),
           }),
         ),
       } satisfies MultipleChoiceQuestionConfig;

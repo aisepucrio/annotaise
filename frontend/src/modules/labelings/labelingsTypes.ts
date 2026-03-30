@@ -49,9 +49,11 @@ export type QuestionTypeDTO =
 
 // DTOs para criação/edição da estrutura do labeling
 export type MultipleChoiceItemDTO = {
+  id?: number;
   text: string;
   value?: boolean;
   order?: number;
+  follow_up_question?: ElementDTO | null;
 };
 
 // Para perguntas do tipo "range"
@@ -96,6 +98,7 @@ export type LabelingStructureElement = ElementDTO & {
     text: string;
     value?: boolean;
     order?: number;
+    follow_up_question?: ElementDTO | null;
   }>;
   question_range?: {
     id?: number;
