@@ -59,11 +59,21 @@ class LabelingElementSerializer(serializers.ModelSerializer):
         ]
 
 class LabelingSectionSerializer(serializers.ModelSerializer):
-    elements = LabelingElementSerializer(many=True, read_only=True)
+    elements = serializers.SerializerMethodField()
 
     class Meta:
         model = LabelingSection
         fields = ["id", "title", "order", "elements"]
+
+    def get_elements(self, obj):
+        follow_up_ids = set(
+            MultipleChoiceItem.objects.filter(
+                labeling_element__labeling_section=obj,
+                follow_up_question__isnull=False,
+            ).values_list("follow_up_question_id", flat=True)
+        )
+        elements = obj.elements.exclude(id__in=follow_up_ids)
+        return LabelingElementSerializer(elements, many=True, context=self.context).data
         
 
 class LabelingMembershipSerializer(serializers.ModelSerializer):
@@ -226,6 +236,8 @@ class LabelingSectionsBulkCreateSerializer(serializers.Serializer):
             )
             created_sections.append(section)
 
+            follow_up_order_counter = 10000
+
             for element_data in elements_data:
                 mc_items_data = element_data.pop('multiple_choice_items', [])
                 range_data = element_data.pop('question_range', None)
@@ -240,10 +252,14 @@ class LabelingSectionsBulkCreateSerializer(serializers.Serializer):
                     follow_up_element = None
 
                     if follow_up_data:
+                        follow_up_data.pop('id', None)
+                        follow_up_data.pop('order', None)
                         fu_mc_items = follow_up_data.pop('multiple_choice_items', [])
                         fu_range = follow_up_data.pop('question_range', None)
+                        follow_up_order_counter += 1
                         follow_up_element = LabelingElement.objects.create(
                             labeling_section=section,
+                            order=follow_up_order_counter,
                             **follow_up_data,
                         )
                         for fu_item in fu_mc_items:

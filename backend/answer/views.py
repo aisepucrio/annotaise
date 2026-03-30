@@ -321,21 +321,46 @@ class ExportAnswersView(APIView):
         ).exclude(question_type="context").values('id','text')
 
         questions = {int(q["id"]): q["text"] for q in questions_qs}
+
+        # build follow-up label map: "followup_103_144" -> "Q : parent text > follow-up text"
+        follow_up_labels = {}
+        from labeling.models import MultipleChoiceItem
+        follow_up_items = (
+            MultipleChoiceItem.objects
+            .filter(
+                labeling_element__labeling_section__labeling_id=labeling_id,
+                follow_up_question__isnull=False,
+            )
+            .select_related("labeling_element", "follow_up_question")
+        )
+        for mc_item in follow_up_items:
+            key = f"followup_{mc_item.labeling_element_id}_{mc_item.id}"
+            parent_text = questions.get(mc_item.labeling_element_id, "?")
+            fu_text = mc_item.follow_up_question.text or "?"
+            follow_up_labels[key] = f"Q : {parent_text} > {mc_item.text} > {fu_text}"
+
         rows = []
         for answer in answers:
             payload = answer.answer_payload
             item_payload = answer.item.payload
             row = {}
+            row["context_id"] = (answer.item.row_index or 0) + 1
+            row["user_id"] = answer.answered_by.id
             for question_number, response in payload.items():
-                row["context_id"] = (answer.item.row_index or 0) + 1
-                row["user_id"] = answer.answered_by.id
-
-                q_id = int(question_number)
-                question_text = questions.get(q_id)
-                if not question_text:
-                    # pula perguntas que não estão mais na estrutura ou não tem label
-                    continue
-                col_name = "Q : " + question_text
+                # follow-up answer key
+                if question_number.startswith("followup_"):
+                    col_name = follow_up_labels.get(question_number)
+                    if not col_name:
+                        continue
+                else:
+                    try:
+                        q_id = int(question_number)
+                    except ValueError:
+                        continue
+                    question_text = questions.get(q_id)
+                    if not question_text:
+                        continue
+                    col_name = "Q : " + question_text
 
                 if isinstance(response, list):
                     row[col_name] = ", ".join(str(x) for x in response)

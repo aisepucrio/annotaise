@@ -573,6 +573,7 @@ class CreateReadLabelingStructureView(APIView):
 
             existing_elements = {el.id: el for el in section.elements.all()}
             elements_to_keep = set()
+            follow_up_order_counter = 10000
 
             for element_idx, element_data in enumerate(elements_data):
                 mc_items_data = element_data.pop("multiple_choice_items", [])
@@ -608,7 +609,15 @@ class CreateReadLabelingStructureView(APIView):
                         element.question_range.delete()
 
                 # ressincroniza múltipla escolha recriando (simplifica)
+                # remove old follow-up elements before deleting items
+                old_follow_up_ids = list(
+                    element.multiple_choice_items
+                    .filter(follow_up_question__isnull=False)
+                    .values_list("follow_up_question_id", flat=True)
+                )
                 element.multiple_choice_items.all().delete()
+                if old_follow_up_ids:
+                    LabelingElement.objects.filter(id__in=old_follow_up_ids).delete()
                 for item_data in mc_items_data:
                     follow_up_data = item_data.pop('follow_up_question', None)
                     follow_up_element = None
@@ -618,13 +627,10 @@ class CreateReadLabelingStructureView(APIView):
                         follow_up_data.pop('order', None)
                         fu_mc_items = follow_up_data.pop('multiple_choice_items', [])
                         fu_range = follow_up_data.pop('question_range', None)
-                        # Use max order + 1 to avoid unique constraint collision
-                        max_order = LabelingElement.objects.filter(
-                            labeling_section=section
-                        ).aggregate(models.Max('order'))['order__max'] or 0
+                        follow_up_order_counter += 1
                         follow_up_element = LabelingElement.objects.create(
                             labeling_section=section,
-                            order=max_order + 1,
+                            order=follow_up_order_counter,
                             **follow_up_data,
                         )
                         for fu_item in fu_mc_items:
@@ -643,6 +649,8 @@ class CreateReadLabelingStructureView(APIView):
                         follow_up_question=follow_up_element,
                         **item_data,
                     )
+                    if follow_up_element:
+                        elements_to_keep.add(follow_up_element.id)
 
             # remove elementos não enviados
             to_delete_elements = [el_id for el_id in existing_elements.keys() if el_id not in elements_to_keep]
