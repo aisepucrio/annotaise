@@ -5,6 +5,7 @@ import type {
   CreateInvitationPayload,
   UpdateUserPayload,
   Invitation,
+  InvitationAssignmentProject,
 } from "./userTypes";
 
 // Busca todos os usuários com opção de busca
@@ -42,9 +43,19 @@ export async function createInvitation(
       email: payload.email,
       role: payload.account_type,
       project_ids: payload.project_ids ?? [],
+      labeling_ids: payload.labeling_ids ?? [],
     },
   );
   return data;
+}
+
+export async function fetchInvitationAssignmentOptions(): Promise<
+  InvitationAssignmentProject[]
+> {
+  const { data } = await api.get<{ projects: InvitationAssignmentProject[] }>(
+    "/invitations/assignment-options/",
+  );
+  return data.projects ?? [];
 }
 
 // Atualiza dados de um usuário existente

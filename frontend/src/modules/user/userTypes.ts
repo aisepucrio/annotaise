@@ -27,6 +27,7 @@ export type CreateInvitationPayload = {
   email: string;
   account_type: User["account_type"];
   project_ids?: number[];
+  labeling_ids?: number[];
 };
 
 export type UpdateUserPayload = Partial<{
@@ -48,4 +49,15 @@ export type Invitation = {
   is_expired?: boolean;
   invited_by?: number | null;
   invited_by_email?: string | null;
+};
+
+export type InvitationAssignmentLabeling = {
+  id: number;
+  title: string;
+};
+
+export type InvitationAssignmentProject = {
+  id: number;
+  name: string;
+  labelings: InvitationAssignmentLabeling[];
 };

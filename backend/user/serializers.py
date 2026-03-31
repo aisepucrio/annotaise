@@ -117,6 +117,11 @@ class InvitationSerializer(serializers.ModelSerializer):
         required=False,
         write_only=True,
     )
+    labeling_ids = serializers.ListField(
+        child=serializers.IntegerField(min_value=1),
+        required=False,
+        write_only=True,
+    )
 
     class Meta:
         model = Invitation
@@ -132,6 +137,7 @@ class InvitationSerializer(serializers.ModelSerializer):
             "invited_by_email",
             "user",
             "project_ids",
+            "labeling_ids",
         ]
         read_only_fields = [
             "token",
@@ -149,6 +155,7 @@ class InvitationSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data.pop("project_ids", None)
+        validated_data.pop("labeling_ids", None)
         invited_by = validated_data.pop(
             "invited_by", getattr(self.context.get("request"), "user", None)
         )

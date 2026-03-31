@@ -8,13 +8,13 @@ import Modal from "@/components/modal/Modal";
 import Select from "@/components/form/Select";
 import Checkbox from "@/components/form/Checkbox";
 import Button from "@/components/button/Button";
-import { useProjectsQuery } from "@/modules/projects/projectsQueries";
-import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
+import { useInvitationAssignmentOptionsQuery } from "@/modules/user/userQueries";
 
 type Payload = {
   email: string;
   account_type: "standard" | "editor" | "admin";
   project_ids?: number[];
+  labeling_ids?: number[];
 };
 
 type NewUserModalProps = {
@@ -48,15 +48,10 @@ export default function NewUserModal({
   const [accountType, setAccountType] =
     useState<Payload["account_type"]>("standard");
   const [selectedProjectIds, setSelectedProjectIds] = useState<number[]>([]);
+  const [selectedLabelingIds, setSelectedLabelingIds] = useState<number[]>([]);
   const [submitting, setSubmitting] = useState(false);
-  const { data: projects } = useProjectsQuery();
-  const { data: currentUser } = useCurrentUser();
-
-  const ownedProjects = useMemo(() => {
-    if (!projects?.length) return [];
-    if (!currentUser?.id) return projects;
-    return projects.filter((project) => project.created_by === currentUser.id);
-  }, [projects, currentUser?.id]);
+  const { data: assignmentProjects, isLoading: assignmentOptionsLoading } =
+    useInvitationAssignmentOptionsQuery();
 
   // Opções do select (memo pra não recriar a cada render)
   const accountOptions = useMemo(
@@ -73,16 +68,57 @@ export default function NewUserModal({
     setEmailsRaw("");
     setAccountType("standard");
     setSelectedProjectIds([]);
+    setSelectedLabelingIds([]);
     setSubmitting(false);
   }, [open]);
 
-  const toggleProjectSelection = (projectId: number, checked: boolean) => {
+  const toggleProjectSelection = (
+    projectId: number,
+    checked: boolean,
+    projectLabelingIds: number[],
+  ) => {
     setSelectedProjectIds((prev) => {
       if (checked) {
         if (prev.includes(projectId)) return prev;
         return [...prev, projectId];
       }
       return prev.filter((id) => id !== projectId);
+    });
+
+    setSelectedLabelingIds((prev) => {
+      if (checked) {
+        return Array.from(new Set([...prev, ...projectLabelingIds]));
+      }
+      const projectLabelingSet = new Set(projectLabelingIds);
+      return prev.filter((id) => !projectLabelingSet.has(id));
+    });
+  };
+
+  const toggleLabelingSelection = (
+    projectId: number,
+    projectLabelingIds: number[],
+    labelingId: number,
+    checked: boolean,
+  ) => {
+    setSelectedLabelingIds((prev) => {
+      const next = checked
+        ? Array.from(new Set([...prev, labelingId]))
+        : prev.filter((id) => id !== labelingId);
+
+      const hasAllProjectLabelings =
+        projectLabelingIds.length > 0 &&
+        projectLabelingIds.every((id) => next.includes(id));
+
+      setSelectedProjectIds((prevProjects) => {
+        if (hasAllProjectLabelings) {
+          return prevProjects.includes(projectId)
+            ? prevProjects
+            : [...prevProjects, projectId];
+        }
+        return prevProjects.filter((id) => id !== projectId);
+      });
+
+      return next;
     });
   };
 
@@ -110,6 +146,7 @@ export default function NewUserModal({
           email,
           account_type: accountType,
           project_ids: selectedProjectIds,
+          labeling_ids: selectedLabelingIds,
         }),
       ),
     );
@@ -189,33 +226,87 @@ export default function NewUserModal({
 
         <div className="space-y-2">
           <p className="text-sm font-medium text-gray-800">
-            Adicionar como colaborador em projetos (opcional)
+            Atribuição automática por projeto/rotulação (opcional)
           </p>
-          {ownedProjects.length === 0 ? (
+          {assignmentOptionsLoading ? (
+            <p className="text-xs text-gray-500">Carregando opções...</p>
+          ) : !assignmentProjects || assignmentProjects.length === 0 ? (
             <p className="text-xs text-gray-500">
               Nenhum projeto elegível encontrado.
             </p>
           ) : (
             <div className="max-h-36 overflow-auto rounded-md border border-gray-200 p-2 space-y-2">
-              {ownedProjects.map((project) => {
-                const checked = selectedProjectIds.includes(project.id);
-                const checkboxId = `invite-project-${project.id}`;
+              {assignmentProjects.map((project) => {
+                const projectChecked = selectedProjectIds.includes(project.id);
+                const projectCheckboxId = `invite-project-${project.id}`;
+                const projectLabelingIds = project.labelings.map(
+                  (labeling) => labeling.id,
+                );
+
                 return (
-                  <div key={project.id} className="flex items-center gap-2">
-                    <Checkbox
-                      id={checkboxId}
-                      checked={checked}
-                      onChange={(next) =>
-                        toggleProjectSelection(project.id, next)
-                      }
-                      variant="square"
-                    />
-                    <label
-                      htmlFor={checkboxId}
-                      className="cursor-pointer text-sm text-gray-700"
-                    >
-                      {project.name}
-                    </label>
+                  <div key={project.id} className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id={projectCheckboxId}
+                        checked={projectChecked}
+                        onChange={(next) =>
+                          toggleProjectSelection(
+                            project.id,
+                            next,
+                            projectLabelingIds,
+                          )
+                        }
+                        variant="square"
+                      />
+                      <label
+                        htmlFor={projectCheckboxId}
+                        className="cursor-pointer text-sm text-gray-700 font-medium"
+                      >
+                        {project.name}
+                      </label>
+                    </div>
+
+                    <div className="ml-6 space-y-1">
+                      {project.labelings.length === 0 ? (
+                        <p className="text-xs text-gray-400">
+                          Sem rotulações neste projeto.
+                        </p>
+                      ) : (
+                        project.labelings.map((labeling) => {
+                          const labelingChecked = selectedLabelingIds.includes(
+                            labeling.id,
+                          );
+                          const labelingCheckboxId = `invite-labeling-${project.id}-${labeling.id}`;
+
+                          return (
+                            <div
+                              key={labeling.id}
+                              className="flex items-center gap-2"
+                            >
+                              <Checkbox
+                                id={labelingCheckboxId}
+                                checked={labelingChecked}
+                                onChange={(next) =>
+                                  toggleLabelingSelection(
+                                    project.id,
+                                    projectLabelingIds,
+                                    labeling.id,
+                                    next,
+                                  )
+                                }
+                                variant="square"
+                              />
+                              <label
+                                htmlFor={labelingCheckboxId}
+                                className="cursor-pointer text-xs text-gray-600"
+                              >
+                                {labeling.title}
+                              </label>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
                   </div>
                 );
               })}

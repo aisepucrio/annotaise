@@ -114,6 +114,9 @@ class LabelingElement(models.Model):
         DATE = "date", "Data"
         CATEGORY = "category", "categoria"
         CODE = "code", "Código"
+        AUDIO = "audio", "Áudio"
+        VIDEO = "video", "Vídeo"
+        PDF = "pdf", "PDF"
 
     labeling_section = models.ForeignKey(
         LabelingSection, on_delete=models.CASCADE, related_name="elements"
