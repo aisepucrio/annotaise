@@ -37,8 +37,8 @@ class MultipleChoiceItemSerializer(serializers.ModelSerializer):
 class QuestionRangeSerializer(serializers.ModelSerializer):
     class Meta:
         model = QuestionRange
-        fields = ["id", "start", "end", "step"]  # idem
-
+        fields = ["id", "start", "end", "start_label", "end_label"]
+    
 class LabelingElementSerializer(serializers.ModelSerializer):
     multiple_choice_items = MultipleChoiceItemSerializer(many=True, read_only=True)
     question_range = QuestionRangeSerializer(read_only=True)
@@ -108,7 +108,7 @@ class QuestionRangeWriteSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
     class Meta:
         model = QuestionRange
-        fields = ['id', 'start', 'end', 'step']
+        fields = ['id', 'start', 'end', 'start_label', 'end_label']
         read_only_fields = []
     def validate(self, attrs):
         if(attrs['start'] >= attrs['end']):

@@ -88,16 +88,14 @@ export const WithValidation: StoryObj<typeof NumberInput> = {
       />
 
       <NumberInput
-        label="Quantidade (múltiplos de 5)"
+        label="Quantidade (mínimo 0)"
         placeholder="Digite a quantidade..."
-        step={5}
         min={0}
       />
 
       <NumberInput
-        label="Preço (com step 0.01)"
+        label="Preço (mínimo 0)"
         placeholder="Digite o preço..."
-        step={0.01}
         min={0}
       />
     </div>
@@ -106,7 +104,7 @@ export const WithValidation: StoryObj<typeof NumberInput> = {
     docs: {
       description: {
         story:
-          "Inputs numéricos com validações de min, max e step. Sem autoValidate, as validações são apenas visuais no navegador.",
+          "Inputs numéricos com validações de min e max. Sem autoValidate, as validações são apenas visuais no navegador.",
       },
     },
   },
@@ -135,9 +133,8 @@ export const WithAutoValidation: StoryObj<typeof NumberInput> = {
         />
 
         <NumberInput
-          label="Múltiplos de 5 (auto-valida)"
+          label="Quantidade mínima 0 (auto-valida)"
           placeholder="Digite a quantidade..."
-          step={5}
           min={0}
           value={value2}
           onChange={setValue2}
@@ -145,11 +142,10 @@ export const WithAutoValidation: StoryObj<typeof NumberInput> = {
         />
 
         <NumberInput
-          label="Range: 0-10, step 0.5 (auto-valida)"
+          label="Range: 0-10 (auto-valida)"
           placeholder="Digite um valor..."
           min={0}
           max={10}
-          step={0.5}
           value={value3}
           onChange={setValue3}
           autoValidate
@@ -161,7 +157,7 @@ export const WithAutoValidation: StoryObj<typeof NumberInput> = {
     docs: {
       description: {
         story:
-          "Com autoValidate=true, o componente aplica automaticamente as validações de min, max e step ao alterar o valor, corrigindo valores inválidos.",
+          "Com autoValidate=true, o componente aplica automaticamente as validações de min e max ao alterar o valor, corrigindo valores inválidos.",
       },
     },
   },
@@ -248,8 +244,7 @@ export const WithTooltip: StoryObj<typeof NumberInput> = {
       <NumberInput
         label="Quantidade"
         placeholder="Digite a quantidade..."
-        tooltip="A quantidade deve ser um múltiplo de 5"
-        step={5}
+        tooltip="A quantidade deve respeitar os limites configurados"
         required
       />
     </div>
@@ -321,7 +316,6 @@ export const Controlled: StoryObj<typeof NumberInput> = {
             label="Range controlado (0-10)"
             min={0}
             max={10}
-            step={1}
             value={rangeValue}
             onChange={setRangeValue}
             autoValidate
@@ -371,7 +365,6 @@ export const UseCases: StoryObj<typeof NumberInput> = {
           label="Quantidade em estoque"
           placeholder="0"
           min={0}
-          step={1}
           value={quantity}
           onChange={setQuantity}
           leftIcon={<Hash className="w-5 h-5" />}
@@ -381,7 +374,6 @@ export const UseCases: StoryObj<typeof NumberInput> = {
           label="Preço (R$)"
           placeholder="0.00"
           min={0}
-          step={0.01}
           value={price}
           onChange={setPrice}
           leftIcon={<Calculator className="w-5 h-5" />}
@@ -392,7 +384,6 @@ export const UseCases: StoryObj<typeof NumberInput> = {
           placeholder="0"
           min={0}
           max={100}
-          step={5}
           value={percentage}
           onChange={setPercentage}
           autoValidate

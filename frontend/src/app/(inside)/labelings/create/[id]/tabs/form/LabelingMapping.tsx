@@ -10,16 +10,19 @@ import {
 import { SectionData, SectionElement } from "./SectionForm";
 import { QuestionElement } from "./QuestionBlock";
 import { ContextElement } from "./ContextBlock";
-import { MultipleChoiceQuestionConfig, type FollowUpQuestion } from "./question-types/QuestionMultipleChoice";
+import {
+  MultipleChoiceQuestionConfig,
+  type FollowUpQuestion,
+} from "./question-types/QuestionMultipleChoice";
+import { NumberQuestionConfig } from "./question-types/QuestionNumber";
+import { RangeQuestionConfig } from "./question-types/QuestionRange";
 
-type FrontRangeConfig = {
-  type: "range";
-  min: number;
-  max: number;
-  step: number;
-};
+type FrontNumberConfig = NumberQuestionConfig;
+type FrontRangeConfig = RangeQuestionConfig;
 
-const DEFAULT_RANGE = { min: 0, max: 10, step: 1 };
+const DEFAULT_RANGE = { min: 1, max: 5 };
+const DEFAULT_NUMBER_RANGE = { min: 0, max: 100 };
+const DEFAULT_LINEAR_SCALE = { min: 1, max: 5 };
 
 const toMaybeNumericId = (id: string): number | undefined => {
   const parsed = Number(id);
@@ -130,6 +133,9 @@ const mapQuestionElementToDTO = (
       return {
         ...base,
         question_type: "number",
+        question_range: mapNumberConfig(
+          q.config as FrontNumberConfig | undefined,
+        ),
       };
 
     case "text":
@@ -157,7 +163,10 @@ const mapFollowUpToDTO = (
     return { ...base, question_range: mapRangeConfig(rc) };
   }
 
-  if (followUp.questionType === "multiple_choice" && followUp.config?.type === "multiple_choice") {
+  if (
+    followUp.questionType === "multiple_choice" &&
+    followUp.config?.type === "multiple_choice"
+  ) {
     const mc = followUp.config as MultipleChoiceQuestionConfig;
     return {
       ...base,
@@ -178,7 +187,8 @@ const mapFollowUpFromDTO = (
 ): FollowUpQuestion | null => {
   if (!dto) return null;
 
-  const questionType = (dto.question_type ?? "text") as FollowUpQuestion["questionType"];
+  const questionType = (dto.question_type ??
+    "text") as FollowUpQuestion["questionType"];
 
   const followUp: FollowUpQuestion = {
     text: dto.text ?? "",
@@ -213,8 +223,27 @@ const mapFollowUpFromDTO = (
 const mapRangeConfig = (config?: FrontRangeConfig): QuestionRangeDTO => ({
   start: config?.min ?? DEFAULT_RANGE.min,
   end: config?.max ?? DEFAULT_RANGE.max,
-  step: config?.step ?? DEFAULT_RANGE.step,
+  start_label: config?.startLabel ?? "",
+  end_label: config?.endLabel ?? "",
 });
+
+const mapNumberConfig = (
+  config?: FrontNumberConfig,
+): QuestionRangeDTO | null => {
+  const hasMin = config?.hasMin ?? false;
+  const hasMax = config?.hasMax ?? false;
+
+  if (!hasMin && !hasMax) {
+    return null;
+  }
+
+  return {
+    start: hasMin ? (config?.min ?? DEFAULT_NUMBER_RANGE.min) : null,
+    end: hasMax ? (config?.max ?? DEFAULT_NUMBER_RANGE.max) : null,
+    start_label: "",
+    end_label: "",
+  };
+};
 
 const mapContextElementToDTO = (
   c: ContextElement,
@@ -282,13 +311,24 @@ const resolveQuestionConfig = (
     case "range":
       return {
         type: "range",
-        min: element.question_range?.start ?? DEFAULT_RANGE.min,
-        max: element.question_range?.end ?? DEFAULT_RANGE.max,
-        step: element.question_range?.step ?? DEFAULT_RANGE.step,
+        min: element.question_range?.start ?? DEFAULT_LINEAR_SCALE.min,
+        max: element.question_range?.end ?? DEFAULT_LINEAR_SCALE.max,
+        startLabel: element.question_range?.start_label ?? "",
+        endLabel: element.question_range?.end_label ?? "",
       } satisfies FrontRangeConfig;
 
     case "number":
-      return { type: "number" };
+      return {
+        type: "number",
+        hasMin:
+          element.question_range?.start !== null &&
+          element.question_range?.start !== undefined,
+        hasMax:
+          element.question_range?.end !== null &&
+          element.question_range?.end !== undefined,
+        min: element.question_range?.start ?? DEFAULT_NUMBER_RANGE.min,
+        max: element.question_range?.end ?? DEFAULT_NUMBER_RANGE.max,
+      } satisfies FrontNumberConfig;
 
     case "text":
     default:

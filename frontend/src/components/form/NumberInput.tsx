@@ -25,19 +25,17 @@ export type NumberInputProps = Omit<
   min?: number;
   /** Valor máximo permitido */
   max?: number;
-  /** Incremento/decremento do valor */
-  step?: number;
   /** Valor do input */
   value?: number | string;
   /** Callback chamado quando o valor muda */
   onChange?: (value: number | string) => void;
-  /** Se true, aplica validação automática de min/max/step */
+  /** Se true, aplica validação automática de min/max */
   autoValidate?: boolean;
 };
 
 /**
  * Componente de Input numérico padronizado com label flutuante e suporte para ícones
- * Suporta validação automática de min, max e step
+ * Suporta validação automática de min e max
  */
 const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
   (
@@ -54,7 +52,6 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
       tooltip,
       min,
       max,
-      step,
       value,
       onChange,
       autoValidate = false,
@@ -93,9 +90,6 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
         if (max !== undefined && numValue > max) {
           numValue = max;
         }
-        if (step !== undefined && step !== 0 && numValue % step !== 0) {
-          numValue = Math.round(numValue / step) * step;
-        }
       }
 
       onChange(numValue);
@@ -125,7 +119,6 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
             className={baseClasses}
             min={min}
             max={max}
-            step={step}
             value={value}
             onChange={handleChange}
             {...props}

@@ -1,18 +1,25 @@
-import NumberInput from "@/components/form/NumberInput";
+import type { ChangeEvent } from "react";
+import Input from "@/components/form/Input";
+import Select from "@/components/form/Select";
 import { useTranslations } from "@/i18n/use-translations";
 
 export type RangeQuestionConfig = {
   type: "range";
-  min?: number;
-  max?: number;
-  step?: number;
+  min: number;
+  max: number;
+  startLabel?: string;
+  endLabel?: string;
 };
+
+const SCALE_START_OPTIONS = [0, 1];
+const SCALE_END_OPTIONS = Array.from({ length: 9 }, (_, index) => index + 2);
 
 export const createDefaultRangeConfig = (): RangeQuestionConfig => ({
   type: "range",
-  min: 0,
-  max: 10,
-  step: 1,
+  min: 1,
+  max: 5,
+  startLabel: "",
+  endLabel: "",
 });
 
 type Props = {
@@ -22,47 +29,89 @@ type Props = {
 
 export default function QuestionRangeEditor({ config, onChange }: Props) {
   const { t } = useTranslations();
-  const { min, max, step } = config;
 
-  const handleNumericChange =
-    (field: "min" | "max" | "step") => (value: number | string) => {
-      const parsed = value === "" ? undefined : Number(value);
+  const handleScaleChange =
+    (field: "min" | "max") => (event: ChangeEvent<HTMLSelectElement>) => {
+      const nextValue = Number(event.target.value);
+      if (!Number.isFinite(nextValue)) return;
+
+      if (field === "min") {
+        const nextMax = Math.max(config.max, nextValue + 1);
+        onChange({
+          ...config,
+          min: nextValue,
+          max: nextMax,
+        });
+        return;
+      }
+
       onChange({
         ...config,
-        [field]: Number.isNaN(parsed) ? undefined : parsed,
+        max: Math.max(nextValue, config.min + 1),
       });
     };
 
+  const handleLabelChange =
+    (field: "startLabel" | "endLabel") =>
+    (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      onChange({
+        ...config,
+        [field]: event.target.value,
+      });
+    };
+
+  const endOptions = SCALE_END_OPTIONS.filter((option) => option > config.min);
+
   return (
-    <div className="flex flex-col gap-3">
-      <div className="grid grid-cols-3 gap-3">
-        <NumberInput
-          label={t("labelings.create.questionType.range.minLabel")}
-          value={min ?? ""}
-          onChange={handleNumericChange("min")}
+    <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-[7rem_minmax(0,1fr)_auto_7rem_minmax(0,1fr)] items-end gap-3">
+        <Select
+          label={t("labelings.create.questionType.range.startValueLabel")}
+          value={String(config.min)}
+          onChange={handleScaleChange("min")}
+          options={SCALE_START_OPTIONS.map((option) => ({
+            value: String(option),
+            label: String(option),
+          }))}
+          containerClassName="w-full"
         />
-        <NumberInput
-          label={t("labelings.create.questionType.range.maxLabel")}
-          value={max ?? ""}
-          onChange={handleNumericChange("max")}
+        <Input
+          label={t("labelings.create.questionType.range.startLabel")}
+          value={config.startLabel ?? ""}
+          onChange={handleLabelChange("startLabel")}
+          placeholder={t(
+            "labelings.create.questionType.range.startLabelPlaceholder",
+          )}
         />
-        <NumberInput
-          label={t("labelings.create.questionType.range.stepLabel")}
-          value={step ?? ""}
-          min={0}
-          step={0.01}
-          onChange={handleNumericChange("step")}
+        <span className="pb-3 text-sm text-metal-700">
+          {t("labelings.create.questionType.range.to")}
+        </span>
+        <Select
+          label={t("labelings.create.questionType.range.endValueLabel")}
+          value={String(config.max)}
+          onChange={handleScaleChange("max")}
+          options={endOptions.map((option) => ({
+            value: String(option),
+            label: String(option),
+          }))}
+          containerClassName="w-full"
+        />
+        <Input
+          label={t("labelings.create.questionType.range.endLabel")}
+          value={config.endLabel ?? ""}
+          onChange={handleLabelChange("endLabel")}
+          placeholder={t(
+            "labelings.create.questionType.range.endLabelPlaceholder",
+          )}
         />
       </div>
-      {(min !== undefined || max !== undefined || step !== undefined) && (
-        <p className="text-xs text-gray-600">
-          {t("labelings.create.questionType.range.summary", {
-            min: min ?? "-",
-            max: max ?? "-",
-            step: step ?? "-",
-          })}
-        </p>
-      )}
+
+      <p className="text-xs text-gray-600">
+        {t("labelings.create.questionType.range.summary", {
+          min: config.min,
+          max: config.max,
+        })}
+      </p>
     </div>
   );
 }

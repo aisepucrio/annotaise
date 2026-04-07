@@ -1,7 +1,6 @@
 from django.db import models
 from django.utils import timezone
 from django.conf import settings
-from django.core.validators import MinValueValidator
 from user.models import UserGroup
 from django.core.exceptions import ValidationError
 
@@ -174,18 +173,25 @@ class QuestionRange(models.Model):
     labeling_element = models.OneToOneField(
         LabelingElement, on_delete=models.CASCADE, related_name="question_range", db_index=True
     )
-    start = models.FloatField()
-    end = models.FloatField()
-    step = models.FloatField(default=1.0, validators=[MinValueValidator(0.0000001)])
+    start = models.FloatField(null=True, blank=True)
+    end = models.FloatField(null=True, blank=True)
+    start_label = models.CharField(max_length=300, blank=True, default="")
+    end_label = models.CharField(max_length=300, blank=True, default="")
 
     class Meta:
         constraints = [
-            models.CheckConstraint(condition=models.Q(end__gt=models.F("start")),#garante que o valor final é maior que o inicial
-                                   name="range_end_gt_start"),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(start__isnull=True)
+                    | models.Q(end__isnull=True)
+                    | models.Q(end__gt=models.F("start"))
+                ),
+                name="range_end_gt_start_when_both",
+            ),
         ]
 
     def __str__(self):
-        return f"{self.start} … {self.end} (step {self.step})"
+        return f"{self.start} … {self.end}"
 
 
 class LabelingMembership(models.Model):

@@ -25,7 +25,7 @@ export function buildInitialAnswers(
           });
           break;
         case "range":
-          initial[element.id] = element.question_range?.start ?? 0;
+          initial[element.id] = null;
           break;
         default:
           initial[element.id] = "";

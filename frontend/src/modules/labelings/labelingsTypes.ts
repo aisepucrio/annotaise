@@ -58,9 +58,10 @@ export type MultipleChoiceItemDTO = {
 
 // Para perguntas do tipo "range"
 export type QuestionRangeDTO = {
-  start: number;
-  end: number;
-  step: number;
+  start?: number | null;
+  end?: number | null;
+  start_label?: string;
+  end_label?: string;
 };
 
 // Elemento genérico da estrutura do labeling, que pode ser uma pergunta ou um contexto
@@ -102,9 +103,10 @@ export type LabelingStructureElement = ElementDTO & {
   }>;
   question_range?: {
     id?: number;
-    start: number;
-    end: number;
-    step: number;
+    start?: number | null;
+    end?: number | null;
+    start_label?: string;
+    end_label?: string;
   } | null;
 };
 

@@ -290,8 +290,7 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.summary.chart.topResponses": "Respostas mais frequentes",
     "labelings.create.summary.chart.histogram": "Distribuição",
     "labelings.create.summary.chart.other": "Outros",
-    "labelings.create.summary.agreement.title":
-      "Agreement entre rotuladores",
+    "labelings.create.summary.agreement.title": "Agreement entre rotuladores",
     "labelings.create.summary.agreement.option": "Opção",
     "labelings.create.summary.agreement.frequency": "Frequência",
     "labelings.create.summary.agreement.count": "Nº de agreements",
@@ -354,13 +353,17 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.question.selectType": "Selecione um tipo",
     "labelings.create.question.type.text": "Texto",
     "labelings.create.question.type.number": "Número",
-    "labelings.create.question.type.range": "Intervalo numérico",
+    "labelings.create.question.type.range": "Escala linear",
     "labelings.create.question.type.multipleChoice": "Seleção múltipla",
     "labelings.create.question.required": "Obrigatória",
     "labelings.create.questionType.text.noConfig":
       "Perguntas de texto não possuem configurações adicionais.",
-    "labelings.create.questionType.number.noConfig":
-      "Perguntas numéricas não possuem configurações adicionais.",
+    "labelings.create.questionType.number.minLabel": "Valor mínimo",
+    "labelings.create.questionType.number.maxLabel": "Valor máximo",
+    "labelings.create.questionType.number.basicMode":
+      "Sem restrições adicionais. O respondente verá apenas um campo numérico.",
+    "labelings.create.questionType.number.summaryMin": "Mínimo ativo: {{min}}",
+    "labelings.create.questionType.number.summaryMax": "Máximo ativo: {{max}}",
     "labelings.create.questionType.multipleChoice.optionsLabel": "Opções",
     "labelings.create.questionType.multipleChoice.addOption": "Adicionar opção",
     "labelings.create.questionType.multipleChoice.optionLabel":
@@ -368,14 +371,21 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.questionType.multipleChoice.allowMultiple":
       "Permitir múltiplas respostas (Checkbox)",
     "labelings.create.questionType.multipleChoice.dragOption": "Arrastar opção",
-    "labelings.create.questionType.multipleChoice.followUp.toggle": "Pergunta de acompanhamento",
-    "labelings.create.questionType.multipleChoice.followUp.title": "Pergunta de acompanhamento",
-    "labelings.create.questionType.multipleChoice.followUp.placeholder": "Texto da pergunta de acompanhamento...",
-    "labelings.create.questionType.range.minLabel": "Valor mínimo",
-    "labelings.create.questionType.range.maxLabel": "Valor máximo",
-    "labelings.create.questionType.range.stepLabel": "Passo",
+    "labelings.create.questionType.multipleChoice.followUp.toggle":
+      "Pergunta de acompanhamento",
+    "labelings.create.questionType.multipleChoice.followUp.title":
+      "Pergunta de acompanhamento",
+    "labelings.create.questionType.multipleChoice.followUp.placeholder":
+      "Texto da pergunta de acompanhamento...",
+    "labelings.create.questionType.range.startValueLabel": "Valor inicial",
+    "labelings.create.questionType.range.endValueLabel": "Valor final",
+    "labelings.create.questionType.range.to": "a",
+    "labelings.create.questionType.range.startLabel": "Rótulo inicial",
+    "labelings.create.questionType.range.endLabel": "Rótulo final",
+    "labelings.create.questionType.range.startLabelPlaceholder": "Ex.: Muito",
+    "labelings.create.questionType.range.endLabelPlaceholder": "Ex.: Pouco",
     "labelings.create.questionType.range.summary":
-      "Faixa configurada: {{min}} até {{max}} (passo {{step}})",
+      "Escala configurada: {{min}} até {{max}}",
     "labelings.create.assign.loading": "Carregando membros...",
     "labelings.create.assign.empty": "Nenhum membro atribuído.",
     "labelings.create.assign.remove": "Remover",
@@ -526,23 +536,17 @@ export const translations: Record<Language, TranslationMap> = {
       "Nº de usuários que concordaram",
     "labelings.create.answers.modal.itemAgreementTotalUsers":
       "Total de usuários",
-    "labelings.create.answers.modal.itemAgreementRate":
-      "Taxa de agreement",
-    "labelings.create.answers.modal.itemAgreementLeading":
-      "Resposta líder",
-    "labelings.create.answers.modal.itemAgreementTie":
-      "Empate entre opções",
+    "labelings.create.answers.modal.itemAgreementRate": "Taxa de agreement",
+    "labelings.create.answers.modal.itemAgreementLeading": "Resposta líder",
+    "labelings.create.answers.modal.itemAgreementTie": "Empate entre opções",
     "labelings.create.answers.modal.itemAgreementNoAnswers":
       "Sem respostas para esta pergunta.",
-    "labelings.create.answers.modal.itemAgreementSingle":
-      "Seleção única",
-    "labelings.create.answers.modal.itemAgreementMulti":
-      "Múltiplas seleções",
+    "labelings.create.answers.modal.itemAgreementSingle": "Seleção única",
+    "labelings.create.answers.modal.itemAgreementMulti": "Múltiplas seleções",
     "labelings.create.answers.modal.itemAgreementOption": "Opção",
     "labelings.create.answers.modal.itemAgreementUsers":
       "Usuários que marcaram",
-    "labelings.create.answers.modal.itemAgreementNoUsers":
-      "Nenhum usuário",
+    "labelings.create.answers.modal.itemAgreementNoUsers": "Nenhum usuário",
     "labelings.create.answers.modal.itemAgreementMissing":
       "{{count}} usuário(s) não responderam esta pergunta.",
     "labelings.create.answers.modal.selectUserLabel": "Usuário para visualizar",
@@ -601,7 +605,8 @@ export const translations: Record<Language, TranslationMap> = {
     "users.edit.error": "Não foi possível atualizar o usuário.",
     "users.edit.deleteButton": "Excluir usuário",
     "users.edit.deleteTitle": "Excluir usuário",
-    "users.edit.deleteDescription": "Esta ação é permanente e não pode ser desfeita. Todos os dados do usuário serão removidos.",
+    "users.edit.deleteDescription":
+      "Esta ação é permanente e não pode ser desfeita. Todos os dados do usuário serão removidos.",
     "users.edit.deleteSuccess": "Usuário excluído com sucesso.",
     "users.edit.deleteError": "Não foi possível excluir o usuário.",
     "projects.new.title": "Novo Projeto",
@@ -720,7 +725,7 @@ export const translations: Record<Language, TranslationMap> = {
     "answer.question.required": "Obrigatória",
     "answer.question.type.text": "Texto",
     "answer.question.type.number": "Número",
-    "answer.question.type.range": "Intervalo",
+    "answer.question.type.range": "Escala linear",
     "answer.question.type.multipleChoice": "Seleção múltipla",
     "answer.question.rangeLabel": "de {{start}} a {{end}}",
     "answer.context.column": "Coluna: ",
@@ -741,7 +746,8 @@ export const translations: Record<Language, TranslationMap> = {
     "guide.loading": "Carregando guia...",
     "guide.noGuide": "Nenhum guia foi fornecido para esta rotulação.",
     "forgotPassword.title": "Esqueceu sua senha?",
-    "forgotPassword.subtitle": "Digite seu email e enviaremos um link para redefinir sua senha.",
+    "forgotPassword.subtitle":
+      "Digite seu email e enviaremos um link para redefinir sua senha.",
     "forgotPassword.emailLabel": "Email",
     "forgotPassword.emailPlaceholder": "seu@email.com",
     "forgotPassword.emailRequired": "Email é obrigatório",
@@ -749,13 +755,15 @@ export const translations: Record<Language, TranslationMap> = {
     "forgotPassword.button": "Enviar link",
     "forgotPassword.loading": "Enviando...",
     "forgotPassword.backToLogin": "Voltar para o login",
-    "forgotPassword.successMessage": "Se o email existir, você receberá um link em breve.",
+    "forgotPassword.successMessage":
+      "Se o email existir, você receberá um link em breve.",
     "resetPassword.title": "Redefinir senha",
     "resetPassword.subtitle": "Digite sua nova senha abaixo.",
     "resetPassword.passwordLabel": "Nova senha",
     "resetPassword.passwordPlaceholder": "Mínimo 3 caracteres",
     "resetPassword.passwordRequired": "Senha é obrigatória",
-    "resetPassword.passwordMinLength": "A senha deve ter no mínimo 3 caracteres",
+    "resetPassword.passwordMinLength":
+      "A senha deve ter no mínimo 3 caracteres",
     "resetPassword.button": "Redefinir senha",
     "resetPassword.loading": "Redefinindo...",
     "resetPassword.successMessage": "Senha redefinida com sucesso!",
@@ -1100,13 +1108,19 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.question.selectType": "Select a type",
     "labelings.create.question.type.text": "Text",
     "labelings.create.question.type.number": "Number",
-    "labelings.create.question.type.range": "Numeric range",
+    "labelings.create.question.type.range": "Linear scale",
     "labelings.create.question.type.multipleChoice": "Multiple choice",
     "labelings.create.question.required": "Required",
     "labelings.create.questionType.text.noConfig":
       "Text questions have no additional settings.",
-    "labelings.create.questionType.number.noConfig":
-      "Numeric questions have no additional settings.",
+    "labelings.create.questionType.number.minLabel": "Minimum value",
+    "labelings.create.questionType.number.maxLabel": "Maximum value",
+    "labelings.create.questionType.number.basicMode":
+      "No additional restrictions. Respondents will see a plain numeric field.",
+    "labelings.create.questionType.number.summaryMin":
+      "Minimum active: {{min}}",
+    "labelings.create.questionType.number.summaryMax":
+      "Maximum active: {{max}}",
     "labelings.create.questionType.multipleChoice.optionsLabel": "Options",
     "labelings.create.questionType.multipleChoice.addOption": "Add option",
     "labelings.create.questionType.multipleChoice.optionLabel":
@@ -1114,14 +1128,21 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.create.questionType.multipleChoice.allowMultiple":
       "Allow multiple answers (Checkbox)",
     "labelings.create.questionType.multipleChoice.dragOption": "Drag option",
-    "labelings.create.questionType.multipleChoice.followUp.toggle": "Follow-up question",
-    "labelings.create.questionType.multipleChoice.followUp.title": "Follow-up question",
-    "labelings.create.questionType.multipleChoice.followUp.placeholder": "Follow-up question text...",
-    "labelings.create.questionType.range.minLabel": "Minimum value",
-    "labelings.create.questionType.range.maxLabel": "Maximum value",
-    "labelings.create.questionType.range.stepLabel": "Step",
+    "labelings.create.questionType.multipleChoice.followUp.toggle":
+      "Follow-up question",
+    "labelings.create.questionType.multipleChoice.followUp.title":
+      "Follow-up question",
+    "labelings.create.questionType.multipleChoice.followUp.placeholder":
+      "Follow-up question text...",
+    "labelings.create.questionType.range.startValueLabel": "Start value",
+    "labelings.create.questionType.range.endValueLabel": "End value",
+    "labelings.create.questionType.range.to": "to",
+    "labelings.create.questionType.range.startLabel": "Start label",
+    "labelings.create.questionType.range.endLabel": "End label",
+    "labelings.create.questionType.range.startLabelPlaceholder": "e.g. Very",
+    "labelings.create.questionType.range.endLabelPlaceholder": "e.g. Little",
     "labelings.create.questionType.range.summary":
-      "Configured range: {{min}} to {{max}} (step {{step}})",
+      "Configured scale: {{min}} to {{max}}",
     "labelings.create.assign.loading": "Loading members...",
     "labelings.create.assign.empty": "No members assigned.",
     "labelings.create.assign.remove": "Remove",
@@ -1255,17 +1276,14 @@ export const translations: Record<Language, TranslationMap> = {
       "No multiple-choice questions available for agreement analysis in this item.",
     "labelings.create.answers.modal.itemAgreementAgreedUsers":
       "Number of agreeing users",
-    "labelings.create.answers.modal.itemAgreementTotalUsers":
-      "Total users",
+    "labelings.create.answers.modal.itemAgreementTotalUsers": "Total users",
     "labelings.create.answers.modal.itemAgreementRate": "Agreement rate",
     "labelings.create.answers.modal.itemAgreementLeading": "Leading answer",
-    "labelings.create.answers.modal.itemAgreementTie":
-      "Tie between options",
+    "labelings.create.answers.modal.itemAgreementTie": "Tie between options",
     "labelings.create.answers.modal.itemAgreementNoAnswers":
       "No answers for this question.",
     "labelings.create.answers.modal.itemAgreementSingle": "Single selection",
-    "labelings.create.answers.modal.itemAgreementMulti":
-      "Multiple selections",
+    "labelings.create.answers.modal.itemAgreementMulti": "Multiple selections",
     "labelings.create.answers.modal.itemAgreementOption": "Option",
     "labelings.create.answers.modal.itemAgreementUsers": "Users who selected",
     "labelings.create.answers.modal.itemAgreementNoUsers": "No users",
@@ -1323,7 +1341,8 @@ export const translations: Record<Language, TranslationMap> = {
     "users.edit.error": "Unable to update the user.",
     "users.edit.deleteButton": "Delete user",
     "users.edit.deleteTitle": "Delete user",
-    "users.edit.deleteDescription": "This action is permanent and cannot be undone. All user data will be removed.",
+    "users.edit.deleteDescription":
+      "This action is permanent and cannot be undone. All user data will be removed.",
     "users.edit.deleteSuccess": "User deleted successfully.",
     "users.edit.deleteError": "Unable to delete the user.",
     "projects.new.title": "New Project",
@@ -1439,7 +1458,7 @@ export const translations: Record<Language, TranslationMap> = {
     "answer.question.required": "Required",
     "answer.question.type.text": "Text",
     "answer.question.type.number": "Number",
-    "answer.question.type.range": "Range",
+    "answer.question.type.range": "Linear scale",
     "answer.question.type.multipleChoice": "Multiple choice",
     "answer.question.rangeLabel": "from {{start}} to {{end}}",
     "answer.context.column": "Column: {{name}}",
@@ -1458,7 +1477,8 @@ export const translations: Record<Language, TranslationMap> = {
     "guide.loading": "Loading guide...",
     "guide.noGuide": "No guide was provided for this labeling.",
     "forgotPassword.title": "Forgot your password?",
-    "forgotPassword.subtitle": "Enter your email and we will send you a link to reset your password.",
+    "forgotPassword.subtitle":
+      "Enter your email and we will send you a link to reset your password.",
     "forgotPassword.emailLabel": "Email",
     "forgotPassword.emailPlaceholder": "your@email.com",
     "forgotPassword.emailRequired": "Email is required.",
@@ -1466,13 +1486,15 @@ export const translations: Record<Language, TranslationMap> = {
     "forgotPassword.button": "Send link",
     "forgotPassword.loading": "Sending...",
     "forgotPassword.backToLogin": "Back to login",
-    "forgotPassword.successMessage": "If the email exists, you will receive a link shortly.",
+    "forgotPassword.successMessage":
+      "If the email exists, you will receive a link shortly.",
     "resetPassword.title": "Reset password",
     "resetPassword.subtitle": "Enter your new password below.",
     "resetPassword.passwordLabel": "New password",
     "resetPassword.passwordPlaceholder": "Minimum 3 characters",
     "resetPassword.passwordRequired": "Password is required.",
-    "resetPassword.passwordMinLength": "The password must be at least 3 characters.",
+    "resetPassword.passwordMinLength":
+      "The password must be at least 3 characters.",
     "resetPassword.button": "Reset password",
     "resetPassword.loading": "Resetting...",
     "resetPassword.successMessage": "Password reset successfully!",
