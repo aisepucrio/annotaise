@@ -136,8 +136,6 @@ export default function QuestionBlock({
         {/* corpo: texto da pergunta + select de tipo */}
         <div className="mb-3 flex items-start gap-2">
           <Input
-            multiline
-            rows={1}
             placeholder={t("labelings.create.question.placeholder")}
             value={data.text || ""}
             onChange={handleTextChange}
