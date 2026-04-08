@@ -37,7 +37,7 @@ export default function QuestionStatisticsVizualizer(
     case "number":
       return <NumberStatView {...props} />;
     case "range":
-      return <NumericRangeStatView {...props} />;
+      return <RangeStatView {...props} />;
     case "multiple_choice":
       return <MultipleChoiceStatView {...props} />;
     default:
@@ -98,11 +98,13 @@ function MultipleChoiceStatView(props: QuestionStatisticsVizualizerProps) {
 }
 
 function NumberStatView(props: QuestionStatisticsVizualizerProps) {
-  return <NumericQuestionStatView {...props} />;
+  return <NumericStatsView {...props} />;
 }
 
-function NumericRangeStatView(props: QuestionStatisticsVizualizerProps) {
-  return <NumericQuestionStatView {...props} />;
+// `range` is the historic question type name; this branch renders the current
+// linear scale statistics view.
+function RangeStatView(props: QuestionStatisticsVizualizerProps) {
+  return <NumericStatsView {...props} />;
 }
 
 function CategoricalQuestionStatView({
@@ -131,22 +133,15 @@ function CategoricalQuestionStatView({
   return (
     <div className={`space-y-3 ${className}`}>
       <div
-        className="rounded-lg border p-3 space-y-2"
-        style={{
-          borderColor: BLUEBERRY_COLORS.surfaceMuted,
-        }}
+        className="text-xs font-semibold"
+        style={{ color: BLUEBERRY_COLORS.textStrong }}
       >
-        <div
-          className="text-xs font-semibold"
-          style={{ color: BLUEBERRY_COLORS.textStrong }}
-        >
-          {summary.chart.title}
-        </div>
-        <SummaryBarChart
-          items={summary.chart.items}
-          total={summary.chart.total}
-        />
+        {summary.chart.title}
       </div>
+      <SummaryBarChart
+        items={summary.chart.items}
+        total={summary.chart.total}
+      />
 
       {showMultipleChoiceAgreement ? (
         <div
@@ -254,7 +249,7 @@ function MultipleChoiceAgreementBars({
   );
 }
 
-function NumericQuestionStatView({
+function NumericStatsView({
   summary,
   t,
   numberFormatter,
@@ -356,12 +351,9 @@ function SummaryBarChart({
 }) {
   if (!items.length) return null;
 
-  const max = Math.max(...items.map((item) => item.count), 1);
-
   return (
     <div className="space-y-2">
       {items.map((item) => {
-        const percentOfMax = (item.count / max) * 100;
         const percentOfTotal =
           total > 0 ? Math.round((item.count / total) * 100) : 0;
 
@@ -387,7 +379,7 @@ function SummaryBarChart({
                 className="h-full rounded-full"
                 style={{
                   backgroundColor: BLUEBERRY_COLORS.barFill,
-                  width: `${percentOfMax}%`,
+                  width: `${percentOfTotal}%`,
                 }}
               />
             </div>

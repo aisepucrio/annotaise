@@ -247,24 +247,22 @@ function buildChartForElement({
     };
   }
 
-  if (element.question_type === "number" || element.question_type === "range") {
-    const numericValues = cleanValues
-      .map((value) => Number(value))
-      .filter((value) => Number.isFinite(value));
+  if (element.question_type === "number") {
+    return buildNumberChart({
+      values: cleanValues,
+      range: element.question_range ?? undefined,
+      t,
+      numberFormatter,
+    });
+  }
 
-    if (!numericValues.length) return noDataChart(t);
-
-    return {
-      kind: "hist",
-      title: t("labelings.create.summary.chart.histogram"),
-      items: buildHistogram({
-        values: numericValues,
-        range: element.question_range ?? undefined,
-        numberFormatter,
-      }),
-      total: numericValues.length,
-      stats: computeStats(numericValues),
-    };
+  if (element.question_type === "range") {
+    return buildRangeChart({
+      values: cleanValues,
+      range: element.question_range ?? undefined,
+      t,
+      numberFormatter,
+    });
   }
 
   return noDataChart(t);
@@ -274,6 +272,39 @@ function noDataChart(t: TranslateFn): QuestionSummaryChart {
   return {
     kind: "none",
     title: t("labelings.create.summary.chart.noData"),
+  };
+}
+
+function extractNumericValues(values: unknown[]): number[] {
+  return values
+    .map((value) => Number(value))
+    .filter((value) => Number.isFinite(value));
+}
+
+function buildNumberChart({
+  values,
+  range,
+  t,
+  numberFormatter,
+}: {
+  values: unknown[];
+  range?: { start?: number | null; end?: number | null };
+  t: TranslateFn;
+  numberFormatter: Intl.NumberFormat;
+}): QuestionSummaryChart {
+  const numericValues = extractNumericValues(values);
+  if (!numericValues.length) return noDataChart(t);
+
+  return {
+    kind: "hist",
+    title: t("labelings.create.summary.chart.histogram"),
+    items: buildHistogram({
+      values: numericValues,
+      range,
+      numberFormatter,
+    }),
+    total: numericValues.length,
+    stats: computeStats(numericValues),
   };
 }
 
@@ -325,6 +356,33 @@ function extractTextResponses(
   });
 
   return responses;
+}
+
+function buildRangeChart({
+  values,
+  range,
+  t,
+  numberFormatter,
+}: {
+  values: unknown[];
+  range?: { start?: number | null; end?: number | null };
+  t: TranslateFn;
+  numberFormatter: Intl.NumberFormat;
+}): QuestionSummaryChart {
+  const numericValues = extractNumericValues(values);
+  if (!numericValues.length) return noDataChart(t);
+
+  return {
+    kind: "hist",
+    title: t("labelings.create.summary.chart.histogram"),
+    items: buildRangeDistribution({
+      values: numericValues,
+      range,
+      numberFormatter,
+    }),
+    total: numericValues.length,
+    stats: computeStats(numericValues),
+  };
 }
 
 function buildChoiceCounts(
@@ -391,6 +449,8 @@ function buildChoiceCountsWithAgreement({
   possibleAgreements: number;
 } {
   const frequencyItems = buildChoiceCounts(element, values, t);
+  const respondentCount = values.length;
+
   if (!answerKey) {
     return {
       items: frequencyItems.map((item) => ({
@@ -398,7 +458,7 @@ function buildChoiceCountsWithAgreement({
         agreementCount: 0,
         agreementRate: 0,
       })),
-      total: frequencyItems.reduce((sum, item) => sum + item.count, 0),
+      total: respondentCount,
       possibleAgreements: 0,
     };
   }
@@ -426,7 +486,7 @@ function buildChoiceCountsWithAgreement({
 
   return {
     items,
-    total: items.reduce((sum, item) => sum + item.count, 0),
+    total: respondentCount,
     possibleAgreements,
   };
 }
@@ -508,14 +568,14 @@ function buildHistogram({
 }): BarItem[] {
   const minValue = Math.min(...values);
   const maxValue = Math.max(...values);
-  const minRange =
+  const start =
     range?.start !== undefined && range.start !== null
-      ? Math.min(range.start, minValue)
+      ? range.start
       : minValue;
-  const maxRange =
-    range?.end !== undefined && range.end !== null
-      ? Math.max(range.end, maxValue)
-      : maxValue;
+  const end =
+    range?.end !== undefined && range.end !== null ? range.end : maxValue;
+  const minRange = Math.min(start, minValue);
+  const maxRange = Math.max(end, maxValue);
 
   if (minRange === maxRange) {
     return [
@@ -526,25 +586,64 @@ function buildHistogram({
     ];
   }
 
-  const binCount = Math.min(6, Math.max(3, Math.ceil(Math.sqrt(values.length))));
-  const width = (maxRange - minRange) / binCount;
-  const bins = Array.from({ length: binCount }, () => 0);
+  const bucketCount = Math.min(6, Math.max(3, Math.ceil(Math.sqrt(values.length))));
+  const width = (maxRange - minRange) / bucketCount;
+  const counts = Array.from({ length: bucketCount }, () => 0);
 
   values.forEach((value) => {
     const index = Math.min(
-      binCount - 1,
+      bucketCount - 1,
       Math.max(0, Math.floor((value - minRange) / width)),
     );
-    bins[index] += 1;
+    counts[index] += 1;
   });
 
-  return bins.map((count, index) => {
-    const start = minRange + width * index;
-    const end = index === binCount - 1 ? maxRange : start + width;
+  return counts.map((count, index) => {
+    const bucketStart = minRange + width * index;
+    const bucketEnd =
+      index === bucketCount - 1 ? maxRange : bucketStart + width;
 
     return {
-      label: `${numberFormatter.format(start)} - ${numberFormatter.format(end)}`,
+      label: `${numberFormatter.format(bucketStart)} - ${numberFormatter.format(bucketEnd)}`,
       count,
     };
   });
+}
+
+// `range` values are rendered as discrete buckets because they now represent
+// a linear scale rather than a continuous numeric interval.
+function buildRangeDistribution({
+  values,
+  range,
+  numberFormatter,
+}: {
+  values: number[];
+  range?: { start?: number | null; end?: number | null };
+  numberFormatter: Intl.NumberFormat;
+}): BarItem[] {
+  const roundedValues = values.map((value) => Math.round(value));
+  const minValue = Math.min(...roundedValues);
+  const maxValue = Math.max(...roundedValues);
+  const start =
+    range?.start !== undefined && range.start !== null
+      ? Math.round(range.start)
+      : minValue;
+  const end =
+    range?.end !== undefined && range.end !== null
+      ? Math.round(range.end)
+      : maxValue;
+  const minScale = Math.min(start, minValue);
+  const maxScale = Math.max(end, maxValue);
+  const bucketCount = maxScale - minScale + 1;
+  const counts = Array.from({ length: bucketCount }, () => 0);
+
+  roundedValues.forEach((value) => {
+    const index = Math.max(0, Math.min(bucketCount - 1, value - minScale));
+    counts[index] += 1;
+  });
+
+  return counts.map((count, index) => ({
+    label: numberFormatter.format(minScale + index),
+    count,
+  }));
 }

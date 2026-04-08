@@ -3,6 +3,8 @@ import Input from "@/components/form/Input";
 import Select from "@/components/form/Select";
 import { useTranslations } from "@/i18n/use-translations";
 
+// `range` remains the internal/frontend name for backward compatibility.
+// In the current product semantics, this config represents a linear scale.
 export type RangeQuestionConfig = {
   type: "range";
   min: number;
@@ -36,11 +38,10 @@ export default function QuestionRangeEditor({ config, onChange }: Props) {
       if (!Number.isFinite(nextValue)) return;
 
       if (field === "min") {
-        const nextMax = Math.max(config.max, nextValue + 1);
         onChange({
           ...config,
           min: nextValue,
-          max: nextMax,
+          max: Math.max(config.max, nextValue + 1),
         });
         return;
       }

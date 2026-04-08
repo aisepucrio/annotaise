@@ -21,6 +21,7 @@ import Select from "@/components/form/Select";
 import { useTranslations } from "@/i18n/use-translations";
 import type { TranslateFn } from "@/i18n/types";
 import type { QuestionConfig } from "./index";
+import type { RangeQuestionConfig } from "./QuestionRange";
 
 export type FollowUpQuestion = {
   text: string;
@@ -308,7 +309,7 @@ function FollowUpEditor({ followUp, onChange }: FollowUpEditorProps) {
       </div>
       {followUp.questionType === "range" && (
         <FollowUpRangeConfig
-          config={followUp.config as { type: "range"; min: number; max: number; step: number } | undefined}
+          config={followUp.config as RangeQuestionConfig | undefined}
           onChange={(rangeConfig) => onChange({ config: rangeConfig })}
         />
       )}
@@ -323,15 +324,15 @@ function FollowUpEditor({ followUp, onChange }: FollowUpEditorProps) {
 }
 
 type FollowUpRangeConfigProps = {
-  config?: { type: "range"; min: number; max: number; step: number };
-  onChange: (config: { type: "range"; min: number; max: number; step: number }) => void;
+  config?: RangeQuestionConfig;
+  onChange: (config: RangeQuestionConfig) => void;
 };
 
 function FollowUpRangeConfig({ config, onChange }: FollowUpRangeConfigProps) {
   const { t } = useTranslations();
-  const current = config ?? { type: "range" as const, min: 0, max: 10, step: 1 };
+  const current = config ?? { type: "range" as const, min: 0, max: 10 };
 
-  const handleChange = (field: "min" | "max" | "step") => (e: ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (field: "min" | "max") => (e: ChangeEvent<HTMLInputElement>) => {
     onChange({ ...current, [field]: Number(e.target.value) || 0 });
   };
 
@@ -351,14 +352,6 @@ function FollowUpRangeConfig({ config, onChange }: FollowUpRangeConfigProps) {
         placeholder={t("labelings.create.questionType.range.maxLabel")}
         value={String(current.max)}
         onChange={handleChange("max")}
-        className="text-sm"
-      />
-      <Input
-        type="number"
-        containerClassName="flex-1"
-        placeholder={t("labelings.create.questionType.range.stepLabel")}
-        value={String(current.step)}
-        onChange={handleChange("step")}
         className="text-sm"
       />
     </div>

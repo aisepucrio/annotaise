@@ -20,7 +20,6 @@ import { RangeQuestionConfig } from "./question-types/QuestionRange";
 type FrontNumberConfig = NumberQuestionConfig;
 type FrontRangeConfig = RangeQuestionConfig;
 
-const DEFAULT_RANGE = { min: 1, max: 5 };
 const DEFAULT_NUMBER_RANGE = { min: 0, max: 100 };
 const DEFAULT_LINEAR_SCALE = { min: 1, max: 5 };
 
@@ -201,7 +200,6 @@ const mapFollowUpFromDTO = (
       type: "range",
       min: dto.question_range.start ?? 0,
       max: dto.question_range.end ?? 10,
-      step: dto.question_range.step ?? 1,
     };
   }
 
@@ -220,9 +218,11 @@ const mapFollowUpFromDTO = (
   return followUp;
 };
 
+// `range` is kept as the config name for compatibility, but the UI treats it
+// as a linear scale question.
 const mapRangeConfig = (config?: FrontRangeConfig): QuestionRangeDTO => ({
-  start: config?.min ?? DEFAULT_RANGE.min,
-  end: config?.max ?? DEFAULT_RANGE.max,
+  start: config?.min ?? DEFAULT_LINEAR_SCALE.min,
+  end: config?.max ?? DEFAULT_LINEAR_SCALE.max,
   start_label: config?.startLabel ?? "",
   end_label: config?.endLabel ?? "",
 });

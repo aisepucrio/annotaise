@@ -44,6 +44,32 @@ const histogramSummary: QuestionSummary = {
   },
 };
 
+const linearScaleSummary: QuestionSummary = {
+  key: "q-range-1",
+  label: "O quanto produtividade e saúde mental estão relacionadas?",
+  type: "range",
+  sectionLabel: "Visão Geral",
+  responseCount: 10,
+  chart: {
+    kind: "hist",
+    title: "Distribuição",
+    items: [
+      { label: "1", count: 1 },
+      { label: "2", count: 1 },
+      { label: "3", count: 2 },
+      { label: "4", count: 3 },
+      { label: "5", count: 3 },
+    ],
+    total: 10,
+    stats: {
+      min: 1,
+      max: 5,
+      avg: 3.6,
+      median: 4,
+    },
+  },
+};
+
 const multipleChoiceSummary: QuestionSummary = {
   key: "q-mc-1",
   label: "Classificação final",
@@ -80,7 +106,7 @@ const textSummary: QuestionSummary = {
 };
 
 const noDataSummary: QuestionSummary = {
-  key: "q-range-1",
+  key: "q-range-empty",
   label: "Pontuação",
   type: "range",
   sectionLabel: "Métricas",
@@ -138,6 +164,18 @@ export const MultipleChoiceBars: Story = {
     <Frame>
       <QuestionStatisticsVizualizer
         summary={multipleChoiceSummary}
+        numberFormatter={numberFormatter}
+        t={t}
+      />
+    </Frame>
+  ),
+};
+
+export const LinearScaleDistribution: Story = {
+  render: () => (
+    <Frame>
+      <QuestionStatisticsVizualizer
+        summary={linearScaleSummary}
         numberFormatter={numberFormatter}
         t={t}
       />
