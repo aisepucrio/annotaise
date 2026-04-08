@@ -104,7 +104,7 @@ function SortableChoice({ id, label, children }: SortableChoiceProps) {
   } = useSortable({ id });
 
   const style = {
-    transform: CSS.Transform.toString(transform),
+    transform: CSS.Translate.toString(transform),
     transition,
     opacity: isDragging ? 0.92 : 1,
   };
@@ -264,7 +264,7 @@ export default function QuestionMultipleChoiceEditor({
                   "labelings.create.questionType.multipleChoice.dragOption",
                 )}
               >
-                <div className="flex flex-col flex-1 gap-1">
+                <div className="flex flex-col flex-1 gap-1 rounded-lg bg-white ">
                   <div className="flex items-center gap-2">
                     <Input
                       rows={2}

@@ -304,7 +304,7 @@ function SortableElement({ id, label, kind, children }: SortableElementProps) {
     id,
   });
   const style = {
-    transform: CSS.Transform.toString(transform),
+    transform: CSS.Translate.toString(transform),
     transition,
     opacity: isDragging ? 0.92 : 1,
   };
