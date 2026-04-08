@@ -27,9 +27,14 @@ export const createDefaultRangeConfig = (): RangeQuestionConfig => ({
 type Props = {
   config: RangeQuestionConfig;
   onChange: (config: RangeQuestionConfig) => void;
+  hideFieldLabels?: boolean;
 };
 
-export default function QuestionRangeEditor({ config, onChange }: Props) {
+export default function QuestionRangeEditor({
+  config,
+  onChange,
+  hideFieldLabels = false,
+}: Props) {
   const { t } = useTranslations();
 
   const handleScaleChange =
@@ -67,7 +72,11 @@ export default function QuestionRangeEditor({ config, onChange }: Props) {
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-[7rem_minmax(0,1fr)_auto_7rem_minmax(0,1fr)] items-end gap-3">
         <Select
-          label={t("labelings.create.questionType.range.startValueLabel")}
+          label={
+            hideFieldLabels
+              ? undefined
+              : t("labelings.create.questionType.range.startValueLabel")
+          }
           value={String(config.min)}
           onChange={handleScaleChange("min")}
           options={SCALE_START_OPTIONS.map((option) => ({
@@ -77,18 +86,28 @@ export default function QuestionRangeEditor({ config, onChange }: Props) {
           containerClassName="w-full"
         />
         <Input
-          label={t("labelings.create.questionType.range.startLabel")}
+          label={
+            hideFieldLabels
+              ? undefined
+              : t("labelings.create.questionType.range.startLabel")
+          }
           value={config.startLabel ?? ""}
           onChange={handleLabelChange("startLabel")}
           placeholder={t(
             "labelings.create.questionType.range.startLabelPlaceholder",
           )}
         />
-        <span className="pb-3 text-sm text-metal-700">
+        <span
+          className={`text-sm text-metal-700 ${hideFieldLabels ? "" : "pb-3"}`}
+        >
           {t("labelings.create.questionType.range.to")}
         </span>
         <Select
-          label={t("labelings.create.questionType.range.endValueLabel")}
+          label={
+            hideFieldLabels
+              ? undefined
+              : t("labelings.create.questionType.range.endValueLabel")
+          }
           value={String(config.max)}
           onChange={handleScaleChange("max")}
           options={endOptions.map((option) => ({
@@ -98,7 +117,11 @@ export default function QuestionRangeEditor({ config, onChange }: Props) {
           containerClassName="w-full"
         />
         <Input
-          label={t("labelings.create.questionType.range.endLabel")}
+          label={
+            hideFieldLabels
+              ? undefined
+              : t("labelings.create.questionType.range.endLabel")
+          }
           value={config.endLabel ?? ""}
           onChange={handleLabelChange("endLabel")}
           placeholder={t(

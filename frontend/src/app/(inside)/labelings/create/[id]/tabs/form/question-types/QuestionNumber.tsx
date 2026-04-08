@@ -27,9 +27,14 @@ export const createDefaultNumberConfig = (): NumberQuestionConfig => ({
 type Props = {
   config: NumberQuestionConfig;
   onChange: (config: NumberQuestionConfig) => void;
+  hideFieldLabels?: boolean;
 };
 
-export default function QuestionNumberEditor({ config, onChange }: Props) {
+export default function QuestionNumberEditor({
+  config,
+  onChange,
+  hideFieldLabels = false,
+}: Props) {
   const { t } = useTranslations();
   const inputId = useId();
   const hasMin = config.hasMin ?? false;
@@ -101,7 +106,11 @@ export default function QuestionNumberEditor({ config, onChange }: Props) {
             className="shrink-0"
           />
           <NumberInput
-            label={t("labelings.create.questionType.number.minLabel")}
+            label={
+              hideFieldLabels
+                ? undefined
+                : t("labelings.create.questionType.number.minLabel")
+            }
             value={config.min ?? ""}
             onChange={handleNumericChange("min")}
             disabled={!hasMin}
@@ -118,7 +127,11 @@ export default function QuestionNumberEditor({ config, onChange }: Props) {
             className="shrink-0"
           />
           <NumberInput
-            label={t("labelings.create.questionType.number.maxLabel")}
+            label={
+              hideFieldLabels
+                ? undefined
+                : t("labelings.create.questionType.number.maxLabel")
+            }
             value={config.max ?? ""}
             onChange={handleNumericChange("max")}
             disabled={!hasMax}

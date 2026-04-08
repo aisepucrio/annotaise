@@ -163,6 +163,14 @@ const mapFollowUpToDTO = (
   }
 
   if (
+    followUp.questionType === "number" &&
+    followUp.config?.type === "number"
+  ) {
+    const nc = followUp.config as FrontNumberConfig;
+    return { ...base, question_range: mapNumberConfig(nc) };
+  }
+
+  if (
     followUp.questionType === "multiple_choice" &&
     followUp.config?.type === "multiple_choice"
   ) {
@@ -200,6 +208,20 @@ const mapFollowUpFromDTO = (
       type: "range",
       min: dto.question_range.start ?? 0,
       max: dto.question_range.end ?? 10,
+    };
+  }
+
+  if (questionType === "number") {
+    followUp.config = {
+      type: "number",
+      hasMin:
+        dto.question_range?.start !== null &&
+        dto.question_range?.start !== undefined,
+      hasMax:
+        dto.question_range?.end !== null &&
+        dto.question_range?.end !== undefined,
+      min: dto.question_range?.start ?? DEFAULT_NUMBER_RANGE.min,
+      max: dto.question_range?.end ?? DEFAULT_NUMBER_RANGE.max,
     };
   }
 

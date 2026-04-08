@@ -276,9 +276,9 @@ function FollowUpQuestionBlock({
   const currentValue = answers?.[answerKey] ?? getDefaultValue(followUpElement);
 
   return (
-    <div className="ml-8 mt-2 mb-1 rounded-lg border border-blue-200 bg-blue-50/50 p-3">
+    <div className="ml-8 mt-2 mb-1 rounded-lg border border-blueberry-700-25 bg-blue-50 p-3">
       {followUp.text && (
-        <div className="mb-2 text-sm font-medium text-blue-800 flex items-center gap-1">
+        <div className="mb-2 flex items-center gap-1 text-sm font-medium text-blueberry-700">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>
             {followUp.text}
           </ReactMarkdown>
