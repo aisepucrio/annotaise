@@ -63,6 +63,7 @@ export default function LabelingAnswerPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loadErrorCode, setLoadErrorCode] = useState<string | null>(null);
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
+  const [errorEventId, setErrorEventId] = useState(0);
 
   // ====== Ordenação/derivados de seções ======
   const orderedSections = useMemo(
@@ -78,6 +79,12 @@ export default function LabelingAnswerPage() {
 
   const isLastSection = currentSectionIdx === totalSections - 1;
 
+  const showError = useCallback((message: string, code: string | null = null) => {
+    setLoadErrorCode(code);
+    setLoadError(message);
+    setErrorEventId((current) => current + 1);
+  }, []);
+
   // ====== Toasts (feedback global) ======
   useEffect(() => {
     if (!loadError) return;
@@ -87,7 +94,7 @@ export default function LabelingAnswerPage() {
       loadErrorCode === "ROTULACAO_FINALIZADA";
 
     (isOkCode ? toast.success : toast.error)(loadError);
-  }, [loadError, loadErrorCode]);
+  }, [errorEventId, loadError, loadErrorCode]);
 
   useEffect(() => {
     if (submitMessage) toast.success(submitMessage);
@@ -97,7 +104,7 @@ export default function LabelingAnswerPage() {
   const loadItem = useCallback(async () => {
     // [EDIT: validação de id]
     if (Number.isNaN(labelingId)) {
-      setLoadError(t("answer.invalidId"));
+      showError(t("answer.invalidId"));
       setIsLoading(false);
       return;
     }
@@ -130,10 +137,9 @@ export default function LabelingAnswerPage() {
       setCurrentItemId(null);
       setRowIndex(null);
       setSections([]);
-      setLoadErrorCode(null);
-
       // [UI: mensagem amigável] tenta extrair do backend
       let message = t("answer.loadError");
+      let code: string | null = null;
 
       if (axios.isAxiosError(error)) {
         const data = error.response?.data as
@@ -148,16 +154,16 @@ export default function LabelingAnswerPage() {
           message = error.message;
         }
 
-        setLoadErrorCode(data?.code ?? null);
+        code = data?.code ?? null;
       } else if (error instanceof Error) {
         message = error.message;
       }
 
-      setLoadError(message);
+      showError(message, code);
     } finally {
       setIsLoading(false);
     }
-  }, [labelingId, t]);
+  }, [labelingId, showError, t]);
 
   useEffect(() => {
     void loadItem();
@@ -167,6 +173,9 @@ export default function LabelingAnswerPage() {
   const handleAnswerChange = useCallback(
     (questionId: number | string, value: unknown) => {
       // [UI: formulário] update do mapa de respostas
+      setLoadError(null);
+      setLoadErrorCode(null);
+      setSubmitMessage(null);
       setAnswers((prev) => ({ ...prev, [String(questionId)]: value }));
     },
     [],
@@ -178,23 +187,23 @@ export default function LabelingAnswerPage() {
 
     const sectionError = validateSectionRequired(currentSection, answers, t);
     if (sectionError) {
-      setLoadError(sectionError);
+      showError(sectionError);
       return;
     }
 
     setLoadError(null);
     setSubmitMessage(null);
     setCurrentSectionIdx((idx) => Math.min(idx + 1, totalSections - 1));
-  }, [answers, currentSection, t, totalSections]);
+  }, [answers, currentSection, showError, t, totalSections]);
 
   const handleSubmit = useCallback(async () => {
     // [EDIT: validações de segurança]
     if (Number.isNaN(labelingId)) {
-      setLoadError(t("answer.invalidId"));
+      showError(t("answer.invalidId"));
       return;
     }
     if (!currentItemId) {
-      setLoadError(t("answer.noItemAvailable"));
+      showError(t("answer.noItemAvailable"));
       return;
     }
 
@@ -202,7 +211,7 @@ export default function LabelingAnswerPage() {
     if (currentSection) {
       const sectionError = validateSectionRequired(currentSection, answers, t);
       if (sectionError) {
-        setLoadError(sectionError);
+        showError(sectionError);
         return;
       }
     }
@@ -210,7 +219,7 @@ export default function LabelingAnswerPage() {
     // [UI: validação global] garante required de todas as seções
     const validationError = validateRequired(sections, answers, t);
     if (validationError) {
-      setLoadError(validationError);
+      showError(validationError);
       return;
     }
 
@@ -243,7 +252,7 @@ export default function LabelingAnswerPage() {
         message = error.message;
       }
 
-      setLoadError(message);
+      showError(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -254,6 +263,7 @@ export default function LabelingAnswerPage() {
     labelingId,
     loadItem,
     sections,
+    showError,
     t,
   ]);
 

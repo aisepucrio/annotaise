@@ -45,7 +45,7 @@ function getFollowUpDefault(
     case "multiple_choice":
       return followUp.allow_multiple ? [] : "";
     case "range":
-      return followUp.question_range?.start ?? 0;
+      return null;
     default:
       return "";
   }
@@ -91,16 +91,15 @@ function validateElements(
   missing: Array<string | number>,
 ) {
   elements.forEach((element) => {
-    if (element.question_type === "context" || !element.required) return;
+    if (element.question_type === "context") return;
 
     const key = String(element.id ?? "");
     const value = answers[key];
 
-    if (isEmptyAnswer(value)) {
+    if (element.required && isEmptyAnswer(value)) {
       missing.push(element.id ?? element.text ?? "pergunta");
     }
 
-    // validate follow-up questions for selected options
     if (element.question_type === "multiple_choice") {
       validateFollowUps(element, answers, missing);
     }

@@ -299,7 +299,7 @@ function getDefaultValue(element: LabelingStructureElement): unknown {
     case "multiple_choice":
       return element.allow_multiple ? [] : "";
     case "range":
-      return element.question_range?.start ?? 0;
+      return null;
     default:
       return "";
   }
