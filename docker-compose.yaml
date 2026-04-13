@@ -13,8 +13,8 @@ services:
       - db
     environment:
       DEBUG: ${DEBUG}
-      DJANGO_DB_HOST: db
-      DJANGO_DB_PORT: 5432
+      DJANGO_DB_HOST: ${DJANGO_DB_HOST:-db}
+      DJANGO_DB_PORT: ${DJANGO_DB_PORT:-5432}
       DJANGO_DB_NAME: ${DJANGO_DB_NAME}
       DJANGO_DB_USER: ${DJANGO_DB_USER}
       DJANGO_DB_PASS: ${DJANGO_DB_PASS}
@@ -27,6 +27,11 @@ services:
       EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD}
       DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL}
       FRONTEND_URL: ${FRONTEND_URL}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_TIMEOUT_SECONDS: ${OLLAMA_TIMEOUT_SECONDS:-60}
+      OLLAMA_IMAGE_CONTEXT_MODEL: ${OLLAMA_IMAGE_CONTEXT_MODEL:-llava:7b}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
 
   frontend:
@@ -53,7 +58,7 @@ services:
       POSTGRES_USER: ${DJANGO_DB_USER}
       POSTGRES_PASSWORD: ${DJANGO_DB_PASS}
     ports:
-      - "5432:5432"
+      - "${DJANGO_DB_HOST_PORT:-5432}:5432"
     volumes:
       - pg_annotaise:/var/lib/postgresql/data
     restart: unless-stopped

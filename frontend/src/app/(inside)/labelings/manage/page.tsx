@@ -13,7 +13,10 @@ import { useCreateLabelingWithCsvMutation } from "@/modules/labelings/labelingMu
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useTranslations } from "@/i18n/use-translations";
-import type { DistributionStrategy } from "@/modules/labelings/labelingsTypes";
+import type {
+  DecisionMode,
+  DistributionStrategy,
+} from "@/modules/labelings/labelingsTypes";
 
 type UploadPayload = {
   file: File;
@@ -24,6 +27,7 @@ type UploadPayload = {
   finalDate?: string;
   blockSectionBack?: boolean;
   decision: boolean;
+  decisionMode: DecisionMode;
   hasBackgroundForm: boolean;
   distributionStrategy: DistributionStrategy;
 };
@@ -70,6 +74,7 @@ export default function LabelingsPage() {
     finalDate,
     blockSectionBack,
     decision,
+    decisionMode,
     hasBackgroundForm,
     distributionStrategy,
   }: UploadPayload) {
@@ -83,6 +88,7 @@ export default function LabelingsPage() {
           final_date: finalDate || undefined,
           block_section_back: blockSectionBack,
           decision,
+          decision_mode: decisionMode,
           has_background_form: hasBackgroundForm,
           distribution_strategy: distributionStrategy,
         },

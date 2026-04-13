@@ -15,6 +15,10 @@ class Labeling(models.Model):
         AUTO = "auto", "Automática" 
         SPECIFIED = "specified", "Estipulada"
         PER_PERSON = "per_person", "Por pessoa"
+
+    class DecisionMode(models.TextChoices):
+        MANUAL = "manual", "Manual"
+        LLM = "llm", "LLM"
     
     #background_labeling = models.ForeignKey(null=True, blank=True, on_delete=models.SET_NULL)
     status = models.CharField(choices=Status.choices,default="draft")
@@ -27,6 +31,11 @@ class Labeling(models.Model):
     start_date = models.DateField(default=timezone.now)
     final_date = models.DateField(null=False, blank=False)
     decision = models.BooleanField(default=False, null=False, blank=False)
+    decision_mode = models.CharField(
+        max_length=16,
+        choices=DecisionMode.choices,
+        default=DecisionMode.MANUAL,
+    )
     distribution_strategy = models.CharField(max_length=32, default=DistributionStrategy.AUTO, choices=DistributionStrategy.choices)
 
 

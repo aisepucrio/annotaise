@@ -140,7 +140,7 @@ export default function AnswersTab({
             const answeredAt = latestAnswer
               ? new Date(latestAnswer.created_at).toLocaleString(locale)
               : "-";
-            const answeredCount = group.answers.length;
+            const answeredCount = getDisplayedResponseCount(group.answers);
             const itemLabel = resolveItemLabel(group.rowIndex, group.itemId, t);
 
             return (
@@ -176,6 +176,23 @@ export default function AnswersTab({
       )}
     </div>
   );
+}
+
+function getDisplayedResponseCount(answers: AnswerResponse[]): number {
+  const fallback = answers.length;
+  const latest = answers[0];
+  const decisionPayload = latest?.item_detail?.decision_payload;
+
+  if (!decisionPayload || typeof decisionPayload !== "object") {
+    return fallback;
+  }
+
+  const decisionVotes = Object.values(decisionPayload).reduce((sum, value) => {
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? sum + numeric : sum;
+  }, 0);
+
+  return decisionVotes > 0 ? Math.max(fallback, decisionVotes) : fallback;
 }
 
 function getCreatedAtMs(answer: AnswerResponse) {

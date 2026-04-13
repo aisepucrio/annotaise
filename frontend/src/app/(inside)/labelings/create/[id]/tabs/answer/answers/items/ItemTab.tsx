@@ -93,12 +93,12 @@ export default function ItemTab({
     t,
   );
   const itemResponsesLabel =
-    itemGroup.answers.length === 1
+    getDisplayedResponseCount(itemGroup.answers) === 1
       ? t("labelings.create.answers.modal.responsesCountSingular", {
-          count: itemGroup.answers.length,
+          count: getDisplayedResponseCount(itemGroup.answers),
         })
       : t("labelings.create.answers.modal.responsesCountPlural", {
-          count: itemGroup.answers.length,
+          count: getDisplayedResponseCount(itemGroup.answers),
         });
   const answeredAt = new Date(selectedAnswer.created_at).toLocaleString(locale);
 
@@ -251,4 +251,21 @@ function selectLatestAnswersByUser(
   }
 
   return Array.from(latestByUser.values());
+}
+
+function getDisplayedResponseCount(answers: AnswerResponse[]): number {
+  const fallback = answers.length;
+  const latest = answers[0];
+  const decisionPayload = latest?.item_detail?.decision_payload;
+
+  if (!decisionPayload || typeof decisionPayload !== "object") {
+    return fallback;
+  }
+
+  const decisionVotes = Object.values(decisionPayload).reduce((sum, value) => {
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? sum + numeric : sum;
+  }, 0);
+
+  return decisionVotes > 0 ? Math.max(fallback, decisionVotes) : fallback;
 }

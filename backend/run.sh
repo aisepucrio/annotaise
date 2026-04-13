@@ -1,8 +1,11 @@
 #!/bin/bash
 
+DB_HOST="${DJANGO_DB_HOST:-db}"
+DB_PORT="${DJANGO_DB_PORT:-5432}"
+
 # Wait for the database
 echo "Waiting for database to be ready..."
-until nc -z db 5432; do
+until nc -z "$DB_HOST" "$DB_PORT"; do
     echo "Database not ready yet. Retrying in 2 seconds..."
     sleep 2
 done

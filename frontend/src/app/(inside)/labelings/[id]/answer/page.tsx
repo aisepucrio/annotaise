@@ -229,11 +229,15 @@ export default function LabelingAnswerPage() {
 
     try {
       // [UI: submit] envia respostas do item atual
-      await submitAnswer({
+      const submitResult = await submitAnswer({
         labeling: labelingId,
         item: currentItemId,
         answer_payload: answers,
       });
+
+      if (submitResult.decision_warning) {
+        toast.error(submitResult.decision_warning);
+      }
 
       setSubmitMessage(t("answer.answerSent"));
 

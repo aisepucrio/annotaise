@@ -25,6 +25,9 @@ import json
 from answer.models import BackgroundAnswer, Answer
 from collections import defaultdict
 
+LLM_TIEBREAK_USERNAME = "llm_tiebreak_bot"
+LLM_TIEBREAK_EMAIL = "llm_tiebreak_bot@annotaise.local"
+
 class LabelingViewSet(viewsets.ModelViewSet):
     serializer_class = LabelingSerializer
     
@@ -101,7 +104,13 @@ class LabelingViewSet(viewsets.ModelViewSet):
     @action(methods=['get'], detail=True, url_path='memberships')
     def list_labeling_memberships(self,request, pk=None):
         labeling = get_object_or_404(Labeling,pk=pk)
-        memberships = LabelingMembership.objects.filter(labeling=labeling).select_related('user')
+        memberships = (
+            LabelingMembership.objects
+            .filter(labeling=labeling)
+            .exclude(user__username=LLM_TIEBREAK_USERNAME)
+            .exclude(user__email__iexact=LLM_TIEBREAK_EMAIL)
+            .select_related('user')
+        )
         background_users = set(
             BackgroundAnswer.objects.filter(labeling=labeling).values_list("answered_by_id", flat=True)
         )
@@ -431,7 +440,12 @@ class LabelingMembershipViewSet(viewsets.ModelViewSet):
     '''Só o owner/colaborator pode mexer nisso'''
     serializer_class = LabelingMembershipSerializer
     permission_classes = [IsAdminAccount, CanEditLabelingsInProjectPermission]
-    queryset = LabelingMembership.objects.select_related('labeling', 'user')
+    queryset = (
+        LabelingMembership.objects
+        .select_related('labeling', 'user')
+        .exclude(user__username=LLM_TIEBREAK_USERNAME)
+        .exclude(user__email__iexact=LLM_TIEBREAK_EMAIL)
+    )
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     

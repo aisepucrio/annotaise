@@ -31,6 +31,9 @@ from labeling.models import Labeling, LabelingMembership
 
 import uuid
 
+LLM_TIEBREAK_USERNAME = "llm_tiebreak_bot"
+LLM_TIEBREAK_EMAIL = "llm_tiebreak_bot@annotaise.local"
+
 #TODO falta um endpoint de alterar a senha... caso não tenha questoes de segurança, tem como fazer por aqui, mas nao é o ideal
 class CurrentAPIView(RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
@@ -44,7 +47,12 @@ class CurrentAPIView(RetrieveUpdateDestroyAPIView):
 User = get_user_model()
 
 class AdminUserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all().order_by("-date_joined")
+    queryset = (
+        User.objects
+        .exclude(username=LLM_TIEBREAK_USERNAME)
+        .exclude(email__iexact=LLM_TIEBREAK_EMAIL)
+        .order_by("-date_joined")
+    )
     permission_classes = [IsAdminAccount]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["username", "email", "first_name", "last_name"]

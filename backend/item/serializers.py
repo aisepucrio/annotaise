@@ -8,7 +8,18 @@ class ItemSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Item
-        fields = ['id', 'labeling', 'payload', 'row_index','status', 'decision_payload']
+        fields = [
+            'id',
+            'labeling',
+            'payload',
+            'row_index',
+            'status',
+            'decision_payload',
+            'llm_tiebreak_attempted',
+            'llm_tiebreak_result',
+            'final_decision_source',
+            'final_decision_value',
+        ]
         read_only_fields = ['id']
 
 

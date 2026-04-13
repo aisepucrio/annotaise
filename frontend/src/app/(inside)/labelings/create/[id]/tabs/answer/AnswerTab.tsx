@@ -46,12 +46,33 @@ export default function AnswerTab({
   const getUserLabel = useCallback(
     (userId: number): string => {
       const user = usersById.get(userId);
-      if (!user) return t("labelings.create.answers.unknownUser");
+      if (!user) {
+        const answerByUser = answers.find((answer) => answer.answered_by === userId);
+        const answerUsername = (answerByUser?.answered_by_username ?? "").trim().toLowerCase();
+        const answerEmail = (answerByUser?.answered_by_email ?? "").trim().toLowerCase();
+        if (
+          answerUsername === "llm_tiebreak_bot" ||
+          answerEmail === "llm_tiebreak_bot@annotaise.local"
+        ) {
+          return "LLM";
+        }
+        return t("labelings.create.answers.unknownUser");
+      }
+
+      const username = (user.username ?? "").trim().toLowerCase();
+      const email = (user.email ?? "").trim().toLowerCase();
+      if (
+        username === "llm_tiebreak_bot" ||
+        email === "llm_tiebreak_bot@annotaise.local"
+      ) {
+        return "LLM";
+      }
+
       const fullName =
         `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim();
       return fullName || user.email || user.username || `User #${userId}`;
     },
-    [usersById, t],
+    [usersById, answers, t],
   );
 
   const responderOptions = useMemo(() => {

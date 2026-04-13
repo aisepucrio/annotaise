@@ -9,6 +9,10 @@ from rest_framework.exceptions import PermissionDenied
 from user.permissions import IsAdminAccount, CanEditAccount
 from django.db.models import Count, Q
 from .permissions import IsProjectOwnerPermission
+
+LLM_TIEBREAK_USERNAME = "llm_tiebreak_bot"
+LLM_TIEBREAK_EMAIL = "llm_tiebreak_bot@annotaise.local"
+
 class ProjectViewSet(viewsets.ModelViewSet):
     serializer_class = ProjectSerializer
     http_method_names = ['get', 'post', 'patch', 'delete']
@@ -101,7 +105,12 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
 class ProjectMembershipViewSet(viewsets.ModelViewSet):
     serializer_class = ProjectMembershipSerializer
-    queryset = ProjectMembership.objects.select_related('project', 'user')
+    queryset = (
+        ProjectMembership.objects
+        .select_related('project', 'user')
+        .exclude(user__username=LLM_TIEBREAK_USERNAME)
+        .exclude(user__email__iexact=LLM_TIEBREAK_EMAIL)
+    )
     http_method_names = ['get', 'post','put', 'patch', 'delete']
     permission_classes = [IsAdminAccount,IsProjectOwnerPermission]
 

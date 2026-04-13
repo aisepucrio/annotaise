@@ -12,7 +12,10 @@ import Checkbox from "@/components/form/Checkbox";
 import Button from "@/components/button/Button";
 import Tooltip from "@/components/tooltip/Tooltip";
 import { useTranslations } from "@/i18n/use-translations";
-import type { DistributionStrategy } from "@/modules/labelings/labelingsTypes";
+import type {
+  DecisionMode,
+  DistributionStrategy,
+} from "@/modules/labelings/labelingsTypes";
 
 // Props esperadas pelo modal de criação de nova rotulagem
 type NewLabelingModalProps = {
@@ -27,6 +30,7 @@ type NewLabelingModalProps = {
     finalDate?: string;
     blockSectionBack?: boolean;
     decision: boolean;
+    decisionMode: DecisionMode;
     hasBackgroundForm: boolean;
     distributionStrategy: DistributionStrategy;
   }) => Promise<void>;
@@ -57,6 +61,7 @@ export default function NewLabelingModal({
   const [distributionStrategy, setDistributionStrategy] =
     useState<DistributionStrategy>("auto");
   const [decisionEnabled, setDecisionEnabled] = useState(false);
+  const [decisionMode, setDecisionMode] = useState<DecisionMode>("manual");
   const [hasBackgroundForm, setHasBackgroundForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState<Step>("upload");
@@ -77,6 +82,7 @@ export default function NewLabelingModal({
       setUsersPerItem("1");
       setDistributionStrategy("auto");
       setDecisionEnabled(false);
+      setDecisionMode("manual");
       setHasBackgroundForm(false);
       setIsSubmitting(false);
       setHasEmptyFields(false);
@@ -93,6 +99,7 @@ export default function NewLabelingModal({
   useEffect(() => {
     if (isPerPerson) {
       setDecisionEnabled(false);
+      setDecisionMode("manual");
       setUsersPerItem("1");
       setFormErrors((prev) => {
         if (!prev.usersPerItem) return prev;
@@ -228,6 +235,7 @@ export default function NewLabelingModal({
         finalDate: finalDate || undefined,
         blockSectionBack: true,
         decision: decisionEnabled,
+        decisionMode,
         hasBackgroundForm,
         distributionStrategy,
       });
@@ -480,30 +488,71 @@ export default function NewLabelingModal({
             </div>
 
             {/* Configurações booleanas extras (checkboxes) */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex items-center gap-2 rounded-lg border border-metal-200 bg-metal-50 px-3 py-2">
-                <Checkbox
-                  id="csv-decision"
-                  checked={decisionEnabled}
-                  onChange={setDecisionEnabled}
-                  disabled={isPerPerson}
-                  variant="square"
-                  hoverColor="var(--metal-500)"
-                  checkedColor="var(--metal-700)"
-                  className="shrink-0"
-                />
-                <div className="flex items-center gap-1">
-                  <label
-                    htmlFor="csv-decision"
-                    className="cursor-pointer text-sm font-medium text-metal-900"
-                  >
-                    {t("labelings.upload.decisionLabel")}
-                  </label>
-                  <Tooltip
-                    content={t("labelings.upload.decisionTooltip")}
-                    color="var(--metal-700)"
-                    size="sm"
-                  />
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <div className="rounded-lg border border-metal-200 bg-metal-50 px-3 py-2">
+                <div className="w-full">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="csv-decision"
+                      checked={decisionEnabled}
+                      onChange={(value) => {
+                        setDecisionEnabled(value);
+                        if (!value) setDecisionMode("manual");
+                      }}
+                      disabled={isPerPerson}
+                      variant="square"
+                      hoverColor="var(--metal-500)"
+                      checkedColor="var(--metal-700)"
+                      className="shrink-0"
+                    />
+                    <div className="flex items-center gap-1">
+                      <label
+                        htmlFor="csv-decision"
+                        className="cursor-pointer text-sm font-medium text-metal-900"
+                      >
+                        {t("labelings.upload.decisionLabel")}
+                      </label>
+                      <Tooltip
+                        content={t("labelings.upload.decisionTooltip")}
+                        color="var(--metal-700)"
+                        size="sm"
+                      />
+                    </div>
+                  </div>
+
+                  {decisionEnabled && !isPerPerson ? (
+                    <div className="mt-2 rounded-md border border-metal-200 bg-white p-2">
+                      <div className="mb-2 flex items-center gap-1">
+                        <span className="text-sm text-metal-700">
+                          {t("labelings.upload.decisionModeLabel")}
+                        </span>
+                        <Tooltip
+                          content={t("labelings.upload.decisionModeTooltip")}
+                          color="var(--metal-700)"
+                          size="sm"
+                        />
+                      </div>
+                      <Select
+                        id="csv-decision-mode"
+                        options={[
+                          {
+                            value: "manual",
+                            label: t("labelings.upload.decisionMode.manual"),
+                          },
+                          {
+                            value: "llm",
+                            label: t("labelings.upload.decisionMode.llm"),
+                          },
+                        ]}
+                        value={decisionMode}
+                        onChange={(e) =>
+                          setDecisionMode(
+                            (e.target as HTMLSelectElement).value as DecisionMode,
+                          )
+                        }
+                      />
+                    </div>
+                  ) : null}
                 </div>
               </div>
 

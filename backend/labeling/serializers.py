@@ -3,12 +3,15 @@ from .models import Labeling, LabelingSection, LabelingElement, MultipleChoiceIt
 from django.db import transaction
 from django.utils import timezone
 
+LLM_TIEBREAK_USERNAME = "llm_tiebreak_bot"
+LLM_TIEBREAK_EMAIL = "llm_tiebreak_bot@annotaise.local"
+
 
 class LabelingSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Labeling
-        fields = ['id', 'project', 'title', 'created_at','status','column_names','start_date','final_date','users_per_item','block_section_back','has_background_form','guide','decision','decisive_question','distribution_strategy']
+        fields = ['id', 'project', 'title', 'created_at','status','column_names','start_date','final_date','users_per_item','block_section_back','has_background_form','guide','decision','decision_mode','decisive_question','distribution_strategy']
         read_only_fields = ['id', 'created_at','created_by','column_names','status']
 
     def create(self, validated_data):
@@ -81,6 +84,15 @@ class LabelingMembershipSerializer(serializers.ModelSerializer):
         model = LabelingMembership
         fields = ['id', 'user', 'labeling', 'items_done', 'role', 'joined_at']
         read_only_fields = ['id', 'joined_at','items_done']
+
+    def validate_user(self, user):
+        username = (getattr(user, "username", "") or "").strip().lower()
+        email = (getattr(user, "email", "") or "").strip().lower()
+        if username == LLM_TIEBREAK_USERNAME or email == LLM_TIEBREAK_EMAIL:
+            raise serializers.ValidationError(
+                "Este usuário técnico não pode ser adicionado como membro de rotulação."
+            )
+        return user
 
     def update(self, instance, validated_data):
         # bloqueia a troca de rotulação

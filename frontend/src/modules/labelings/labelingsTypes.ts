@@ -1,5 +1,6 @@
 export type LabelingStatus = "draft" | "active" | "archived" | "finished";
 export type DistributionStrategy = "auto" | "specified" | "per_person";
+export type DecisionMode = "manual" | "llm";
 
 // Campos que o backend retorna para um labeling
 export type Labeling = {
@@ -9,6 +10,7 @@ export type Labeling = {
   status: LabelingStatus;
   has_background_form?: boolean;
   decision: boolean;
+  decision_mode?: DecisionMode;
   decisive_question?: number | null;
   guide?: string;
   start_date?: string | null;
@@ -29,6 +31,7 @@ export type LabelingPayload = Pick<
   | "users_per_item"
   | "has_background_form"
   | "decision"
+  | "decision_mode"
   | "decisive_question"
   | "guide"
   | "block_section_back"
@@ -180,6 +183,11 @@ export type ItemStructure = {
   payload: Record<string, unknown>;
   row_index: number;
   status: string;
+  decision_payload?: Record<string, number> | null;
+  llm_tiebreak_attempted?: boolean;
+  llm_tiebreak_result?: Record<string, unknown> | null;
+  final_decision_source?: string | null;
+  final_decision_value?: string | null;
 };
 
 export type AnswerStructure = {
@@ -196,8 +204,13 @@ export type AnswerPayload = {
 export type AnswerResponse = AnswerPayload & {
   id: number;
   answered_by: number;
+  answered_by_username?: string;
+  answered_by_email?: string;
+  answered_by_first_name?: string;
+  answered_by_last_name?: string;
   created_at: string;
   item_detail?: ItemStructure;
+  decision_warning?: string;
 };
 
 export type BackgroundAnswerPayload = {

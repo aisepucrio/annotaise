@@ -231,6 +231,11 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.upload.decisionLabel": "Ativar decisão automática",
     "labelings.upload.decisionTooltip":
       "*Experimental* Ative para decidir respostas finais automaticamente quando todos os usuários finalizarem um item.\nEm caso de empate, a rotulação continua.",
+    "labelings.upload.decisionModeLabel": "Modo da decisão automática",
+    "labelings.upload.decisionMode.manual": "Manual",
+    "labelings.upload.decisionMode.llm": "LLM (desempate)",
+    "labelings.upload.decisionModeTooltip":
+      "Manual mantém o desempate por anotadores humanos. LLM executa uma rodada única com 5 modelos no empate.",
     "labelings.upload.decisionHelpLine1":
       "*EXPERIMENTAL* Marque para decidir respostas finais automaticamente quando todos os usuários finalizarem um item",
     "labelings.upload.decisionHelpLine2":
@@ -993,6 +998,11 @@ export const translations: Record<Language, TranslationMap> = {
     "labelings.upload.decisionLabel": "Enable automatic decision",
     "labelings.upload.decisionTooltip":
       "*Experimental* Enable to decide final answers automatically when all users finish an item.\nIf there is a tie, labeling continues.",
+    "labelings.upload.decisionModeLabel": "Automatic decision mode",
+    "labelings.upload.decisionMode.manual": "Manual",
+    "labelings.upload.decisionMode.llm": "LLM (tie-break)",
+    "labelings.upload.decisionModeTooltip":
+      "Manual keeps human tie-break. LLM runs one single tie-break round with 5 models.",
     "labelings.upload.decisionHelpLine1":
       "*EXPERIMENTAL* Check to decide final answers automatically when all users finish an item",
     "labelings.upload.decisionHelpLine2":
