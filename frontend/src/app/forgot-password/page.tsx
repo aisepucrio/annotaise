@@ -1,6 +1,5 @@
 'use client';
 
-import { isAxiosError } from 'axios';
 import AuthLayout from '@/components/auth-layout/AuthLayout';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -11,6 +10,7 @@ import { toast } from 'sonner';
 import AuthFormButton from '@/components/auth-layout/AuthFormButton';
 import Input from '@/components/form/Input';
 import { useTranslations } from '@/i18n/use-translations';
+import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 
 type FormData = {
   email: string;
@@ -34,14 +34,7 @@ export default function ForgotPasswordPage() {
       await forgotPassword(data.email);
       toast.success(t('forgotPassword.successMessage'));
     } catch (err) {
-      let message = t('forgotPassword.successMessage');
-
-      if (isAxiosError(err)) {
-        const detail = (err.response?.data as { detail?: string })?.detail;
-        if (detail) message = detail;
-      }
-
-      toast.success(message);
+      toast.success(getApiErrorMessage(err, t('forgotPassword.successMessage')));
     } finally {
       setIsLoading(false);
     }

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import { useTranslations } from '@/i18n/use-translations';
+import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 import Modal from '@/components/modal/Modal';
 import Select from '@/components/form/Select';
 import Checkbox from '@/components/form/Checkbox';
@@ -139,7 +140,7 @@ export default function NewUserModal({ open, onClose, onSubmit }: NewUserModalPr
 
     if (failed.length > 0) {
       const failedEmails = failed.map(({ email }) => email).join(', ');
-      const reason = (failed[0].r as PromiseRejectedResult).reason?.response?.data?.detail ?? t('users.new.error');
+      const reason = getApiErrorMessage((failed[0].r as PromiseRejectedResult).reason, t('users.new.error'));
       toast.error(`${failed.length} email${failed.length > 1 ? 's' : ''} falhou: ${failedEmails} - ${reason}`);
     }
 

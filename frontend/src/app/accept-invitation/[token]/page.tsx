@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import api from '@/lib/fetcher';
-import { isAxiosError } from 'axios';
+import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 import { toast } from 'sonner';
 import Input from '@/components/form/Input';
 import PasswordInput from '@/components/form/PasswordInput';
@@ -80,10 +80,7 @@ export default function AcceptInvitationPage() {
       .get<Invitation>(`/invitations/${token}/`)
       .then((res) => setInvitation(res.data))
       .catch((err) => {
-        let message = t('invitation.error.load');
-        if (isAxiosError(err) && err.response?.status === 404) {
-          message = t('invitation.error.notFound');
-        }
+        const message = getApiErrorMessage(err, t('invitation.error.load'));
         setInvitation(null);
         setInviteError(message);
         toast.error(message);
@@ -103,14 +100,7 @@ export default function AcceptInvitationPage() {
       toast.success(t('invitation.success.accountCreated'));
       setTimeout(() => router.push('/login'), 800);
     } catch (err) {
-      let message = t('invitation.error.accept');
-      if (isAxiosError(err)) {
-        const detail = (err.response?.data as { detail?: string })?.detail;
-        if (detail) message = detail;
-      } else if (err instanceof Error && err.message) {
-        message = err.message;
-      }
-      toast.error(message);
+      toast.error(getApiErrorMessage(err, t('invitation.error.accept')));
     } finally {
       setIsSubmitting(false);
     }

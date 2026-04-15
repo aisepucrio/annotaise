@@ -1,6 +1,5 @@
 'use client';
 
-import { isAxiosError } from 'axios';
 import AuthLayout from '@/components/auth-layout/AuthLayout';
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useState, useEffect, Suspense } from 'react';
@@ -11,6 +10,7 @@ import { toast } from 'sonner';
 import AuthFormButton from '@/components/auth-layout/AuthFormButton';
 import PasswordInput from '@/components/form/PasswordInput';
 import { useTranslations } from '@/i18n/use-translations';
+import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 
 type FormData = {
   new_password: string;
@@ -45,14 +45,7 @@ function ResetPasswordForm() {
       toast.success(t('resetPassword.successMessage'));
       router.push('/login');
     } catch (err) {
-      let message = t('resetPassword.invalidToken');
-
-      if (isAxiosError(err)) {
-        const detail = (err.response?.data as { detail?: string })?.detail;
-        if (detail) message = detail;
-      }
-
-      toast.error(message);
+      toast.error(getApiErrorMessage(err, t('resetPassword.invalidToken')));
     } finally {
       setIsLoading(false);
     }

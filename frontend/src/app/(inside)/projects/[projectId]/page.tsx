@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Save } from 'lucide-react';
 import { useTranslations } from '@/i18n/use-translations';
+import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 import InnerPageHeader from '@/components/InnerPageHeader';
 import Button from '@/components/button/Button';
 import DeleteIconButton from '@/components/button/DeleteIconButton';
@@ -133,9 +134,7 @@ export default function ProjectDetailsPage() {
       await updateProjectMutation.mutateAsync(values);
       toast.success(t('projects.detail.updateSuccess'));
     } catch (error) {
-      const message =
-        (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? t('projects.detail.updateError');
-      toast.error(message);
+      toast.error(getApiErrorMessage(error, t('projects.detail.updateError')));
     }
   });
 
@@ -148,9 +147,7 @@ export default function ProjectDetailsPage() {
       setIsDeleteModalOpen(false);
       router.push('/projects');
     } catch (error) {
-      const message =
-        (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? t('projects.detail.deleteError');
-      toast.error(message);
+      toast.error(getApiErrorMessage(error, t('projects.detail.deleteError')));
     } finally {
       setDeleteLoading(false);
     }
@@ -170,9 +167,7 @@ export default function ProjectDetailsPage() {
       setNewMemberRole('viewer');
       toast.success(t('projects.detail.addMemberSuccess'));
     } catch (error) {
-      const message =
-        (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? t('projects.detail.addMemberError');
-      toast.error(message);
+      toast.error(getApiErrorMessage(error, t('projects.detail.addMemberError')));
     }
   };
 
@@ -186,9 +181,7 @@ export default function ProjectDetailsPage() {
       });
       toast.success(t('projects.detail.roleUpdateSuccess'));
     } catch (error) {
-      const message =
-        (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? t('projects.detail.roleUpdateError');
-      toast.error(message);
+      toast.error(getApiErrorMessage(error, t('projects.detail.roleUpdateError')));
     }
   };
 
@@ -197,9 +190,7 @@ export default function ProjectDetailsPage() {
       await deleteMembershipMutation.mutateAsync(membership.id);
       toast.success(t('projects.detail.removeMemberSuccess'));
     } catch (error) {
-      const message =
-        (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? t('projects.detail.removeMemberError');
-      toast.error(message);
+      toast.error(getApiErrorMessage(error, t('projects.detail.removeMemberError')));
     }
   };
 

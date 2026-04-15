@@ -1,6 +1,5 @@
 'use client';
 
-import { isAxiosError } from 'axios';
 import AuthLayout from '@/components/auth-layout/AuthLayout';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -12,6 +11,7 @@ import AuthFormButton from '@/components/auth-layout/AuthFormButton';
 import Input from '@/components/form/Input';
 import PasswordInput from '@/components/form/PasswordInput';
 import { useTranslations } from '@/i18n/use-translations';
+import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 import Link from 'next/link';
 
 // === Tipos ===
@@ -50,18 +50,7 @@ export default function LoginPage() {
 
       router.push('/labelings');
     } catch (err) {
-      let message = t('login.error.invalidCredentials');
-
-      if (isAxiosError(err)) {
-        const detail = (err.response?.data as { detail?: string })?.detail;
-        if (detail) {
-          message = detail;
-        }
-      } else if (err instanceof Error && err.message) {
-        message = err.message;
-      }
-
-      toast.error(message);
+      toast.error(getApiErrorMessage(err, t('login.error.invalidCredentials')));
     } finally {
       setIsLoading(false);
     }

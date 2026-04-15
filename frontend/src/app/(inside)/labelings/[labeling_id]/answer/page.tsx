@@ -1,8 +1,8 @@
 'use client';
 
+import { isAxiosError } from 'axios';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import axios from 'axios';
 import { Send, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import ReactMarkdown from 'react-markdown';
@@ -10,7 +10,8 @@ import remarkGfm from 'remark-gfm';
 import { ExternalLink } from 'lucide-react';
 
 import { useTranslations } from '@/i18n/use-translations';
-import { fetchLabelingById, fetchLabelingStructure, fetchNextAnswer, submitAnswer } from '@/modules/labelings/labelingService';
+import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
+import { fetchLabelingById, fetchNextAnswer, submitAnswer } from '@/modules/labelings/labelingService';
 import type { LabelingStructureSection } from '@/modules/labelings/labelingsTypes';
 import { buildInitialAnswers, validateRequired, validateSectionRequired } from './answer_utils';
 import type { AnswerMap } from './answer_types';
@@ -117,24 +118,11 @@ export default function LabelingAnswerPage() {
       setRowIndex(null);
       setSections([]);
       // [UI: mensagem amigável] tenta extrair do backend
-      let message = t('answer.loadError');
-      let code: string | null = null;
-
-      if (axios.isAxiosError(error)) {
-        const data = error.response?.data as { detail?: string; code?: string } | undefined;
-
-        if (data?.code === 'NO_LABELINGS_TO_ANSWER') {
-          message = data.detail ?? t('answer.noLabelings');
-        } else if (data?.detail) {
-          message = data.detail;
-        } else if (error.message) {
-          message = error.message;
-        }
-
-        code = data?.code ?? null;
-      } else if (error instanceof Error) {
-        message = error.message;
-      }
+      const code = isAxiosError(error) ? ((error.response?.data as { code?: string } | undefined)?.code ?? null) : null;
+      const message =
+        code === 'NO_LABELINGS_TO_ANSWER'
+          ? getApiErrorMessage(error, t('answer.noLabelings'))
+          : getApiErrorMessage(error, t('answer.loadError'));
 
       showError(message, code);
     } finally {
@@ -218,18 +206,7 @@ export default function LabelingAnswerPage() {
       // [UI: fluxo] ao enviar, já carrega o próximo item
       await loadItem();
     } catch (error) {
-      let message = t('answer.sendError');
-
-      if (axios.isAxiosError(error)) {
-        const detail = (error.response?.data as { detail?: string } | undefined)?.detail;
-
-        if (detail) message = detail;
-        else if (error.message) message = error.message;
-      } else if (error instanceof Error) {
-        message = error.message;
-      }
-
-      showError(message);
+      showError(getApiErrorMessage(error, t('answer.sendError')));
     } finally {
       setIsSubmitting(false);
     }

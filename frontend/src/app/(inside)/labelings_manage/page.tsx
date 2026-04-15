@@ -7,7 +7,7 @@ import NewLabelingModal from './NewLabelingModal';
 import GridItemCard from '@/components/grid/GridItemCard';
 import Button from '@/components/button/Button';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
+import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 import { useLabelingDashboardEditQuery } from '@/modules/labelings/labelingQueries';
 import { useCreateLabelingWithCsvMutation } from '@/modules/labelings/labelingMutations';
 import { useSearchParams } from 'next/navigation';
@@ -43,8 +43,7 @@ export default function LabelingsPage() {
 
   useEffect(() => {
     if (error) {
-      const errorMessage = error instanceof Error ? error.message : t('labelings.manage.loadError');
-      toast.error(errorMessage);
+      toast.error(getApiErrorMessage(error, t('labelings.manage.loadError')));
     }
   }, [error, t]);
 
@@ -86,13 +85,7 @@ export default function LabelingsPage() {
       });
       setOpen(false);
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        const detail = (err.response?.data as { detail?: string })?.detail || err.message || t('labelings.manage.createError');
-        toast.error(detail);
-        return;
-      }
-      toast.error(err instanceof Error ? err.message : t('labelings.manage.createErrorGeneric'));
-      return;
+      toast.error(getApiErrorMessage(err, t('labelings.manage.createError')));
     }
   }
 

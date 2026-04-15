@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import type { ProjectPayload, ProjectStatus } from '@/modules/projects/projectsTypes';
 import { toast } from 'sonner';
 import { useTranslations } from '@/i18n/use-translations';
+import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 import Modal from '@/components/modal/Modal';
 import Input from '@/components/form/Input';
 import Select from '@/components/form/Select';
@@ -49,8 +50,7 @@ export default function NewProjectModal({ open, onClose, onSubmit }: NewProjectM
         onClose();
         toast.success(t('projects.new.success'));
       } catch (err) {
-        const message = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? t('projects.new.error');
-        toast.error(message);
+        toast.error(getApiErrorMessage(err, t('projects.new.error')));
       } finally {
         setSubmitting(false);
       }

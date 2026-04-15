@@ -2,12 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import axios from 'axios';
 import { Send } from 'lucide-react';
 import { toast } from 'sonner';
 import InnerPageHeader from '@/components/InnerPageHeader';
 import Button from '@/components/button/Button';
 import { useTranslations } from '@/i18n/use-translations';
+import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 import {
   fetchLabelingById,
   fetchLabelingStructure,
@@ -44,7 +44,7 @@ export default function LabelingBackgroundPage() {
 
   const loadBackground = useCallback(async () => {
     if (Number.isNaN(labelingId)) {
-      toast.error('ID de rotulação inválido.');
+      toast.error(t('answer.invalidId'));
       setIsLoading(false);
       return;
     }
@@ -59,7 +59,7 @@ export default function LabelingBackgroundPage() {
 
       setLabelingTitle(labeling.title);
       if (!labeling.has_background_form) {
-        toast.error('Esta rotulação não possui formulário background.');
+        toast.error(t('answer.background.formUnavailable'));
         router.push('/labelings');
         return;
       }
@@ -73,18 +73,11 @@ export default function LabelingBackgroundPage() {
       setAnswers(merged);
       setCurrentSectionIdx(0);
     } catch (error) {
-      let message = 'Não foi possível carregar o formulário background.';
-      if (axios.isAxiosError(error)) {
-        const detail = (error.response?.data as { detail?: string } | undefined)?.detail;
-        if (detail) message = detail;
-      } else if (error instanceof Error) {
-        message = error.message;
-      }
-      toast.error(message);
+      toast.error(getApiErrorMessage(error, t('answer.background.loadError')));
     } finally {
       setIsLoading(false);
     }
-  }, [labelingId, router]);
+  }, [labelingId, router, t]);
 
   useEffect(() => {
     void loadBackground();
@@ -119,17 +112,10 @@ export default function LabelingBackgroundPage() {
         labeling: labelingId,
         answer_payload: answers,
       });
-      toast.success('Formulário background enviado com sucesso.');
+      toast.success(t('answer.background.sent'));
       router.push(`/labelings/${labelingId}/answer`);
     } catch (error) {
-      let message = 'Não foi possível enviar o formulário background.';
-      if (axios.isAxiosError(error)) {
-        const detail = (error.response?.data as { detail?: string } | undefined)?.detail;
-        if (detail) message = detail;
-      } else if (error instanceof Error) {
-        message = error.message;
-      }
-      toast.error(message);
+      toast.error(getApiErrorMessage(error, t('answer.background.sendError')));
     } finally {
       setIsSubmitting(false);
     }
@@ -148,7 +134,7 @@ export default function LabelingBackgroundPage() {
           {isLoading ? (
             <p className="text-sm text-gray-600">{t('common.loading')}</p>
           ) : orderedSections.length === 0 ? (
-            <p className="text-sm text-gray-600">Formulário background ainda não foi configurado.</p>
+            <p className="text-sm text-gray-600">{t('answer.background.empty')}</p>
           ) : currentSection ? (
             <div className="space-y-6">
               <SectionCard
@@ -173,7 +159,7 @@ export default function LabelingBackgroundPage() {
                     icon={<Send size={16} />}
                     fill={false}
                   >
-                    {isSubmitting ? t('common.sending') : 'Enviar Background'}
+                    {isSubmitting ? t('common.sending') : t('answer.background.send')}
                   </Button>
                 )}
               </div>

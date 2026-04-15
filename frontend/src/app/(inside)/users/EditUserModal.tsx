@@ -5,6 +5,7 @@ import type { UpdateUserPayload, User } from '@/modules/user/userTypes';
 import { toast } from 'sonner';
 
 import { useTranslations } from '@/i18n/use-translations';
+import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 import Modal from '@/components/modal/Modal';
 import Input from '@/components/form/Input';
 import Select from '@/components/form/Select';
@@ -92,11 +93,7 @@ export default function EditUserModal({ open, user, onClose, onSubmit, onDelete 
       toast.success(t('users.edit.success'));
       onClose();
     } catch (err) {
-      const message =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
-        (err instanceof Error ? err.message : t('users.edit.error'));
-
-      toast.error(message);
+      toast.error(getApiErrorMessage(err, t('users.edit.error')));
     } finally {
       setSubmitting(false);
     }
@@ -110,10 +107,7 @@ export default function EditUserModal({ open, user, onClose, onSubmit, onDelete 
       setConfirmDeleteOpen(false);
       onClose();
     } catch (err) {
-      const message =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
-        (err instanceof Error ? err.message : t('users.edit.deleteError'));
-      toast.error(message);
+      toast.error(getApiErrorMessage(err, t('users.edit.deleteError')));
     } finally {
       setDeleting(false);
     }
