@@ -1,5 +1,4 @@
 import { useCallback } from "react";
-import type { TranslateFn } from "@/i18n/types";
 import type { SectionData, SectionElement } from "./SectionForm";
 import {
   createContextElement,
@@ -69,21 +68,16 @@ export function useElementManager(
    * Adiciona uma pergunta em uma seção específica
    * @param sectionId - ID da seção onde adicionar
    * @param insertAfterId - ID do elemento após o qual inserir. Null = final
-   * @param t - Função de tradução
    */
   const addQuestion = useCallback(
-    (
-      sectionId: string,
-      insertAfterId: string | null | undefined,
-      t?: TranslateFn,
-    ) => {
+    (sectionId: string, insertAfterId: string | null | undefined) => {
       setSections(
         sections.map((s) => {
           if (s.id !== sectionId) return s;
 
           // Special token: "start" means insert at beginning
           if (insertAfterId === "start") {
-            const newElement = createQuestionElement(0, t);
+            const newElement = createQuestionElement(0);
             return {
               ...s,
               elements: [
@@ -102,14 +96,14 @@ export function useElementManager(
               ...s,
               elements: [
                 ...s.elements,
-                createQuestionElement(nextOrder(s.elements), t),
+                createQuestionElement(nextOrder(s.elements)),
               ],
             };
           }
 
           // Insere após o elemento especificado
           return insertElementAfter(s, insertAfterId, (order) =>
-            createQuestionElement(order, t),
+            createQuestionElement(order),
           );
         }),
       );

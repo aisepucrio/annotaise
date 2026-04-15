@@ -134,8 +134,8 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
             <SidebarItem
               icon={<BookmarkPlus size={24} />}
               label={t("sidebar.manageLabelings")}
-              href="/labelings/manage"
-              alias="/labelings/manage"
+              href="/labelings_manage"
+              alias="/labelings_manage"
               hover_color="blue"
               collapsed={!isOpen}
             />

@@ -9,7 +9,7 @@ import type {
   LabelingStructureSection,
 } from "@/modules/labelings/labelingsTypes";
 import { useTranslations } from "@/i18n/use-translations";
-import ItemTab from "./items/ItemTab";
+import ItemTab from "./ItemTab";
 import { resolveItemLabel } from "../answer-utils";
 
 type ResponderOption = { id: number; label: string };
@@ -253,7 +253,8 @@ function groupAnswersByItem(answers: AnswerResponse[]) {
   }));
 
   return grouped.sort((a, b) => {
-    if (a.rowIndex !== null && b.rowIndex !== null) return a.rowIndex - b.rowIndex;
+    if (a.rowIndex !== null && b.rowIndex !== null)
+      return a.rowIndex - b.rowIndex;
     if (a.rowIndex !== null) return -1;
     if (b.rowIndex !== null) return 1;
     return a.itemId - b.itemId;

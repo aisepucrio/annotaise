@@ -1,12 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useParams } from "next/navigation";
 import Select from "@/components/form/Select";
 import Button from "@/components/button/Button";
 import { toast } from "sonner";
 import { useTranslations } from "@/i18n/use-translations";
 import { getApiErrorMessage } from "@/lib/getApiErrorMessage";
-import { useLabelingDecisionQuestionsQuery } from "@/modules/labelings/create/labelingManagerQueries";
+import {
+  useLabelingDecisionQuestionsQuery,
+  useLabelingHeaderQuery,
+} from "@/modules/labelings/create/labelingManagerQueries";
 import { useUpdateLabelingMutation } from "@/modules/labelings/create/labelingManagerMutations";
 
 type DecisionTabProps = {
@@ -15,7 +19,7 @@ type DecisionTabProps = {
   onDecisiveQuestionChange?: (value: number | null) => void;
 };
 
-export default function DecisionTab({
+function DecisionTab({
   labelingId,
   decisiveQuestionId,
   onDecisiveQuestionChange,
@@ -128,3 +132,22 @@ export default function DecisionTab({
     </div>
   );
 }
+
+function DecisionPageView() {
+  const params = useParams<{ labeling_id: string }>();
+  const labelingId = useMemo(() => Number(params?.labeling_id), [params]);
+  const headerQuery = useLabelingHeaderQuery(labelingId);
+
+  return (
+    <DecisionTab
+      labelingId={labelingId}
+      decisiveQuestionId={headerQuery.data?.labeling?.decisive_question ?? null}
+      onDecisiveQuestionChange={() => {
+        void headerQuery.refetch();
+      }}
+    />
+  );
+}
+
+export { DecisionTab };
+export { DecisionPageView as default };

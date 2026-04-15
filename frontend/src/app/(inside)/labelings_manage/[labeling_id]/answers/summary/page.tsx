@@ -71,7 +71,7 @@ export default function SummaryTab({
     [agreementData?.max_min_agreement],
   );
   const agreementSummary = useMemo(
-    () => (shouldShowAgreement ? agreementData?.questions ?? [] : []),
+    () => (shouldShowAgreement ? (agreementData?.questions ?? []) : []),
     [agreementData?.questions, shouldShowAgreement],
   );
   const thresholdOptions = useMemo(() => {

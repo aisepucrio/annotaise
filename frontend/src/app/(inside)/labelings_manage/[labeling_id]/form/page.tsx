@@ -4,12 +4,14 @@ import { ArrowDown, ArrowUp } from "lucide-react";
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useImperativeHandle,
   forwardRef,
   type ReactNode,
   useState,
 } from "react";
+import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import InsertionPoint from "./InsertionPoint";
 import SectionForm from "./SectionForm";
@@ -23,7 +25,10 @@ import {
   createDefaultSectionWithoutContext,
 } from "./elementFactories";
 import { useTranslations } from "@/i18n/use-translations";
-import { useLabelingStructureQueryByType } from "@/modules/labelings/create/labelingManagerQueries";
+import {
+  useLabelingHeaderQuery,
+  useLabelingStructureQueryByType,
+} from "@/modules/labelings/create/labelingManagerQueries";
 import { useSaveLabelingStructureMutation } from "@/modules/labelings/create/labelingManagerMutations";
 import { getApiErrorMessage } from "@/lib/getApiErrorMessage";
 
@@ -45,7 +50,10 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(
     const [activeFormType, setActiveFormType] = useState<FormType>("main");
 
     // Queries and mutations
-    const structureQuery = useLabelingStructureQueryByType(labelingId, activeFormType);
+    const structureQuery = useLabelingStructureQueryByType(
+      labelingId,
+      activeFormType,
+    );
     const saveMutation = useSaveLabelingStructureMutation();
 
     // Custom hooks for section and element management
@@ -92,7 +100,7 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(
 
         setSections([
           allowContext
-            ? createDefaultSection(t)
+            ? createDefaultSection()
             : createDefaultSectionWithoutContext(),
         ]);
       }
@@ -105,9 +113,6 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(
 
     // Derived state
     const columns = structureQuery.data?.columns ?? [];
-    const isLoadingLabeling = structureQuery.isLoading;
-    const isSaving = saveMutation.isPending;
-
     const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
     const pendingScrollToIdRef = useRef<string | null>(null);
 
@@ -136,6 +141,20 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(
         },
       );
     }, [activeFormType, labelingId, sections, saveMutation, t]);
+
+    useEffect(() => {
+      const handleSaveEvent = (event: Event) => {
+        const customEvent = event as CustomEvent<{ tab?: string }>;
+        if (customEvent.detail?.tab === "form") {
+          void handleSaveStructure();
+        }
+      };
+
+      window.addEventListener("labelings-manage:save", handleSaveEvent);
+      return () => {
+        window.removeEventListener("labelings-manage:save", handleSaveEvent);
+      };
+    }, [handleSaveStructure]);
 
     // Expose methods to parent via ref
     useImperativeHandle(
@@ -268,10 +287,10 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(
               }}
               onAddQuestion={() => {
                 if (sections.length > 0) {
-                  addQuestion(sections[0].id, "start", t);
+                  addQuestion(sections[0].id, "start");
                 }
               }}
-              onAddSection={() => addSection(null, t)}
+              onAddSection={() => addSection(null)}
             />
           </div>
 
@@ -302,10 +321,10 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(
                     addContext(section.id, insertAfterId)
                   }
                   onAddQuestion={(insertAfterId) =>
-                    addQuestion(section.id, insertAfterId, t)
+                    addQuestion(section.id, insertAfterId)
                   }
                   onAddSection={(insertAfterId) =>
-                    addSection(insertAfterId ?? section.id, t)
+                    addSection(insertAfterId ?? section.id)
                   }
                   onMouseEnterInsertionPoint={handleMouseEnter}
                   onMouseLeaveInsertionPoint={handleMouseLeave}
@@ -329,10 +348,10 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(
                   onAddQuestion={() => {
                     const nextIdx = idx + 1;
                     if (nextIdx < sections.length) {
-                      addQuestion(sections[nextIdx].id, "start", t);
+                      addQuestion(sections[nextIdx].id, "start");
                     }
                   }}
-                  onAddSection={() => addSection(section.id, t)}
+                  onAddSection={() => addSection(section.id)}
                 />
               </div>
             </div>
@@ -407,4 +426,19 @@ function getScrollParent(node: HTMLElement | null): HTMLElement | Window {
 
 FormTab.displayName = "FormTab";
 
-export default FormTab;
+export { FormTab };
+
+export default function FormPage() {
+  const params = useParams<{ labeling_id: string }>();
+  const labelingId = useMemo(() => Number(params?.labeling_id), [params]);
+  const headerQuery = useLabelingHeaderQuery(labelingId);
+
+  return (
+    <FormTab
+      labelingId={labelingId}
+      hasBackgroundForm={Boolean(
+        headerQuery.data?.labeling?.has_background_form,
+      )}
+    />
+  );
+}

@@ -10,7 +10,7 @@ const PUBLIC_PATHS = [LOGIN_PATH];
 const PUBLIC_PREFIXES = ["/accept-invitation"];
 
 const LABELINGS_ROOT = "/labelings";
-const LABELINGS_MANAGE = "/labelings/manage";
+const LABELINGS_MANAGE = "/labelings_manage";
 
 export default function AuthGuard({ children }: PropsWithChildren) {
   const router = useRouter();
@@ -53,7 +53,7 @@ export default function AuthGuard({ children }: PropsWithChildren) {
     }
 
     // Usuário normal:
-    // - Pode acessar apenas /labelings (e subrotas), EXCETO /labelings/manage
+    // - Pode acessar apenas /labelings (e subrotas), EXCETO /labelings_manage
     // - Qualquer outra rota -> /labelings
     const isLabelingsArea = pathname.startsWith(LABELINGS_ROOT);
     const isManageArea =

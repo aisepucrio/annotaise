@@ -1,12 +1,17 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
+import { useParams } from "next/navigation";
 import { toast } from "sonner";
-import AnswersTab from "./answers/AnswersTab";
-import SummaryTab from "./answers-summary/AnswersSummaryTab";
+import AnswersTab from "./[item_id]/page";
+import SummaryTab from "./summary/page";
 import AnswerTabHeader, { type AnswerView } from "./AnswerTabHeader";
 import { useTranslations } from "@/i18n/use-translations";
-import { useLabelingAnswersWithStructureQuery } from "@/modules/labelings/create/labelingManagerQueries";
+import {
+  useAvailableUsersQuery,
+  useLabelingAnswersWithStructureQuery,
+  useLabelingHeaderQuery,
+} from "@/modules/labelings/create/labelingManagerQueries";
 import { exportLabelingAnswersCsv } from "@/modules/labelings/labelingService";
 import { getApiErrorMessage } from "@/lib/getApiErrorMessage";
 import type { User } from "@/modules/user/userTypes";
@@ -17,11 +22,7 @@ type AnswerTabProps = {
   usersPerItem?: number;
 };
 
-export default function AnswerTab({
-  labelingId,
-  users,
-  usersPerItem,
-}: AnswerTabProps) {
+export function AnswerTab({ labelingId, users, usersPerItem }: AnswerTabProps) {
   const { t } = useTranslations();
   const [activeView, setActiveView] = useState<AnswerView>("answers");
   const [isInspectingItem, setIsInspectingItem] = useState(false);
@@ -47,9 +48,15 @@ export default function AnswerTab({
     (userId: number): string => {
       const user = usersById.get(userId);
       if (!user) {
-        const answerByUser = answers.find((answer) => answer.answered_by === userId);
-        const answerUsername = (answerByUser?.answered_by_username ?? "").trim().toLowerCase();
-        const answerEmail = (answerByUser?.answered_by_email ?? "").trim().toLowerCase();
+        const answerByUser = answers.find(
+          (answer) => answer.answered_by === userId,
+        );
+        const answerUsername = (answerByUser?.answered_by_username ?? "")
+          .trim()
+          .toLowerCase();
+        const answerEmail = (answerByUser?.answered_by_email ?? "")
+          .trim()
+          .toLowerCase();
         if (
           answerUsername === "llm_tiebreak_bot" ||
           answerEmail === "llm_tiebreak_bot@annotaise.local"
@@ -161,3 +168,24 @@ export default function AnswerTab({
     </div>
   );
 }
+
+export function AnswerTabView() {
+  const params = useParams<{ labeling_id: string }>();
+  const labelingId = useMemo(() => Number(params?.labeling_id), [params]);
+
+  const usersQuery = useAvailableUsersQuery();
+  const headerQuery = useLabelingHeaderQuery(labelingId);
+
+  const users = usersQuery.data ?? [];
+  const usersPerItem = headerQuery.data?.labeling?.users_per_item;
+
+  return (
+    <AnswerTab
+      labelingId={labelingId}
+      users={users}
+      usersPerItem={usersPerItem}
+    />
+  );
+}
+
+export { AnswerTabView as default };

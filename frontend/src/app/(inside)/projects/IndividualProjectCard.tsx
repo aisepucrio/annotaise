@@ -29,7 +29,7 @@ export default function IndividualProjectCard({
 
   const handle = () => {
     const params = new URLSearchParams({ project: title });
-    router.push(`/labelings/manage?${params.toString()}`);
+    router.push(`/labelings_manage?${params.toString()}`);
   };
 
   return (

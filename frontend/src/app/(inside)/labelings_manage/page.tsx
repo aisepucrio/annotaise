@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import PageLayout from "@/components/inside-pages-layout/PageLayout";
-import IndividualLabelingCard from "../IndividualLabelingCard";
+import IndividualLabelingCard from "../labelings/IndividualLabelingCard";
 import { Pen } from "lucide-react";
 import NewLabelingModal from "./NewLabelingModal";
 import GridItemCard from "@/components/grid/GridItemCard";
@@ -162,7 +162,7 @@ export default function LabelingsPage() {
               actionButton={
                 <Button
                   icon={<Pen size={18} strokeWidth={1.75} />}
-                  onClick={() => router.push(`/labelings/create/${l.id}`)}
+                  onClick={() => router.push(`/labelings_manage/${l.id}/form`)}
                   variant="normal"
                   fill={true}
                   className="px-4"

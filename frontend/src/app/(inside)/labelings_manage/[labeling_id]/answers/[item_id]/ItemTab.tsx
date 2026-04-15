@@ -8,8 +8,8 @@ import type {
   LabelingStructureSection,
 } from "@/modules/labelings/labelingsTypes";
 import { useTranslations } from "@/i18n/use-translations";
-import TwoOptionSelector from "../../../TwoOptionSelector";
-import { resolveItemLabel } from "../../answer-utils";
+import TwoOptionSelector from "../../TwoOptionSelector";
+import { resolveItemLabel } from "../answer-utils";
 import ItemSummary from "./ItemSummary";
 import ItemAnswers from "./ItemAnswers";
 import { ArrowLeft } from "lucide-react";

@@ -1,13 +1,26 @@
 "use client";
 
-import { useRef } from "react";
+import { useMemo, useRef, useState } from "react";
+import { useParams } from "next/navigation";
 import { Users } from "lucide-react";
+import { toast } from "sonner";
 import {
   type LabelingMembershipDashboard,
   type LabelingMembershipRole,
 } from "@/modules/labelings/labelingsTypes";
 import { type User } from "@/modules/user/userTypes";
 import { useTranslations } from "@/i18n/use-translations";
+import { getApiErrorMessage } from "@/lib/getApiErrorMessage";
+import {
+  useAvailableUsersQuery,
+  useLabelingHeaderQuery,
+  useLabelingMembershipsQuery,
+} from "@/modules/labelings/create/labelingManagerQueries";
+import {
+  useCreateMembershipMutation,
+  useDeleteMembershipMutation,
+  useUpdateMembershipMutation,
+} from "@/modules/labelings/create/labelingManagerMutations";
 import Select from "@/components/form/Select";
 import Button from "@/components/button/Button";
 import DeleteIconButton from "@/components/button/DeleteIconButton";
@@ -33,7 +46,7 @@ type AssignTabProps = {
   onRemoveMember: (membership: LabelingMembershipDashboard) => void;
 };
 
-export default function AssignTab({
+function AssignTabView({
   labelingId,
   hasBackgroundForm,
   memberships,
@@ -187,5 +200,128 @@ export default function AssignTab({
 
       <BackgroundModal ref={backgroundModalRef} labelingId={labelingId} />
     </>
+  );
+}
+
+export default function AssignPage() {
+  const params = useParams<{ labeling_id: string }>();
+  const labelingId = useMemo(() => Number(params?.labeling_id), [params]);
+  const { t } = useTranslations();
+
+  const [newMemberId, setNewMemberId] = useState("");
+  const [newMemberRole, setNewMemberRole] =
+    useState<LabelingMembershipRole>("annotator");
+
+  const headerQuery = useLabelingHeaderQuery(labelingId);
+  const membershipsQuery = useLabelingMembershipsQuery(labelingId);
+  const usersQuery = useAvailableUsersQuery();
+
+  const memberships = membershipsQuery.data ?? [];
+  const availableUsers = usersQuery.data ?? [];
+  const hasBackgroundForm = Boolean(
+    headerQuery.data?.labeling?.has_background_form,
+  );
+
+  const createMembershipMutation = useCreateMembershipMutation();
+  const updateMembershipMutation = useUpdateMembershipMutation();
+  const deleteMembershipMutation = useDeleteMembershipMutation();
+
+  const membershipSaving =
+    createMembershipMutation.isPending ||
+    updateMembershipMutation.isPending ||
+    deleteMembershipMutation.isPending;
+
+  const filteredAvailableUsers = useMemo(
+    () =>
+      availableUsers.filter(
+        (user) =>
+          !memberships.some((membership) => membership.email === user.email),
+      ),
+    [availableUsers, memberships],
+  );
+
+  const handleAddMember = () => {
+    if (!newMemberId || Number.isNaN(labelingId)) return;
+
+    createMembershipMutation.mutate(
+      {
+        labeling: labelingId,
+        user: Number(newMemberId),
+        role: newMemberRole,
+      },
+      {
+        onSuccess: () => {
+          setNewMemberId("");
+          setNewMemberRole("annotator");
+          toast.success(t("labelings.create.success.memberAdded"));
+        },
+        onError: (error: unknown) => {
+          toast.error(
+            getApiErrorMessage(error, t("labelings.create.errors.addMember")),
+          );
+        },
+      },
+    );
+  };
+
+  const handleChangeRole = (
+    membership: LabelingMembershipDashboard,
+    role: LabelingMembershipRole,
+  ) => {
+    if (Number.isNaN(labelingId)) return;
+
+    updateMembershipMutation.mutate(
+      { id: membership.id, labelingId, role },
+      {
+        onSuccess: () => {
+          toast.success(t("labelings.create.success.roleUpdated"));
+        },
+        onError: (error: unknown) => {
+          toast.error(
+            getApiErrorMessage(error, t("labelings.create.errors.updateRole")),
+          );
+        },
+      },
+    );
+  };
+
+  const handleRemoveMember = (membership: LabelingMembershipDashboard) => {
+    if (Number.isNaN(labelingId)) return;
+
+    deleteMembershipMutation.mutate(
+      { id: membership.id, labelingId },
+      {
+        onSuccess: () => {
+          toast.success(t("labelings.create.success.memberRemoved"));
+        },
+        onError: (error: unknown) => {
+          toast.error(
+            getApiErrorMessage(
+              error,
+              t("labelings.create.errors.removeMember"),
+            ),
+          );
+        },
+      },
+    );
+  };
+
+  return (
+    <AssignTabView
+      labelingId={labelingId}
+      hasBackgroundForm={hasBackgroundForm}
+      memberships={memberships}
+      membershipLoading={membershipsQuery.isLoading}
+      membershipSaving={membershipSaving}
+      availableUsers={filteredAvailableUsers}
+      roleOptions={["annotator", "admin"]}
+      newMemberId={newMemberId}
+      newMemberRole={newMemberRole}
+      onChangeNewMemberId={setNewMemberId}
+      onChangeNewMemberRole={setNewMemberRole}
+      onAddMember={handleAddMember}
+      onChangeRole={handleChangeRole}
+      onRemoveMember={handleRemoveMember}
+    />
   );
 }

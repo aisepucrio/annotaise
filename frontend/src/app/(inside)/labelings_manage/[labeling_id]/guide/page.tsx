@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useMemo,
   useState,
   useRef,
   useEffect,
@@ -8,15 +9,19 @@ import {
   forwardRef,
   useImperativeHandle,
 } from "react";
+import { useParams } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { toast } from "sonner";
 import { useTranslations } from "@/i18n/use-translations";
+import { getApiErrorMessage } from "@/lib/getApiErrorMessage";
+import { useLabelingHeaderQuery } from "@/modules/labelings/create/labelingManagerQueries";
+import { useUpdateLabelingMutation } from "@/modules/labelings/create/labelingManagerMutations";
 
 type GuideTabProps = {
   guideText: string;
   onGuideChange: (value: string) => void;
   onSaveGuide: () => void;
-  disableSave: boolean;
   isSaving: boolean;
 };
 
@@ -26,7 +31,7 @@ export type GuideTabHandle = {
 };
 
 const GuideTab = forwardRef<GuideTabHandle, GuideTabProps>(
-  ({ guideText, onGuideChange, onSaveGuide, disableSave, isSaving }, ref) => {
+  ({ guideText, onGuideChange, onSaveGuide, isSaving }, ref) => {
     const { t } = useTranslations();
     const [leftWidth, setLeftWidth] = useState(50);
     const [isDragging, setIsDragging] = useState(false);
@@ -143,4 +148,62 @@ const GuideTab = forwardRef<GuideTabHandle, GuideTabProps>(
 
 GuideTab.displayName = "GuideTab";
 
-export default GuideTab;
+function GuidePageView() {
+  const params = useParams<{ labeling_id: string }>();
+  const labelingId = useMemo(() => Number(params?.labeling_id), [params]);
+  const { t } = useTranslations();
+
+  const headerQuery = useLabelingHeaderQuery(labelingId);
+  const updateMutation = useUpdateLabelingMutation();
+
+  const [guideText, setGuideText] = useState<string>("");
+
+  useEffect(() => {
+    setGuideText(headerQuery.data?.labeling?.guide ?? "");
+  }, [headerQuery.data?.labeling?.guide]);
+
+  const handleSaveGuide = useCallback(() => {
+    if (Number.isNaN(labelingId)) return;
+
+    updateMutation.mutate(
+      { id: labelingId, payload: { guide: guideText } },
+      {
+        onSuccess: () => {
+          void headerQuery.refetch();
+          toast.success(t("labelings.create.success.guideSaved"));
+        },
+        onError: (error: unknown) => {
+          toast.error(
+            getApiErrorMessage(error, t("labelings.create.errors.saveGuide")),
+          );
+        },
+      },
+    );
+  }, [guideText, headerQuery, labelingId, t, updateMutation]);
+
+  useEffect(() => {
+    const handleSaveEvent = (event: Event) => {
+      const customEvent = event as CustomEvent<{ tab?: string }>;
+      if (customEvent.detail?.tab === "guide") {
+        handleSaveGuide();
+      }
+    };
+
+    window.addEventListener("labelings-manage:save", handleSaveEvent);
+    return () => {
+      window.removeEventListener("labelings-manage:save", handleSaveEvent);
+    };
+  }, [handleSaveGuide]);
+
+  return (
+    <GuideTab
+      guideText={guideText}
+      onGuideChange={setGuideText}
+      onSaveGuide={handleSaveGuide}
+      isSaving={updateMutation.isPending}
+    />
+  );
+}
+
+export { GuideTab };
+export default GuidePageView;
