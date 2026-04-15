@@ -3,7 +3,7 @@ import GridLayout from './GridLayout';
 import GridItemCard from './GridItemCard';
 
 const meta = {
-  title: 'GridLayout',
+  title: 'Grid/GridLayout',
   component: GridLayout,
   tags: ['autodocs'],
   parameters: {

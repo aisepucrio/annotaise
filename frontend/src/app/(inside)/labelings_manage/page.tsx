@@ -1,18 +1,22 @@
 'use client';
 import { useEffect, useState } from 'react';
-import PageLayout from '@/components/inside-pages-layout/PageLayout';
-import IndividualLabelingCard from '../labelings/IndividualLabelingCard';
+import { useRouter, useSearchParams } from 'next/navigation';
+
 import { Pen } from 'lucide-react';
+
+import { useTranslations } from '@/i18n/use-translations';
+
+import { toast } from 'sonner';
+
+import IndividualLabelingCard from '@/components/labeling-card/IndividualLabelingCard';
 import NewLabelingModal from './NewLabelingModal';
+
+import PageLayout from '@/components/inside-pages-layout/PageLayout';
 import GridItemCard from '@/components/grid/GridItemCard';
 import Button from '@/components/button/Button';
-import { useRouter } from 'next/navigation';
 import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 import { useLabelingDashboardEditQuery } from '@/modules/labelings/labelingQueries';
 import { useCreateLabelingWithCsvMutation } from '@/modules/labelings/labelingMutations';
-import { useSearchParams } from 'next/navigation';
-import { toast } from 'sonner';
-import { useTranslations } from '@/i18n/use-translations';
 import type { DecisionMode, DistributionStrategy } from '@/modules/labelings/labelingsTypes';
 
 type UploadPayload = {
@@ -33,10 +37,11 @@ export default function LabelingsPage() {
   const { t } = useTranslations();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [open, setOpen] = useState(false);
-  const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  const { data: labelings, error, isLoading } = useLabelingDashboardEditQuery(debouncedSearch);
+  const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const { data: labelings, error, isLoading } = useLabelingDashboardEditQuery(searchQuery);
 
   const labelingsList = labelings ?? [];
   const createLabelingWithCsv = useCreateLabelingWithCsvMutation();
@@ -48,40 +53,30 @@ export default function LabelingsPage() {
   }, [error, t]);
 
   useEffect(() => {
+    // Allow deep-linking into this page with a prefilled project search.
     const projectQuery = searchParams.get('project');
     if (projectQuery) {
-      setDebouncedSearch(projectQuery);
+      setSearchQuery(projectQuery);
     }
   }, [searchParams]);
 
-  async function handleConfirm({
-    file,
-    title,
-    projectId,
-    usersPerItem,
-    startDate,
-    finalDate,
-    blockSectionBack,
-    decision,
-    decisionMode,
-    hasBackgroundForm,
-    distributionStrategy,
-  }: UploadPayload) {
+  async function handleConfirmCreateNewLabeling(payload: UploadPayload) {
     try {
       await createLabelingWithCsv.mutateAsync({
+        // Translate the modal payload into the API contract expected by the backend.
         payload: {
-          title,
-          project: projectId,
-          users_per_item: usersPerItem,
-          start_date: startDate || undefined,
-          final_date: finalDate || undefined,
-          block_section_back: blockSectionBack,
-          decision,
-          decision_mode: decisionMode,
-          has_background_form: hasBackgroundForm,
-          distribution_strategy: distributionStrategy,
+          title: payload.title,
+          project: payload.projectId,
+          users_per_item: payload.usersPerItem,
+          start_date: payload.startDate || undefined,
+          final_date: payload.finalDate || undefined,
+          block_section_back: payload.blockSectionBack,
+          decision: payload.decision,
+          decision_mode: payload.decisionMode,
+          has_background_form: payload.hasBackgroundForm,
+          distribution_strategy: payload.distributionStrategy,
         },
-        file,
+        file: payload.file,
       });
       setOpen(false);
     } catch (err) {
@@ -89,13 +84,21 @@ export default function LabelingsPage() {
     }
   }
 
+  const getLabelingCardBorderColor = (daysPassed: number, daysTotal: number, itemsDone: number, totalItems?: number) => {
+    const pending = Math.max((totalItems ?? 0) - itemsDone, 0);
+    const isComplete = itemsDone !== 0 && pending === 0;
+    const isLate = daysPassed > daysTotal && daysTotal > 0;
+
+    return isComplete ? 'var(--green-blueberry)' : isLate ? 'var(--red-blueberry)' : undefined;
+  };
+
   return (
     <PageLayout
       pageTitle={t('labelings.manage.title')}
       tooltip={t('labelings.manage.tooltip')}
       description={t('labelings.manage.description')}
       searchPlaceholder={t('labelings.manage.searchPlaceholder')}
-      onSearch={setDebouncedSearch}
+      onSearch={setSearchQuery}
       filterButtonText={t('filterBar.filterButton')}
       hasButton
       buttonText={t('labelings.manage.newButton')}
@@ -103,40 +106,37 @@ export default function LabelingsPage() {
       isLoading={isLoading}
       message={!isLoading && labelingsList.length === 0 ? t('labelings.manage.empty') : undefined}
       minColumnWidth="420px"
-      modal={<NewLabelingModal open={open} onClose={() => setOpen(false)} onConfirm={handleConfirm} />}
+      modal={<NewLabelingModal open={open} onClose={() => setOpen(false)} onConfirm={handleConfirmCreateNewLabeling} />}
     >
-      {labelingsList.map((l, index) => {
-        const pending = Math.max((l.total_items ?? 0) - (l.items_done ?? 0), 0);
-        const isComplete = l.items_done !== 0 && pending === 0;
-        const isLate = l.days_passed > l.total_days && l.total_days > 0;
-        const borderColor = isComplete ? 'var(--green-blueberry)' : isLate ? 'var(--red-blueberry)' : undefined;
-
-        return (
-          <GridItemCard key={l.id} index={index} borderColor={borderColor}>
-            <IndividualLabelingCard
-              title={l.labeling_name}
-              project={l.project_name}
-              daysPassed={l.days_passed}
-              daysTotal={l.total_days}
-              labelingsDone={l.items_done}
-              labelingsPending={pending}
-              variant="manage"
-              actionButton={
-                <Button
-                  icon={<Pen size={18} strokeWidth={1.75} />}
-                  onClick={() => router.push(`/labelings_manage/${l.id}/form`)}
-                  variant="normal"
-                  fill={true}
-                  className="px-4"
-                  ariaLabel={t('labelings.manage.action.manageAria')}
-                >
-                  {t('labelings.manage.action.manage')}
-                </Button>
-              }
-            />
-          </GridItemCard>
-        );
-      })}
+      {labelingsList.map((l, index) => (
+        <GridItemCard
+          key={l.id}
+          index={index}
+          borderColor={getLabelingCardBorderColor(l.days_passed, l.total_days, l.items_done, l.total_items)}
+        >
+          <IndividualLabelingCard
+            title={l.labeling_name}
+            project={l.project_name}
+            daysPassed={l.days_passed}
+            daysTotal={l.total_days}
+            labelingsDone={l.items_done}
+            labelingsPending={Math.max((l.total_items ?? 0) - (l.items_done ?? 0), 0)}
+            variant="manage"
+            actionButton={
+              <Button
+                icon={<Pen size={18} strokeWidth={1.75} />}
+                onClick={() => router.push(`/labelings_manage/${l.id}/form`)}
+                variant="normal"
+                fill={true}
+                className="px-4"
+                ariaLabel={t('labelings.manage.action.manageAria')}
+              >
+                {t('labelings.manage.action.manage')}
+              </Button>
+            }
+          />
+        </GridItemCard>
+      ))}
     </PageLayout>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import PageLayout from '@/components/inside-pages-layout/PageLayout';
-import IndividualLabelingCard from './IndividualLabelingCard';
+import IndividualLabelingCard from '@/components/labeling-card/IndividualLabelingCard';
 import GridItemCard from '@/components/grid/GridItemCard';
 import Button from '@/components/button/Button';
 import { Tag } from 'lucide-react';

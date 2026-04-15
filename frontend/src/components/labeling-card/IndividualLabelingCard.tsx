@@ -35,18 +35,15 @@ export default function IndividualLabelingCard({
 }: IndividualManageLabelingCardProps) {
   const { t } = useTranslations();
 
-  // Lógica de variante e contadores
   const isManageVariant = variant === 'manage';
   const pending = labelingsPending ?? 0;
   const totalLabelings = labelingsDone + pending;
   const hasDeadlineEnded = daysPassed > daysTotal && daysTotal > 0;
 
-  // Lógica de estado do labeling
   const isComplete = isManageVariant && labelingsDone !== 0 && pending === 0;
   const isLate = isManageVariant && hasDeadlineEnded;
   const isDeadlineFinished = !isManageVariant && hasDeadlineEnded;
 
-  // Labels para dias
   const getDaysLabel = () => {
     if (isComplete) return t('labelings.progress.completed');
     if (isLate) return `${daysPassed - daysTotal} ${t('labelings.progress.daysLate')}`;
@@ -54,7 +51,6 @@ export default function IndividualLabelingCard({
     return `${daysPassed} / ${daysTotal} ${t('labelings.progress.daysPassed')}`;
   };
 
-  // Labels para labelings
   const getLabelingsLabel = () => {
     if (isComplete) return `${labelingsDone} ${t('labelings.progress.labelingsDone')}`;
     if (labelingsDone > totalLabelings) {
@@ -63,7 +59,6 @@ export default function IndividualLabelingCard({
     return `${labelingsDone} / ${totalLabelings} ${t('labelings.progress.labelingsDone')}`;
   };
 
-  // Cores padrão ou customizadas
   const normalColors = colors?.normal || {
     bg: 'bg-blueberry-700-15',
     fill: 'bg-blueberry-700-25',
@@ -73,7 +68,6 @@ export default function IndividualLabelingCard({
 
   return (
     <>
-      {/* título */}
       <h3
         className={`${
           isComplete ? 'text-green-blueberry' : isLate ? 'text-red-blueberry' : 'text-black'
@@ -82,13 +76,10 @@ export default function IndividualLabelingCard({
         {title}
       </h3>
 
-      {/* projeto */}
       <h3 className="text-gray-500 font-semibold leading-tight pr-10">{project}</h3>
 
-      {/* linha divisória */}
       <div className="mt-2 h-0.75 rounded-full bg-metal-50" />
 
-      {/* métricas e ação */}
       <div className="mt-3 flex flex-col gap-3 min-w-0 w-full">
         {isManageVariant ? (
           <ProgressBar
@@ -112,12 +103,11 @@ export default function IndividualLabelingCard({
           label={getDaysLabel()}
           bgColor={itemsFillColor}
           fillColor={itemsFillColor}
-          labelClassName={'text-gray-800'}
+          labelClassName="text-gray-800"
           rounded="right"
           className="-ml-3"
         />
 
-        {/* botão de ação */}
         <div className="flex items-center justify-center mt-2">{actionButton}</div>
       </div>
     </>
