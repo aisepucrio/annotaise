@@ -7,8 +7,8 @@ import remarkGfm from 'remark-gfm';
 import { toast } from 'sonner';
 import { useTranslations } from '@/i18n/use-translations';
 import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
-import { useLabelingHeaderQuery } from '@/modules/labelings/create/labelingManagerQueries';
-import { useUpdateLabelingMutation } from '@/modules/labelings/create/labelingManagerMutations';
+import { useLabelingHeaderQuery } from '@/modules/labelings/manage/labelingManagerQueries';
+import { useUpdateLabelingMutation } from '@/modules/labelings/manage/labelingManagerMutations';
 
 type GuideTabProps = {
   guideText: string;

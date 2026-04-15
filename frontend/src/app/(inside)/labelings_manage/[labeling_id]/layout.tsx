@@ -8,12 +8,12 @@ import LabelingHeader from './LabelingHeader';
 import EditLabelingModal from './EditLabelingModal';
 import AddItemsCsvModal from './AddItemsCsvModal';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
-import { useLabelingHeaderQuery } from '@/modules/labelings/create/labelingManagerQueries';
+import { useLabelingHeaderQuery } from '@/modules/labelings/manage/labelingManagerQueries';
 import {
   useAddItemsCsvMutation,
   useDeleteLabelingMutation,
   useUpdateLabelingMutation,
-} from '@/modules/labelings/create/labelingManagerMutations';
+} from '@/modules/labelings/manage/labelingManagerMutations';
 import { exportImportedLabelingCsv } from '@/modules/labelings/labelingService';
 import type { LabelingPayload } from '@/modules/labelings/labelingsTypes';
 import { useTranslations } from '@/i18n/use-translations';

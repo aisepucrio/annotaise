@@ -11,7 +11,7 @@ import {
   useAvailableUsersQuery,
   useLabelingAnswersWithStructureQuery,
   useLabelingHeaderQuery,
-} from '@/modules/labelings/create/labelingManagerQueries';
+} from '@/modules/labelings/manage/labelingManagerQueries';
 import { exportLabelingAnswersCsv } from '@/modules/labelings/labelingService';
 import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 import type { User } from '@/modules/user/userTypes';

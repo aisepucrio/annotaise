@@ -13,8 +13,8 @@ import { useElementManager } from './useElementManager';
 import { useVisibleInsertionPoint } from './useVisibleInsertionPoint';
 import { createDefaultSection, createDefaultSectionWithoutContext } from './elementFactories';
 import { useTranslations } from '@/i18n/use-translations';
-import { useLabelingHeaderQuery, useLabelingStructureQueryByType } from '@/modules/labelings/create/labelingManagerQueries';
-import { useSaveLabelingStructureMutation } from '@/modules/labelings/create/labelingManagerMutations';
+import { useLabelingHeaderQuery, useLabelingStructureQueryByType } from '@/modules/labelings/manage/labelingManagerQueries';
+import { useSaveLabelingStructureMutation } from '@/modules/labelings/manage/labelingManagerMutations';
 import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 
 type FormTabProps = {

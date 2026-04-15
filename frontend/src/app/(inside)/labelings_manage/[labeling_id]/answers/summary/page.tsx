@@ -5,7 +5,7 @@ import type { AnswerResponse, LabelingStructureSection } from '@/modules/labelin
 import { useTranslations } from '@/i18n/use-translations';
 import SectionVizualizer from '@/components/answer-vizualizer/SectionVizualizer';
 import SummaryVizualizer from '@/components/answer-vizualizer/SummaryVizualizer';
-import { useLabelingAgreementSummaryQuery } from '@/modules/labelings/create/labelingManagerQueries';
+import { useLabelingAgreementSummaryQuery } from '@/modules/labelings/manage/labelingManagerQueries';
 import { buildSummarySections, splitSummarySectionGroupTitle } from '@/components/answer-vizualizer/summary-vizualizer-utils';
 
 type SummaryTabProps = {

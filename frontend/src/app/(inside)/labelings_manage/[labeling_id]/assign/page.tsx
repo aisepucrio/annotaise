@@ -12,12 +12,12 @@ import {
   useAvailableUsersQuery,
   useLabelingHeaderQuery,
   useLabelingMembershipsQuery,
-} from '@/modules/labelings/create/labelingManagerQueries';
+} from '@/modules/labelings/manage/labelingManagerQueries';
 import {
   useCreateMembershipMutation,
   useDeleteMembershipMutation,
   useUpdateMembershipMutation,
-} from '@/modules/labelings/create/labelingManagerMutations';
+} from '@/modules/labelings/manage/labelingManagerMutations';
 import Select from '@/components/form/Select';
 import Button from '@/components/button/Button';
 import DeleteIconButton from '@/components/button/DeleteIconButton';
