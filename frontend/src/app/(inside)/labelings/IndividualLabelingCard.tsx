@@ -1,9 +1,9 @@
-import { ReactNode } from "react";
-import ProgressBar from "@/components/progress-bar/ProgressBar";
-import StatPill from "@/components/stat-pill/StatPill";
-import { useTranslations } from "@/i18n/use-translations";
+import { ReactNode } from 'react';
+import ProgressBar from '@/components/progress-bar/ProgressBar';
+import StatPill from '@/components/stat-pill/StatPill';
+import { useTranslations } from '@/i18n/use-translations';
 
-type LabelingCardVariant = "manage" | "labelings";
+type LabelingCardVariant = 'manage' | 'labelings';
 
 type IndividualManageLabelingCardProps = {
   title: string;
@@ -36,7 +36,7 @@ export default function IndividualLabelingCard({
   const { t } = useTranslations();
 
   // Lógica de variante e contadores
-  const isManageVariant = variant === "manage";
+  const isManageVariant = variant === 'manage';
   const pending = labelingsPending ?? 0;
   const totalLabelings = labelingsDone + pending;
   const hasDeadlineEnded = daysPassed > daysTotal && daysTotal > 0;
@@ -48,54 +48,42 @@ export default function IndividualLabelingCard({
 
   // Labels para dias
   const getDaysLabel = () => {
-    if (isComplete) return t("labelings.progress.completed");
-    if (isLate)
-      return `${daysPassed - daysTotal} ${t("labelings.progress.daysLate")}`;
-    if (isDeadlineFinished) return t("labelings.progress.deadlineFinished");
-    return `${daysPassed} / ${daysTotal} ${t("labelings.progress.daysPassed")}`;
+    if (isComplete) return t('labelings.progress.completed');
+    if (isLate) return `${daysPassed - daysTotal} ${t('labelings.progress.daysLate')}`;
+    if (isDeadlineFinished) return t('labelings.progress.deadlineFinished');
+    return `${daysPassed} / ${daysTotal} ${t('labelings.progress.daysPassed')}`;
   };
 
   // Labels para labelings
   const getLabelingsLabel = () => {
-    if (isComplete)
-      return `${labelingsDone} ${t("labelings.progress.labelingsDone")}`;
+    if (isComplete) return `${labelingsDone} ${t('labelings.progress.labelingsDone')}`;
     if (labelingsDone > totalLabelings) {
-      return `${labelingsDone - totalLabelings} ${t("labelings.progress.labelingsLate")}`;
+      return `${labelingsDone - totalLabelings} ${t('labelings.progress.labelingsLate')}`;
     }
-    return `${labelingsDone} / ${totalLabelings} ${t("labelings.progress.labelingsDone")}`;
+    return `${labelingsDone} / ${totalLabelings} ${t('labelings.progress.labelingsDone')}`;
   };
 
   // Cores padrão ou customizadas
   const normalColors = colors?.normal || {
-    bg: "bg-blueberry-700-15",
-    fill: "bg-blueberry-700-25",
+    bg: 'bg-blueberry-700-15',
+    fill: 'bg-blueberry-700-25',
   };
 
-  const itemsFillColor = isComplete
-    ? "bg-green-blueberry-25"
-    : isLate
-      ? "bg-red-blueberry-25"
-      : normalColors.fill;
+  const itemsFillColor = isComplete ? 'bg-green-blueberry-25' : isLate ? 'bg-red-blueberry-25' : normalColors.fill;
 
   return (
     <>
       {/* título */}
       <h3
         className={`${
-          isComplete
-            ? "text-green-blueberry"
-            : isLate
-              ? "text-red-blueberry"
-              : "text-black"
+          isComplete ? 'text-green-blueberry' : isLate ? 'text-red-blueberry' : 'text-black'
         } font-semibold leading-tight pr-10`}
       >
         {title}
       </h3>
 
       {/* projeto */}
-      <h3 className="text-gray-500 font-semibold leading-tight pr-10">
-        {project}
-      </h3>
+      <h3 className="text-gray-500 font-semibold leading-tight pr-10">{project}</h3>
 
       {/* linha divisória */}
       <div className="mt-2 h-0.75 rounded-full bg-metal-50" />
@@ -114,12 +102,7 @@ export default function IndividualLabelingCard({
           />
         ) : (
           <div className="-ml-3 w-full">
-            <StatPill
-              label={t("labelings.progress.labelingsDone")}
-              value={labelingsDone}
-              color="blue"
-              cut="right"
-            />
+            <StatPill label={t('labelings.progress.labelingsDone')} value={labelingsDone} color="blue" cut="right" />
           </div>
         )}
 
@@ -129,15 +112,13 @@ export default function IndividualLabelingCard({
           label={getDaysLabel()}
           bgColor={itemsFillColor}
           fillColor={itemsFillColor}
-          labelClassName={"text-gray-800"}
+          labelClassName={'text-gray-800'}
           rounded="right"
           className="-ml-3"
         />
 
         {/* botão de ação */}
-        <div className="flex items-center justify-center mt-2">
-          {actionButton}
-        </div>
+        <div className="flex items-center justify-center mt-2">{actionButton}</div>
       </div>
     </>
   );

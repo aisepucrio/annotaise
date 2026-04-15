@@ -1,17 +1,11 @@
-"use client";
+'use client';
 
-import { useMemo } from "react";
-import type { TranslateFn } from "@/i18n/types";
-import type {
-  AnswerResponse,
-  LabelingStructureSection,
-} from "@/modules/labelings/labelingsTypes";
-import SectionVizualizer from "@/components/answer-vizualizer/SectionVizualizer";
-import SummaryVizualizer from "@/components/answer-vizualizer/SummaryVizualizer";
-import {
-  buildSummarySections,
-  splitSummarySectionGroupTitle,
-} from "@/components/answer-vizualizer/summary-vizualizer-utils";
+import { useMemo } from 'react';
+import type { TranslateFn } from '@/i18n/types';
+import type { AnswerResponse, LabelingStructureSection } from '@/modules/labelings/labelingsTypes';
+import SectionVizualizer from '@/components/answer-vizualizer/SectionVizualizer';
+import SummaryVizualizer from '@/components/answer-vizualizer/SummaryVizualizer';
+import { buildSummarySections, splitSummarySectionGroupTitle } from '@/components/answer-vizualizer/summary-vizualizer-utils';
 
 type ItemSummaryProps = {
   answers: AnswerResponse[];
@@ -20,16 +14,8 @@ type ItemSummaryProps = {
   locale: string;
 };
 
-export default function ItemSummary({
-  answers,
-  sections,
-  t,
-  locale,
-}: ItemSummaryProps) {
-  const numberFormatter = useMemo(
-    () => new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }),
-    [locale],
-  );
+export default function ItemSummary({ answers, sections, t, locale }: ItemSummaryProps) {
+  const numberFormatter = useMemo(() => new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }), [locale]);
 
   const sectionGroups = useMemo(
     () =>
@@ -39,15 +25,11 @@ export default function ItemSummary({
         t,
         numberFormatter,
       }),
-    [answers, numberFormatter, sections, t],
+    [answers, numberFormatter, sections, t]
   );
 
   if (sectionGroups.length === 0) {
-    return (
-      <p className="text-sm text-gray-600">
-        {t("labelings.create.answers.modal.itemSummaryEmpty")}
-      </p>
-    );
+    return <p className="text-sm text-gray-600">{t('labelings.create.answers.modal.itemSummaryEmpty')}</p>;
   }
 
   return (
@@ -56,14 +38,8 @@ export default function ItemSummary({
         const parsed = splitSummarySectionGroupTitle(sectionGroup.title);
 
         return (
-          <div
-            key={sectionGroup.title}
-            className={sectionIndex > 0 ? "mt-12" : undefined}
-          >
-            <SectionVizualizer
-              title={parsed.title}
-              sectionLabel={parsed.sectionLabel}
-            >
+          <div key={sectionGroup.title} className={sectionIndex > 0 ? 'mt-12' : undefined}>
+            <SectionVizualizer title={parsed.title} sectionLabel={parsed.sectionLabel}>
               {sectionGroup.items.map((summary) => (
                 <SummaryVizualizer
                   key={summary.key}

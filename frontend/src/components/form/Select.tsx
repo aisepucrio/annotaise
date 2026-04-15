@@ -1,20 +1,17 @@
-"use client";
+'use client';
 
-import React, { forwardRef, SelectHTMLAttributes, ReactNode } from "react";
-import { cn } from "@/lib/utils";
-import { ChevronDown } from "lucide-react";
-import FormFieldBase from "./base/FormFieldBase";
-import { formFieldClasses } from "./base/formFieldClasses";
+import React, { forwardRef, SelectHTMLAttributes, ReactNode } from 'react';
+import { cn } from '@/lib/utils';
+import { ChevronDown } from 'lucide-react';
+import FormFieldBase from './base/FormFieldBase';
+import { formFieldClasses } from './base/formFieldClasses';
 
 export type SelectOption = {
   value: string;
   label: string;
 };
 
-export type SelectProps = Omit<
-  SelectHTMLAttributes<HTMLSelectElement>,
-  "size"
-> & {
+export type SelectProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, 'size'> & {
   /** Label do select */
   label?: string;
   /** Mensagem de erro */
@@ -45,24 +42,17 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
       placeholder,
       required = false,
       icon,
-      className = "",
-      containerClassName = "",
+      className = '',
+      containerClassName = '',
       id,
       disabled = false,
       tooltip,
       ...props
     },
-    ref,
+    ref
   ) => {
     return (
-      <FormFieldBase
-        label={label}
-        id={id}
-        error={error}
-        required={required}
-        className={containerClassName}
-        tooltip={tooltip}
-      >
+      <FormFieldBase label={label} id={id} error={error} required={required} className={containerClassName} tooltip={tooltip}>
         <div className="relative">
           <select
             ref={ref}
@@ -72,9 +62,9 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
               formFieldClasses.base,
               formFieldClasses.getBorderColor(!!error),
               formFieldClasses.disabled,
-              "pr-10 appearance-none cursor-pointer",
-              "[&>option:first-child]:text-metal-400",
-              className,
+              'pr-10 appearance-none cursor-pointer',
+              '[&>option:first-child]:text-metal-400',
+              className
             )}
             {...props}
           >
@@ -84,11 +74,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
               </option>
             )}
             {options.map((option) => (
-              <option
-                key={option.value}
-                value={option.value}
-                className="text-metal-700"
-              >
+              <option key={option.value} value={option.value} className="text-metal-700">
                 {option.label}
               </option>
             ))}
@@ -100,9 +86,9 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
         </div>
       </FormFieldBase>
     );
-  },
+  }
 );
 
-Select.displayName = "Select";
+Select.displayName = 'Select';
 
 export default Select;

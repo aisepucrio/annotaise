@@ -1,37 +1,24 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import axios from "axios";
-import { Send, Info } from "lucide-react";
-import { toast } from "sonner";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import { ExternalLink } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import axios from 'axios';
+import { Send, Info } from 'lucide-react';
+import { toast } from 'sonner';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { ExternalLink } from 'lucide-react';
 
-import { useTranslations } from "@/i18n/use-translations";
-import {
-  fetchLabelingById,
-  fetchLabelingStructure,
-  fetchNextAnswer,
-  submitAnswer,
-} from "@/modules/labelings/labelingService";
-import type { LabelingStructureSection } from "@/modules/labelings/labelingsTypes";
-import {
-  buildInitialAnswers,
-  validateRequired,
-  validateSectionRequired,
-} from "./answer_utils";
-import type { AnswerMap } from "./answer_types";
+import { useTranslations } from '@/i18n/use-translations';
+import { fetchLabelingById, fetchLabelingStructure, fetchNextAnswer, submitAnswer } from '@/modules/labelings/labelingService';
+import type { LabelingStructureSection } from '@/modules/labelings/labelingsTypes';
+import { buildInitialAnswers, validateRequired, validateSectionRequired } from './answer_utils';
+import type { AnswerMap } from './answer_types';
 
-import SectionCard from "./section_card";
-import InnerPageHeader from "@/components/InnerPageHeader";
-import Button from "@/components/button/Button";
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
+import SectionCard from './section_card';
+import InnerPageHeader from '@/components/InnerPageHeader';
+import Button from '@/components/button/Button';
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 
 export default function LabelingAnswerPage() {
   const { t } = useTranslations();
@@ -45,8 +32,8 @@ export default function LabelingAnswerPage() {
   }, [params]);
 
   // ====== Estado "dados" ======
-  const [labelingTitle, setLabelingTitle] = useState("");
-  const [guideText, setGuideText] = useState("");
+  const [labelingTitle, setLabelingTitle] = useState('');
+  const [guideText, setGuideText] = useState('');
   const [sections, setSections] = useState<LabelingStructureSection[]>([]);
   const [payload, setPayload] = useState<Record<string, unknown>>({});
   const [answers, setAnswers] = useState<AnswerMap>({});
@@ -66,16 +53,10 @@ export default function LabelingAnswerPage() {
   const [errorEventId, setErrorEventId] = useState(0);
 
   // ====== Ordenação/derivados de seções ======
-  const orderedSections = useMemo(
-    () => [...sections].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
-    [sections],
-  );
+  const orderedSections = useMemo(() => [...sections].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)), [sections]);
 
   const totalSections = orderedSections.length;
-  const currentSection =
-    currentSectionIdx >= 0 && currentSectionIdx < totalSections
-      ? orderedSections[currentSectionIdx]
-      : null;
+  const currentSection = currentSectionIdx >= 0 && currentSectionIdx < totalSections ? orderedSections[currentSectionIdx] : null;
 
   const isLastSection = currentSectionIdx === totalSections - 1;
 
@@ -89,9 +70,7 @@ export default function LabelingAnswerPage() {
   useEffect(() => {
     if (!loadError) return;
 
-    const isOkCode =
-      loadErrorCode === "NO_LABELINGS_TO_ANSWER" ||
-      loadErrorCode === "ROTULACAO_FINALIZADA";
+    const isOkCode = loadErrorCode === 'NO_LABELINGS_TO_ANSWER' || loadErrorCode === 'ROTULACAO_FINALIZADA';
 
     (isOkCode ? toast.success : toast.error)(loadError);
   }, [errorEventId, loadError, loadErrorCode]);
@@ -104,7 +83,7 @@ export default function LabelingAnswerPage() {
   const loadItem = useCallback(async () => {
     // [EDIT: validação de id]
     if (Number.isNaN(labelingId)) {
-      showError(t("answer.invalidId"));
+      showError(t('answer.invalidId'));
       setIsLoading(false);
       return;
     }
@@ -119,7 +98,7 @@ export default function LabelingAnswerPage() {
       // [UI: header] título + guia (texto do markdown)
       const labeling = await fetchLabelingById(labelingId);
       setLabelingTitle(labeling.title);
-      setGuideText(labeling.guide ?? "");
+      setGuideText(labeling.guide ?? '');
 
       // [UI: formulário] próximo item + estrutura de seções
       const nextAnswer = await fetchNextAnswer(labelingId);
@@ -138,16 +117,14 @@ export default function LabelingAnswerPage() {
       setRowIndex(null);
       setSections([]);
       // [UI: mensagem amigável] tenta extrair do backend
-      let message = t("answer.loadError");
+      let message = t('answer.loadError');
       let code: string | null = null;
 
       if (axios.isAxiosError(error)) {
-        const data = error.response?.data as
-          | { detail?: string; code?: string }
-          | undefined;
+        const data = error.response?.data as { detail?: string; code?: string } | undefined;
 
-        if (data?.code === "NO_LABELINGS_TO_ANSWER") {
-          message = data.detail ?? t("answer.noLabelings");
+        if (data?.code === 'NO_LABELINGS_TO_ANSWER') {
+          message = data.detail ?? t('answer.noLabelings');
         } else if (data?.detail) {
           message = data.detail;
         } else if (error.message) {
@@ -170,16 +147,13 @@ export default function LabelingAnswerPage() {
   }, [loadItem]);
 
   // ====== Handlers de interação ======
-  const handleAnswerChange = useCallback(
-    (questionId: number | string, value: unknown) => {
-      // [UI: formulário] update do mapa de respostas
-      setLoadError(null);
-      setLoadErrorCode(null);
-      setSubmitMessage(null);
-      setAnswers((prev) => ({ ...prev, [String(questionId)]: value }));
-    },
-    [],
-  );
+  const handleAnswerChange = useCallback((questionId: number | string, value: unknown) => {
+    // [UI: formulário] update do mapa de respostas
+    setLoadError(null);
+    setLoadErrorCode(null);
+    setSubmitMessage(null);
+    setAnswers((prev) => ({ ...prev, [String(questionId)]: value }));
+  }, []);
 
   const goToNextSection = useCallback(() => {
     // [UI: navegação] valida apenas a seção atual antes de avançar
@@ -199,11 +173,11 @@ export default function LabelingAnswerPage() {
   const handleSubmit = useCallback(async () => {
     // [EDIT: validações de segurança]
     if (Number.isNaN(labelingId)) {
-      showError(t("answer.invalidId"));
+      showError(t('answer.invalidId'));
       return;
     }
     if (!currentItemId) {
-      showError(t("answer.noItemAvailable"));
+      showError(t('answer.noItemAvailable'));
       return;
     }
 
@@ -239,16 +213,15 @@ export default function LabelingAnswerPage() {
         toast.error(submitResult.decision_warning);
       }
 
-      setSubmitMessage(t("answer.answerSent"));
+      setSubmitMessage(t('answer.answerSent'));
 
       // [UI: fluxo] ao enviar, já carrega o próximo item
       await loadItem();
     } catch (error) {
-      let message = t("answer.sendError");
+      let message = t('answer.sendError');
 
       if (axios.isAxiosError(error)) {
-        const detail = (error.response?.data as { detail?: string } | undefined)
-          ?.detail;
+        const detail = (error.response?.data as { detail?: string } | undefined)?.detail;
 
         if (detail) message = detail;
         else if (error.message) message = error.message;
@@ -260,41 +233,27 @@ export default function LabelingAnswerPage() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [
-    answers,
-    currentItemId,
-    currentSection,
-    labelingId,
-    loadItem,
-    sections,
-    showError,
-    t,
-  ]);
+  }, [answers, currentItemId, currentSection, labelingId, loadItem, sections, showError, t]);
 
   // ====== UI: header do item ======
   const HeaderBadges = (
     <div className="flex flex-1 flex-wrap items-center justify-end gap-3">
       {rowIndex !== null ? (
         <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-blue-50">
-          {t("answer.itemNumber", { number: rowIndex + 1 })}
+          {t('answer.itemNumber', { number: rowIndex + 1 })}
         </span>
       ) : null}
       {totalSections > 0 ? (
         <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-blue-50">
-          {t("answer.sectionProgress", {
+          {t('answer.sectionProgress', {
             current: currentSectionIdx + 1,
             total: totalSections,
           })}
         </span>
       ) : null}
       {/* [UI: toggle] abre/fecha painel de guia */}
-      <Button
-        fill={false}
-        variant="white"
-        onClick={() => setShowGuide((prev) => !prev)}
-        icon={<Info size={16} />}
-      >
-        {showGuide ? t("answer.hideGuide") : t("answer.showGuide")}
+      <Button fill={false} variant="white" onClick={() => setShowGuide((prev) => !prev)} icon={<Info size={16} />}>
+        {showGuide ? t('answer.hideGuide') : t('answer.showGuide')}
       </Button>
       {/* [UI: debug] recarrega item atual */}
     </div>
@@ -311,14 +270,10 @@ export default function LabelingAnswerPage() {
           className="inline-flex items-center gap-1 text-sm text-primary underline underline-offset-2 cursor-pointer hover:opacity-80"
           onClick={() => {
             if (Number.isNaN(labelingId)) return;
-            window.open(
-              `/labelings/${labelingId}/guide`,
-              "_blank",
-              "noopener,noreferrer",
-            );
+            window.open(`/labelings/${labelingId}/guide`, '_blank', 'noopener,noreferrer');
           }}
         >
-          {t("answer.openNewTab")}
+          {t('answer.openNewTab')}
           <ExternalLink className="h-3 w-3" />
         </span>
       </div>
@@ -326,12 +281,10 @@ export default function LabelingAnswerPage() {
       <div className="mt-1 space-y-4">
         {guideText ? (
           <div className="prose prose-sm max-w-none text-gray-900">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {guideText}
-            </ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{guideText}</ReactMarkdown>
           </div>
         ) : (
-          <p className="text-sm text-gray-600">{t("answer.noGuide")}</p>
+          <p className="text-sm text-gray-600">{t('answer.noGuide')}</p>
         )}
       </div>
     </div>
@@ -342,17 +295,13 @@ export default function LabelingAnswerPage() {
     <section className="rounded-xl bg-white p-4 h-full overflow-y-auto ">
       {/* [UI: loading] */}
       {isLoading ? (
-        <p className="text-sm text-gray-600">{t("answer.loadingItem")}</p>
+        <p className="text-sm text-gray-600">{t('answer.loadingItem')}</p>
       ) : orderedSections.length === 0 ? (
         // [UI: estado vazio] sem itens para responder
         <div className="rounded-lg border border-dashed border-green-200 bg-green-50 px-4 py-6 text-center text-sm text-green-900 w-1/4 items-center mx-auto">
           <div className="flex items-center justify-center gap-2">
             <span>✓</span>
-            <span>
-              {loadErrorCode === "NO_LABELINGS_TO_ANSWER"
-                ? t("answer.thankYou")
-                : t("answer.noItemsNow")}
-            </span>
+            <span>{loadErrorCode === 'NO_LABELINGS_TO_ANSWER' ? t('answer.thankYou') : t('answer.noItemsNow')}</span>
           </div>
         </div>
       ) : currentSection ? (
@@ -372,28 +321,18 @@ export default function LabelingAnswerPage() {
             <div />
             <div className="flex gap-3">
               {!isLastSection ? (
-                <Button
-                  type="button"
-                  onClick={goToNextSection}
-                  disabled={isLoading || isSubmitting}
-                  fill={false}
-                >
-                  {t("answer.advance")}
+                <Button type="button" onClick={goToNextSection} disabled={isLoading || isSubmitting} fill={false}>
+                  {t('answer.advance')}
                 </Button>
               ) : (
                 <Button
                   type="button"
                   onClick={() => void handleSubmit()}
-                  disabled={
-                    isLoading ||
-                    isSubmitting ||
-                    !currentItemId ||
-                    orderedSections.length === 0
-                  }
+                  disabled={isLoading || isSubmitting || !currentItemId || orderedSections.length === 0}
                   icon={<Send size={16} />}
                   fill={false}
                 >
-                  {isSubmitting ? t("answer.sending") : t("answer.sendAnswer")}
+                  {isSubmitting ? t('answer.sending') : t('answer.sendAnswer')}
                 </Button>
               )}
             </div>
@@ -406,14 +345,11 @@ export default function LabelingAnswerPage() {
   // ====== UI: layout (com/sem guia) ======
   return (
     <>
-      <InnerPageHeader onBack={() => router.push("/labelings")}>
+      <InnerPageHeader onBack={() => router.push('/labelings')}>
         {/* [UI: título da página] */}
         <div>
           <h1 className="text-lg font-semibold leading-tight">
-            {labelingTitle ||
-              (isLoading
-                ? t("answer.loadingLabeling")
-                : t("answer.answerLabeling"))}
+            {labelingTitle || (isLoading ? t('answer.loadingLabeling') : t('answer.answerLabeling'))}
           </h1>
         </div>
 
@@ -421,11 +357,7 @@ export default function LabelingAnswerPage() {
         {HeaderBadges}
       </InnerPageHeader>
 
-      <div
-        className={`mt-4 ${
-          showGuide ? "h-[calc(100vh-10vh)]" : "min-h-[calc(100vh-10vh)]"
-        }`}
-      >
+      <div className={`mt-4 ${showGuide ? 'h-[calc(100vh-10vh)]' : 'min-h-[calc(100vh-10vh)]'}`}>
         {showGuide ? (
           <ResizablePanelGroup direction="horizontal" className="h-full gap-3">
             <ResizablePanel defaultSize={70} minSize={30}>

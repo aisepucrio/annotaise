@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { Loader2, TriangleAlert, Upload } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
-import Modal from "@/components/modal/Modal";
-import Button from "@/components/button/Button";
-import { useTranslations } from "@/i18n/use-translations";
+import { Loader2, TriangleAlert, Upload } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
+import Modal from '@/components/modal/Modal';
+import Button from '@/components/button/Button';
+import { useTranslations } from '@/i18n/use-translations';
 
 type AddItemsCsvModalProps = {
   open: boolean;
@@ -13,11 +13,7 @@ type AddItemsCsvModalProps = {
   onConfirm: (file: File) => Promise<void>;
 };
 
-export default function AddItemsCsvModal({
-  open,
-  onClose,
-  onConfirm,
-}: AddItemsCsvModalProps) {
+export default function AddItemsCsvModal({ open, onClose, onConfirm }: AddItemsCsvModalProps) {
   const { t } = useTranslations();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -32,19 +28,19 @@ export default function AddItemsCsvModal({
       setIsSubmitting(false);
       setHasEmptyFields(false);
       setIsAnalyzingFile(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   }, [open]);
 
   function validateFile(file: File) {
-    if (!file.name.toLowerCase().endsWith(".csv")) {
-      throw new Error(t("labelings.upload.error.invalidFileExtension"));
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      throw new Error(t('labelings.upload.error.invalidFileExtension'));
     }
   }
 
   function parseCsvLine(line: string): string[] {
     const cells: string[] = [];
-    let current = "";
+    let current = '';
     let inQuotes = false;
 
     for (let i = 0; i < line.length; i += 1) {
@@ -57,9 +53,9 @@ export default function AddItemsCsvModal({
         } else {
           inQuotes = !inQuotes;
         }
-      } else if (char === "," && !inQuotes) {
+      } else if (char === ',' && !inQuotes) {
         cells.push(current);
-        current = "";
+        current = '';
       } else {
         current += char;
       }
@@ -72,7 +68,7 @@ export default function AddItemsCsvModal({
     setIsAnalyzingFile(true);
     try {
       const content = await file.text();
-      const lines = content.split(/\r?\n/).filter((line) => line.trim() !== "");
+      const lines = content.split(/\r?\n/).filter((line) => line.trim() !== '');
       if (lines.length <= 1) {
         setHasEmptyFields(false);
         return;
@@ -82,7 +78,7 @@ export default function AddItemsCsvModal({
       const emptyFound = lines.slice(1).some((line) => {
         const cells = parseCsvLine(line);
         if (cells.length < headers.length) return true;
-        return cells.some((cell) => cell.trim() === "");
+        return cells.some((cell) => cell.trim() === '');
       });
 
       setHasEmptyFields(emptyFound);
@@ -108,10 +104,7 @@ export default function AddItemsCsvModal({
     } catch (err) {
       setSelectedFile(null);
       setHasEmptyFields(false);
-      const message =
-        err instanceof Error
-          ? err.message
-          : t("labelings.upload.error.invalidFile");
+      const message = err instanceof Error ? err.message : t('labelings.upload.error.invalidFile');
       toast.error(message);
     }
   }
@@ -126,10 +119,7 @@ export default function AddItemsCsvModal({
       setSelectedFile(file);
       void parseHasEmptyFields(file);
     } catch (err) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : t("labelings.upload.error.invalidFile");
+      const message = err instanceof Error ? err.message : t('labelings.upload.error.invalidFile');
       toast.error(message);
     }
   }
@@ -141,7 +131,7 @@ export default function AddItemsCsvModal({
 
   async function handleConfirm() {
     if (!selectedFile) {
-      toast.error(t("labelings.upload.error.missingFile"));
+      toast.error(t('labelings.upload.error.missingFile'));
       return;
     }
 
@@ -149,10 +139,7 @@ export default function AddItemsCsvModal({
     try {
       await onConfirm(selectedFile);
     } catch (err) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : t("labelings.addItemsCsv.error");
+      const message = err instanceof Error ? err.message : t('labelings.addItemsCsv.error');
       toast.error(message);
     } finally {
       setIsSubmitting(false);
@@ -165,12 +152,8 @@ export default function AddItemsCsvModal({
     <Modal
       open={open}
       onClose={onClose}
-      title={t("labelings.addItemsCsv.title")}
-      description={
-        <p>
-          {t("labelings.addItemsCsv.description")}
-        </p>
-      }
+      title={t('labelings.addItemsCsv.title')}
+      description={<p>{t('labelings.addItemsCsv.description')}</p>}
     >
       <div>
         <div
@@ -178,13 +161,7 @@ export default function AddItemsCsvModal({
           onDrop={handleDrop}
           onDragOver={handleDragOver}
         >
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".csv"
-            onChange={handleFile}
-            className="hidden"
-          />
+          <input ref={fileInputRef} type="file" accept=".csv" onChange={handleFile} className="hidden" />
 
           <Button
             type="button"
@@ -193,21 +170,21 @@ export default function AddItemsCsvModal({
             icon={<Upload size={18} />}
             fill={false}
           >
-            {t("labelings.upload.button")}
+            {t('labelings.upload.button')}
           </Button>
 
           <p className="text-xs text-gray-600">
             {selectedFile
-              ? t("labelings.upload.selectedFile", {
+              ? t('labelings.upload.selectedFile', {
                   name: selectedFile.name,
                 })
-              : t("labelings.upload.placeholder")}
+              : t('labelings.upload.placeholder')}
           </p>
 
           {isAnalyzingFile && (
             <div className="flex items-center gap-2 text-xs text-gray-500">
               <Loader2 className="h-4 w-4 animate-spin" />
-              {t("labelings.upload.analyzing")}
+              {t('labelings.upload.analyzing')}
             </div>
           )}
         </div>
@@ -215,43 +192,25 @@ export default function AddItemsCsvModal({
         {hasEmptyFields && (
           <div className="mt-4 rounded-lg border border-red-blueberry bg-red-50 px-3 py-2 text-sm text-red-blueberry">
             <TriangleAlert className="inline-block mr-1 mb-0.5 w-4 h-4" />
-            {t("labelings.upload.emptyFields.textStart")}{" "}
-            <strong>
-              {t("labelings.upload.emptyFields.highlightEmpty")}
-            </strong>{" "}
-            {t("labelings.upload.emptyFields.textMiddle")}{" "}
-            <strong>
-              {t("labelings.upload.emptyFields.highlightMissingInfo")}
-            </strong>
-            ; {t("labelings.upload.emptyFields.textAfter")}{" "}
-            <strong>
-              {t("labelings.upload.emptyFields.highlightUnexpected")}
-            </strong>
-            , {t("labelings.upload.emptyFields.textEnd")}
+            {t('labelings.upload.emptyFields.textStart')} <strong>{t('labelings.upload.emptyFields.highlightEmpty')}</strong>{' '}
+            {t('labelings.upload.emptyFields.textMiddle')} <strong>{t('labelings.upload.emptyFields.highlightMissingInfo')}</strong>;{' '}
+            {t('labelings.upload.emptyFields.textAfter')} <strong>{t('labelings.upload.emptyFields.highlightUnexpected')}</strong>,{' '}
+            {t('labelings.upload.emptyFields.textEnd')}
           </div>
         )}
 
         <div className="mt-6 flex justify-end gap-3">
-          <Button
-            type="button"
-            variant="white"
-            fill={false}
-            onClick={onClose}
-            disabled={isSubmitting}
-          >
-            {t("common.cancel")}
+          <Button type="button" variant="white" fill={false} onClick={onClose} disabled={isSubmitting}>
+            {t('common.cancel')}
           </Button>
-          <Button
-            onClick={handleConfirm}
-            disabled={!selectedFile || isAnalyzingFile || isSubmitting}
-          >
+          <Button onClick={handleConfirm} disabled={!selectedFile || isAnalyzingFile || isSubmitting}>
             {isSubmitting ? (
               <span className="inline-flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                {t("labelings.upload.processing")}
+                {t('labelings.upload.processing')}
               </span>
             ) : (
-              t("labelings.addItemsCsv.confirm")
+              t('labelings.addItemsCsv.confirm')
             )}
           </Button>
         </div>

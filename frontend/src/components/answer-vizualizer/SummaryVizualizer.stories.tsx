@@ -1,61 +1,52 @@
-import type { Meta, StoryObj } from "@storybook/nextjs";
-import type { TranslateFn } from "@/i18n/types";
-import type {
-  AnswerResponse,
-  LabelingStructureSection,
-} from "@/modules/labelings/labelingsTypes";
-import SectionVizualizer from "./SectionVizualizer";
-import SummaryVizualizer, {
-  SummaryQuestionCard,
-  type QuestionSummary,
-} from "./SummaryVizualizer";
-import {
-  buildSummarySections,
-  splitSummarySectionGroupTitle,
-} from "./summary-vizualizer-utils";
+import type { Meta, StoryObj } from '@storybook/nextjs';
+import type { TranslateFn } from '@/i18n/types';
+import type { AnswerResponse, LabelingStructureSection } from '@/modules/labelings/labelingsTypes';
+import SectionVizualizer from './SectionVizualizer';
+import SummaryVizualizer, { SummaryQuestionCard, type QuestionSummary } from './SummaryVizualizer';
+import { buildSummarySections, splitSummarySectionGroupTitle } from './summary-vizualizer-utils';
 
 const t: TranslateFn = (key, params) => {
   switch (key) {
-    case "labelings.create.summary.loading":
-      return "Carregando";
-    case "labelings.create.summary.empty":
-      return "Sem respostas";
-    case "labelings.create.summary.responsesCount":
-      return "respostas";
-    case "labelings.create.summary.typeLabel":
-      return `Tipo: ${String(params?.type ?? "")}`;
-    case "labelings.create.question.type.text":
-      return "Texto";
-    case "labelings.create.question.type.number":
-      return "Número";
-    case "labelings.create.question.type.range":
-      return "Faixa";
-    case "labelings.create.question.type.multipleChoice":
-      return "Múltipla escolha";
-    case "labelings.create.summary.questionFallback":
-      return "Pergunta sem título";
-    case "labelings.create.summary.sectionLabel":
-      return `Seção ${String(params?.order ?? "")}`;
-    case "labelings.create.summary.chart.noData":
-      return "Sem dados";
-    case "labelings.create.summary.chart.topResponses":
-      return "Respostas mais frequentes";
-    case "labelings.create.summary.chart.histogram":
-      return "Histograma";
-    case "labelings.create.summary.chart.other":
-      return "Outros";
-    case "labelings.create.summary.stats.min":
-      return "Min";
-    case "labelings.create.summary.stats.max":
-      return "Max";
-    case "labelings.create.summary.stats.average":
-      return "Média";
-    case "labelings.create.summary.stats.median":
-      return "Mediana";
-    case "common.yes":
-      return "Sim";
-    case "common.no":
-      return "Não";
+    case 'labelings.create.summary.loading':
+      return 'Carregando';
+    case 'labelings.create.summary.empty':
+      return 'Sem respostas';
+    case 'labelings.create.summary.responsesCount':
+      return 'respostas';
+    case 'labelings.create.summary.typeLabel':
+      return `Tipo: ${String(params?.type ?? '')}`;
+    case 'labelings.create.question.type.text':
+      return 'Texto';
+    case 'labelings.create.question.type.number':
+      return 'Número';
+    case 'labelings.create.question.type.range':
+      return 'Faixa';
+    case 'labelings.create.question.type.multipleChoice':
+      return 'Múltipla escolha';
+    case 'labelings.create.summary.questionFallback':
+      return 'Pergunta sem título';
+    case 'labelings.create.summary.sectionLabel':
+      return `Seção ${String(params?.order ?? '')}`;
+    case 'labelings.create.summary.chart.noData':
+      return 'Sem dados';
+    case 'labelings.create.summary.chart.topResponses':
+      return 'Respostas mais frequentes';
+    case 'labelings.create.summary.chart.histogram':
+      return 'Histograma';
+    case 'labelings.create.summary.chart.other':
+      return 'Outros';
+    case 'labelings.create.summary.stats.min':
+      return 'Min';
+    case 'labelings.create.summary.stats.max':
+      return 'Max';
+    case 'labelings.create.summary.stats.average':
+      return 'Média';
+    case 'labelings.create.summary.stats.median':
+      return 'Mediana';
+    case 'common.yes':
+      return 'Sim';
+    case 'common.no':
+      return 'Não';
     default:
       return key;
   }
@@ -65,25 +56,25 @@ const structureSections: LabelingStructureSection[] = [
   {
     id: 1,
     order: 1,
-    title: "Qualidade",
+    title: 'Qualidade',
     elements: [
       {
         id: 101,
         order: 1,
-        text: "Classificação final",
-        question_type: "multiple_choice",
+        text: 'Classificação final',
+        question_type: 'multiple_choice',
         multiple_choice_items: [
-          { text: "Correto", order: 1 },
-          { text: "Parcial", order: 2 },
-          { text: "Incorreto", order: 3 },
+          { text: 'Correto', order: 1 },
+          { text: 'Parcial', order: 2 },
+          { text: 'Incorreto', order: 3 },
         ],
         question_range: null,
       },
       {
         id: 102,
         order: 2,
-        text: "Tempo de resposta (s)",
-        question_type: "number",
+        text: 'Tempo de resposta (s)',
+        question_type: 'number',
         multiple_choice_items: [],
         question_range: null,
       },
@@ -92,23 +83,23 @@ const structureSections: LabelingStructureSection[] = [
   {
     id: 2,
     order: 2,
-    title: "Comentários",
+    title: 'Comentários',
     elements: [
       {
         id: 201,
         order: 1,
-        text: "Observações",
-        question_type: "text",
+        text: 'Observações',
+        question_type: 'text',
         multiple_choice_items: [],
         question_range: null,
       },
       {
         id: 202,
         order: 2,
-        text: "Contexto interno (ignorado no resumo)",
-        question_type: "context",
-        context_type: "text",
-        column_name: "ctx",
+        text: 'Contexto interno (ignorado no resumo)',
+        question_type: 'context',
+        context_type: 'text',
+        column_name: 'ctx',
         multiple_choice_items: [],
         question_range: null,
       },
@@ -122,11 +113,11 @@ const answers: AnswerResponse[] = [
     labeling: 1,
     item: 10,
     answered_by: 11,
-    created_at: "2026-02-20T10:00:00Z",
+    created_at: '2026-02-20T10:00:00Z',
     answer_payload: {
-      "101": "Correto",
-      "102": 1.2,
-      "201": "Boa consistência geral.",
+      '101': 'Correto',
+      '102': 1.2,
+      '201': 'Boa consistência geral.',
     },
   },
   {
@@ -134,11 +125,11 @@ const answers: AnswerResponse[] = [
     labeling: 1,
     item: 10,
     answered_by: 12,
-    created_at: "2026-02-20T11:00:00Z",
+    created_at: '2026-02-20T11:00:00Z',
     answer_payload: {
-      "101": "Parcial",
-      "102": 2.8,
-      "201": "Ambiguidade em um trecho.",
+      '101': 'Parcial',
+      '102': 2.8,
+      '201': 'Ambiguidade em um trecho.',
     },
   },
   {
@@ -146,28 +137,28 @@ const answers: AnswerResponse[] = [
     labeling: 1,
     item: 10,
     answered_by: 13,
-    created_at: "2026-02-20T12:00:00Z",
+    created_at: '2026-02-20T12:00:00Z',
     answer_payload: {
-      "101": "Correto",
-      "102": 1.7,
-      "201": "Resposta objetiva e clara.",
+      '101': 'Correto',
+      '102': 1.7,
+      '201': 'Resposta objetiva e clara.',
     },
   },
 ];
 
 const sampleCardSummary: QuestionSummary = {
-  key: "q-102",
-  label: "Tempo de resposta (s)",
-  type: "number",
-  sectionLabel: "Seção 1 - Qualidade",
+  key: 'q-102',
+  label: 'Tempo de resposta (s)',
+  type: 'number',
+  sectionLabel: 'Seção 1 - Qualidade',
   responseCount: 3,
   chart: {
-    kind: "hist",
-    title: "Histograma",
+    kind: 'hist',
+    title: 'Histograma',
     items: [
-      { label: "1-1.6", count: 1 },
-      { label: "1.6-2.2", count: 1 },
-      { label: "2.2-2.8", count: 1 },
+      { label: '1-1.6', count: 1 },
+      { label: '1.6-2.2', count: 1 },
+      { label: '2.2-2.8', count: 1 },
     ],
     total: 3,
     stats: {
@@ -180,15 +171,15 @@ const sampleCardSummary: QuestionSummary = {
 };
 
 const meta = {
-  title: "AnswerVizualizer/SummaryVizualizer",
+  title: 'AnswerVizualizer/SummaryVizualizer',
   component: SummaryVizualizer,
-  tags: ["autodocs"],
+  tags: ['autodocs'],
   parameters: {
-    layout: "centered",
+    layout: 'centered',
     docs: {
       description: {
         component:
-          "Renderiza um card individual de resumo de pergunta. Para listas por seção, use `SectionVizualizer` e `buildSummarySections`.",
+          'Renderiza um card individual de resumo de pergunta. Para listas por seção, use `SectionVizualizer` e `buildSummarySections`.',
       },
     },
   },
@@ -197,12 +188,8 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof SummaryVizualizer>;
 
-function SummarySectionsPreview({
-  showResponseCount = true,
-}: {
-  showResponseCount?: boolean;
-}) {
-  const numberFormatter = new Intl.NumberFormat("pt-BR", {
+function SummarySectionsPreview({ showResponseCount = true }: { showResponseCount?: boolean }) {
+  const numberFormatter = new Intl.NumberFormat('pt-BR', {
     maximumFractionDigits: 2,
   });
   const sectionGroups = buildSummarySections({
@@ -218,14 +205,8 @@ function SummarySectionsPreview({
         const parsed = splitSummarySectionGroupTitle(sectionGroup.title);
 
         return (
-          <div
-            key={sectionGroup.title}
-            className={sectionIndex > 0 ? "mt-12" : undefined}
-          >
-            <SectionVizualizer
-              title={parsed.title}
-              sectionLabel={parsed.sectionLabel}
-            >
+          <div key={sectionGroup.title} className={sectionIndex > 0 ? 'mt-12' : undefined}>
+            <SectionVizualizer title={parsed.title} sectionLabel={parsed.sectionLabel}>
               {sectionGroup.items.map((summary) => (
                 <SummaryVizualizer
                   key={summary.key}
@@ -272,7 +253,7 @@ export const QuestionCardPreview: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Preview isolado do card via default export `SummaryVizualizer`.",
+        story: 'Preview isolado do card via default export `SummaryVizualizer`.',
       },
     },
   },
@@ -280,9 +261,11 @@ export const QuestionCardPreview: Story = {
     <div className="w-[860px] rounded-xl border border-metal-100 bg-white p-5">
       <SummaryVizualizer
         summary={sampleCardSummary}
-        numberFormatter={new Intl.NumberFormat("pt-BR", {
-          maximumFractionDigits: 2,
-        })}
+        numberFormatter={
+          new Intl.NumberFormat('pt-BR', {
+            maximumFractionDigits: 2,
+          })
+        }
         t={t}
         showSectionLabel
         showTypeLabel
@@ -296,7 +279,7 @@ export const QuestionCardPreviewNamedExport: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Mesmo preview usando o named export `SummaryQuestionCard`.",
+        story: 'Mesmo preview usando o named export `SummaryQuestionCard`.',
       },
     },
   },
@@ -304,9 +287,11 @@ export const QuestionCardPreviewNamedExport: Story = {
     <div className="w-[860px] rounded-xl border border-metal-100 bg-white p-5">
       <SummaryQuestionCard
         summary={sampleCardSummary}
-        numberFormatter={new Intl.NumberFormat("pt-BR", {
-          maximumFractionDigits: 2,
-        })}
+        numberFormatter={
+          new Intl.NumberFormat('pt-BR', {
+            maximumFractionDigits: 2,
+          })
+        }
         t={t}
         showSectionLabel
         showTypeLabel

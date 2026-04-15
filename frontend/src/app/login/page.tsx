@@ -1,18 +1,18 @@
-"use client";
+'use client';
 
-import { isAxiosError } from "axios";
-import AuthLayout from "@/components/auth-layout/AuthLayout";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { AuthActions } from "@/lib/authClient";
-import { Mail, LogIn } from "lucide-react";
-import { toast } from "sonner";
-import AuthFormButton from "@/components/auth-layout/AuthFormButton";
-import Input from "@/components/form/Input";
-import PasswordInput from "@/components/form/PasswordInput";
-import { useTranslations } from "@/i18n/use-translations";
-import Link from "next/link";
+import { isAxiosError } from 'axios';
+import AuthLayout from '@/components/auth-layout/AuthLayout';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { AuthActions } from '@/lib/authClient';
+import { Mail, LogIn } from 'lucide-react';
+import { toast } from 'sonner';
+import AuthFormButton from '@/components/auth-layout/AuthFormButton';
+import Input from '@/components/form/Input';
+import PasswordInput from '@/components/form/PasswordInput';
+import { useTranslations } from '@/i18n/use-translations';
+import Link from 'next/link';
 
 // === Tipos ===
 type FormData = {
@@ -42,15 +42,15 @@ export default function LoginPage() {
       const { access, refresh } = response.data ?? {};
 
       if (!access || !refresh) {
-        throw new Error(t("login.error.invalidResponse"));
+        throw new Error(t('login.error.invalidResponse'));
       }
 
-      storeToken(access, "access");
-      storeToken(refresh, "refresh");
+      storeToken(access, 'access');
+      storeToken(refresh, 'refresh');
 
-      router.push("/labelings");
+      router.push('/labelings');
     } catch (err) {
-      let message = t("login.error.invalidCredentials");
+      let message = t('login.error.invalidCredentials');
 
       if (isAxiosError(err)) {
         const detail = (err.response?.data as { detail?: string })?.detail;
@@ -69,21 +69,21 @@ export default function LoginPage() {
 
   // --- Render (JSX) ---
   return (
-    <AuthLayout title={t("login.title")} subtitle={t("login.subtitle")}>
+    <AuthLayout title={t('login.title')} subtitle={t('login.subtitle')}>
       <form onSubmit={handleSubmit(onSubmit)}>
         {/* Campo: Email */}
         <div className="mt-8">
           <Input
-            label={t("login.emailLabel")}
+            label={t('login.emailLabel')}
             type="email"
-            placeholder={t("login.emailPlaceholder")}
+            placeholder={t('login.emailPlaceholder')}
             icon={<Mail className="w-8 h-8" />}
             error={errors.email?.message}
-            {...register("email", {
-              required: t("login.emailRequired"),
+            {...register('email', {
+              required: t('login.emailRequired'),
               pattern: {
                 value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                message: t("login.emailInvalid"),
+                message: t('login.emailInvalid'),
               },
             })}
           />
@@ -91,27 +91,27 @@ export default function LoginPage() {
         {/* Campo: Senha */}
         <div className="mt-6">
           <PasswordInput
-            label={t("login.passwordLabel")}
-            placeholder={t("login.passwordPlaceholder")}
+            label={t('login.passwordLabel')}
+            placeholder={t('login.passwordPlaceholder')}
             error={errors.password?.message}
-            {...register("password", {
-              required: t("login.passwordRequired"),
+            {...register('password', {
+              required: t('login.passwordRequired'),
             })}
           />
         </div>
 
         {/* Ação: Esqueceu senha */}
         <div className="flex w-full justify-end mt-3">
-          <Link href="/forgot-password" className="text-sm sm:text-md text-blueberry-900 underline cursor-pointer hover:text-blueberry-700">
-            {t("login.forgotPassword")}
+          <Link
+            href="/forgot-password"
+            className="text-sm sm:text-md text-blueberry-900 underline cursor-pointer hover:text-blueberry-700"
+          >
+            {t('login.forgotPassword')}
           </Link>
         </div>
 
         {/* Ação: Enviar formulário */}
-        <AuthFormButton
-          icon={<LogIn className="w-6 h-6 mr-2" />}
-          text={isLoading ? t("login.loading") : t("login.button")}
-        />
+        <AuthFormButton icon={<LogIn className="w-6 h-6 mr-2" />} text={isLoading ? t('login.loading') : t('login.button')} />
       </form>
     </AuthLayout>
   );

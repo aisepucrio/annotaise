@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { useId, cloneElement } from "react";
-import { Tooltip as ReactTooltip } from "react-tooltip";
-import "react-tooltip/dist/react-tooltip.css";
+import { useId, cloneElement } from 'react';
+import { Tooltip as ReactTooltip } from 'react-tooltip';
+import 'react-tooltip/dist/react-tooltip.css';
 
 type TooltipProps = {
   content: string;
   children: React.ReactElement<TooltipTriggerProps>;
-  place?: "top" | "bottom" | "left" | "right";
+  place?: 'top' | 'bottom' | 'left' | 'right';
 };
 
 type TooltipTriggerProps = {
@@ -15,12 +15,12 @@ type TooltipTriggerProps = {
   onMouseLeave?: React.MouseEventHandler;
 } & Record<string, unknown>;
 
-export function Tooltip({ content, children, place = "bottom" }: TooltipProps) {
+export function Tooltip({ content, children, place = 'bottom' }: TooltipProps) {
   const tooltipId = useId();
 
   const trigger = cloneElement(children, {
-    "data-tooltip-id": tooltipId,
-    "data-tooltip-content": content,
+    'data-tooltip-id': tooltipId,
+    'data-tooltip-content': content,
     onMouseEnter: (e: React.MouseEvent) => {
       children.props.onMouseEnter?.(e);
     },

@@ -1,16 +1,16 @@
-import type { Meta, StoryObj } from "@storybook/nextjs";
-import { Hash, Calculator, Percent } from "lucide-react";
-import { useState } from "react";
-import NumberInput from "./NumberInput";
+import type { Meta, StoryObj } from '@storybook/nextjs';
+import { Hash, Calculator, Percent } from 'lucide-react';
+import { useState } from 'react';
+import NumberInput from './NumberInput';
 
 const meta = {
   component: NumberInput,
-  tags: ["autodocs"],
+  tags: ['autodocs'],
   args: {
-    placeholder: "Digite um número...",
+    placeholder: 'Digite um número...',
   },
   parameters: {
-    layout: "centered",
+    layout: 'centered',
   },
 } satisfies Meta<typeof NumberInput>;
 
@@ -22,14 +22,13 @@ export default meta;
 
 export const Playground: StoryObj<typeof NumberInput> = {
   args: {
-    label: "Campo numérico",
-    placeholder: "Digite um número...",
+    label: 'Campo numérico',
+    placeholder: 'Digite um número...',
   },
   parameters: {
     docs: {
       description: {
-        story:
-          "Input numérico editável. Use os controles para testar diferentes propriedades.",
+        story: 'Input numérico editável. Use os controles para testar diferentes propriedades.',
       },
     },
   },
@@ -42,17 +41,9 @@ export const Playground: StoryObj<typeof NumberInput> = {
 export const Variants: StoryObj<typeof NumberInput> = {
   render: () => (
     <div className="flex flex-col gap-6 w-96">
-      <NumberInput
-        label="Quantidade"
-        placeholder="Digite a quantidade..."
-        icon={<Hash className="w-5 h-5" />}
-      />
+      <NumberInput label="Quantidade" placeholder="Digite a quantidade..." icon={<Hash className="w-5 h-5" />} />
 
-      <NumberInput
-        label="Valor"
-        placeholder="Digite o valor..."
-        leftIcon={<Calculator className="w-5 h-5" />}
-      />
+      <NumberInput label="Valor" placeholder="Digite o valor..." leftIcon={<Calculator className="w-5 h-5" />} />
 
       <NumberInput
         label="Porcentagem"
@@ -66,8 +57,7 @@ export const Variants: StoryObj<typeof NumberInput> = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Diferentes variações de inputs numéricos com ícones posicionados à direita ou esquerda.",
+        story: 'Diferentes variações de inputs numéricos com ícones posicionados à direita ou esquerda.',
       },
     },
   },
@@ -80,31 +70,17 @@ export const Variants: StoryObj<typeof NumberInput> = {
 export const WithValidation: StoryObj<typeof NumberInput> = {
   render: () => (
     <div className="flex flex-col gap-6 w-96">
-      <NumberInput
-        label="Idade (min: 18, max: 100)"
-        placeholder="Digite sua idade..."
-        min={18}
-        max={100}
-      />
+      <NumberInput label="Idade (min: 18, max: 100)" placeholder="Digite sua idade..." min={18} max={100} />
 
-      <NumberInput
-        label="Quantidade (mínimo 0)"
-        placeholder="Digite a quantidade..."
-        min={0}
-      />
+      <NumberInput label="Quantidade (mínimo 0)" placeholder="Digite a quantidade..." min={0} />
 
-      <NumberInput
-        label="Preço (mínimo 0)"
-        placeholder="Digite o preço..."
-        min={0}
-      />
+      <NumberInput label="Preço (mínimo 0)" placeholder="Digite o preço..." min={0} />
     </div>
   ),
   parameters: {
     docs: {
       description: {
-        story:
-          "Inputs numéricos com validações de min e max. Sem autoValidate, as validações são apenas visuais no navegador.",
+        story: 'Inputs numéricos com validações de min e max. Sem autoValidate, as validações são apenas visuais no navegador.',
       },
     },
   },
@@ -116,9 +92,9 @@ export const WithValidation: StoryObj<typeof NumberInput> = {
 
 export const WithAutoValidation: StoryObj<typeof NumberInput> = {
   render: () => {
-    const [value1, setValue1] = useState<number | string>("");
-    const [value2, setValue2] = useState<number | string>("");
-    const [value3, setValue3] = useState<number | string>("");
+    const [value1, setValue1] = useState<number | string>('');
+    const [value2, setValue2] = useState<number | string>('');
+    const [value3, setValue3] = useState<number | string>('');
 
     return (
       <div className="flex flex-col gap-6 w-96">
@@ -157,7 +133,7 @@ export const WithAutoValidation: StoryObj<typeof NumberInput> = {
     docs: {
       description: {
         story:
-          "Com autoValidate=true, o componente aplica automaticamente as validações de min e max ao alterar o valor, corrigindo valores inválidos.",
+          'Com autoValidate=true, o componente aplica automaticamente as validações de min e max ao alterar o valor, corrigindo valores inválidos.',
       },
     },
   },
@@ -191,7 +167,7 @@ export const WithError: StoryObj<typeof NumberInput> = {
   parameters: {
     docs: {
       description: {
-        story: "Inputs numéricos com mensagens de erro.",
+        story: 'Inputs numéricos com mensagens de erro.',
       },
     },
   },
@@ -204,24 +180,15 @@ export const WithError: StoryObj<typeof NumberInput> = {
 export const Disabled: StoryObj<typeof NumberInput> = {
   render: () => (
     <div className="flex flex-col gap-6 w-96">
-      <NumberInput
-        label="Campo desabilitado vazio"
-        placeholder="Campo desabilitado..."
-        disabled
-      />
+      <NumberInput label="Campo desabilitado vazio" placeholder="Campo desabilitado..." disabled />
 
-      <NumberInput
-        label="Campo desabilitado com valor"
-        value={42}
-        disabled
-        icon={<Hash className="w-5 h-5" />}
-      />
+      <NumberInput label="Campo desabilitado com valor" value={42} disabled icon={<Hash className="w-5 h-5" />} />
     </div>
   ),
   parameters: {
     docs: {
       description: {
-        story: "Inputs numéricos em estado desabilitado.",
+        story: 'Inputs numéricos em estado desabilitado.',
       },
     },
   },
@@ -234,12 +201,7 @@ export const Disabled: StoryObj<typeof NumberInput> = {
 export const WithTooltip: StoryObj<typeof NumberInput> = {
   render: () => (
     <div className="flex flex-col gap-6 w-96">
-      <NumberInput
-        label="Idade"
-        placeholder="Digite sua idade..."
-        tooltip="Digite sua idade atual em anos completos"
-        min={18}
-      />
+      <NumberInput label="Idade" placeholder="Digite sua idade..." tooltip="Digite sua idade atual em anos completos" min={18} />
 
       <NumberInput
         label="Quantidade"
@@ -252,7 +214,7 @@ export const WithTooltip: StoryObj<typeof NumberInput> = {
   parameters: {
     docs: {
       description: {
-        story: "Inputs numéricos com tooltips informativos.",
+        story: 'Inputs numéricos com tooltips informativos.',
       },
     },
   },
@@ -265,11 +227,7 @@ export const WithTooltip: StoryObj<typeof NumberInput> = {
 export const Required: StoryObj<typeof NumberInput> = {
   render: () => (
     <div className="flex flex-col gap-6 w-96">
-      <NumberInput
-        label="Campo obrigatório"
-        placeholder="Digite um número..."
-        required
-      />
+      <NumberInput label="Campo obrigatório" placeholder="Digite um número..." required />
 
       <NumberInput
         label="Quantidade (obrigatória)"
@@ -282,7 +240,7 @@ export const Required: StoryObj<typeof NumberInput> = {
   parameters: {
     docs: {
       description: {
-        story: "Inputs numéricos marcados como obrigatórios.",
+        story: 'Inputs numéricos marcados como obrigatórios.',
       },
     },
   },
@@ -294,35 +252,19 @@ export const Required: StoryObj<typeof NumberInput> = {
 
 export const Controlled: StoryObj<typeof NumberInput> = {
   render: () => {
-    const [simpleValue, setSimpleValue] = useState<number | string>("");
+    const [simpleValue, setSimpleValue] = useState<number | string>('');
     const [rangeValue, setRangeValue] = useState<number | string>(5);
 
     return (
       <div className="flex flex-col gap-6 w-96">
         <div>
-          <NumberInput
-            label="Valor simples"
-            placeholder="Digite um número..."
-            value={simpleValue}
-            onChange={setSimpleValue}
-          />
-          <p className="mt-2 text-xs text-metal-700">
-            Valor atual: {String(simpleValue) || "(vazio)"}
-          </p>
+          <NumberInput label="Valor simples" placeholder="Digite um número..." value={simpleValue} onChange={setSimpleValue} />
+          <p className="mt-2 text-xs text-metal-700">Valor atual: {String(simpleValue) || '(vazio)'}</p>
         </div>
 
         <div>
-          <NumberInput
-            label="Range controlado (0-10)"
-            min={0}
-            max={10}
-            value={rangeValue}
-            onChange={setRangeValue}
-            autoValidate
-          />
-          <p className="mt-2 text-xs text-metal-700">
-            Valor atual: {String(rangeValue)}
-          </p>
+          <NumberInput label="Range controlado (0-10)" min={0} max={10} value={rangeValue} onChange={setRangeValue} autoValidate />
+          <p className="mt-2 text-xs text-metal-700">Valor atual: {String(rangeValue)}</p>
         </div>
       </div>
     );
@@ -330,8 +272,7 @@ export const Controlled: StoryObj<typeof NumberInput> = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Exemplo de inputs numéricos controlados usando estado React. O valor é gerenciado externamente.",
+        story: 'Exemplo de inputs numéricos controlados usando estado React. O valor é gerenciado externamente.',
       },
     },
   },
@@ -343,9 +284,9 @@ export const Controlled: StoryObj<typeof NumberInput> = {
 
 export const UseCases: StoryObj<typeof NumberInput> = {
   render: () => {
-    const [age, setAge] = useState<number | string>("");
+    const [age, setAge] = useState<number | string>('');
     const [quantity, setQuantity] = useState<number | string>(0);
-    const [price, setPrice] = useState<number | string>("");
+    const [price, setPrice] = useState<number | string>('');
     const [percentage, setPercentage] = useState<number | string>(50);
 
     return (
@@ -395,8 +336,7 @@ export const UseCases: StoryObj<typeof NumberInput> = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Exemplos práticos de uso do NumberInput em diferentes cenários: idade, quantidade, preço e porcentagem.",
+        story: 'Exemplos práticos de uso do NumberInput em diferentes cenários: idade, quantidade, preço e porcentagem.',
       },
     },
   },

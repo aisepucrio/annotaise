@@ -1,27 +1,27 @@
-import type { Meta, StoryObj } from "@storybook/nextjs";
-import Tooltip from "./Tooltip";
-import { HelpCircle } from "lucide-react";
+import type { Meta, StoryObj } from '@storybook/nextjs';
+import Tooltip from './Tooltip';
+import { HelpCircle } from 'lucide-react';
 
 const meta = {
-  title: "Tooltip",
+  title: 'Tooltip',
   component: Tooltip,
   parameters: {
-    layout: "centered",
+    layout: 'centered',
   },
-  tags: ["autodocs"],
+  tags: ['autodocs'],
   argTypes: {
     content: {
-      control: "text",
-      description: "Conteúdo do tooltip (texto)",
+      control: 'text',
+      description: 'Conteúdo do tooltip (texto)',
     },
     color: {
-      control: "color",
-      description: "Cor do ícone (aceita RGB, hex, variáveis CSS, etc.)",
+      control: 'color',
+      description: 'Cor do ícone (aceita RGB, hex, variáveis CSS, etc.)',
     },
     size: {
-      control: "select",
-      options: ["sm", "md", "lg"],
-      description: "Tamanho do ícone",
+      control: 'select',
+      options: ['sm', 'md', 'lg'],
+      description: 'Tamanho do ícone',
     },
   },
 } satisfies Meta<typeof Tooltip>;
@@ -34,9 +34,9 @@ type Story = StoryObj<typeof meta>;
  */
 export const Default: Story = {
   args: {
-    content: "Esta é uma informação útil para o usuário",
-    color: "#1E3A8A",
-    size: "md",
+    content: 'Esta é uma informação útil para o usuário',
+    color: '#1E3A8A',
+    size: 'md',
   },
 };
 
@@ -45,9 +45,9 @@ export const Default: Story = {
  */
 export const CustomIcon: Story = {
   args: {
-    content: "Precisa de ajuda? Clique aqui para mais detalhes",
-    color: "#1E3A8A",
-    size: "md",
+    content: 'Precisa de ajuda? Clique aqui para mais detalhes',
+    color: '#1E3A8A',
+    size: 'md',
     icon: <HelpCircle size={20} strokeWidth={2.25} />,
   },
 };
@@ -57,10 +57,9 @@ export const CustomIcon: Story = {
  */
 export const ComplexContent: Story = {
   args: {
-    content:
-      "Dica importante: use este campo para adicionar informações detalhadas sobre o projeto. Máximo de 500 caracteres.",
-    color: "#1E3A8A",
-    size: "md",
+    content: 'Dica importante: use este campo para adicionar informações detalhadas sobre o projeto. Máximo de 500 caracteres.',
+    color: '#1E3A8A',
+    size: 'md',
   },
 };
 
@@ -68,7 +67,7 @@ export const ComplexContent: Story = {
  * Múltiplos tamanhos lado a lado
  */
 export const AllSizes: Story = {
-  args: { content: "Exemplo de tooltip", color: "#1E3A8A", size: "md" },
+  args: { content: 'Exemplo de tooltip', color: '#1E3A8A', size: 'md' },
   render: () => (
     <div className="flex items-center gap-4">
       <Tooltip content="Tamanho pequeno (sm)" color="#1E3A8A" size="sm" />

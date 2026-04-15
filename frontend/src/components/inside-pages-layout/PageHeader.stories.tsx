@@ -1,16 +1,16 @@
-import type { Meta, StoryObj } from "@storybook/nextjs";
-import PageHeader from "./PageHeader";
+import type { Meta, StoryObj } from '@storybook/nextjs';
+import PageHeader from './PageHeader';
 
 const meta = {
-  title: "InsidePages/PageHeader",
+  title: 'InsidePages/PageHeader',
   component: PageHeader,
-  tags: ["autodocs"],
+  tags: ['autodocs'],
   args: {
-    page_title: "Título da Página",
-    description: "Esta é uma descrição da página",
+    page_title: 'Título da Página',
+    description: 'Esta é uma descrição da página',
   },
   parameters: {
-    layout: "fullscreen",
+    layout: 'fullscreen',
   },
 } satisfies Meta<typeof PageHeader>;
 
@@ -48,10 +48,7 @@ export const Variations: StoryObj<typeof PageHeader> = {
 
       <div>
         <p className="text-sm text-gray-600 mb-2 ml-5">Com descrição</p>
-        <PageHeader
-          page_title="Projetos"
-          description="Gerencie seus projetos de anotação"
-        />
+        <PageHeader page_title="Projetos" description="Gerencie seus projetos de anotação" />
       </div>
 
       <div>
@@ -64,9 +61,7 @@ export const Variations: StoryObj<typeof PageHeader> = {
       </div>
 
       <div>
-        <p className="text-sm text-gray-600 mb-2 ml-5">
-          Completo (título, descrição e tooltip)
-        </p>
+        <p className="text-sm text-gray-600 mb-2 ml-5">Completo (título, descrição e tooltip)</p>
         <PageHeader
           page_title="Usuários"
           description="Gerencie usuários e permissões"
@@ -100,18 +95,12 @@ export const TitleLengths: StoryObj<typeof PageHeader> = {
     <div className="flex flex-col gap-6">
       <div>
         <p className="text-sm text-gray-600 mb-2 ml-5">Título curto</p>
-        <PageHeader
-          page_title="Dashboard"
-          description="Visão geral das métricas"
-        />
+        <PageHeader page_title="Dashboard" description="Visão geral das métricas" />
       </div>
 
       <div>
         <p className="text-sm text-gray-600 mb-2 ml-5">Título médio</p>
-        <PageHeader
-          page_title="Gerenciamento de Projetos"
-          description="Acompanhe o progresso dos seus projetos"
-        />
+        <PageHeader page_title="Gerenciamento de Projetos" description="Acompanhe o progresso dos seus projetos" />
       </div>
 
       <div>
@@ -152,10 +141,7 @@ export const UsageContexts: StoryObj<typeof PageHeader> = {
 
       <div>
         <p className="text-sm text-gray-600 mb-2 ml-5">Página de listagem</p>
-        <PageHeader
-          page_title="Anotações"
-          description="123 anotações encontradas"
-        />
+        <PageHeader page_title="Anotações" description="123 anotações encontradas" />
       </div>
 
       <div>

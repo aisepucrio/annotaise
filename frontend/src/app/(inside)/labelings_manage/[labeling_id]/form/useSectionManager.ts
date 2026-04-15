@@ -1,8 +1,8 @@
-import { useState, useCallback } from "react";
-import { arrayMove } from "@dnd-kit/sortable";
-import type { DragEndEvent } from "@dnd-kit/core";
-import type { SectionData, SectionElement } from "./SectionForm";
-import { createDefaultSection } from "./elementFactories";
+import { useState, useCallback } from 'react';
+import { arrayMove } from '@dnd-kit/sortable';
+import type { DragEndEvent } from '@dnd-kit/core';
+import type { SectionData, SectionElement } from './SectionForm';
+import { createDefaultSection } from './elementFactories';
 
 /**
  * Hook para gerenciar todas as operações relacionadas a seções.
@@ -50,9 +50,7 @@ export function useSectionManager(initialSections: SectionData[] = []) {
       }
 
       // Procura se é uma section
-      const afterSectionIndex = prev.findIndex(
-        (section) => section.id === insertAfterId,
-      );
+      const afterSectionIndex = prev.findIndex((section) => section.id === insertAfterId);
 
       if (afterSectionIndex !== -1) {
         // É uma section, insere após ela
@@ -63,31 +61,21 @@ export function useSectionManager(initialSections: SectionData[] = []) {
       // Procura se é um element dentro de alguma section
       for (let i = 0; i < prev.length; i++) {
         const section = prev[i];
-        const elementExists = section.elements.some(
-          (el) => el.id === insertAfterId,
-        );
+        const elementExists = section.elements.some((el) => el.id === insertAfterId);
         if (elementExists) {
           // Encontrou o elemento dentro desta seção.
           // Separamos a seção em dois: a primeira mantém os elementos até o elemento selecionado (inclusive),
           // e a nova seção recebe os elementos posteriores.
-          const ordered = [...section.elements].sort(
-            (a, b) => (a.order ?? 0) - (b.order ?? 0),
-          );
-          const elementIndex = ordered.findIndex(
-            (el) => el.id === insertAfterId,
-          );
-          const firstPart = ordered
-            .slice(0, elementIndex + 1)
-            .map((el: SectionElement, idx: number) => ({
-              ...el,
-              order: idx,
-            }));
-          const secondPart = ordered
-            .slice(elementIndex + 1)
-            .map((el: SectionElement, idx: number) => ({
-              ...el,
-              order: idx,
-            }));
+          const ordered = [...section.elements].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+          const elementIndex = ordered.findIndex((el) => el.id === insertAfterId);
+          const firstPart = ordered.slice(0, elementIndex + 1).map((el: SectionElement, idx: number) => ({
+            ...el,
+            order: idx,
+          }));
+          const secondPart = ordered.slice(elementIndex + 1).map((el: SectionElement, idx: number) => ({
+            ...el,
+            order: idx,
+          }));
 
           const newSection = {
             ...createDefaultSection(),
@@ -95,9 +83,7 @@ export function useSectionManager(initialSections: SectionData[] = []) {
           };
 
           // Replace the current section with the truncated first part
-          const updatedPrev = prev.map((s: SectionData, idxSec: number) =>
-            idxSec === i ? { ...s, elements: firstPart } : s,
-          );
+          const updatedPrev = prev.map((s: SectionData, idxSec: number) => (idxSec === i ? { ...s, elements: firstPart } : s));
 
           // Insert newSection after the current
           return insertAtIndex(updatedPrev, newSection, i + 1);
@@ -130,9 +116,7 @@ export function useSectionManager(initialSections: SectionData[] = []) {
    * Atualiza apenas o título de uma seção
    */
   const updateSectionTitle = useCallback((sectionId: string, title: string) => {
-    setSections((prev) =>
-      prev.map((s) => (s.id === sectionId ? { ...s, title } : s)),
-    );
+    setSections((prev) => prev.map((s) => (s.id === sectionId ? { ...s, title } : s)));
   }, []);
 
   /**
@@ -160,11 +144,7 @@ export function useSectionManager(initialSections: SectionData[] = []) {
 /**
  * Insere um item em um índice específico e reordena
  */
-function insertAtIndex<T extends { order?: number }>(
-  array: T[],
-  item: T,
-  index: number,
-): T[] {
+function insertAtIndex<T extends { order?: number }>(array: T[], item: T, index: number): T[] {
   const merged = [...array.slice(0, index), item, ...array.slice(index)];
   return merged.map((section, idx) => ({
     ...section,

@@ -64,7 +64,7 @@
     "logout": "Logout",
     "expandMenu": "Expand sidebar",
     "collapseMenu": "Collapse sidebar",
-    "groups" : "Groups"
+    "groups": "Groups"
   },
   "dashboard": {
     "title": "Dashboard",

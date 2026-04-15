@@ -1,8 +1,8 @@
-import React from "react";
-import { Info } from "lucide-react";
-import { Tooltip as TooltipPrimitive } from "../ui/tooltip";
+import React from 'react';
+import { Info } from 'lucide-react';
+import { Tooltip as TooltipPrimitive } from '../ui/tooltip';
 
-type TooltipSize = "sm" | "md" | "lg";
+type TooltipSize = 'sm' | 'md' | 'lg';
 
 type TooltipProps = {
   /** Conteúdo do tooltip (texto) */
@@ -20,23 +20,17 @@ type TooltipProps = {
 /**
  * Componente de ícone informativo com tooltip
  */
-export default function Tooltip({
-  content,
-  color = "white",
-  size = "md",
-  icon,
-  className = "",
-}: TooltipProps) {
+export default function Tooltip({ content, color = 'white', size = 'md', icon, className = '' }: TooltipProps) {
   // Define o tamanho do ícone e do container
   const getSizeClasses = () => {
     switch (size) {
-      case "sm":
-        return { container: "h-6 w-6", iconSize: 16 };
-      case "lg":
-        return { container: "h-10 w-10", iconSize: 24 };
-      case "md":
+      case 'sm':
+        return { container: 'h-6 w-6', iconSize: 16 };
+      case 'lg':
+        return { container: 'h-10 w-10', iconSize: 24 };
+      case 'md':
       default:
-        return { container: "h-8 w-8", iconSize: 20 };
+        return { container: 'h-8 w-8', iconSize: 20 };
     }
   };
 

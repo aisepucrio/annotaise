@@ -1,16 +1,16 @@
-import type { ContextElement } from "./ContextBlock";
-import type { QuestionElement } from "./QuestionBlock";
-import type { SectionData } from "./SectionForm";
-import { getDefaultQuestionConfig } from "./QuestionBlock";
+import type { ContextElement } from './ContextBlock';
+import type { QuestionElement } from './QuestionBlock';
+import type { SectionData } from './SectionForm';
+import { getDefaultQuestionConfig } from './QuestionBlock';
 
 /**
  * Cria um novo elemento de contexto
  */
 export const createContextElement = (order: number): ContextElement => ({
   id: crypto.randomUUID(),
-  kind: "context",
+  kind: 'context',
   order,
-  contextType: "text",
+  contextType: 'text',
 });
 
 /**
@@ -18,12 +18,12 @@ export const createContextElement = (order: number): ContextElement => ({
  */
 export const createQuestionElement = (order: number): QuestionElement => ({
   id: crypto.randomUUID(),
-  kind: "question",
+  kind: 'question',
   order,
-  question_type: "text",
+  question_type: 'text',
   required: false,
-  text: "",
-  config: getDefaultQuestionConfig("text"),
+  text: '',
+  config: getDefaultQuestionConfig('text'),
 });
 
 /**
@@ -32,7 +32,7 @@ export const createQuestionElement = (order: number): QuestionElement => ({
 export const createDefaultSection = (): SectionData => {
   return {
     id: crypto.randomUUID(),
-    title: "",
+    title: '',
     elements: [],
     order: 0,
   };
@@ -43,7 +43,7 @@ export const createDefaultSectionWithoutContext = (): SectionData => {
 
   return {
     id: crypto.randomUUID(),
-    title: "",
+    title: '',
     elements: [question],
     order: 0,
   };

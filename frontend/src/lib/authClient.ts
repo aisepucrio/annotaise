@@ -1,25 +1,25 @@
-"use client";
+'use client';
 
-import Cookies from "js-cookie";
-import { api } from "@/lib/api";
+import Cookies from 'js-cookie';
+import { api } from '@/lib/api';
 
 /**
  * Stores a token in cookies.
  */
-const storeToken = (token: string, type: "access" | "refresh") => {
-  Cookies.set(type + "Token", token);
+const storeToken = (token: string, type: 'access' | 'refresh') => {
+  Cookies.set(type + 'Token', token);
 };
 
 /**
  * Retrieves a token from cookies.
  */
-const getToken = (type: "access" | "refresh") => {
-  return Cookies.get(type + "Token");
+const getToken = (type: 'access' | 'refresh') => {
+  return Cookies.get(type + 'Token');
 };
 
 const removeTokens = () => {
-  Cookies.remove("accessToken");
-  Cookies.remove("refreshToken");
+  Cookies.remove('accessToken');
+  Cookies.remove('refreshToken');
 };
 
 /**
@@ -28,24 +28,24 @@ const removeTokens = () => {
  */
 const forceLogoutAndRedirect = () => {
   removeTokens();
-  if (typeof window !== "undefined") {
-    if (window.location.pathname === "/login") return;
-    window.location.replace("/login");
+  if (typeof window !== 'undefined') {
+    if (window.location.pathname === '/login') return;
+    window.location.replace('/login');
   }
 };
 
 const login = (email: string, password: string) => {
-  return api.post("/api/auth/token/", { email, password });
+  return api.post('/api/auth/token/', { email, password });
 };
 
 const logout = () => {
-  const refreshToken = getToken("refresh");
-  return api.post("/api/auth/logout/", { refresh: refreshToken });
+  const refreshToken = getToken('refresh');
+  return api.post('/api/auth/logout/', { refresh: refreshToken });
 };
 
 const handleJWTRefresh = () => {
-  const refreshToken = getToken("refresh");
-  return api.post("/api/auth/token/refresh/", { refresh: refreshToken });
+  const refreshToken = getToken('refresh');
+  return api.post('/api/auth/token/refresh/', { refresh: refreshToken });
 };
 
 export const AuthActions = () => {
@@ -62,12 +62,12 @@ export const AuthActions = () => {
   };
 };
 
-/* esqueceu a senha e reset */ 
+/* esqueceu a senha e reset */
 
 const forgotPassword = (email: string) => {
-  return api.post("/api/auth/forgot-password/", { email });
+  return api.post('/api/auth/forgot-password/', { email });
 };
 
 const resetPassword = (token: string, newPassword: string) => {
-  return api.post("/api/auth/reset-password/", { token, new_password: newPassword });
-}
+  return api.post('/api/auth/reset-password/', { token, new_password: newPassword });
+};

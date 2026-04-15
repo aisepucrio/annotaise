@@ -1,5 +1,5 @@
-import React from "react";
-import { useGridColumns } from "./GridLayout";
+import React from 'react';
+import { useGridColumns } from './GridLayout';
 
 type GridItemCardProps = {
   /** Elementos filhos a serem renderizados dentro do card */
@@ -12,19 +12,12 @@ type GridItemCardProps = {
   className?: string;
 };
 
-export default function GridItemCard({
-  children,
-  index,
-  borderColor,
-  className = "",
-}: GridItemCardProps) {
+export default function GridItemCard({ children, index, borderColor, className = '' }: GridItemCardProps) {
   const columnCount = useGridColumns();
   const row = Math.floor(index / columnCount);
   const col = index % columnCount;
   const isEven = (row + col) % 2 === 0;
-  const defaultBorderColor = isEven
-    ? "var(--blueberry-500)"
-    : "var(--blueberry-700)";
+  const defaultBorderColor = isEven ? 'var(--blueberry-500)' : 'var(--blueberry-700)';
   const appliedBorderColor = borderColor ?? defaultBorderColor;
 
   return (

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect } from 'react';
 
 /**
  * Hook para gerenciar qual insertion point está visível na tela.
@@ -6,9 +6,7 @@ import { useState, useCallback, useEffect } from "react";
  * Permite override via hover do usuário.
  */
 export function useVisibleInsertionPoint() {
-  const [autoVisiblePointId, setAutoVisiblePointId] = useState<string | null>(
-    null,
-  );
+  const [autoVisiblePointId, setAutoVisiblePointId] = useState<string | null>(null);
   const [hoveredPointId, setHoveredPointId] = useState<string | null>(null);
 
   // O ponto visível é o que tem hover, ou o calculado automaticamente
@@ -21,9 +19,7 @@ export function useVisibleInsertionPoint() {
    * Regra: Mostra o insertion point mais abaixo que esteja suficientemente visível.
    */
   const updateVisiblePoint = useCallback(() => {
-    const allPoints = document.querySelectorAll<HTMLElement>(
-      "[data-insertion-point]",
-    );
+    const allPoints = document.querySelectorAll<HTMLElement>('[data-insertion-point]');
 
     if (allPoints.length === 0) {
       setAutoVisiblePointId(null);
@@ -57,7 +53,7 @@ export function useVisibleInsertionPoint() {
 
       if (isVisible && isLowerThanCurrent) {
         selectedPoint = {
-          id: point.getAttribute("data-insertion-point"),
+          id: point.getAttribute('data-insertion-point'),
           top: pointTop,
         };
       }
@@ -73,12 +69,12 @@ export function useVisibleInsertionPoint() {
       requestAnimationFrame(updateVisiblePoint);
     };
 
-    window.addEventListener("scroll", handleUpdate, true);
-    window.addEventListener("resize", handleUpdate);
+    window.addEventListener('scroll', handleUpdate, true);
+    window.addEventListener('resize', handleUpdate);
 
     return () => {
-      window.removeEventListener("scroll", handleUpdate, true);
-      window.removeEventListener("resize", handleUpdate);
+      window.removeEventListener('scroll', handleUpdate, true);
+      window.removeEventListener('resize', handleUpdate);
     };
   }, [updateVisiblePoint]);
 
@@ -99,9 +95,9 @@ export function useVisibleInsertionPoint() {
       setHoveredPointId(null);
     };
 
-    window.addEventListener("scroll", clearHoverOnScroll, true);
+    window.addEventListener('scroll', clearHoverOnScroll, true);
     return () => {
-      window.removeEventListener("scroll", clearHoverOnScroll, true);
+      window.removeEventListener('scroll', clearHoverOnScroll, true);
     };
   }, []);
 

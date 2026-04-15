@@ -1,43 +1,36 @@
-"use client";
+'use client';
 
-import {
-  useCallback,
-  useMemo,
-  useRef,
-  useEffect,
-  useState,
-  type ReactNode,
-} from "react";
-import { useParams, usePathname, useRouter } from "next/navigation";
-import { toast } from "sonner";
+import { useCallback, useMemo, useRef, useEffect, useState, type ReactNode } from 'react';
+import { useParams, usePathname, useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
-import LabelingHeader from "./LabelingHeader";
-import EditLabelingModal from "./EditLabelingModal";
-import AddItemsCsvModal from "./AddItemsCsvModal";
-import ConfirmDeleteModal from "@/components/ConfirmDeleteModal";
-import { useLabelingHeaderQuery } from "@/modules/labelings/create/labelingManagerQueries";
+import LabelingHeader from './LabelingHeader';
+import EditLabelingModal from './EditLabelingModal';
+import AddItemsCsvModal from './AddItemsCsvModal';
+import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
+import { useLabelingHeaderQuery } from '@/modules/labelings/create/labelingManagerQueries';
 import {
   useAddItemsCsvMutation,
   useDeleteLabelingMutation,
   useUpdateLabelingMutation,
-} from "@/modules/labelings/create/labelingManagerMutations";
-import { exportImportedLabelingCsv } from "@/modules/labelings/labelingService";
-import type { LabelingPayload } from "@/modules/labelings/labelingsTypes";
-import { useTranslations } from "@/i18n/use-translations";
-import { getApiErrorMessage } from "@/lib/getApiErrorMessage";
+} from '@/modules/labelings/create/labelingManagerMutations';
+import { exportImportedLabelingCsv } from '@/modules/labelings/labelingService';
+import type { LabelingPayload } from '@/modules/labelings/labelingsTypes';
+import { useTranslations } from '@/i18n/use-translations';
+import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 
 type LayoutProps = {
   children: ReactNode;
 };
 
-type HeaderTabKey = "form" | "assign" | "answers" | "guide" | "decision";
+type HeaderTabKey = 'form' | 'assign' | 'answers' | 'guide' | 'decision';
 
 function getActiveTabFromPath(pathname: string): HeaderTabKey {
-  if (pathname.includes("/assign")) return "assign";
-  if (pathname.includes("/answers")) return "answers";
-  if (pathname.includes("/guide")) return "guide";
-  if (pathname.includes("/decision")) return "decision";
-  return "form";
+  if (pathname.includes('/assign')) return 'assign';
+  if (pathname.includes('/answers')) return 'answers';
+  if (pathname.includes('/guide')) return 'guide';
+  if (pathname.includes('/decision')) return 'decision';
+  return 'form';
 }
 
 export default function LabelingsManageLayout({ children }: LayoutProps) {
@@ -50,7 +43,7 @@ export default function LabelingsManageLayout({ children }: LayoutProps) {
 
   const labelingId = useMemo(() => Number(params?.labeling_id), [params]);
   const activeTab = useMemo(() => getActiveTabFromPath(pathname), [pathname]);
-  const showSaveButton = activeTab === "form" || activeTab === "guide";
+  const showSaveButton = activeTab === 'form' || activeTab === 'guide';
 
   const [isEditInfoOpen, setIsEditInfoOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -73,18 +66,13 @@ export default function LabelingsManageLayout({ children }: LayoutProps) {
       {
         onSuccess: () => {
           void headerQuery.refetch();
-          toast.success(t("labelings.create.success.updated"));
+          toast.success(t('labelings.create.success.updated'));
           setIsEditInfoOpen(false);
         },
         onError: (error: unknown) => {
-          toast.error(
-            getApiErrorMessage(
-              error,
-              t("labelings.create.errors.updateLabeling"),
-            ),
-          );
+          toast.error(getApiErrorMessage(error, t('labelings.create.errors.updateLabeling')));
         },
-      },
+      }
     );
   };
 
@@ -93,16 +81,11 @@ export default function LabelingsManageLayout({ children }: LayoutProps) {
 
     deleteMutation.mutate(labelingId, {
       onSuccess: () => {
-        toast.success(t("labelings.create.success.deleted"));
-        router.push("/labelings_manage");
+        toast.success(t('labelings.create.success.deleted'));
+        router.push('/labelings_manage');
       },
       onError: (error: unknown) => {
-        toast.error(
-          getApiErrorMessage(
-            error,
-            t("labelings.create.errors.deleteLabeling"),
-          ),
-        );
+        toast.error(getApiErrorMessage(error, t('labelings.create.errors.deleteLabeling')));
       },
     });
   };
@@ -114,23 +97,19 @@ export default function LabelingsManageLayout({ children }: LayoutProps) {
           { labelingId, file },
           {
             onSuccess: () => {
-              toast.success(t("labelings.addItemsCsv.success"));
+              toast.success(t('labelings.addItemsCsv.success'));
               setIsImportCsvOpen(false);
               void headerQuery.refetch();
               resolve();
             },
             onError: (error: unknown) => {
-              reject(
-                new Error(
-                  getApiErrorMessage(error, t("labelings.addItemsCsv.error")),
-                ),
-              );
+              reject(new Error(getApiErrorMessage(error, t('labelings.addItemsCsv.error'))));
             },
-          },
+          }
         );
       });
     },
-    [addItemsCsvMutation, headerQuery, labelingId, t],
+    [addItemsCsvMutation, headerQuery, labelingId, t]
   );
 
   const handleDownloadCsv = useCallback(async () => {
@@ -140,19 +119,14 @@ export default function LabelingsManageLayout({ children }: LayoutProps) {
     try {
       const { blob, filename } = await exportImportedLabelingCsv(labelingId);
       const url = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
+      const anchor = document.createElement('a');
       anchor.href = url;
       anchor.download = filename ?? `labeling_${labelingId}_imported.csv`;
       anchor.click();
       URL.revokeObjectURL(url);
-      toast.success(t("labelings.create.header.downloadCsvSuccess"));
+      toast.success(t('labelings.create.header.downloadCsvSuccess'));
     } catch (error: unknown) {
-      toast.error(
-        getApiErrorMessage(
-          error,
-          t("labelings.create.header.downloadCsvError"),
-        ),
-      );
+      toast.error(getApiErrorMessage(error, t('labelings.create.header.downloadCsvError')));
     } finally {
       setIsDownloadingCsv(false);
     }
@@ -160,22 +134,17 @@ export default function LabelingsManageLayout({ children }: LayoutProps) {
 
   const tabs = useMemo(() => {
     const base = [
-      { key: "form", label: t("labelings.create.tabs.form") },
-      { key: "assign", label: t("labelings.create.tabs.assign") },
-      { key: "answers", label: t("labelings.create.tabs.answers") },
-      { key: "guide", label: t("labelings.create.tabs.guide") },
+      { key: 'form', label: t('labelings.create.tabs.form') },
+      { key: 'assign', label: t('labelings.create.tabs.assign') },
+      { key: 'answers', label: t('labelings.create.tabs.answers') },
+      { key: 'guide', label: t('labelings.create.tabs.guide') },
     ];
 
-    return labeling?.decision
-      ? [
-          ...base,
-          { key: "decision", label: t("labelings.create.tabs.decision") },
-        ]
-      : base;
+    return labeling?.decision ? [...base, { key: 'decision', label: t('labelings.create.tabs.decision') }] : base;
   }, [labeling?.decision, t]);
 
   useEffect(() => {
-    if (!labeling?.decision && activeTab === "decision") {
+    if (!labeling?.decision && activeTab === 'decision') {
       router.replace(`/labelings_manage/${labelingId}/form`);
     }
   }, [activeTab, labeling?.decision, labelingId, router]);
@@ -184,15 +153,15 @@ export default function LabelingsManageLayout({ children }: LayoutProps) {
     (tab: string) => {
       router.push(`/labelings_manage/${labelingId}/${tab}`);
     },
-    [labelingId, router],
+    [labelingId, router]
   );
 
   const handleHeaderSave = useCallback(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === 'undefined') return;
     window.dispatchEvent(
-      new CustomEvent("labelings-manage:save", {
+      new CustomEvent('labelings-manage:save', {
         detail: { tab: activeTab },
-      }),
+      })
     );
   }, [activeTab]);
 
@@ -207,7 +176,7 @@ export default function LabelingsManageLayout({ children }: LayoutProps) {
         onTabClick={handleTabRouteChange}
         isDeleting={deleteMutation.isPending}
         headerRef={headerRef}
-        onBack={() => router.push("/labelings_manage")}
+        onBack={() => router.push('/labelings_manage')}
         onEditInfo={() => setIsEditInfoOpen(true)}
         onDelete={() => setIsDeleteOpen(true)}
         showSaveButton={showSaveButton}
@@ -219,11 +188,7 @@ export default function LabelingsManageLayout({ children }: LayoutProps) {
 
       <div className="flex-1 min-h-0 overflow-y-auto">{children}</div>
 
-      <AddItemsCsvModal
-        open={isImportCsvOpen}
-        onClose={() => setIsImportCsvOpen(false)}
-        onConfirm={handleImportCsv}
-      />
+      <AddItemsCsvModal open={isImportCsvOpen} onClose={() => setIsImportCsvOpen(false)} onConfirm={handleImportCsv} />
 
       <EditLabelingModal
         open={isEditInfoOpen}
@@ -239,11 +204,11 @@ export default function LabelingsManageLayout({ children }: LayoutProps) {
         onClose={() => setIsDeleteOpen(false)}
         onConfirm={handleDeleteLabeling}
         isDeleting={deleteMutation.isPending}
-        title={t("labelings.create.delete.title")}
-        itemName={labeling?.title ?? ""}
-        description={t("labelings.create.delete.description")}
-        confirmButtonText={t("labelings.create.delete.confirm")}
-        cancelButtonText={t("common.cancel")}
+        title={t('labelings.create.delete.title')}
+        itemName={labeling?.title ?? ''}
+        description={t('labelings.create.delete.description')}
+        confirmButtonText={t('labelings.create.delete.confirm')}
+        cancelButtonText={t('common.cancel')}
       />
     </div>
   );

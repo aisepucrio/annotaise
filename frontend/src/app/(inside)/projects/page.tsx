@@ -1,28 +1,24 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import PageLayout from "@/components/inside-pages-layout/PageLayout";
-import IndividualProjectCard from "./IndividualProjectCard";
-import NewProjectModal from "./NewProjectModal";
-import GridItemCard from "@/components/grid/GridItemCard";
-import { useProjectDashboardQuery } from "@/modules/projects/projectsQueries";
-import { useCreateProjectMutation } from "@/modules/projects/projectsMutations";
-import type { ProjectPayload } from "@/modules/projects/projectsTypes";
-import { toast } from "sonner";
-import { useTranslations } from "@/i18n/use-translations";
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import PageLayout from '@/components/inside-pages-layout/PageLayout';
+import IndividualProjectCard from './IndividualProjectCard';
+import NewProjectModal from './NewProjectModal';
+import GridItemCard from '@/components/grid/GridItemCard';
+import { useProjectDashboardQuery } from '@/modules/projects/projectsQueries';
+import { useCreateProjectMutation } from '@/modules/projects/projectsMutations';
+import type { ProjectPayload } from '@/modules/projects/projectsTypes';
+import { toast } from 'sonner';
+import { useTranslations } from '@/i18n/use-translations';
 
 export default function Projects() {
   const router = useRouter();
   const { t } = useTranslations();
   const [modalOpen, setModalOpen] = useState(false);
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  const {
-    data: projects,
-    error,
-    isLoading,
-  } = useProjectDashboardQuery(debouncedSearch);
+  const { data: projects, error, isLoading } = useProjectDashboardQuery(debouncedSearch);
 
   const createProjectMutation = useCreateProjectMutation();
 
@@ -34,35 +30,26 @@ export default function Projects() {
 
   useEffect(() => {
     if (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : t("projects.loadError");
+      const errorMessage = error instanceof Error ? error.message : t('projects.loadError');
       toast.error(errorMessage);
     }
   }, [error, t]);
 
   return (
     <PageLayout
-      pageTitle={t("projects.title")}
-      tooltip={t("projects.tooltip")}
-      description={t("projects.description.admin")}
-      searchPlaceholder={t("projects.searchPlaceholder")}
+      pageTitle={t('projects.title')}
+      tooltip={t('projects.tooltip')}
+      description={t('projects.description.admin')}
+      searchPlaceholder={t('projects.searchPlaceholder')}
       onSearch={setDebouncedSearch}
-      filterButtonText={t("filterBar.filterButton")}
+      filterButtonText={t('filterBar.filterButton')}
       hasButton
-      buttonText={t("projects.createButton")}
+      buttonText={t('projects.createButton')}
       onButtonClick={() => setModalOpen(true)}
       isLoading={isLoading}
-      message={
-        !isLoading && projectList.length === 0 ? t("projects.empty") : undefined
-      }
+      message={!isLoading && projectList.length === 0 ? t('projects.empty') : undefined}
       minColumnWidth="480px"
-      modal={
-        <NewProjectModal
-          open={modalOpen}
-          onClose={() => setModalOpen(false)}
-          onSubmit={handleCreateProject}
-        />
-      }
+      modal={<NewProjectModal open={modalOpen} onClose={() => setModalOpen(false)} onSubmit={handleCreateProject} />}
     >
       {projectList.map((project, index) => (
         <GridItemCard key={project.id} index={index}>

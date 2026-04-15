@@ -1,19 +1,19 @@
-import type { Meta, StoryObj } from "@storybook/nextjs";
-import { Save, Trash2, Plus } from "lucide-react";
-import Button from "./Button";
+import type { Meta, StoryObj } from '@storybook/nextjs';
+import { Save, Trash2, Plus } from 'lucide-react';
+import Button from './Button';
 
 const meta = {
-  title: "Button",
+  title: 'Button',
   component: Button,
-  tags: ["autodocs"],
+  tags: ['autodocs'],
   args: {
-    children: "Botão",
-    variant: "normal",
+    children: 'Botão',
+    variant: 'normal',
     fill: true,
-    size: "normal",
+    size: 'normal',
   },
   parameters: {
-    layout: "centered",
+    layout: 'centered',
   },
 } satisfies Meta<typeof Button>;
 
@@ -87,8 +87,8 @@ export const Sizes: StoryObj<typeof Button> = {
 
       {/* Botão apenas com ícone */}
       <Button size="icon" ariaLabel="Adicionar" fill={false}>
-        {" "}
-        <Plus size={16} />{" "}
+        {' '}
+        <Plus size={16} />{' '}
       </Button>
     </div>
   ),

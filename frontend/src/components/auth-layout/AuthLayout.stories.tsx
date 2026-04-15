@@ -1,12 +1,12 @@
-import type { Meta, StoryObj } from "@storybook/nextjs";
-import AuthLayout from "./AuthLayout";
+import type { Meta, StoryObj } from '@storybook/nextjs';
+import AuthLayout from './AuthLayout';
 
 const meta = {
-  title: "AuthLayout",
+  title: 'AuthLayout',
   component: AuthLayout,
-  tags: ["autodocs"],
+  tags: ['autodocs'],
   parameters: {
-    layout: "fullscreen",
+    layout: 'fullscreen',
   },
 } satisfies Meta<typeof AuthLayout>;
 
@@ -18,8 +18,8 @@ export default meta;
 
 export const Login: StoryObj<typeof AuthLayout> = {
   args: {
-    title: "Entrar",
-    subtitle: "Acesse sua conta para continuar",
+    title: 'Entrar',
+    subtitle: 'Acesse sua conta para continuar',
     children: (
       <div className="mt-8">
         <form className="flex flex-col gap-4">
@@ -41,10 +41,7 @@ export const Login: StoryObj<typeof AuthLayout> = {
             />
           </label>
 
-          <button
-            type="button"
-            className="mt-2 h-11 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700"
-          >
+          <button type="button" className="mt-2 h-11 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700">
             Entrar
           </button>
 
@@ -76,8 +73,8 @@ Layout base para páginas de autenticação.
 
 export const Cadastro: StoryObj<typeof AuthLayout> = {
   args: {
-    title: "Criar conta",
-    subtitle: "Preencha os dados para se cadastrar",
+    title: 'Criar conta',
+    subtitle: 'Preencha os dados para se cadastrar',
     children: (
       <div className="mt-8">
         <form className="flex flex-col gap-4">
@@ -108,10 +105,7 @@ export const Cadastro: StoryObj<typeof AuthLayout> = {
             />
           </label>
 
-          <button
-            type="button"
-            className="mt-2 h-11 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700"
-          >
+          <button type="button" className="mt-2 h-11 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700">
             Cadastrar
           </button>
 
@@ -141,13 +135,11 @@ Ideal para manter consistência visual entre login, registro e recuperação de 
 
 export const SemSubtitulo: StoryObj<typeof AuthLayout> = {
   args: {
-    title: "Recuperar acesso",
+    title: 'Recuperar acesso',
     subtitle: undefined,
     children: (
       <div className="mt-8">
-        <p className="text-sm text-gray-600 mb-4">
-          Informe seu e-mail para receber instruções.
-        </p>
+        <p className="text-sm text-gray-600 mb-4">Informe seu e-mail para receber instruções.</p>
 
         <div className="flex flex-col gap-4">
           <label className="flex flex-col gap-1">
@@ -159,10 +151,7 @@ export const SemSubtitulo: StoryObj<typeof AuthLayout> = {
             />
           </label>
 
-          <button
-            type="button"
-            className="h-11 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700"
-          >
+          <button type="button" className="h-11 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700">
             Enviar
           </button>
         </div>
@@ -188,9 +177,9 @@ Neste caso, o espaço do subtítulo ainda existe no layout, mas o texto não é 
 
 export const SubtituloLongo: StoryObj<typeof AuthLayout> = {
   args: {
-    title: "Bem-vinda de volta",
+    title: 'Bem-vinda de volta',
     subtitle:
-      "Use suas credenciais para continuar. Se você estiver com problemas para acessar, verifique seu e-mail e tente redefinir a senha.",
+      'Use suas credenciais para continuar. Se você estiver com problemas para acessar, verifique seu e-mail e tente redefinir a senha.',
     children: (
       <div className="mt-8">
         <div className="flex flex-col gap-4">
@@ -212,10 +201,7 @@ export const SubtituloLongo: StoryObj<typeof AuthLayout> = {
             />
           </label>
 
-          <button
-            type="button"
-            className="mt-2 h-11 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700"
-          >
+          <button type="button" className="mt-2 h-11 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700">
             Continuar
           </button>
         </div>
@@ -241,8 +227,8 @@ Exemplo para validar comportamento com subtítulos maiores.
 
 export const ComAviso: StoryObj<typeof AuthLayout> = {
   args: {
-    title: "Entrar",
-    subtitle: "Acesse sua conta para continuar",
+    title: 'Entrar',
+    subtitle: 'Acesse sua conta para continuar',
     children: (
       <div className="mt-8">
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -268,10 +254,7 @@ export const ComAviso: StoryObj<typeof AuthLayout> = {
             />
           </label>
 
-          <button
-            type="button"
-            className="mt-2 h-11 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700"
-          >
+          <button type="button" className="mt-2 h-11 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700">
             Entrar
           </button>
         </form>

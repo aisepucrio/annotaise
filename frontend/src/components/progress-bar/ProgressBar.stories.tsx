@@ -1,21 +1,21 @@
-import type { Meta, StoryObj } from "@storybook/nextjs";
-import ProgressBar from "./ProgressBar";
+import type { Meta, StoryObj } from '@storybook/nextjs';
+import ProgressBar from './ProgressBar';
 
 const meta = {
-  title: "ProgressBar",
+  title: 'ProgressBar',
   component: ProgressBar,
-  tags: ["autodocs"],
+  tags: ['autodocs'],
   args: {
     value: 50,
     max: 100,
-    label: "50%",
-    bgColor: "bg-gray-200",
-    fillColor: "bg-blue-500",
-    rounded: "all",
-    height: "32px",
+    label: '50%',
+    bgColor: 'bg-gray-200',
+    fillColor: 'bg-blue-500',
+    rounded: 'all',
+    height: '32px',
   },
   parameters: {
-    layout: "centered",
+    layout: 'centered',
   },
 } satisfies Meta<typeof ProgressBar>;
 
@@ -54,59 +54,27 @@ export const ColorExamples: StoryObj<typeof ProgressBar> = {
     <div className="flex flex-col items-center gap-4 w-96">
       <div className="w-full">
         <p className="text-sm mb-1 text-gray-600">Azul (padrão)</p>
-        <ProgressBar
-          value={60}
-          max={100}
-          label="60%"
-          bgColor="bg-gray-200"
-          fillColor="bg-blue-500"
-        />
+        <ProgressBar value={60} max={100} label="60%" bgColor="bg-gray-200" fillColor="bg-blue-500" />
       </div>
 
       <div className="w-full">
         <p className="text-sm mb-1 text-gray-600">Verde (sucesso)</p>
-        <ProgressBar
-          value={100}
-          max={100}
-          label="Completo!"
-          bgColor="bg-green-100"
-          fillColor="bg-green-400"
-        />
+        <ProgressBar value={100} max={100} label="Completo!" bgColor="bg-green-100" fillColor="bg-green-400" />
       </div>
 
       <div className="w-full">
         <p className="text-sm mb-1 text-gray-600">Vermelho (erro/atraso)</p>
-        <ProgressBar
-          value={75}
-          max={100}
-          label="Atrasado"
-          bgColor="bg-red-100"
-          fillColor="bg-red-400"
-        />
+        <ProgressBar value={75} max={100} label="Atrasado" bgColor="bg-red-100" fillColor="bg-red-400" />
       </div>
 
       <div className="w-full">
         <p className="text-sm mb-1 text-gray-600">Amarelo (atenção)</p>
-        <ProgressBar
-          value={40}
-          max={100}
-          label="40%"
-          bgColor="bg-yellow-100"
-          fillColor="bg-yellow-400"
-        />
+        <ProgressBar value={40} max={100} label="40%" bgColor="bg-yellow-100" fillColor="bg-yellow-400" />
       </div>
 
       <div className="w-full">
-        <p className="text-sm mb-1 text-gray-600">
-          Cores customizadas (blueberry)
-        </p>
-        <ProgressBar
-          value={65}
-          max={100}
-          label="65 / 100 tarefas"
-          bgColor="bg-blueberry-700-15"
-          fillColor="bg-blueberry-700-25"
-        />
+        <p className="text-sm mb-1 text-gray-600">Cores customizadas (blueberry)</p>
+        <ProgressBar value={65} max={100} label="65 / 100 tarefas" bgColor="bg-blueberry-700-15" fillColor="bg-blueberry-700-25" />
       </div>
     </div>
   ),
@@ -132,30 +100,22 @@ export const BorderStyles: StoryObj<typeof ProgressBar> = {
   render: () => (
     <div className="flex flex-col items-center gap-4 w-96">
       <div className="w-full">
-        <p className="text-sm mb-1 text-gray-600">
-          Todas as bordas arredondadas (all)
-        </p>
+        <p className="text-sm mb-1 text-gray-600">Todas as bordas arredondadas (all)</p>
         <ProgressBar value={70} max={100} label="70%" rounded="all" />
       </div>
 
       <div className="w-full">
-        <p className="text-sm mb-1 text-gray-600">
-          Apenas direita arredondada (right)
-        </p>
+        <p className="text-sm mb-1 text-gray-600">Apenas direita arredondada (right)</p>
         <ProgressBar value={70} max={100} label="70%" rounded="right" />
       </div>
 
       <div className="w-full">
-        <p className="text-sm mb-1 text-gray-600">
-          Apenas esquerda arredondada (left)
-        </p>
+        <p className="text-sm mb-1 text-gray-600">Apenas esquerda arredondada (left)</p>
         <ProgressBar value={70} max={100} label="70%" rounded="left" />
       </div>
 
       <div className="w-full">
-        <p className="text-sm mb-1 text-gray-600">
-          Sem bordas arredondadas (none)
-        </p>
+        <p className="text-sm mb-1 text-gray-600">Sem bordas arredondadas (none)</p>
         <ProgressBar value={70} max={100} label="70%" rounded="none" />
       </div>
     </div>
@@ -234,13 +194,7 @@ export const CustomLabels: StoryObj<typeof ProgressBar> = {
 
       <div className="w-full">
         <p className="text-sm mb-1 text-gray-600">Texto customizado</p>
-        <ProgressBar
-          value={100}
-          max={100}
-          label="Concluído!"
-          bgColor="bg-green-100"
-          fillColor="bg-green-400"
-        />
+        <ProgressBar value={100} max={100} label="Concluído!" bgColor="bg-green-100" fillColor="bg-green-400" />
       </div>
 
       <div className="w-full">
@@ -274,21 +228,21 @@ export const RealWorldExample: StoryObj<typeof ProgressBar> = {
     // Simulando diferentes estados de labelings
     const examples = [
       {
-        title: "Projeto em andamento",
+        title: 'Projeto em andamento',
         days_passed: 5,
         days_total: 10,
         labelings_done: 120,
         labelings_total: 500,
       },
       {
-        title: "Projeto atrasado",
+        title: 'Projeto atrasado',
         days_passed: 12,
         days_total: 10,
         labelings_done: 80,
         labelings_total: 100,
       },
       {
-        title: "Projeto completo",
+        title: 'Projeto completo',
         days_passed: 10,
         days_total: 10,
         labelings_done: 100,
@@ -302,33 +256,23 @@ export const RealWorldExample: StoryObj<typeof ProgressBar> = {
           const isComplete = ex.labelings_done === ex.labelings_total;
           const isLate = ex.days_passed > ex.days_total;
 
-          const daysBgColor = isComplete ? "bg-green-100" : "bg-blue-200";
-          const daysFillColor = isComplete
-            ? "bg-green-400"
-            : isLate
-              ? "bg-red-300"
-              : "bg-blue-300";
+          const daysBgColor = isComplete ? 'bg-green-100' : 'bg-blue-200';
+          const daysFillColor = isComplete ? 'bg-green-400' : isLate ? 'bg-red-300' : 'bg-blue-300';
 
           const daysLabel = isComplete
-            ? "Concluído"
+            ? 'Concluído'
             : isLate
               ? `${ex.days_passed - ex.days_total} dias de atraso`
               : `${ex.days_passed} / ${ex.days_total} dias passados`;
 
-          const labelingsBgColor = isComplete ? "bg-green-100" : "bg-blue-200";
-          const labelingsFillColor = isComplete
-            ? "bg-green-400"
-            : "bg-blue-300";
+          const labelingsBgColor = isComplete ? 'bg-green-100' : 'bg-blue-200';
+          const labelingsFillColor = isComplete ? 'bg-green-400' : 'bg-blue-300';
 
-          const labelingsLabel = isComplete
-            ? "Concluído"
-            : `${ex.labelings_done} / ${ex.labelings_total} anotações feitas`;
+          const labelingsLabel = isComplete ? 'Concluído' : `${ex.labelings_done} / ${ex.labelings_total} anotações feitas`;
 
           return (
             <div key={idx} className="w-full">
-              <p className="text-sm mb-2 text-gray-800 font-semibold">
-                {ex.title}
-              </p>
+              <p className="text-sm mb-2 text-gray-800 font-semibold">{ex.title}</p>
               <div className="flex flex-col gap-3">
                 <ProgressBar
                   value={ex.days_passed}

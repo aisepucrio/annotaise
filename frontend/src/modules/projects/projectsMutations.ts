@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   createProject,
   updateProject,
@@ -6,8 +6,8 @@ import {
   createProjectMembership,
   updateProjectMembership,
   deleteProjectMembership,
-} from "./projectService";
-import type { ProjectPayload, ProjectMembershipPayload } from "./projectsTypes";
+} from './projectService';
+import type { ProjectPayload, ProjectMembershipPayload } from './projectsTypes';
 
 // Utilizada para criar projeto
 export function useCreateProjectMutation() {
@@ -16,9 +16,9 @@ export function useCreateProjectMutation() {
   return useMutation({
     mutationFn: (data: ProjectPayload) => createProject(data),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["projects"] });
+      void queryClient.invalidateQueries({ queryKey: ['projects'] });
       void queryClient.invalidateQueries({
-        queryKey: ["projects", "dashboard"],
+        queryKey: ['projects', 'dashboard'],
       });
     },
   });
@@ -31,10 +31,10 @@ export function useUpdateProjectMutation(projectId: number) {
   return useMutation({
     mutationFn: (data: ProjectPayload) => updateProject(projectId, data),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["projects", projectId] });
-      void queryClient.invalidateQueries({ queryKey: ["projects"] });
+      void queryClient.invalidateQueries({ queryKey: ['projects', projectId] });
+      void queryClient.invalidateQueries({ queryKey: ['projects'] });
       void queryClient.invalidateQueries({
-        queryKey: ["projects", "dashboard"],
+        queryKey: ['projects', 'dashboard'],
       });
     },
   });
@@ -47,9 +47,9 @@ export function useDeleteProjectMutation(projectId: number) {
   return useMutation({
     mutationFn: () => deleteProject(projectId),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["projects"] });
+      void queryClient.invalidateQueries({ queryKey: ['projects'] });
       void queryClient.invalidateQueries({
-        queryKey: ["projects", "dashboard"],
+        queryKey: ['projects', 'dashboard'],
       });
     },
   });
@@ -60,11 +60,10 @@ export function useCreateProjectMembershipMutation(projectId: number) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: ProjectMembershipPayload) =>
-      createProjectMembership(data),
+    mutationFn: (data: ProjectMembershipPayload) => createProjectMembership(data),
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: ["projects", projectId, "memberships"],
+        queryKey: ['projects', projectId, 'memberships'],
       });
     },
   });
@@ -75,16 +74,10 @@ export function useUpdateProjectMembershipMutation(projectId: number) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      id,
-      data,
-    }: {
-      id: number;
-      data: Partial<ProjectMembershipPayload>;
-    }) => updateProjectMembership(id, data),
+    mutationFn: ({ id, data }: { id: number; data: Partial<ProjectMembershipPayload> }) => updateProjectMembership(id, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: ["projects", projectId, "memberships"],
+        queryKey: ['projects', projectId, 'memberships'],
       });
     },
   });
@@ -98,7 +91,7 @@ export function useDeleteProjectMembershipMutation(projectId: number) {
     mutationFn: (membershipId: number) => deleteProjectMembership(membershipId),
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: ["projects", projectId, "memberships"],
+        queryKey: ['projects', projectId, 'memberships'],
       });
     },
   });

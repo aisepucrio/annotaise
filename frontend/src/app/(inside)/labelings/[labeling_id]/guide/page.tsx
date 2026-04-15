@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import { fetchLabelingById } from "@/modules/labelings/labelingService";
-import { useTranslations } from "@/i18n/use-translations";
+import { useEffect, useMemo, useState } from 'react';
+import { useParams } from 'next/navigation';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { fetchLabelingById } from '@/modules/labelings/labelingService';
+import { useTranslations } from '@/i18n/use-translations';
 
 export default function LabelingGuidePage() {
   const { t } = useTranslations();
@@ -15,15 +15,15 @@ export default function LabelingGuidePage() {
     return Number.isFinite(parsed) ? parsed : NaN;
   }, [params]);
 
-  const [guideText, setGuideText] = useState<string>("");
-  const [title, setTitle] = useState<string>("");
+  const [guideText, setGuideText] = useState<string>('');
+  const [title, setTitle] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadGuide = async () => {
       if (Number.isNaN(labelingId)) {
-        setError(t("guide.invalidId"));
+        setError(t('guide.invalidId'));
         setLoading(false);
         return;
       }
@@ -31,10 +31,10 @@ export default function LabelingGuidePage() {
       setError(null);
       try {
         const labeling = await fetchLabelingById(labelingId);
-        setGuideText(labeling.guide ?? "");
-        setTitle(labeling.title ?? t("guide.title"));
+        setGuideText(labeling.guide ?? '');
+        setTitle(labeling.title ?? t('guide.title'));
       } catch {
-        setError(t("guide.loadError"));
+        setError(t('guide.loadError'));
       } finally {
         setLoading(false);
       }
@@ -50,17 +50,15 @@ export default function LabelingGuidePage() {
 
         <div className=" bg-white p-4 ">
           {loading ? (
-            <p className="text-sm text-gray-600">{t("guide.loading")}</p>
+            <p className="text-sm text-gray-600">{t('guide.loading')}</p>
           ) : error ? (
             <p className="text-sm text-red-700">{error}</p>
           ) : guideText ? (
             <div className="prose prose-sm max-w-none text-gray-900">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {guideText}
-              </ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{guideText}</ReactMarkdown>
             </div>
           ) : (
-            <p className="text-sm text-gray-600">{t("guide.noGuide")}</p>
+            <p className="text-sm text-gray-600">{t('guide.noGuide')}</p>
           )}
         </div>
       </div>

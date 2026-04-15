@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useEffect, useState, ReactNode } from "react";
-import Modal from "@/components/modal/Modal";
-import Button from "@/components/button/Button";
-import Input from "@/components/form/Input";
-import { useTranslations } from "@/i18n/use-translations";
+import { useEffect, useState, ReactNode } from 'react';
+import Modal from '@/components/modal/Modal';
+import Button from '@/components/button/Button';
+import Input from '@/components/form/Input';
+import { useTranslations } from '@/i18n/use-translations';
 
 interface ConfirmDeleteModalProps {
   /** Controla a visibilidade do modal */
@@ -43,15 +43,15 @@ export default function ConfirmDeleteModal({
   cancelButtonText,
 }: ConfirmDeleteModalProps) {
   const { t } = useTranslations();
-  const [confirmText, setConfirmText] = useState("");
-  const resolvedDescription = description ?? t("confirmDelete.description");
-  const resolvedConfirmText = confirmButtonText ?? t("common.delete");
-  const resolvedCancelText = cancelButtonText ?? t("common.cancel");
+  const [confirmText, setConfirmText] = useState('');
+  const resolvedDescription = description ?? t('confirmDelete.description');
+  const resolvedConfirmText = confirmButtonText ?? t('common.delete');
+  const resolvedCancelText = cancelButtonText ?? t('common.cancel');
 
   // Limpa o input quando o modal fecha
   useEffect(() => {
     if (!open) {
-      setConfirmText("");
+      setConfirmText('');
     }
   }, [open]);
 
@@ -73,9 +73,7 @@ export default function ConfirmDeleteModal({
         {/* Input de confirmacao */}
         <div className="space-y-2">
           <p className="text-sm text-metal-700">
-            {t("confirmDelete.promptPrefix")} {" "}
-            <strong className="text-metal-900">{itemName}</strong>{" "}
-            {t("confirmDelete.promptSuffix")}
+            {t('confirmDelete.promptPrefix')} <strong className="text-metal-900">{itemName}</strong> {t('confirmDelete.promptSuffix')}
           </p>
           <Input
             value={confirmText}
@@ -88,21 +86,11 @@ export default function ConfirmDeleteModal({
 
         {/* Botoes de acao */}
         <div className="flex justify-between gap-3 pt-2">
-          <Button
-            onClick={onClose}
-            disabled={isDeleting}
-            fill={true}
-            variant="white"
-          >
+          <Button onClick={onClose} disabled={isDeleting} fill={true} variant="white">
             {resolvedCancelText}
           </Button>
-          <Button
-            onClick={handleConfirm}
-            disabled={!isConfirmValid || isDeleting}
-            fill={true}
-            variant="red"
-          >
-            {isDeleting ? t("common.deleting") : resolvedConfirmText}
+          <Button onClick={handleConfirm} disabled={!isConfirmValid || isDeleting} fill={true} variant="red">
+            {isDeleting ? t('common.deleting') : resolvedConfirmText}
           </Button>
         </div>
       </div>

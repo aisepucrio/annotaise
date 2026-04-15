@@ -1,6 +1,6 @@
-export type LabelingStatus = "draft" | "active" | "archived" | "finished";
-export type DistributionStrategy = "auto" | "specified" | "per_person";
-export type DecisionMode = "manual" | "llm";
+export type LabelingStatus = 'draft' | 'active' | 'archived' | 'finished';
+export type DistributionStrategy = 'auto' | 'specified' | 'per_person';
+export type DecisionMode = 'manual' | 'llm';
 
 // Campos que o backend retorna para um labeling
 export type Labeling = {
@@ -26,16 +26,16 @@ export type Labeling = {
 // Campos que o backend aceita pra criar/editar (sem id/created_at/etc)
 export type LabelingPayload = Pick<
   Labeling,
-  | "title"
-  | "project"
-  | "users_per_item"
-  | "has_background_form"
-  | "decision"
-  | "decision_mode"
-  | "decisive_question"
-  | "guide"
-  | "block_section_back"
-  | "distribution_strategy"
+  | 'title'
+  | 'project'
+  | 'users_per_item'
+  | 'has_background_form'
+  | 'decision'
+  | 'decision_mode'
+  | 'decisive_question'
+  | 'guide'
+  | 'block_section_back'
+  | 'distribution_strategy'
 > & {
   status?: LabelingStatus;
   start_date?: string;
@@ -43,12 +43,7 @@ export type LabelingPayload = Pick<
 };
 
 // Estrutura do labeling (formulário) - tipos compartilhados entre frontend e backend
-export type QuestionTypeDTO =
-  | "text"
-  | "number"
-  | "range"
-  | "multiple_choice"
-  | "context";
+export type QuestionTypeDTO = 'text' | 'number' | 'range' | 'multiple_choice' | 'context';
 
 // DTOs para criação/edição da estrutura do labeling
 export type MultipleChoiceItemDTO = {
@@ -134,7 +129,7 @@ export type LabelingStructurePayload = {
 };
 
 // Tipos relacionados a memberships
-export type LabelingMembershipRole = "owner" | "admin" | "annotator" | "viewer";
+export type LabelingMembershipRole = 'owner' | 'admin' | 'annotator' | 'viewer';
 
 export type LabelingMembership = {
   id: number;

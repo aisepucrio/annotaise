@@ -1,17 +1,17 @@
-import type { Meta, StoryObj } from "@storybook/nextjs";
-import StatPill from "./StatPill";
+import type { Meta, StoryObj } from '@storybook/nextjs';
+import StatPill from './StatPill';
 
 const meta = {
-  title: "StatPill",
+  title: 'StatPill',
   component: StatPill,
-  tags: ["autodocs"],
+  tags: ['autodocs'],
   args: {
-    label: "Concluídos",
+    label: 'Concluídos',
     value: 42,
-    color: "green",
+    color: 'green',
   },
   parameters: {
-    layout: "centered",
+    layout: 'centered',
   },
 } satisfies Meta<typeof StatPill>;
 
@@ -44,9 +44,7 @@ export const GroupedPills: StoryObj<typeof StatPill> = {
   render: () => (
     <div className="flex flex-col gap-6 w-80">
       <div>
-        <p className="text-sm text-gray-600 mb-2">
-          Pills agrupados horizontalmente
-        </p>
+        <p className="text-sm text-gray-600 mb-2">Pills agrupados horizontalmente</p>
         <div className="flex gap-0">
           <StatPill label="Aprovados" value={45} color="green" cut="left" />
           <StatPill label="Pendentes" value={12} color="orange" />
@@ -57,12 +55,7 @@ export const GroupedPills: StoryObj<typeof StatPill> = {
       <div>
         <p className="text-sm text-gray-600 mb-2">Pills empilhados</p>
         <div className="flex flex-col gap-0 w-48">
-          <StatPill
-            label="Usuários ativos"
-            value={156}
-            color="blue"
-            cut="left"
-          />
+          <StatPill label="Usuários ativos" value={156} color="blue" cut="left" />
           <StatPill label="Novos hoje" value={8} color="green" cut="right" />
         </div>
       </div>

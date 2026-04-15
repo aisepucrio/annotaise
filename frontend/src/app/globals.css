@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /* @custom-variant dark (&:is(.dark *)); Temporarily disable dark mode variant until ready */
 @plugin "@tailwindcss/typography";
@@ -159,11 +159,11 @@ body {
 }
 
 @-moz-document url-prefix() {
-  [data-date-icon="true"] {
+  [data-date-icon='true'] {
     display: none;
   }
 
-  input[data-date-input="true"] {
+  input[data-date-input='true'] {
     padding-right: 0.75rem;
   }
 }

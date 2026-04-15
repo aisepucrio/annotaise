@@ -1,14 +1,13 @@
-"use client";
+'use client';
 
-import type { TranslateFn } from "@/i18n/types";
-import type { LabelingStructureElement } from "@/modules/labelings/labelingsTypes";
-import { formatPayloadValue } from "./answer_utils";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import { useEffect, useRef, useState } from "react";
-import hljs from "highlight.js";
-import "highlight.js/styles/github.css";
-
+import type { TranslateFn } from '@/i18n/types';
+import type { LabelingStructureElement } from '@/modules/labelings/labelingsTypes';
+import { formatPayloadValue } from './answer_utils';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { useEffect, useRef, useState } from 'react';
+import hljs from 'highlight.js';
+import 'highlight.js/styles/github.css';
 
 type ContextRowProps = {
   element: LabelingStructureElement;
@@ -17,10 +16,10 @@ type ContextRowProps = {
 };
 
 function isValidImageUrl(value: string): boolean {
-  if (!value || typeof value !== "string") return false;
+  if (!value || typeof value !== 'string') return false;
 
   // Check if it's a URL (http/https)
-  if (value.startsWith("http://") || value.startsWith("https://")) {
+  if (value.startsWith('http://') || value.startsWith('https://')) {
     return true;
   }
 
@@ -28,10 +27,10 @@ function isValidImageUrl(value: string): boolean {
 }
 
 function isValidBase64Image(value: string): boolean {
-  if (!value || typeof value !== "string") return false;
+  if (!value || typeof value !== 'string') return false;
 
   // Check if it's a data URL with image mime type
-  if (value.startsWith("data:image/")) {
+  if (value.startsWith('data:image/')) {
     return true;
   }
 
@@ -51,7 +50,7 @@ function getImageSrc(value: string): string {
   }
 
   // If it's already a data URL, use it directly
-  if (value.startsWith("data:image/")) {
+  if (value.startsWith('data:image/')) {
     return value;
   }
 
@@ -59,13 +58,7 @@ function getImageSrc(value: string): string {
   return `data:image/png;base64,${value}`;
 }
 
-function ImageContext({
-  value,
-  errorMessage,
-}: {
-  value: string;
-  errorMessage: string;
-}) {
+function ImageContext({ value, errorMessage }: { value: string; errorMessage: string }) {
   const [hasError, setHasError] = useState(false);
 
   if (hasError) {
@@ -77,7 +70,7 @@ function ImageContext({
   }
 
   // Try to render any value as an image - let onError handle invalid sources
-  if (!value || typeof value !== "string" || value.trim() === "") {
+  if (!value || typeof value !== 'string' || value.trim() === '') {
     return (
       <div className="flex items-center justify-center rounded-lg border border-red-200 bg-red-50 p-4 text-red-600">
         {errorMessage}
@@ -100,7 +93,7 @@ function CodeContext({ value }: { value: string }) {
 
   useEffect(() => {
     if (codeRef.current) {
-      codeRef.current.removeAttribute("data-highlighted");
+      codeRef.current.removeAttribute('data-highlighted');
       codeRef.current.textContent = value;
       hljs.highlightElement(codeRef.current);
     }
@@ -113,13 +106,8 @@ function CodeContext({ value }: { value: string }) {
   );
 }
 
-
 function isYouTubeUrl(value: string): boolean {
-  return (
-    value.includes("youtube.com/watch") ||
-    value.includes("youtu.be/") ||
-    value.includes("youtube.com/shorts")
-  );
+  return value.includes('youtube.com/watch') || value.includes('youtu.be/') || value.includes('youtube.com/shorts');
 }
 
 function getYouTubeEmbedUrl(value: string): string {
@@ -135,18 +123,10 @@ function getYouTubeEmbedUrl(value: string): string {
   return value;
 }
 
-
-
-function VideoContext({
-  value,
-  errorMessage,
-}: {
-  value: string;
-  errorMessage: string;
-}) {
+function VideoContext({ value, errorMessage }: { value: string; errorMessage: string }) {
   const [hasError, setHasError] = useState(false);
 
-  if (!value || typeof value !== "string" || value.trim() === "") {
+  if (!value || typeof value !== 'string' || value.trim() === '') {
     return (
       <div className="flex items-center justify-center rounded-lg border border-red-200 bg-red-50 p-4 text-red-600">
         {errorMessage}
@@ -175,26 +155,16 @@ function VideoContext({
   }
 
   return (
-    <video
-      controls
-      className="w-full max-h-[50vh]"
-      onError={() => setHasError(true)}
-    >
+    <video controls className="w-full max-h-[50vh]" onError={() => setHasError(true)}>
       <source src={value} />
     </video>
   );
 }
 
-function PdfContext({
-  value,
-  errorMessage,
-}: {
-  value: string;
-  errorMessage: string;
-}) {
+function PdfContext({ value, errorMessage }: { value: string; errorMessage: string }) {
   const [hasError, setHasError] = useState(false);
 
-  if (!value || typeof value !== "string" || value.trim() === "") {
+  if (!value || typeof value !== 'string' || value.trim() === '') {
     return (
       <div className="flex items-center justify-center rounded-lg border border-red-200 bg-red-50 p-4 text-red-600">
         {errorMessage}
@@ -210,26 +180,13 @@ function PdfContext({
     );
   }
 
-  return (
-    <iframe
-      src={value}
-      className="w-full"
-      style={{ height: "60vh" }}
-      onError={() => setHasError(true)}
-    />
-  );
+  return <iframe src={value} className="w-full" style={{ height: '60vh' }} onError={() => setHasError(true)} />;
 }
 
-function AudioContext({
-  value,
-  errorMessage,
-}: {
-  value: string;
-  errorMessage: string;
-}) {
+function AudioContext({ value, errorMessage }: { value: string; errorMessage: string }) {
   const [hasError, setHasError] = useState(false);
 
-  if (!value || typeof value !== "string" || value.trim() === "") {
+  if (!value || typeof value !== 'string' || value.trim() === '') {
     return (
       <div className="flex items-center justify-center rounded-lg border border-red-200 bg-red-50 p-4 text-red-600">
         {errorMessage}
@@ -246,11 +203,7 @@ function AudioContext({
   }
 
   return (
-    <audio
-      controls
-      className="w-full"
-      onError={() => setHasError(true)}
-    >
+    <audio controls className="w-full" onError={() => setHasError(true)}>
       <source src={value} />
     </audio>
   );
@@ -259,59 +212,33 @@ function AudioContext({
 export default function ContextRow({ element, payload, t }: ContextRowProps) {
   const value = element.column_name ? payload[element.column_name] : undefined;
   const hasValue = value !== undefined && value !== null;
-  const contextLabel = element.text?.trim()
-    ? element.text
-    : element.column_name || t("answer.context.title");
-  const formattedValue = hasValue
-    ? formatPayloadValue(value)
-    : t("answer.context.noValue");
+  const contextLabel = element.text?.trim() ? element.text : element.column_name || t('answer.context.title');
+  const formattedValue = hasValue ? formatPayloadValue(value) : t('answer.context.noValue');
 
   const renderContent = () => {
-      if(element.context_type === "pdf" && hasValue) {
-        return (
-         <PdfContext
-            value={formattedValue}
-            errorMessage={t("answer.context.invalidPdf")}
-          />
-        );
-      }
-
-      if (element.context_type === "video" && hasValue) {
-        return (
-          <VideoContext
-            value={formattedValue}
-            errorMessage={t("answer.context.invalidVideo")}
-          />
-        );
-      }
-
-      if (element.context_type === "audio" && hasValue) {
-        return (
-          <AudioContext
-            value={formattedValue}
-            errorMessage={t("answer.context.invalidAudio")}
-          />
-        );
-      }
-
-    if (element.context_type === "image" && hasValue) {
-      return (
-        <ImageContext
-          value={formattedValue}
-          errorMessage={t("answer.context.invalidImage")}
-        />
-      );
+    if (element.context_type === 'pdf' && hasValue) {
+      return <PdfContext value={formattedValue} errorMessage={t('answer.context.invalidPdf')} />;
     }
 
-    if (element.context_type === "code") {
+    if (element.context_type === 'video' && hasValue) {
+      return <VideoContext value={formattedValue} errorMessage={t('answer.context.invalidVideo')} />;
+    }
+
+    if (element.context_type === 'audio' && hasValue) {
+      return <AudioContext value={formattedValue} errorMessage={t('answer.context.invalidAudio')} />;
+    }
+
+    if (element.context_type === 'image' && hasValue) {
+      return <ImageContext value={formattedValue} errorMessage={t('answer.context.invalidImage')} />;
+    }
+
+    if (element.context_type === 'code') {
       return <CodeContext value={formattedValue} />;
     }
 
     return (
       <div className="prose prose-sm max-w-none text-gray-800">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-          {formattedValue}
-        </ReactMarkdown>
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{formattedValue}</ReactMarkdown>
       </div>
     );
   };
@@ -321,9 +248,7 @@ export default function ContextRow({ element, payload, t }: ContextRowProps) {
       <div className="text-left mt-12 mb-0">
         <div className=" inline-block text-metal-900 text-md font-normal  border-blueberry-700">
           <div className="p-1">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {contextLabel}
-            </ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{contextLabel}</ReactMarkdown>
           </div>
         </div>
       </div>
@@ -331,8 +256,8 @@ export default function ContextRow({ element, payload, t }: ContextRowProps) {
       <div
         className="border-t-6 border-l-6 p-5 shadow-md rounded-br-xl rounded-ss-3xl bg-blueberry-700-15"
         style={{
-          borderTopColor: "var(--blueberry-700)",
-          borderLeftColor: "var(--blueberry-700)",
+          borderTopColor: 'var(--blueberry-700)',
+          borderLeftColor: 'var(--blueberry-700)',
         }}
       >
         {renderContent()}
@@ -340,4 +265,3 @@ export default function ContextRow({ element, payload, t }: ContextRowProps) {
     </>
   );
 }
-

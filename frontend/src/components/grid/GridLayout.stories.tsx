@@ -1,13 +1,13 @@
-import type { Meta, StoryObj } from "@storybook/nextjs";
-import GridLayout from "./GridLayout";
-import GridItemCard from "./GridItemCard";
+import type { Meta, StoryObj } from '@storybook/nextjs';
+import GridLayout from './GridLayout';
+import GridItemCard from './GridItemCard';
 
 const meta = {
-  title: "GridLayout",
+  title: 'GridLayout',
   component: GridLayout,
-  tags: ["autodocs"],
+  tags: ['autodocs'],
   parameters: {
-    layout: "padded",
+    layout: 'padded',
   },
 } satisfies Meta<typeof GridLayout>;
 
@@ -19,7 +19,7 @@ export default meta;
 
 export const Playground: StoryObj<typeof GridLayout> = {
   args: {
-    minColumnWidth: "400px",
+    minColumnWidth: '400px',
   },
   render: (args) => (
     <GridLayout {...args}>
@@ -27,9 +27,7 @@ export const Playground: StoryObj<typeof GridLayout> = {
         <GridItemCard key={i} index={i}>
           <div className="p-4">
             <h3 className="font-bold text-lg mb-2">Item {i + 1}</h3>
-            <p className="text-gray-600">
-              Conteúdo do card {i + 1}. Este é um exemplo de item no grid.
-            </p>
+            <p className="text-gray-600">Conteúdo do card {i + 1}. Este é um exemplo de item no grid.</p>
           </div>
         </GridItemCard>
       ))}
@@ -38,8 +36,7 @@ export const Playground: StoryObj<typeof GridLayout> = {
   parameters: {
     docs: {
       description: {
-        story:
-          "GridLayout base editável. Use os controles para testar diferentes tamanhos de coluna.",
+        story: 'GridLayout base editável. Use os controles para testar diferentes tamanhos de coluna.',
       },
     },
   },
@@ -59,13 +56,9 @@ export const Examples: StoryObj<typeof GridLayout> = {
             <GridItemCard key={i} index={i}>
               <div className="p-4">
                 <h4 className="font-semibold text-lg mb-2">Projeto {i + 1}</h4>
-                <p className="text-gray-600 text-sm">
-                  Descrição do projeto de rotulação
-                </p>
+                <p className="text-gray-600 text-sm">Descrição do projeto de rotulação</p>
                 <div className="mt-3 flex gap-2">
-                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
-                    Em andamento
-                  </span>
+                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Em andamento</span>
                 </div>
               </div>
             </GridItemCard>
@@ -77,7 +70,7 @@ export const Examples: StoryObj<typeof GridLayout> = {
   parameters: {
     docs: {
       description: {
-        story: "Exemplo prático de grid com cards de projetos.",
+        story: 'Exemplo prático de grid com cards de projetos.',
       },
     },
   },
@@ -96,10 +89,7 @@ export const DifferentCounts: StoryObj<typeof GridLayout> = {
           <GridItemCard index={0}>
             <div className="p-4">
               <h4 className="font-semibold">Único item</h4>
-              <p className="text-gray-600 text-sm">
-                Quando há apenas um item, ele não se expande para preencher toda
-                a largura
-              </p>
+              <p className="text-gray-600 text-sm">Quando há apenas um item, ele não se expande para preencher toda a largura</p>
             </div>
           </GridItemCard>
         </GridLayout>
@@ -135,8 +125,7 @@ export const DifferentCounts: StoryObj<typeof GridLayout> = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Grid com diferentes quantidades de itens. O layout se adapta automaticamente.",
+        story: 'Grid com diferentes quantidades de itens. O layout se adapta automaticamente.',
       },
     },
   },
@@ -195,8 +184,7 @@ export const ColumnSizes: StoryObj<typeof GridLayout> = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Grids com diferentes tamanhos mínimos de coluna. O grid sempre usa o espaço disponível de forma responsiva.",
+        story: 'Grids com diferentes tamanhos mínimos de coluna. O grid sempre usa o espaço disponível de forma responsiva.',
       },
     },
   },
@@ -220,16 +208,12 @@ export const VariedContent: StoryObj<typeof GridLayout> = {
         <div className="p-4">
           <h4 className="font-bold text-lg mb-2">Projeto com Mais Detalhes</h4>
           <p className="text-gray-600 text-sm mb-3">
-            Este projeto tem uma descrição mais longa para demonstrar como os
-            cards se comportam com diferentes quantidades de conteúdo.
+            Este projeto tem uma descrição mais longa para demonstrar como os cards se comportam com diferentes quantidades de
+            conteúdo.
           </p>
           <div className="flex gap-2 flex-wrap">
-            <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
-              Ativo
-            </span>
-            <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
-              Categoria A
-            </span>
+            <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">Ativo</span>
+            <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Categoria A</span>
           </div>
         </div>
       </GridItemCard>
@@ -237,25 +221,18 @@ export const VariedContent: StoryObj<typeof GridLayout> = {
       <GridItemCard index={2}>
         <div className="p-4">
           <h4 className="font-bold text-lg mb-2">Projeto Complexo</h4>
-          <p className="text-gray-600 text-sm mb-3">
-            Um projeto com múltiplos elementos e informações mais complexas.
-          </p>
+          <p className="text-gray-600 text-sm mb-3">Um projeto com múltiplos elementos e informações mais complexas.</p>
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">Progresso:</span>
               <span className="font-semibold">75%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className="bg-blue-600 h-2 rounded-full"
-                style={{ width: "75%" }}
-              />
+              <div className="bg-blue-600 h-2 rounded-full" style={{ width: '75%' }} />
             </div>
           </div>
           <div className="mt-3 flex gap-2">
-            <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
-              Prioritário
-            </span>
+            <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">Prioritário</span>
           </div>
         </div>
       </GridItemCard>
@@ -312,8 +289,7 @@ export const VariedContent: StoryObj<typeof GridLayout> = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Cards com diferentes tipos de conteúdo, demonstrando a versatilidade do componente.",
+        story: 'Cards com diferentes tipos de conteúdo, demonstrando a versatilidade do componente.',
       },
     },
   },
@@ -327,12 +303,10 @@ export const ColorPattern: StoryObj<typeof GridLayout> = {
   render: () => (
     <div className="flex flex-col gap-8">
       <div>
-        <h3 className="text-xl font-bold mb-4">
-          Padrão xadrez de cores (baseado em posição)
-        </h3>
+        <h3 className="text-xl font-bold mb-4">Padrão xadrez de cores (baseado em posição)</h3>
         <p className="text-gray-600 mb-4">
-          As cores das bordas alternam em padrão xadrez. Items em posições
-          (linha + coluna) pares têm blueberry-500, ímpares têm blueberry-700.
+          As cores das bordas alternam em padrão xadrez. Items em posições (linha + coluna) pares têm blueberry-500, ímpares têm
+          blueberry-700.
         </p>
         <GridLayout>
           {Array.from({ length: 12 }).map((_, i) => (
@@ -350,8 +324,7 @@ export const ColorPattern: StoryObj<typeof GridLayout> = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Demonstração do padrão de cores alternadas que cria um efeito visual de xadrez.",
+        story: 'Demonstração do padrão de cores alternadas que cria um efeito visual de xadrez.',
       },
     },
   },

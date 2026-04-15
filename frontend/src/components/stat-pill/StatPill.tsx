@@ -1,4 +1,4 @@
-export type StatPillColor = "blue" | "orange" | "red" | "green";
+export type StatPillColor = 'blue' | 'orange' | 'red' | 'green';
 
 type StatPillProps = {
   /** Texto descritivo da métrica */
@@ -8,45 +8,32 @@ type StatPillProps = {
   /** Paleta de cor base do componente */
   color: StatPillColor;
   /** Indica se o "corte" visual deve aparecer à esquerda ou à direita */
-  cut?: "left" | "right";
+  cut?: 'left' | 'right';
 };
 
-const statPillPalette: Record<
-  StatPillColor,
-  { textColor: string; backgroundColor: string }
-> = {
+const statPillPalette: Record<StatPillColor, { textColor: string; backgroundColor: string }> = {
   blue: {
-    textColor: "var(--blueberry-700)",
-    backgroundColor: "var(--blueberry-700-15)",
+    textColor: 'var(--blueberry-700)',
+    backgroundColor: 'var(--blueberry-700-15)',
   },
   orange: {
-    textColor: "var(--orange-blueberry)",
-    backgroundColor: "var(--orange-blueberry-15)",
+    textColor: 'var(--orange-blueberry)',
+    backgroundColor: 'var(--orange-blueberry-15)',
   },
   red: {
-    textColor: "var(--red-blueberry)",
-    backgroundColor: "var(--red-blueberry-15)",
+    textColor: 'var(--red-blueberry)',
+    backgroundColor: 'var(--red-blueberry-15)',
   },
   green: {
-    textColor: "var(--green-blueberry)",
-    backgroundColor: "var(--green-blueberry-15)",
+    textColor: 'var(--green-blueberry)',
+    backgroundColor: 'var(--green-blueberry-15)',
   },
 };
 
-export default function StatPill({
-  label,
-  value,
-  color,
-  cut,
-}: StatPillProps) {
+export default function StatPill({ label, value, color, cut }: StatPillProps) {
   const { textColor, backgroundColor } = statPillPalette[color];
 
-  const cutClass =
-    cut === "left"
-      ? "rounded-l-md"
-      : cut === "right"
-      ? "rounded-r-md"
-      : "rounded-md";
+  const cutClass = cut === 'left' ? 'rounded-l-md' : cut === 'right' ? 'rounded-r-md' : 'rounded-md';
 
   return (
     <div

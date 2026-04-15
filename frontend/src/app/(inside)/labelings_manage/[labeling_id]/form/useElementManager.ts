@@ -1,10 +1,6 @@
-import { useCallback } from "react";
-import type { SectionData, SectionElement } from "./SectionForm";
-import {
-  createContextElement,
-  createQuestionElement,
-  nextOrder,
-} from "./elementFactories";
+import { useCallback } from 'react';
+import type { SectionData, SectionElement } from './SectionForm';
+import { createContextElement, createQuestionElement, nextOrder } from './elementFactories';
 
 /**
  * Hook para gerenciar operações em elementos dentro de seções.
@@ -13,7 +9,7 @@ import {
 export function useElementManager(
   sections: SectionData[],
   setSections: (sections: SectionData[]) => void,
-  options?: { allowContext?: boolean },
+  options?: { allowContext?: boolean }
 ) {
   const allowContext = options?.allowContext ?? true;
   /**
@@ -29,7 +25,7 @@ export function useElementManager(
           if (s.id !== sectionId) return s;
 
           // Special token: "start" means insert at beginning
-          if (insertAfterId === "start") {
+          if (insertAfterId === 'start') {
             const newElement = createContextElement(0);
             return {
               ...s,
@@ -47,21 +43,16 @@ export function useElementManager(
             // Adiciona no final
             return {
               ...s,
-              elements: [
-                ...s.elements,
-                createContextElement(nextOrder(s.elements)),
-              ],
+              elements: [...s.elements, createContextElement(nextOrder(s.elements))],
             };
           }
 
           // Insere após o elemento especificado
-          return insertElementAfter(s, insertAfterId, (order) =>
-            createContextElement(order),
-          );
-        }),
+          return insertElementAfter(s, insertAfterId, (order) => createContextElement(order));
+        })
       );
     },
-    [allowContext, sections, setSections],
+    [allowContext, sections, setSections]
   );
 
   /**
@@ -76,7 +67,7 @@ export function useElementManager(
           if (s.id !== sectionId) return s;
 
           // Special token: "start" means insert at beginning
-          if (insertAfterId === "start") {
+          if (insertAfterId === 'start') {
             const newElement = createQuestionElement(0);
             return {
               ...s,
@@ -94,21 +85,16 @@ export function useElementManager(
             // Adiciona no final
             return {
               ...s,
-              elements: [
-                ...s.elements,
-                createQuestionElement(nextOrder(s.elements)),
-              ],
+              elements: [...s.elements, createQuestionElement(nextOrder(s.elements))],
             };
           }
 
           // Insere após o elemento especificado
-          return insertElementAfter(s, insertAfterId, (order) =>
-            createQuestionElement(order),
-          );
-        }),
+          return insertElementAfter(s, insertAfterId, (order) => createQuestionElement(order));
+        })
       );
     },
-    [sections, setSections],
+    [sections, setSections]
   );
 
   return {
@@ -127,11 +113,9 @@ export function useElementManager(
 function insertElementAfter(
   section: SectionData,
   afterElementId: string,
-  createElement: (order: number) => SectionElement,
+  createElement: (order: number) => SectionElement
 ): SectionData {
-  const ordered = [...section.elements].sort(
-    (a, b) => (a.order ?? 0) - (b.order ?? 0),
-  );
+  const ordered = [...section.elements].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
   const afterIndex = ordered.findIndex((el) => el.id === afterElementId);
 
@@ -139,19 +123,14 @@ function insertElementAfter(
     // Se não encontrou, adiciona no final
     return {
       ...section,
-      elements: [
-        ...section.elements,
-        createElement(nextOrder(section.elements)),
-      ],
+      elements: [...section.elements, createElement(nextOrder(section.elements))],
     };
   }
 
   const insertIndex = afterIndex + 1;
-  const merged = [
-    ...ordered.slice(0, insertIndex),
-    createElement(insertIndex),
-    ...ordered.slice(insertIndex),
-  ].map((el: SectionElement, idx: number) => ({ ...el, order: idx }));
+  const merged = [...ordered.slice(0, insertIndex), createElement(insertIndex), ...ordered.slice(insertIndex)].map(
+    (el: SectionElement, idx: number) => ({ ...el, order: idx })
+  );
 
   return { ...section, elements: merged };
 }

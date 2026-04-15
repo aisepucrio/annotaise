@@ -1,10 +1,10 @@
-import type { TranslateFn } from "@/i18n/types";
+import type { TranslateFn } from '@/i18n/types';
 import type {
   AnswerResponse,
   LabelingAgreementQuestionSummary,
   LabelingStructureElement,
   LabelingStructureSection,
-} from "@/modules/labelings/labelingsTypes";
+} from '@/modules/labelings/labelingsTypes';
 
 export type BarItem = { label: string; count: number };
 
@@ -15,20 +15,20 @@ export type AgreementBarItem = BarItem & {
 
 export type QuestionSummaryChart =
   | {
-      kind: "bar";
+      kind: 'bar';
       title: string;
       items: AgreementBarItem[];
       total: number;
       possibleAgreements?: number;
     }
   | {
-      kind: "hist";
+      kind: 'hist';
       title: string;
       items: BarItem[];
       total: number;
       stats: { min: number; max: number; avg: number; median: number };
     }
-  | { kind: "none"; title: string };
+  | { kind: 'none'; title: string };
 
 export type QuestionSummary = {
   key: string;
@@ -67,7 +67,7 @@ export function buildSummarySections({
       agreementSummary,
       t,
       numberFormatter,
-    }),
+    })
   );
 }
 
@@ -75,7 +75,7 @@ export function splitSummarySectionGroupTitle(sectionGroupTitle: string): {
   sectionLabel?: string;
   title: string;
 } {
-  const separator = " - ";
+  const separator = ' - ';
   const separatorIndex = sectionGroupTitle.indexOf(separator);
 
   if (separatorIndex < 0) {
@@ -88,9 +88,7 @@ export function splitSummarySectionGroupTitle(sectionGroupTitle: string): {
   };
 }
 
-function groupSummariesBySection(
-  summaries: QuestionSummary[],
-): SummarySectionGroup[] {
+function groupSummariesBySection(summaries: QuestionSummary[]): SummarySectionGroup[] {
   const groupsByTitle = new Map<string, SummarySectionGroup>();
   const orderedGroups: SummarySectionGroup[] = [];
 
@@ -113,9 +111,7 @@ function groupSummariesBySection(
   return orderedGroups;
 }
 
-function buildAgreementLookup(
-  agreementSummary: LabelingAgreementQuestionSummary[],
-): Map<string, LabelingAgreementQuestionSummary> {
+function buildAgreementLookup(agreementSummary: LabelingAgreementQuestionSummary[]): Map<string, LabelingAgreementQuestionSummary> {
   const lookup = new Map<string, LabelingAgreementQuestionSummary>();
   agreementSummary.forEach((question) => {
     lookup.set(String(question.question_id), question);
@@ -136,42 +132,28 @@ function buildQuestionSummaries({
   t: TranslateFn;
   numberFormatter: Intl.NumberFormat;
 }): QuestionSummary[] {
-  const orderedSections = [...structureSections].sort(
-    (a, b) => (a.order ?? 0) - (b.order ?? 0),
-  );
+  const orderedSections = [...structureSections].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
   const summaries: QuestionSummary[] = [];
   const agreementByQuestion = buildAgreementLookup(agreementSummary);
 
   orderedSections.forEach((section, sectionIndex) => {
-    const orderedElements = [...(section.elements ?? [])].sort(
-      (a, b) => (a.order ?? 0) - (b.order ?? 0),
-    );
+    const orderedElements = [...(section.elements ?? [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
     orderedElements
-      .filter((element) => element.question_type !== "context")
+      .filter((element) => element.question_type !== 'context')
       .forEach((element, elementIndex) => {
-        const label =
-          element.text?.trim() ||
-          t("labelings.create.summary.questionFallback");
+        const label = element.text?.trim() || t('labelings.create.summary.questionFallback');
 
-        const baseSectionLabel = t("labelings.create.summary.sectionLabel", {
+        const baseSectionLabel = t('labelings.create.summary.sectionLabel', {
           order: section.order ?? sectionIndex + 1,
         });
         const sectionTitle = section.title?.trim();
-        const sectionLabel = sectionTitle
-          ? `${baseSectionLabel} - ${sectionTitle}`
-          : baseSectionLabel;
+        const sectionLabel = sectionTitle ? `${baseSectionLabel} - ${sectionTitle}` : baseSectionLabel;
 
-        const key = String(
-          element.id ?? `${section.order ?? sectionIndex}-${elementIndex}`,
-        );
+        const key = String(element.id ?? `${section.order ?? sectionIndex}-${elementIndex}`);
         const answerKey = element.id ? String(element.id) : null;
-        const values = answerKey
-          ? answers.map((answer) =>
-              resolveAnswerPayloadValue(answer.answer_payload ?? {}, answerKey),
-            )
-          : [];
+        const values = answerKey ? answers.map((answer) => resolveAnswerPayloadValue(answer.answer_payload ?? {}, answerKey)) : [];
 
         summaries.push({
           key,
@@ -179,10 +161,7 @@ function buildQuestionSummaries({
           type: element.question_type,
           sectionLabel,
           responseCount: values.filter(hasValue).length,
-          textResponses:
-            element.question_type === "text"
-              ? extractTextResponses(values, t)
-              : undefined,
+          textResponses: element.question_type === 'text' ? extractTextResponses(values, t) : undefined,
           chart: buildChartForElement({
             element,
             values,
@@ -216,7 +195,7 @@ function buildChartForElement({
   const cleanValues = values.filter(hasValue);
   if (!cleanValues.length) return noDataChart(t);
 
-  if (element.question_type === "multiple_choice") {
+  if (element.question_type === 'multiple_choice') {
     const { items, total, possibleAgreements } = buildChoiceCountsWithAgreement({
       element,
       values: cleanValues,
@@ -227,27 +206,27 @@ function buildChartForElement({
     if (!items.length) return noDataChart(t);
 
     return {
-      kind: "bar",
-      title: t("labelings.create.summary.chart.topResponses"),
+      kind: 'bar',
+      title: t('labelings.create.summary.chart.topResponses'),
       items,
       total,
       possibleAgreements,
     };
   }
 
-  if (element.question_type === "text") {
+  if (element.question_type === 'text') {
     const items = buildTextCounts(cleanValues, t);
     if (!items.length) return noDataChart(t);
 
     return {
-      kind: "bar",
-      title: t("labelings.create.summary.chart.topResponses"),
+      kind: 'bar',
+      title: t('labelings.create.summary.chart.topResponses'),
       items,
       total: items.reduce((sum, item) => sum + item.count, 0),
     };
   }
 
-  if (element.question_type === "number") {
+  if (element.question_type === 'number') {
     return buildNumberChart({
       values: cleanValues,
       range: element.question_range ?? undefined,
@@ -256,7 +235,7 @@ function buildChartForElement({
     });
   }
 
-  if (element.question_type === "range") {
+  if (element.question_type === 'range') {
     return buildRangeChart({
       values: cleanValues,
       range: element.question_range ?? undefined,
@@ -270,15 +249,13 @@ function buildChartForElement({
 
 function noDataChart(t: TranslateFn): QuestionSummaryChart {
   return {
-    kind: "none",
-    title: t("labelings.create.summary.chart.noData"),
+    kind: 'none',
+    title: t('labelings.create.summary.chart.noData'),
   };
 }
 
 function extractNumericValues(values: unknown[]): number[] {
-  return values
-    .map((value) => Number(value))
-    .filter((value) => Number.isFinite(value));
+  return values.map((value) => Number(value)).filter((value) => Number.isFinite(value));
 }
 
 function buildNumberChart({
@@ -296,8 +273,8 @@ function buildNumberChart({
   if (!numericValues.length) return noDataChart(t);
 
   return {
-    kind: "hist",
-    title: t("labelings.create.summary.chart.histogram"),
+    kind: 'hist',
+    title: t('labelings.create.summary.chart.histogram'),
     items: buildHistogram({
       values: numericValues,
       range,
@@ -310,39 +287,33 @@ function buildNumberChart({
 
 function hasValue(value: unknown) {
   if (value === null || value === undefined) return false;
-  if (typeof value === "string") return value.trim().length > 0;
+  if (typeof value === 'string') return value.trim().length > 0;
   if (Array.isArray(value)) return value.length > 0;
   return true;
 }
 
-function normalizeChoiceValue(
-  value: unknown,
-  t: (key: string) => string,
-): string | null {
+function normalizeChoiceValue(value: unknown, t: (key: string) => string): string | null {
   if (value === null || value === undefined) return null;
 
-  if (typeof value === "boolean") {
-    return value ? t("common.yes") : t("common.no");
+  if (typeof value === 'boolean') {
+    return value ? t('common.yes') : t('common.no');
   }
 
-  if (typeof value === "string") {
+  if (typeof value === 'string') {
     const trimmed = value.trim();
     if (!trimmed) return null;
 
     const lowered = trimmed.toLowerCase();
-    if (lowered === "true") return t("common.yes");
-    if (lowered === "false") return t("common.no");
+    if (lowered === 'true') return t('common.yes');
+    if (lowered === 'false') return t('common.no');
     return trimmed;
   }
 
-  if (typeof value === "number") return String(value);
+  if (typeof value === 'number') return String(value);
   return String(value);
 }
 
-function extractTextResponses(
-  values: unknown[],
-  t: (key: string) => string,
-): string[] {
+function extractTextResponses(values: unknown[], t: (key: string) => string): string[] {
   const responses: string[] = [];
 
   values.forEach((value) => {
@@ -373,8 +344,8 @@ function buildRangeChart({
   if (!numericValues.length) return noDataChart(t);
 
   return {
-    kind: "hist",
-    title: t("labelings.create.summary.chart.histogram"),
+    kind: 'hist',
+    title: t('labelings.create.summary.chart.histogram'),
     items: buildRangeDistribution({
       values: numericValues,
       range,
@@ -385,14 +356,8 @@ function buildRangeChart({
   };
 }
 
-function buildChoiceCounts(
-  element: LabelingStructureElement,
-  values: unknown[],
-  t: (key: string) => string,
-): BarItem[] {
-  const options = [...(element.multiple_choice_items ?? [])]
-    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-    .map((item) => item.text);
+function buildChoiceCounts(element: LabelingStructureElement, values: unknown[], t: (key: string) => string): BarItem[] {
+  const options = [...(element.multiple_choice_items ?? [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)).map((item) => item.text);
 
   const counts = new Map<string, number>();
   const optionSet = new Set(options);
@@ -423,7 +388,7 @@ function buildChoiceCounts(
 
   if (otherCount > 0) {
     items.push({
-      label: t("labelings.create.summary.chart.other"),
+      label: t('labelings.create.summary.chart.other'),
       count: otherCount,
     });
   }
@@ -471,16 +436,15 @@ function buildChoiceCountsWithAgreement({
     agreementByOptionKey.set(option.key, option.agreement_count ?? 0);
   });
 
-  const otherLabel = t("labelings.create.summary.chart.other");
+  const otherLabel = t('labelings.create.summary.chart.other');
   const items: AgreementBarItem[] = frequencyItems.map((item) => {
-    const optionKey = item.label === otherLabel ? "__other__" : item.label;
+    const optionKey = item.label === otherLabel ? '__other__' : item.label;
     const agreementCount = agreementByOptionKey.get(optionKey) ?? 0;
     return {
       label: item.label,
       count: item.count,
       agreementCount,
-      agreementRate:
-        possibleAgreements > 0 ? agreementCount / possibleAgreements : 0,
+      agreementRate: possibleAgreements > 0 ? agreementCount / possibleAgreements : 0,
     };
   });
 
@@ -491,10 +455,7 @@ function buildChoiceCountsWithAgreement({
   };
 }
 
-function resolveAnswerPayloadValue(
-  payload: Record<string, unknown>,
-  answerKey: string,
-): unknown {
+function resolveAnswerPayloadValue(payload: Record<string, unknown>, answerKey: string): unknown {
   if (Object.prototype.hasOwnProperty.call(payload, answerKey)) {
     return payload[answerKey];
   }
@@ -529,12 +490,10 @@ function buildTextCounts(values: unknown[], t: (key: string) => string): BarItem
     label,
     count,
   }));
-  const restCount = sorted
-    .slice(MAX_TEXT_BARS - 1)
-    .reduce((sum, [, count]) => sum + count, 0);
+  const restCount = sorted.slice(MAX_TEXT_BARS - 1).reduce((sum, [, count]) => sum + count, 0);
 
   top.push({
-    label: t("labelings.create.summary.chart.other"),
+    label: t('labelings.create.summary.chart.other'),
     count: restCount,
   });
 
@@ -546,8 +505,7 @@ function computeStats(values: number[]) {
   const total = sorted.reduce((sum, value) => sum + value, 0);
   const avg = total / sorted.length;
   const mid = Math.floor(sorted.length / 2);
-  const median =
-    sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+  const median = sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
 
   return {
     min: sorted[0],
@@ -568,12 +526,8 @@ function buildHistogram({
 }): BarItem[] {
   const minValue = Math.min(...values);
   const maxValue = Math.max(...values);
-  const start =
-    range?.start !== undefined && range.start !== null
-      ? range.start
-      : minValue;
-  const end =
-    range?.end !== undefined && range.end !== null ? range.end : maxValue;
+  const start = range?.start !== undefined && range.start !== null ? range.start : minValue;
+  const end = range?.end !== undefined && range.end !== null ? range.end : maxValue;
   const minRange = Math.min(start, minValue);
   const maxRange = Math.max(end, maxValue);
 
@@ -591,17 +545,13 @@ function buildHistogram({
   const counts = Array.from({ length: bucketCount }, () => 0);
 
   values.forEach((value) => {
-    const index = Math.min(
-      bucketCount - 1,
-      Math.max(0, Math.floor((value - minRange) / width)),
-    );
+    const index = Math.min(bucketCount - 1, Math.max(0, Math.floor((value - minRange) / width)));
     counts[index] += 1;
   });
 
   return counts.map((count, index) => {
     const bucketStart = minRange + width * index;
-    const bucketEnd =
-      index === bucketCount - 1 ? maxRange : bucketStart + width;
+    const bucketEnd = index === bucketCount - 1 ? maxRange : bucketStart + width;
 
     return {
       label: `${numberFormatter.format(bucketStart)} - ${numberFormatter.format(bucketEnd)}`,
@@ -624,14 +574,8 @@ function buildRangeDistribution({
   const roundedValues = values.map((value) => Math.round(value));
   const minValue = Math.min(...roundedValues);
   const maxValue = Math.max(...roundedValues);
-  const start =
-    range?.start !== undefined && range.start !== null
-      ? Math.round(range.start)
-      : minValue;
-  const end =
-    range?.end !== undefined && range.end !== null
-      ? Math.round(range.end)
-      : maxValue;
+  const start = range?.start !== undefined && range.start !== null ? Math.round(range.start) : minValue;
+  const end = range?.end !== undefined && range.end !== null ? Math.round(range.end) : maxValue;
   const minScale = Math.min(start, minValue);
   const maxScale = Math.max(end, maxValue);
   const bucketCount = maxScale - minScale + 1;

@@ -1,10 +1,10 @@
-import type { RefObject } from "react";
-import { ArrowLeft, Download, Edit, Calendar, Save, Upload } from "lucide-react";
-import Button from "@/components/button/Button";
-import DeleteIconButton from "@/components/button/DeleteIconButton";
-import { useTranslations } from "@/i18n/use-translations";
-import type { Labeling } from "@/modules/labelings/labelingsTypes";
-import type { Project } from "@/modules/projects/projectsTypes";
+import type { RefObject } from 'react';
+import { ArrowLeft, Download, Edit, Calendar, Save, Upload } from 'lucide-react';
+import Button from '@/components/button/Button';
+import DeleteIconButton from '@/components/button/DeleteIconButton';
+import { useTranslations } from '@/i18n/use-translations';
+import type { Labeling } from '@/modules/labelings/labelingsTypes';
+import type { Project } from '@/modules/projects/projectsTypes';
 
 type HeaderTab = { key: string; label: string };
 
@@ -33,7 +33,7 @@ interface LabelingHeaderProps {
 }
 
 function formatDate(dateStr: string | null, locale: string) {
-  if (!dateStr) return "--/--/----";
+  if (!dateStr) return '--/--/----';
   return new Date(dateStr).toLocaleDateString(locale);
 }
 
@@ -59,10 +59,7 @@ export default function LabelingHeader({
   const { t, locale } = useTranslations();
 
   return (
-    <div
-      ref={headerRef}
-      className="bg-blueberry-700 text-white px-4 py-2 shadow-md shrink-0 sticky top-0 z-20"
-    >
+    <div ref={headerRef} className="bg-blueberry-700 text-white px-4 py-2 shadow-md shrink-0 sticky top-0 z-20">
       <div className="flex items-center justify-between">
         {/* Esquerda: título, informações do projeto, datas e ação de editar */}
         {/* Botão */}
@@ -73,7 +70,7 @@ export default function LabelingHeader({
             size="icon"
             onClick={onBack}
             className="flex items-center justify-center bg-white/20 hover:bg-white/30"
-            aria-label={t("labelings.create.header.backAria")}
+            aria-label={t('labelings.create.header.backAria')}
           >
             <ArrowLeft size={22} />
           </Button>
@@ -83,16 +80,14 @@ export default function LabelingHeader({
             <div className="flex items-center gap-3">
               <span className="text-xl font-semibold leading-tight">
                 {labeling?.title ||
-                  (isLoading
-                    ? t("labelings.create.header.loadingTitle")
-                    : t("labelings.create.header.titleFallback"))}
+                  (isLoading ? t('labelings.create.header.loadingTitle') : t('labelings.create.header.titleFallback'))}
               </span>
               <span className="text-sm opacity-90">
                 {project?.name
-                  ? t("labelings.create.header.projectLabel", {
+                  ? t('labelings.create.header.projectLabel', {
                       name: project.name,
                     })
-                  : t("labelings.create.header.projectMissing")}
+                  : t('labelings.create.header.projectMissing')}
               </span>
             </div>
 
@@ -100,16 +95,13 @@ export default function LabelingHeader({
             <div className="flex items-center gap-3 text-md mt-0.5">
               <span className="flex items-center gap-1">
                 <Calendar size={14} />
-                {`${formatDate(labeling?.start_date ?? null, locale)} - ${formatDate(
-                  labeling?.final_date ?? null,
-                  locale,
-                )}`}
+                {`${formatDate(labeling?.start_date ?? null, locale)} - ${formatDate(labeling?.final_date ?? null, locale)}`}
               </span>
 
               {/* Badges */}
               {labeling?.users_per_item !== undefined && (
                 <span className="px-2 py-1 bg-white/20 text-white text-[11px] font-semibold uppercase tracking-wide">
-                  {t("labelings.create.header.usersPerItem", {
+                  {t('labelings.create.header.usersPerItem', {
                     count: labeling.users_per_item,
                   })}
                 </span>
@@ -117,8 +109,8 @@ export default function LabelingHeader({
 
               {labeling?.decision !== undefined && (
                 <span className="px-2 py-1 bg-white/20 text-white text-[11px] font-semibold uppercase tracking-wide">
-                  {t("labelings.create.header.decisionLabel", {
-                    value: labeling.decision ? t("common.yes") : t("common.no"),
+                  {t('labelings.create.header.decisionLabel', {
+                    value: labeling.decision ? t('common.yes') : t('common.no'),
                   })}
                 </span>
               )}
@@ -129,7 +121,7 @@ export default function LabelingHeader({
             type="button"
             onClick={onEditInfo}
             className="p-1 rounded-md hover:bg-white/10 cursor-pointer self-center"
-            aria-label={t("labelings.create.header.editAria")}
+            aria-label={t('labelings.create.header.editAria')}
           >
             <Edit size={28} />
           </button>
@@ -145,9 +137,9 @@ export default function LabelingHeader({
               disabled={isLoading}
               icon={<Upload size={20} />}
               className="bg-white/20 hover:bg-white/30"
-              ariaLabel={t("labelings.addItemsCsv.buttonAria")}
+              ariaLabel={t('labelings.addItemsCsv.buttonAria')}
             >
-              {t("labelings.addItemsCsv.button")}
+              {t('labelings.addItemsCsv.button')}
             </Button>
           )}
           {onDownloadCsv && (
@@ -158,11 +150,9 @@ export default function LabelingHeader({
               disabled={isDownloadingCsv || isLoading}
               icon={<Download size={20} />}
               className="bg-white/20 hover:bg-white/30"
-              ariaLabel={t("labelings.create.header.downloadCsvAria")}
+              ariaLabel={t('labelings.create.header.downloadCsvAria')}
             >
-              {isDownloadingCsv
-                ? t("labelings.create.header.downloadingCsv")
-                : t("labelings.create.header.downloadCsv")}
+              {isDownloadingCsv ? t('labelings.create.header.downloadingCsv') : t('labelings.create.header.downloadCsv')}
             </Button>
           )}
           {showSaveButton && onSave && (
@@ -174,13 +164,13 @@ export default function LabelingHeader({
               icon={<Save size={20} />}
               className="bg-white/20 hover:bg-white/30"
             >
-              {isSaving ? t("common.saving") : t("common.saveChanges")}
+              {isSaving ? t('common.saving') : t('common.saveChanges')}
             </Button>
           )}
           <DeleteIconButton
             onClick={onDelete}
             disabled={isDeleting || isLoading}
-            ariaLabel={t("labelings.create.header.deleteButton")}
+            ariaLabel={t('labelings.create.header.deleteButton')}
           />
         </div>
       </div>
@@ -196,9 +186,7 @@ export default function LabelingHeader({
             type="button"
             onClick={() => onTabClick(tab.key)}
             className={`pb-0 border-b-2 transition-colors cursor-pointer ${
-              activeTabKey === tab.key
-                ? "border-white font-semibold text-white"
-                : "border-transparent text-blue-100 hover:text-white"
+              activeTabKey === tab.key ? 'border-white font-semibold text-white' : 'border-transparent text-blue-100 hover:text-white'
             }`}
           >
             {tab.label}

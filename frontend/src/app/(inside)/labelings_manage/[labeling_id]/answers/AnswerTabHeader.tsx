@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { Download } from "lucide-react";
-import Button from "@/components/button/Button";
-import { useTranslations } from "@/i18n/use-translations";
-import TwoOptionSelector from "../TwoOptionSelector";
+import { Download } from 'lucide-react';
+import Button from '@/components/button/Button';
+import { useTranslations } from '@/i18n/use-translations';
+import TwoOptionSelector from '../TwoOptionSelector';
 
-export type AnswerView = "answers" | "summary";
+export type AnswerView = 'answers' | 'summary';
 
 type AnswerTabHeaderProps = {
   activeView: AnswerView;
@@ -15,13 +15,7 @@ type AnswerTabHeaderProps = {
   hidden?: boolean;
 };
 
-export default function AnswerTabHeader({
-  activeView,
-  onViewChange,
-  exporting,
-  onExportCsv,
-  hidden = false,
-}: AnswerTabHeaderProps) {
+export default function AnswerTabHeader({ activeView, onViewChange, exporting, onExportCsv, hidden = false }: AnswerTabHeaderProps) {
   const { t } = useTranslations();
 
   if (hidden) return null;
@@ -34,17 +28,15 @@ export default function AnswerTabHeader({
             <TwoOptionSelector
               value={activeView}
               onChange={onViewChange}
-              ariaLabel={`${t("labelings.create.tabs.answers")} / ${t(
-                "labelings.create.tabs.summary",
-              )}`}
+              ariaLabel={`${t('labelings.create.tabs.answers')} / ${t('labelings.create.tabs.summary')}`}
               options={[
                 {
-                  value: "answers",
-                  label: t("labelings.create.tabs.answers"),
+                  value: 'answers',
+                  label: t('labelings.create.tabs.answers'),
                 },
                 {
-                  value: "summary",
-                  label: t("labelings.create.tabs.summary"),
+                  value: 'summary',
+                  label: t('labelings.create.tabs.summary'),
                 },
               ]}
             />
@@ -59,12 +51,10 @@ export default function AnswerTabHeader({
             onClick={onExportCsv}
             disabled={exporting}
             className="px-4"
-            ariaLabel={t("labelings.create.answers.exportAria")}
+            ariaLabel={t('labelings.create.answers.exportAria')}
             icon={<Download size={16} />}
           >
-            {exporting
-              ? t("labelings.create.answers.exporting")
-              : t("labelings.create.answers.exportButton")}
+            {exporting ? t('labelings.create.answers.exporting') : t('labelings.create.answers.exportButton')}
           </Button>
         </div>
       </div>

@@ -1,26 +1,13 @@
-import type { ComponentType } from "react";
+import type { ComponentType } from 'react';
 import QuestionMultipleChoiceEditor, {
   MultipleChoiceQuestionConfig,
   createDefaultMultipleChoiceConfig,
-} from "./QuestionMultipleChoice";
-import QuestionNumberEditor, {
-  NumberQuestionConfig,
-  createDefaultNumberConfig,
-} from "./QuestionNumber";
-import QuestionRangeEditor, {
-  RangeQuestionConfig,
-  createDefaultRangeConfig,
-} from "./QuestionRange";
-import QuestionTextEditor, {
-  TextQuestionConfig,
-  createDefaultTextConfig,
-} from "./QuestionText";
+} from './QuestionMultipleChoice';
+import QuestionNumberEditor, { NumberQuestionConfig, createDefaultNumberConfig } from './QuestionNumber';
+import QuestionRangeEditor, { RangeQuestionConfig, createDefaultRangeConfig } from './QuestionRange';
+import QuestionTextEditor, { TextQuestionConfig, createDefaultTextConfig } from './QuestionText';
 
-export type QuestionConfig =
-  | TextQuestionConfig
-  | NumberQuestionConfig
-  | RangeQuestionConfig
-  | MultipleChoiceQuestionConfig;
+export type QuestionConfig = TextQuestionConfig | NumberQuestionConfig | RangeQuestionConfig | MultipleChoiceQuestionConfig;
 
 export type QuestionTypeComponentProps<TConfig extends QuestionConfig> = {
   config: TConfig;
@@ -31,9 +18,7 @@ type QuestionComponentRegistry = {
   text: ComponentType<QuestionTypeComponentProps<TextQuestionConfig>>;
   number: ComponentType<QuestionTypeComponentProps<NumberQuestionConfig>>;
   range: ComponentType<QuestionTypeComponentProps<RangeQuestionConfig>>;
-  multiple_choice: ComponentType<
-    QuestionTypeComponentProps<MultipleChoiceQuestionConfig>
-  >;
+  multiple_choice: ComponentType<QuestionTypeComponentProps<MultipleChoiceQuestionConfig>>;
 };
 
 export const QUESTION_TYPE_COMPONENTS: QuestionComponentRegistry = {

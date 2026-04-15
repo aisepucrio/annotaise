@@ -1,46 +1,28 @@
-import type { ChangeEvent, ReactNode } from "react";
-import { GripVertical, MessageSquarePlus, Plus, Trash2 } from "lucide-react";
-import {
-  DndContext,
-  PointerSensor,
-  closestCenter,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  useSortable,
-  arrayMove,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import Button from "@/components/button/Button";
-import Input from "@/components/form/Input";
-import Select from "@/components/form/Select";
-import { useTranslations } from "@/i18n/use-translations";
-import type { TranslateFn } from "@/i18n/types";
-import type { QuestionConfig } from "./index";
-import QuestionNumberEditor, {
-  createDefaultNumberConfig,
-  type NumberQuestionConfig,
-} from "./QuestionNumber";
-import QuestionRangeEditor, {
-  createDefaultRangeConfig,
-  type RangeQuestionConfig,
-} from "./QuestionRange";
+import type { ChangeEvent, ReactNode } from 'react';
+import { GripVertical, MessageSquarePlus, Plus, Trash2 } from 'lucide-react';
+import { DndContext, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, useSortable, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import Button from '@/components/button/Button';
+import Input from '@/components/form/Input';
+import Select from '@/components/form/Select';
+import { useTranslations } from '@/i18n/use-translations';
+import type { TranslateFn } from '@/i18n/types';
+import type { QuestionConfig } from './index';
+import QuestionNumberEditor, { createDefaultNumberConfig, type NumberQuestionConfig } from './QuestionNumber';
+import QuestionRangeEditor, { createDefaultRangeConfig, type RangeQuestionConfig } from './QuestionRange';
 
 // Shared types used by the main multiple choice editor and by the
 // follow-up block embedded inside each option.
 export type FollowUpQuestion = {
   text: string;
-  questionType: "text" | "number" | "range" | "multiple_choice";
+  questionType: 'text' | 'number' | 'range' | 'multiple_choice';
   required: boolean;
   config?: QuestionConfig;
 };
 
 export type MultipleChoiceQuestionConfig = {
-  type: "multiple_choice";
+  type: 'multiple_choice';
   allowMultiple?: boolean;
   choices: MultipleChoiceChoice[];
 };
@@ -53,13 +35,10 @@ export type MultipleChoiceChoice = {
 };
 
 // Keeps option creation consistent in the main editor and in follow-ups.
-const createChoice = (
-  index: number,
-  t?: TranslateFn,
-): MultipleChoiceChoice => ({
+const createChoice = (index: number, t?: TranslateFn): MultipleChoiceChoice => ({
   id: crypto.randomUUID(),
   text: t
-    ? t("labelings.create.questionType.multipleChoice.optionLabel", {
+    ? t('labelings.create.questionType.multipleChoice.optionLabel', {
         index,
       })
     : `Option ${index}`,
@@ -67,15 +46,10 @@ const createChoice = (
 
 // Multiple choice defaults reused by both the main question and
 // the follow-up variant of multiple choice.
-const createDefaultChoices = (t?: TranslateFn): MultipleChoiceChoice[] => [
-  createChoice(1, t),
-  createChoice(2, t),
-];
+const createDefaultChoices = (t?: TranslateFn): MultipleChoiceChoice[] => [createChoice(1, t), createChoice(2, t)];
 
-export const createDefaultMultipleChoiceConfig = (
-  t?: TranslateFn,
-): MultipleChoiceQuestionConfig => ({
-  type: "multiple_choice",
+export const createDefaultMultipleChoiceConfig = (t?: TranslateFn): MultipleChoiceQuestionConfig => ({
+  type: 'multiple_choice',
   allowMultiple: false,
   choices: createDefaultChoices(t),
 });
@@ -94,14 +68,7 @@ type SortableChoiceProps = {
 };
 
 function SortableChoice({ id, label, children }: SortableChoiceProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
   const style = {
     transform: CSS.Translate.toString(transform),
@@ -110,11 +77,7 @@ function SortableChoice({ id, label, children }: SortableChoiceProps) {
   };
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`relative ${isDragging ? "z-10" : ""}`}
-    >
+    <div ref={setNodeRef} style={style} className={`relative ${isDragging ? 'z-10' : ''}`}>
       <div className="flex items-start gap-1">
         <button
           type="button"
@@ -135,46 +98,32 @@ function SortableChoice({ id, label, children }: SortableChoiceProps) {
 // =========================
 // Main QMC Editor
 // =========================
-export default function QuestionMultipleChoiceEditor({
-  config,
-  onChange,
-  allowFollowUp = true,
-}: Props) {
+export default function QuestionMultipleChoiceEditor({ config, onChange, allowFollowUp = true }: Props) {
   const { t } = useTranslations();
   const sortableIds = config.choices.map((choice) => choice.id);
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 6 },
-    }),
+    })
   );
 
   // Every change flows through `choices`; this keeps add/remove/reorder/follow-up
   // updates synchronized within the same config object.
-  const updateChoice = (
-    choiceId: string,
-    patch: Partial<MultipleChoiceChoice>,
-  ) => {
-    const updated = config.choices.map((choice) =>
-      choice.id === choiceId ? { ...choice, ...patch } : choice,
-    );
+  const updateChoice = (choiceId: string, patch: Partial<MultipleChoiceChoice>) => {
+    const updated = config.choices.map((choice) => (choice.id === choiceId ? { ...choice, ...patch } : choice));
     onChange({ ...config, choices: updated });
   };
 
-  const handleChoiceTextChange =
-    (choiceId: string) => (e: ChangeEvent<HTMLInputElement>) => {
-      updateChoice(choiceId, { text: e.target.value });
-    };
+  const handleChoiceTextChange = (choiceId: string) => (e: ChangeEvent<HTMLInputElement>) => {
+    updateChoice(choiceId, { text: e.target.value });
+  };
 
   const handleChoiceDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    const oldIndex = config.choices.findIndex(
-      (choice) => choice.id === active.id,
-    );
-    const newIndex = config.choices.findIndex(
-      (choice) => choice.id === over.id,
-    );
+    const oldIndex = config.choices.findIndex((choice) => choice.id === active.id);
+    const newIndex = config.choices.findIndex((choice) => choice.id === over.id);
     if (oldIndex === -1 || newIndex === -1) return;
 
     const reordered = arrayMove(config.choices, oldIndex, newIndex);
@@ -210,18 +159,15 @@ export default function QuestionMultipleChoiceEditor({
     } else {
       updateChoice(choiceId, {
         followUpQuestion: {
-          text: "",
-          questionType: "text",
+          text: '',
+          questionType: 'text',
           required: false,
         },
       });
     }
   };
 
-  const handleFollowUpChange = (
-    choiceId: string,
-    patch: Partial<FollowUpQuestion>,
-  ) => {
+  const handleFollowUpChange = (choiceId: string, patch: Partial<FollowUpQuestion>) => {
     const choice = config.choices.find((c) => c.id === choiceId);
     if (!choice?.followUpQuestion) return;
     updateChoice(choiceId, {
@@ -233,7 +179,7 @@ export default function QuestionMultipleChoiceEditor({
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold text-blueberry-900">
-          {t("labelings.create.questionType.multipleChoice.optionsLabel")}
+          {t('labelings.create.questionType.multipleChoice.optionsLabel')}
         </span>
         <label className="flex items-center gap-2 text-sm text-blueberry-900 cursor-pointer">
           <input
@@ -242,28 +188,15 @@ export default function QuestionMultipleChoiceEditor({
             checked={config.allowMultiple ?? false}
             onChange={handleAllowMultipleChange}
           />
-          {t("labelings.create.questionType.multipleChoice.allowMultiple")}
+          {t('labelings.create.questionType.multipleChoice.allowMultiple')}
         </label>
       </div>
 
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleChoiceDragEnd}
-      >
-        <SortableContext
-          items={sortableIds}
-          strategy={verticalListSortingStrategy}
-        >
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleChoiceDragEnd}>
+        <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
           <div className="flex flex-col gap-2">
             {config.choices.map((choice) => (
-              <SortableChoice
-                key={choice.id}
-                id={choice.id}
-                label={t(
-                  "labelings.create.questionType.multipleChoice.dragOption",
-                )}
-              >
+              <SortableChoice key={choice.id} id={choice.id} label={t('labelings.create.questionType.multipleChoice.dragOption')}>
                 <div className="flex flex-col flex-1 gap-1 rounded-lg bg-white ">
                   <div className="flex items-center gap-2">
                     <Input
@@ -277,13 +210,11 @@ export default function QuestionMultipleChoiceEditor({
                       <button
                         type="button"
                         onClick={() => handleToggleFollowUp(choice.id)}
-                        title={t(
-                          "labelings.create.questionType.multipleChoice.followUp.toggle",
-                        )}
+                        title={t('labelings.create.questionType.multipleChoice.followUp.toggle')}
                         className={`rounded-md border border-transparent p-1 cursor-pointer ${
                           choice.followUpQuestion
-                            ? "text-blueberry-500 hover:text-blueberry-700"
-                            : "text-metal-400 hover:text-blueberry-500"
+                            ? 'text-blueberry-500 hover:text-blueberry-700'
+                            : 'text-metal-400 hover:text-blueberry-500'
                         }`}
                       >
                         <MessageSquarePlus size={18} />
@@ -298,12 +229,7 @@ export default function QuestionMultipleChoiceEditor({
                     </button>
                   </div>
                   {allowFollowUp && choice.followUpQuestion && (
-                    <FollowUpEditor
-                      followUp={choice.followUpQuestion}
-                      onChange={(patch) =>
-                        handleFollowUpChange(choice.id, patch)
-                      }
-                    />
+                    <FollowUpEditor followUp={choice.followUpQuestion} onChange={(patch) => handleFollowUpChange(choice.id, patch)} />
                   )}
                 </div>
               </SortableChoice>
@@ -318,9 +244,7 @@ export default function QuestionMultipleChoiceEditor({
           onClick={handleAddChoice}
           size="icon"
           fill={false}
-          ariaLabel={t(
-            "labelings.create.questionType.multipleChoice.addOption",
-          )}
+          ariaLabel={t('labelings.create.questionType.multipleChoice.addOption')}
           className="text-lg leading-none"
         >
           <Plus size={20} />
@@ -342,7 +266,7 @@ function FollowUpEditor({ followUp, onChange }: FollowUpEditorProps) {
   const { t } = useTranslations();
 
   const handleTypeChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    const newType = e.target.value as FollowUpQuestion["questionType"];
+    const newType = e.target.value as FollowUpQuestion['questionType'];
     onChange({
       questionType: newType,
       config: getDefaultFollowUpConfig(newType, t),
@@ -353,7 +277,7 @@ function FollowUpEditor({ followUp, onChange }: FollowUpEditorProps) {
     <div className="ml-8 mt-1 rounded-lg border border-blueberry-700-25 bg-blue-50 p-3 flex flex-col gap-2">
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold text-blueberry-700">
-          {t("labelings.create.questionType.multipleChoice.followUp.title")}
+          {t('labelings.create.questionType.multipleChoice.followUp.title')}
         </span>
         <label className="flex items-center gap-2 text-xs text-blueberry-900 cursor-pointer">
           <input
@@ -362,14 +286,12 @@ function FollowUpEditor({ followUp, onChange }: FollowUpEditorProps) {
             checked={followUp.required}
             onChange={(e) => onChange({ required: e.target.checked })}
           />
-          {t("labelings.create.question.required")}
+          {t('labelings.create.question.required')}
         </label>
       </div>
       <div className="flex items-start gap-2">
         <Input
-          placeholder={t(
-            "labelings.create.questionType.multipleChoice.followUp.placeholder",
-          )}
+          placeholder={t('labelings.create.questionType.multipleChoice.followUp.placeholder')}
           value={followUp.text}
           onChange={(e) => onChange({ text: e.target.value })}
           containerClassName="flex-1"
@@ -380,18 +302,18 @@ function FollowUpEditor({ followUp, onChange }: FollowUpEditorProps) {
           value={followUp.questionType}
           onChange={handleTypeChange}
           options={[
-            { value: "text", label: t("labelings.create.question.type.text") },
+            { value: 'text', label: t('labelings.create.question.type.text') },
             {
-              value: "number",
-              label: t("labelings.create.question.type.number"),
+              value: 'number',
+              label: t('labelings.create.question.type.number'),
             },
             {
-              value: "range",
-              label: t("labelings.create.question.type.range"),
+              value: 'range',
+              label: t('labelings.create.question.type.range'),
             },
             {
-              value: "multiple_choice",
-              label: t("labelings.create.question.type.multipleChoice"),
+              value: 'multiple_choice',
+              label: t('labelings.create.question.type.multipleChoice'),
             },
           ]}
         />
@@ -407,42 +329,34 @@ function FollowUpEditor({ followUp, onChange }: FollowUpEditorProps) {
 
 // Chooses the default config when the follow-up changes type.
 // For `text`, there is no extra editor, so config stays undefined.
-const getDefaultFollowUpConfig = (
-  questionType: FollowUpQuestion["questionType"],
-  t: TranslateFn,
-): QuestionConfig | undefined => {
+const getDefaultFollowUpConfig = (questionType: FollowUpQuestion['questionType'], t: TranslateFn): QuestionConfig | undefined => {
   switch (questionType) {
-    case "number":
+    case 'number':
       return createDefaultNumberConfig();
-    case "range":
+    case 'range':
       return createDefaultRangeConfig();
-    case "multiple_choice":
+    case 'multiple_choice':
       return createDefaultMultipleChoiceConfig(t);
-    case "text":
+    case 'text':
     default:
       return undefined;
   }
 };
 
 type FollowUpConfigEditorProps = {
-  questionType: FollowUpQuestion["questionType"];
+  questionType: FollowUpQuestion['questionType'];
   config?: QuestionConfig;
   onChange: (config?: QuestionConfig) => void;
 };
 
 // Reuses the existing editors and only applies the visual adjustments
 // needed in the follow-up context.
-function FollowUpConfigEditor({
-  questionType,
-  config,
-  onChange,
-}: FollowUpConfigEditorProps) {
+function FollowUpConfigEditor({ questionType, config, onChange }: FollowUpConfigEditorProps) {
   const { t } = useTranslations();
 
   switch (questionType) {
-    case "number": {
-      const current =
-        config?.type === "number" ? config : createDefaultNumberConfig();
+    case 'number': {
+      const current = config?.type === 'number' ? config : createDefaultNumberConfig();
       return (
         <QuestionNumberEditor
           config={current as NumberQuestionConfig}
@@ -452,23 +366,15 @@ function FollowUpConfigEditor({
       );
     }
 
-    case "range": {
-      const current =
-        config?.type === "range" ? config : createDefaultRangeConfig();
+    case 'range': {
+      const current = config?.type === 'range' ? config : createDefaultRangeConfig();
       return (
-        <QuestionRangeEditor
-          config={current as RangeQuestionConfig}
-          onChange={(nextConfig) => onChange(nextConfig)}
-          hideFieldLabels
-        />
+        <QuestionRangeEditor config={current as RangeQuestionConfig} onChange={(nextConfig) => onChange(nextConfig)} hideFieldLabels />
       );
     }
 
-    case "multiple_choice": {
-      const current =
-        config?.type === "multiple_choice"
-          ? config
-          : createDefaultMultipleChoiceConfig(t);
+    case 'multiple_choice': {
+      const current = config?.type === 'multiple_choice' ? config : createDefaultMultipleChoiceConfig(t);
       return (
         <QuestionMultipleChoiceEditor
           config={current as MultipleChoiceQuestionConfig}
@@ -478,7 +384,7 @@ function FollowUpConfigEditor({
       );
     }
 
-    case "text":
+    case 'text':
     default:
       return null;
   }

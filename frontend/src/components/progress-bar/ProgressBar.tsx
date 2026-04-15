@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 
 type ProgressBarProps = {
   /** Valor atual do progresso (0-100 ou qualquer escala) */
@@ -12,7 +12,7 @@ type ProgressBarProps = {
   /** Cor do progresso/preenchimento (classe Tailwind ou CSS) */
   fillColor?: string;
   /** Posição da borda arredondada: 'all', 'right', 'left', 'none' (padrão: 'all') */
-  rounded?: "all" | "right" | "left" | "none";
+  rounded?: 'all' | 'right' | 'left' | 'none';
   /** Altura da barra (padrão: 32px) */
   height?: string;
   /** Classes CSS adicionais para o container */
@@ -25,12 +25,12 @@ export default function ProgressBar({
   value,
   max = 100,
   label,
-  bgColor = "bg-gray-200",
-  fillColor = "bg-blue-500",
-  rounded = "all",
-  height = "32px",
-  className = "",
-  labelClassName = "text-gray-800",
+  bgColor = 'bg-gray-200',
+  fillColor = 'bg-blue-500',
+  rounded = 'all',
+  height = '32px',
+  className = '',
+  labelClassName = 'text-gray-800',
 }: ProgressBarProps) {
   // Calcular porcentagem
   const percent = max > 0 ? Math.min(Math.max((value / max) * 100, 0), 100) : 0;
@@ -38,15 +38,15 @@ export default function ProgressBar({
   // Determinar classe de borda
   const getRoundedClass = () => {
     switch (rounded) {
-      case "right":
-        return "rounded-r-full";
-      case "left":
-        return "rounded-l-full";
-      case "none":
-        return "";
-      case "all":
+      case 'right':
+        return 'rounded-r-full';
+      case 'left':
+        return 'rounded-l-full';
+      case 'none':
+        return '';
+      case 'all':
       default:
-        return "rounded-full";
+        return 'rounded-full';
     }
   };
 
@@ -55,10 +55,7 @@ export default function ProgressBar({
   return (
     <div className={`w-full min-w-0 ${className}`}>
       <div className="relative w-full">
-        <div
-          className={`w-full ${bgColor} ${roundedClass} overflow-hidden`}
-          style={{ height }}
-        >
+        <div className={`w-full ${bgColor} ${roundedClass} overflow-hidden`} style={{ height }}>
           <div
             className={`h-full ${fillColor} transition-all duration-200`}
             style={{ width: `${percent}%` }}

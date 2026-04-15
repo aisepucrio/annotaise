@@ -1,22 +1,19 @@
-"use client";
-import { useEffect, useState } from "react";
-import PageLayout from "@/components/inside-pages-layout/PageLayout";
-import IndividualLabelingCard from "../labelings/IndividualLabelingCard";
-import { Pen } from "lucide-react";
-import NewLabelingModal from "./NewLabelingModal";
-import GridItemCard from "@/components/grid/GridItemCard";
-import Button from "@/components/button/Button";
-import { useRouter } from "next/navigation";
-import axios from "axios";
-import { useLabelingDashboardEditQuery } from "@/modules/labelings/labelingQueries";
-import { useCreateLabelingWithCsvMutation } from "@/modules/labelings/labelingMutations";
-import { useSearchParams } from "next/navigation";
-import { toast } from "sonner";
-import { useTranslations } from "@/i18n/use-translations";
-import type {
-  DecisionMode,
-  DistributionStrategy,
-} from "@/modules/labelings/labelingsTypes";
+'use client';
+import { useEffect, useState } from 'react';
+import PageLayout from '@/components/inside-pages-layout/PageLayout';
+import IndividualLabelingCard from '../labelings/IndividualLabelingCard';
+import { Pen } from 'lucide-react';
+import NewLabelingModal from './NewLabelingModal';
+import GridItemCard from '@/components/grid/GridItemCard';
+import Button from '@/components/button/Button';
+import { useRouter } from 'next/navigation';
+import axios from 'axios';
+import { useLabelingDashboardEditQuery } from '@/modules/labelings/labelingQueries';
+import { useCreateLabelingWithCsvMutation } from '@/modules/labelings/labelingMutations';
+import { useSearchParams } from 'next/navigation';
+import { toast } from 'sonner';
+import { useTranslations } from '@/i18n/use-translations';
+import type { DecisionMode, DistributionStrategy } from '@/modules/labelings/labelingsTypes';
 
 type UploadPayload = {
   file: File;
@@ -37,29 +34,22 @@ export default function LabelingsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  const {
-    data: labelings,
-    error,
-    isLoading,
-  } = useLabelingDashboardEditQuery(debouncedSearch);
+  const { data: labelings, error, isLoading } = useLabelingDashboardEditQuery(debouncedSearch);
 
   const labelingsList = labelings ?? [];
   const createLabelingWithCsv = useCreateLabelingWithCsvMutation();
 
   useEffect(() => {
     if (error) {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : t("labelings.manage.loadError");
+      const errorMessage = error instanceof Error ? error.message : t('labelings.manage.loadError');
       toast.error(errorMessage);
     }
   }, [error, t]);
 
   useEffect(() => {
-    const projectQuery = searchParams.get("project");
+    const projectQuery = searchParams.get('project');
     if (projectQuery) {
       setDebouncedSearch(projectQuery);
     }
@@ -97,57 +87,36 @@ export default function LabelingsPage() {
       setOpen(false);
     } catch (err) {
       if (axios.isAxiosError(err)) {
-        const detail =
-          (err.response?.data as { detail?: string })?.detail ||
-          err.message ||
-          t("labelings.manage.createError");
+        const detail = (err.response?.data as { detail?: string })?.detail || err.message || t('labelings.manage.createError');
         toast.error(detail);
         return;
       }
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : t("labelings.manage.createErrorGeneric"),
-      );
+      toast.error(err instanceof Error ? err.message : t('labelings.manage.createErrorGeneric'));
       return;
     }
   }
 
   return (
     <PageLayout
-      pageTitle={t("labelings.manage.title")}
-      tooltip={t("labelings.manage.tooltip")}
-      description={t("labelings.manage.description")}
-      searchPlaceholder={t("labelings.manage.searchPlaceholder")}
+      pageTitle={t('labelings.manage.title')}
+      tooltip={t('labelings.manage.tooltip')}
+      description={t('labelings.manage.description')}
+      searchPlaceholder={t('labelings.manage.searchPlaceholder')}
       onSearch={setDebouncedSearch}
-      filterButtonText={t("filterBar.filterButton")}
+      filterButtonText={t('filterBar.filterButton')}
       hasButton
-      buttonText={t("labelings.manage.newButton")}
+      buttonText={t('labelings.manage.newButton')}
       onButtonClick={() => setOpen(true)}
       isLoading={isLoading}
-      message={
-        !isLoading && labelingsList.length === 0
-          ? t("labelings.manage.empty")
-          : undefined
-      }
+      message={!isLoading && labelingsList.length === 0 ? t('labelings.manage.empty') : undefined}
       minColumnWidth="420px"
-      modal={
-        <NewLabelingModal
-          open={open}
-          onClose={() => setOpen(false)}
-          onConfirm={handleConfirm}
-        />
-      }
+      modal={<NewLabelingModal open={open} onClose={() => setOpen(false)} onConfirm={handleConfirm} />}
     >
       {labelingsList.map((l, index) => {
         const pending = Math.max((l.total_items ?? 0) - (l.items_done ?? 0), 0);
         const isComplete = l.items_done !== 0 && pending === 0;
         const isLate = l.days_passed > l.total_days && l.total_days > 0;
-        const borderColor = isComplete
-          ? "var(--green-blueberry)"
-          : isLate
-            ? "var(--red-blueberry)"
-            : undefined;
+        const borderColor = isComplete ? 'var(--green-blueberry)' : isLate ? 'var(--red-blueberry)' : undefined;
 
         return (
           <GridItemCard key={l.id} index={index} borderColor={borderColor}>
@@ -166,9 +135,9 @@ export default function LabelingsPage() {
                   variant="normal"
                   fill={true}
                   className="px-4"
-                  ariaLabel={t("labelings.manage.action.manageAria")}
+                  ariaLabel={t('labelings.manage.action.manageAria')}
                 >
-                  {t("labelings.manage.action.manage")}
+                  {t('labelings.manage.action.manage')}
                 </Button>
               }
             />

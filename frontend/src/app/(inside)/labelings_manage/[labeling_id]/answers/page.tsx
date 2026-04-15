@@ -1,20 +1,20 @@
-"use client";
+'use client';
 
-import { useState, useMemo, useCallback, useEffect } from "react";
-import { useParams } from "next/navigation";
-import { toast } from "sonner";
-import AnswersTab from "./[item_id]/page";
-import SummaryTab from "./summary/page";
-import AnswerTabHeader, { type AnswerView } from "./AnswerTabHeader";
-import { useTranslations } from "@/i18n/use-translations";
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useParams } from 'next/navigation';
+import { toast } from 'sonner';
+import AnswersTab from './[item_id]/page';
+import SummaryTab from './summary/page';
+import AnswerTabHeader, { type AnswerView } from './AnswerTabHeader';
+import { useTranslations } from '@/i18n/use-translations';
 import {
   useAvailableUsersQuery,
   useLabelingAnswersWithStructureQuery,
   useLabelingHeaderQuery,
-} from "@/modules/labelings/create/labelingManagerQueries";
-import { exportLabelingAnswersCsv } from "@/modules/labelings/labelingService";
-import { getApiErrorMessage } from "@/lib/getApiErrorMessage";
-import type { User } from "@/modules/user/userTypes";
+} from '@/modules/labelings/create/labelingManagerQueries';
+import { exportLabelingAnswersCsv } from '@/modules/labelings/labelingService';
+import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
+import type { User } from '@/modules/user/userTypes';
 
 type AnswerTabProps = {
   labelingId: number;
@@ -24,19 +24,14 @@ type AnswerTabProps = {
 
 export function AnswerTab({ labelingId, users, usersPerItem }: AnswerTabProps) {
   const { t } = useTranslations();
-  const [activeView, setActiveView] = useState<AnswerView>("answers");
+  const [activeView, setActiveView] = useState<AnswerView>('answers');
   const [isInspectingItem, setIsInspectingItem] = useState(false);
-  const [selectedResponder, setSelectedResponder] = useState<"all" | number>(
-    "all",
-  );
+  const [selectedResponder, setSelectedResponder] = useState<'all' | number>('all');
   const [exporting, setExporting] = useState(false);
 
   const { data, isLoading } = useLabelingAnswersWithStructureQuery(labelingId);
   const answers = useMemo(() => data?.answers ?? [], [data?.answers]);
-  const structureSections = useMemo(
-    () => data?.structure ?? [],
-    [data?.structure],
-  );
+  const structureSections = useMemo(() => data?.structure ?? [], [data?.structure]);
 
   const usersById = useMemo(() => {
     const map = new Map<number, User>();
@@ -48,38 +43,25 @@ export function AnswerTab({ labelingId, users, usersPerItem }: AnswerTabProps) {
     (userId: number): string => {
       const user = usersById.get(userId);
       if (!user) {
-        const answerByUser = answers.find(
-          (answer) => answer.answered_by === userId,
-        );
-        const answerUsername = (answerByUser?.answered_by_username ?? "")
-          .trim()
-          .toLowerCase();
-        const answerEmail = (answerByUser?.answered_by_email ?? "")
-          .trim()
-          .toLowerCase();
-        if (
-          answerUsername === "llm_tiebreak_bot" ||
-          answerEmail === "llm_tiebreak_bot@annotaise.local"
-        ) {
-          return "LLM";
+        const answerByUser = answers.find((answer) => answer.answered_by === userId);
+        const answerUsername = (answerByUser?.answered_by_username ?? '').trim().toLowerCase();
+        const answerEmail = (answerByUser?.answered_by_email ?? '').trim().toLowerCase();
+        if (answerUsername === 'llm_tiebreak_bot' || answerEmail === 'llm_tiebreak_bot@annotaise.local') {
+          return 'LLM';
         }
-        return t("labelings.create.answers.unknownUser");
+        return t('labelings.create.answers.unknownUser');
       }
 
-      const username = (user.username ?? "").trim().toLowerCase();
-      const email = (user.email ?? "").trim().toLowerCase();
-      if (
-        username === "llm_tiebreak_bot" ||
-        email === "llm_tiebreak_bot@annotaise.local"
-      ) {
-        return "LLM";
+      const username = (user.username ?? '').trim().toLowerCase();
+      const email = (user.email ?? '').trim().toLowerCase();
+      if (username === 'llm_tiebreak_bot' || email === 'llm_tiebreak_bot@annotaise.local') {
+        return 'LLM';
       }
 
-      const fullName =
-        `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim();
+      const fullName = `${user.first_name ?? ''} ${user.last_name ?? ''}`.trim();
       return fullName || user.email || user.username || `User #${userId}`;
     },
-    [usersById, answers, t],
+    [usersById, answers, t]
   );
 
   const responderOptions = useMemo(() => {
@@ -91,12 +73,12 @@ export function AnswerTab({ labelingId, users, usersPerItem }: AnswerTabProps) {
   }, [answers, getUserLabel]);
 
   const filteredAnswers = useMemo(() => {
-    if (selectedResponder === "all") return answers;
+    if (selectedResponder === 'all') return answers;
     return answers.filter((a) => a.answered_by === selectedResponder);
   }, [answers, selectedResponder]);
 
   useEffect(() => {
-    if (activeView !== "answers" && isInspectingItem) {
+    if (activeView !== 'answers' && isInspectingItem) {
       setIsInspectingItem(false);
     }
   }, [activeView, isInspectingItem]);
@@ -108,22 +90,20 @@ export function AnswerTab({ labelingId, users, usersPerItem }: AnswerTabProps) {
     try {
       const { blob, filename } = await exportLabelingAnswersCsv(labelingId);
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
+      const a = document.createElement('a');
       a.href = url;
       a.download = filename ?? `labeling_${labelingId}_answers.csv`;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success(t("labelings.create.answers.exportSuccess"));
+      toast.success(t('labelings.create.answers.exportSuccess'));
     } catch (error) {
-      toast.error(
-        getApiErrorMessage(error, t("labelings.create.answers.exportError")),
-      );
+      toast.error(getApiErrorMessage(error, t('labelings.create.answers.exportError')));
     } finally {
       setExporting(false);
     }
   };
 
-  const shouldHideLocalHeader = activeView === "answers" && isInspectingItem;
+  const shouldHideLocalHeader = activeView === 'answers' && isInspectingItem;
 
   return (
     <div className="h-full flex flex-col">
@@ -135,14 +115,8 @@ export function AnswerTab({ labelingId, users, usersPerItem }: AnswerTabProps) {
         onExportCsv={() => void handleExportCsv()}
       />
 
-      <div
-        className={
-          isInspectingItem
-            ? "flex-1 min-h-0 overflow-hidden"
-            : "flex-1 overflow-y-auto"
-        }
-      >
-        {activeView === "answers" ? (
+      <div className={isInspectingItem ? 'flex-1 min-h-0 overflow-hidden' : 'flex-1 overflow-y-auto'}>
+        {activeView === 'answers' ? (
           <AnswersTab
             responderOptions={responderOptions}
             selectedResponder={selectedResponder}
@@ -179,13 +153,7 @@ export function AnswerTabView() {
   const users = usersQuery.data ?? [];
   const usersPerItem = headerQuery.data?.labeling?.users_per_item;
 
-  return (
-    <AnswerTab
-      labelingId={labelingId}
-      users={users}
-      usersPerItem={usersPerItem}
-    />
-  );
+  return <AnswerTab labelingId={labelingId} users={users} usersPerItem={usersPerItem} />;
 }
 
 export { AnswerTabView as default };

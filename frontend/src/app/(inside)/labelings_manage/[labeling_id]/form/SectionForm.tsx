@@ -1,27 +1,15 @@
-"use client";
+'use client';
 
-import { useMemo } from "react";
-import { Trash2, GripVertical } from "lucide-react";
-import {
-  DndContext,
-  PointerSensor,
-  closestCenter,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  useSortable,
-  arrayMove,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import QuestionBlock, { QuestionElement } from "./QuestionBlock";
-import ContextBlock, { ContextElement } from "./ContextBlock";
-import InsertionPoint from "./InsertionPoint";
-import { useTranslations } from "@/i18n/use-translations";
-import Input from "@/components/form/Input";
+import { useMemo } from 'react';
+import { Trash2, GripVertical } from 'lucide-react';
+import { DndContext, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, useSortable, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import QuestionBlock, { QuestionElement } from './QuestionBlock';
+import ContextBlock, { ContextElement } from './ContextBlock';
+import InsertionPoint from './InsertionPoint';
+import { useTranslations } from '@/i18n/use-translations';
+import Input from '@/components/form/Input';
 
 // Union type: um elemento pode ser questão ou contexto
 export type SectionElement = QuestionElement | ContextElement;
@@ -73,31 +61,22 @@ export default function SectionForm({
   // Garante que sempre temos uma seção válida
   const safeSection = (): SectionData => ({
     id: data?.id ?? crypto.randomUUID(),
-    title: data?.title ?? "",
+    title: data?.title ?? '',
     order: data?.order,
     elements: data?.elements ?? [],
   });
 
   // Elementos ordenados por order (crescente)
-  const orderedElements = useMemo(
-    () =>
-      [...(data?.elements ?? [])].sort(
-        (a, b) => (a.order ?? 0) - (b.order ?? 0),
-      ),
-    [data?.elements],
-  );
+  const orderedElements = useMemo(() => [...(data?.elements ?? [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)), [data?.elements]);
 
   // IDs para o sortable context
-  const sortableIds = useMemo(
-    () => orderedElements.map((el) => el.id),
-    [orderedElements],
-  );
+  const sortableIds = useMemo(() => orderedElements.map((el) => el.id), [orderedElements]);
 
   // Configuração do drag sensor (6px de movimento antes de iniciar drag)
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 6 },
-    }),
+    })
   );
 
   // ========================================
@@ -107,14 +86,9 @@ export default function SectionForm({
   /**
    * Atualiza um elemento específico dentro da seção
    */
-  const handleUpdateElement = (
-    elementId: string,
-    patch: Partial<SectionElement>,
-  ) => {
+  const handleUpdateElement = (elementId: string, patch: Partial<SectionElement>) => {
     const current = safeSection();
-    const updatedElements = current.elements.map((el) =>
-      el.id === elementId ? { ...el, ...patch } : el,
-    );
+    const updatedElements = current.elements.map((el) => (el.id === elementId ? { ...el, ...patch } : el));
     onUpdateSection({ ...current, elements: updatedElements });
   };
 
@@ -149,15 +123,12 @@ export default function SectionForm({
   // ========================================
 
   return (
-    <div
-      className="relative border-4 border-blueberry-900 rounded-xl py-5 pr-5 pl-8"
-      data-section-anchor-id={data.id}
-    >
+    <div className="relative border-4 border-blueberry-900 rounded-xl py-5 pr-5 pl-8" data-section-anchor-id={data.id}>
       {/* Cabeçalho: Label da seção + Botão remover */}
       <div className="flex items-start justify-between">
         <div className="inline-flex -mt-9 mb-3 ml-2">
           <span className="mt-8 px-3 py-1 bg-blueberry-900 text-white text-xs rounded-t-md shadow">
-            {t("labelings.create.section.label", {
+            {t('labelings.create.section.label', {
               index: humanIndex,
               total,
             })}
@@ -167,8 +138,8 @@ export default function SectionForm({
           <button
             type="button"
             onClick={onRemoveSection}
-            title={t("labelings.create.section.delete")}
-            aria-label={t("labelings.create.section.delete")}
+            title={t('labelings.create.section.delete')}
+            aria-label={t('labelings.create.section.delete')}
             className="text-gray-400 hover:text-red-500 cursor-pointer"
           >
             <Trash2 size={22} />
@@ -181,42 +152,33 @@ export default function SectionForm({
         <Input
           rows={2}
           className="text-sm font-semibold text-blue-900"
-          placeholder={t("labelings.create.section.titlePlaceholder")}
-          value={data?.title ?? ""}
+          placeholder={t('labelings.create.section.titlePlaceholder')}
+          value={data?.title ?? ''}
           onChange={(e) => onChangeTitle(e.target.value)}
         />
       </div>
 
       {/* Lista de elementos (contextos e perguntas) com drag and drop */}
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleElementDragEnd}
-      >
-        <SortableContext
-          items={sortableIds}
-          strategy={verticalListSortingStrategy}
-        >
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleElementDragEnd}>
+        <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
           <div className="relative">
             {/* Insertion point antes do primeiro elemento */}
             <div className="pointer-events-auto">
               <InsertionPoint
                 id={`section-${data.id}-start`}
-                isVisible={
-                  visibleInsertionPointId === `section-${data.id}-start`
-                }
+                isVisible={visibleInsertionPointId === `section-${data.id}-start`}
                 allowContext={allowContext}
                 onMouseEnter={onMouseEnterInsertionPoint}
                 onMouseLeave={onMouseLeaveInsertionPoint}
-                onAddContext={() => onAddContext("start")}
-                onAddQuestion={() => onAddQuestion("start")}
+                onAddContext={() => onAddContext('start')}
+                onAddQuestion={() => onAddQuestion('start')}
                 onAddSection={() => onAddSection(null)}
               />
             </div>
 
             {/* Renderiza cada elemento com insertion point após */}
             {orderedElements.map((element) => {
-              const isContext = element.kind === "context";
+              const isContext = element.kind === 'context';
               if (isContext && !allowContext) {
                 return null;
               }
@@ -226,28 +188,20 @@ export default function SectionForm({
                   {/* Elemento com drag handle */}
                   <SortableElement
                     id={element.id}
-                    label={
-                      isContext
-                        ? t("labelings.create.section.dragContext")
-                        : t("labelings.create.section.dragQuestion")
-                    }
-                    kind={isContext ? "context" : "question"}
+                    label={isContext ? t('labelings.create.section.dragContext') : t('labelings.create.section.dragQuestion')}
+                    kind={isContext ? 'context' : 'question'}
                   >
                     {isContext ? (
                       <ContextBlock
                         data={element}
                         columns={columns}
-                        onUpdate={(patch) =>
-                          handleUpdateElement(element.id, patch)
-                        }
+                        onUpdate={(patch) => handleUpdateElement(element.id, patch)}
                         onRemove={() => handleRemoveElement(element.id)}
                       />
                     ) : (
                       <QuestionBlock
                         data={element}
-                        onUpdate={(patch) =>
-                          handleUpdateElement(element.id, patch)
-                        }
+                        onUpdate={(patch) => handleUpdateElement(element.id, patch)}
                         onRemove={() => handleRemoveElement(element.id)}
                       />
                     )}
@@ -257,9 +211,7 @@ export default function SectionForm({
                   <div className="pointer-events-auto">
                     <InsertionPoint
                       id={`element-${element.id}`}
-                      isVisible={
-                        visibleInsertionPointId === `element-${element.id}`
-                      }
+                      isVisible={visibleInsertionPointId === `element-${element.id}`}
                       allowContext={allowContext}
                       onMouseEnter={onMouseEnterInsertionPoint}
                       onMouseLeave={onMouseLeaveInsertionPoint}
@@ -285,7 +237,7 @@ export default function SectionForm({
 type SortableElementProps = {
   id: string;
   label: string;
-  kind: "context" | "question";
+  kind: 'context' | 'question';
   children: React.ReactNode;
 };
 
@@ -293,14 +245,7 @@ type SortableElementProps = {
  * Wrapper que torna um elemento arrastável com drag handle.
  */
 function SortableElement({ id, label, kind, children }: SortableElementProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id,
   });
   const style = {
@@ -308,15 +253,10 @@ function SortableElement({ id, label, kind, children }: SortableElementProps) {
     transition,
     opacity: isDragging ? 0.92 : 1,
   };
-  const dragColorClass =
-    kind === "context" ? "bg-blueberry-700" : "bg-blueberry-500";
+  const dragColorClass = kind === 'context' ? 'bg-blueberry-700' : 'bg-blueberry-500';
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`relative ${isDragging ? "z-10" : ""}`}
-    >
+    <div ref={setNodeRef} style={style} className={`relative ${isDragging ? 'z-10' : ''}`}>
       <button
         type="button"
         aria-label={label}
@@ -327,7 +267,7 @@ function SortableElement({ id, label, kind, children }: SortableElementProps) {
       >
         <GripVertical size={16} />
       </button>
-      <div className={isDragging ? "opacity-95" : ""}>{children}</div>
+      <div className={isDragging ? 'opacity-95' : ''}>{children}</div>
     </div>
   );
 }

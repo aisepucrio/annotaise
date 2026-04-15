@@ -1,21 +1,18 @@
-"use client";
+'use client';
 
-import { Loader2, TriangleAlert, Upload } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useProjectsQuery } from "@/modules/projects/projectsQueries";
-import { toast } from "sonner";
-import Modal from "@/components/modal/Modal";
-import Input from "@/components/form/Input";
-import Select from "@/components/form/Select";
-import DatePicker from "@/components/form/DatePicker";
-import Checkbox from "@/components/form/Checkbox";
-import Button from "@/components/button/Button";
-import Tooltip from "@/components/tooltip/Tooltip";
-import { useTranslations } from "@/i18n/use-translations";
-import type {
-  DecisionMode,
-  DistributionStrategy,
-} from "@/modules/labelings/labelingsTypes";
+import { Loader2, TriangleAlert, Upload } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useProjectsQuery } from '@/modules/projects/projectsQueries';
+import { toast } from 'sonner';
+import Modal from '@/components/modal/Modal';
+import Input from '@/components/form/Input';
+import Select from '@/components/form/Select';
+import DatePicker from '@/components/form/DatePicker';
+import Checkbox from '@/components/form/Checkbox';
+import Button from '@/components/button/Button';
+import Tooltip from '@/components/tooltip/Tooltip';
+import { useTranslations } from '@/i18n/use-translations';
+import type { DecisionMode, DistributionStrategy } from '@/modules/labelings/labelingsTypes';
 
 // Props esperadas pelo modal de criação de nova rotulagem
 type NewLabelingModalProps = {
@@ -37,15 +34,11 @@ type NewLabelingModalProps = {
 };
 
 // Etapas internas do fluxo (upload -> detalhes)
-type Step = "upload" | "details";
-type DetailFormField = "title" | "projectId" | "startDate" | "finalDate" | "usersPerItem";
+type Step = 'upload' | 'details';
+type DetailFormField = 'title' | 'projectId' | 'startDate' | 'finalDate' | 'usersPerItem';
 type DetailFormErrors = Partial<Record<DetailFormField, string>>;
 
-export default function NewLabelingModal({
-  open,
-  onClose,
-  onConfirm,
-}: NewLabelingModalProps) {
+export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabelingModalProps) {
   const { t } = useTranslations();
 
   // Referência para acionar o input de arquivo via botão
@@ -53,18 +46,17 @@ export default function NewLabelingModal({
 
   // Estado principal do formulário
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState('');
   const [projectId, setProjectId] = useState<number | null>(null);
-  const [startDate, setStartDate] = useState("");
-  const [finalDate, setFinalDate] = useState("");
-  const [usersPerItem, setUsersPerItem] = useState<string>("1");
-  const [distributionStrategy, setDistributionStrategy] =
-    useState<DistributionStrategy>("auto");
+  const [startDate, setStartDate] = useState('');
+  const [finalDate, setFinalDate] = useState('');
+  const [usersPerItem, setUsersPerItem] = useState<string>('1');
+  const [distributionStrategy, setDistributionStrategy] = useState<DistributionStrategy>('auto');
   const [decisionEnabled, setDecisionEnabled] = useState(false);
-  const [decisionMode, setDecisionMode] = useState<DecisionMode>("manual");
+  const [decisionMode, setDecisionMode] = useState<DecisionMode>('manual');
   const [hasBackgroundForm, setHasBackgroundForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [step, setStep] = useState<Step>("upload");
+  const [step, setStep] = useState<Step>('upload');
   const [hasEmptyFields, setHasEmptyFields] = useState(false);
   const [isAnalyzingFile, setIsAnalyzingFile] = useState(false);
   const [formErrors, setFormErrors] = useState<DetailFormErrors>({});
@@ -75,32 +67,32 @@ export default function NewLabelingModal({
   useEffect(() => {
     if (!open) {
       setSelectedFile(null);
-      setTitle("");
+      setTitle('');
       setProjectId(null);
-      setStartDate("");
-      setFinalDate("");
-      setUsersPerItem("1");
-      setDistributionStrategy("auto");
+      setStartDate('');
+      setFinalDate('');
+      setUsersPerItem('1');
+      setDistributionStrategy('auto');
       setDecisionEnabled(false);
-      setDecisionMode("manual");
+      setDecisionMode('manual');
       setHasBackgroundForm(false);
       setIsSubmitting(false);
       setHasEmptyFields(false);
       setIsAnalyzingFile(false);
       setFormErrors({});
-      setStep("upload");
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      setStep('upload');
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   }, [open]);
 
-  const isPerPerson = distributionStrategy === "per_person";
+  const isPerPerson = distributionStrategy === 'per_person';
 
   // Efeito: estratégia "per_person" força configurações incompatíveis
   useEffect(() => {
     if (isPerPerson) {
       setDecisionEnabled(false);
-      setDecisionMode("manual");
-      setUsersPerItem("1");
+      setDecisionMode('manual');
+      setUsersPerItem('1');
       setFormErrors((prev) => {
         if (!prev.usersPerItem) return prev;
         const next = { ...prev };
@@ -122,14 +114,14 @@ export default function NewLabelingModal({
   // Efeito: define a data inicial com a data atual na abertura
   useEffect(() => {
     if (open && !startDate) {
-      setStartDate(new Date().toISOString().split("T")[0]);
+      setStartDate(new Date().toISOString().split('T')[0]);
     }
   }, [open, startDate]);
 
   // Validação básica do arquivo antes de prosseguir
   function validateFile(file: File) {
-    if (!file.name.toLowerCase().endsWith(".csv")) {
-      throw new Error(t("labelings.upload.error.invalidFileExtension"));
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      throw new Error(t('labelings.upload.error.invalidFileExtension'));
     }
   }
 
@@ -138,7 +130,7 @@ export default function NewLabelingModal({
     setIsAnalyzingFile(true);
     try {
       const content = await file.text();
-      const lines = content.split(/\r?\n/).filter((line) => line.trim() !== "");
+      const lines = content.split(/\r?\n/).filter((line) => line.trim() !== '');
       if (lines.length <= 1) {
         setHasEmptyFields(false);
         return;
@@ -148,7 +140,7 @@ export default function NewLabelingModal({
       const emptyFound = lines.slice(1).some((line) => {
         const cells = parseCsvLine(line);
         if (cells.length < headers.length) return true;
-        return cells.some((cell) => cell.trim() === "");
+        return cells.some((cell) => cell.trim() === '');
       });
 
       setHasEmptyFields(emptyFound);
@@ -175,10 +167,7 @@ export default function NewLabelingModal({
     } catch (err) {
       setSelectedFile(null);
       setHasEmptyFields(false);
-      const message =
-        err instanceof Error
-          ? err.message
-          : t("labelings.upload.error.invalidFile");
+      const message = err instanceof Error ? err.message : t('labelings.upload.error.invalidFile');
       toast.error(message);
     }
   }
@@ -188,24 +177,24 @@ export default function NewLabelingModal({
     const nextFormErrors: DetailFormErrors = {};
 
     if (!title.trim()) {
-      nextFormErrors.title = t("labelings.upload.error.missingTitle");
+      nextFormErrors.title = t('labelings.upload.error.missingTitle');
     }
 
     if (!projectId) {
-      nextFormErrors.projectId = t("labelings.upload.error.missingProject");
+      nextFormErrors.projectId = t('labelings.upload.error.missingProject');
     }
 
     if (!finalDate.trim()) {
-      nextFormErrors.finalDate = t("labelings.upload.error.missingFinalDate");
+      nextFormErrors.finalDate = t('labelings.upload.error.missingFinalDate');
     }
 
     const parsedUsersPerItem = Number(usersPerItem);
     if (!Number.isInteger(parsedUsersPerItem) || parsedUsersPerItem <= 0) {
-      nextFormErrors.usersPerItem = t("labelings.upload.error.invalidUsersPerItem");
+      nextFormErrors.usersPerItem = t('labelings.upload.error.invalidUsersPerItem');
     }
 
     if (startDate && finalDate && startDate > finalDate) {
-      nextFormErrors.finalDate = t("labelings.upload.error.invalidDates");
+      nextFormErrors.finalDate = t('labelings.upload.error.invalidDates');
     }
 
     if (Object.keys(nextFormErrors).length > 0) {
@@ -216,7 +205,7 @@ export default function NewLabelingModal({
     setFormErrors({});
 
     if (!selectedFile) {
-      toast.error(t("labelings.upload.error.missingFile"));
+      toast.error(t('labelings.upload.error.missingFile'));
       return;
     }
 
@@ -240,10 +229,7 @@ export default function NewLabelingModal({
         distributionStrategy,
       });
     } catch (err) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : t("labelings.upload.error.createFailed");
+      const message = err instanceof Error ? err.message : t('labelings.upload.error.createFailed');
       toast.error(message);
     } finally {
       setIsSubmitting(false);
@@ -251,24 +237,21 @@ export default function NewLabelingModal({
   }
 
   // Regra de navegação para avançar da etapa de upload
-  const canContinueUploadStep = useMemo(
-    () => Boolean(selectedFile) && !isAnalyzingFile,
-    [selectedFile, isAnalyzingFile],
-  );
+  const canContinueUploadStep = useMemo(() => Boolean(selectedFile) && !isAnalyzingFile, [selectedFile, isAnalyzingFile]);
 
   // Navegação entre etapas
   function handleContinueFromUpload() {
     if (!selectedFile) {
-      toast.error(t("labelings.upload.error.continueMissingFile"));
+      toast.error(t('labelings.upload.error.continueMissingFile'));
       return;
     }
     setFormErrors({});
-    setStep("details");
+    setStep('details');
   }
 
   function handleBackToUpload() {
     setFormErrors({});
-    setStep("upload");
+    setStep('upload');
   }
 
   // Drag and drop de arquivo na área de upload
@@ -282,10 +265,7 @@ export default function NewLabelingModal({
       setSelectedFile(file);
       void parseHasEmptyFields(file);
     } catch (err) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : t("labelings.upload.error.invalidFile");
+      const message = err instanceof Error ? err.message : t('labelings.upload.error.invalidFile');
       toast.error(message);
     }
   }
@@ -298,7 +278,7 @@ export default function NewLabelingModal({
   // Parser simples de linha CSV (suporta aspas e escape por aspas duplas)
   function parseCsvLine(line: string): string[] {
     const cells: string[] = [];
-    let current = "";
+    let current = '';
     let inQuotes = false;
 
     for (let i = 0; i < line.length; i += 1) {
@@ -311,9 +291,9 @@ export default function NewLabelingModal({
         } else {
           inQuotes = !inQuotes;
         }
-      } else if (char === "," && !inQuotes) {
+      } else if (char === ',' && !inQuotes) {
         cells.push(current);
-        current = "";
+        current = '';
       } else {
         current += char;
       }
@@ -327,25 +307,18 @@ export default function NewLabelingModal({
 
   // Descrição muda conforme a etapa ativa do modal
   const modalDescription =
-    step === "upload" ? (
+    step === 'upload' ? (
       <p>
-        {t("labelings.upload.description.uploadPrefix")} <strong>.CSV</strong>{" "}
-        {t("labelings.upload.description.uploadSuffix")}
+        {t('labelings.upload.description.uploadPrefix')} <strong>.CSV</strong> {t('labelings.upload.description.uploadSuffix')}
       </p>
     ) : (
-      <p>{t("labelings.upload.description.details")}</p>
+      <p>{t('labelings.upload.description.details')}</p>
     );
 
   return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title={t("labelings.upload.title")}
-      description={modalDescription}
-      maxWidth="lg"
-    >
+    <Modal open={open} onClose={onClose} title={t('labelings.upload.title')} description={modalDescription} maxWidth="lg">
       {/* Render: etapa de upload */}
-      {step === "upload" ? (
+      {step === 'upload' ? (
         <div>
           {/* Área principal de upload (botão + drag and drop + status) */}
           <div
@@ -353,13 +326,7 @@ export default function NewLabelingModal({
             onDrop={handleDrop}
             onDragOver={handleDragOver}
           >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".csv"
-              onChange={handleFile}
-              className="hidden"
-            />
+            <input ref={fileInputRef} type="file" accept=".csv" onChange={handleFile} className="hidden" />
 
             <Button
               type="button"
@@ -368,21 +335,21 @@ export default function NewLabelingModal({
               icon={<Upload size={18} />}
               fill={false}
             >
-              {t("labelings.upload.button")}
+              {t('labelings.upload.button')}
             </Button>
 
             <p className="text-xs text-gray-600">
               {selectedFile
-                ? t("labelings.upload.selectedFile", {
+                ? t('labelings.upload.selectedFile', {
                     name: selectedFile.name,
                   })
-                : t("labelings.upload.placeholder")}
+                : t('labelings.upload.placeholder')}
             </p>
 
             {isAnalyzingFile && (
               <div className="flex items-center gap-2 text-xs text-gray-500">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                {t("labelings.upload.analyzing")}
+                {t('labelings.upload.analyzing')}
               </div>
             )}
           </div>
@@ -391,29 +358,17 @@ export default function NewLabelingModal({
           {hasEmptyFields && (
             <div className="mt-4 rounded-lg border border-red-blueberry bg-red-50 px-3 py-2 text-sm text-red-blueberry">
               <TriangleAlert className="inline-block mr-1 mb-0.5 w-4 h-4" />
-              {t("labelings.upload.emptyFields.textStart")}{" "}
-              <strong>
-                {t("labelings.upload.emptyFields.highlightEmpty")}
-              </strong>{" "}
-              {t("labelings.upload.emptyFields.textMiddle")}{" "}
-              <strong>
-                {t("labelings.upload.emptyFields.highlightMissingInfo")}
-              </strong>
-              ; {t("labelings.upload.emptyFields.textAfter")}{" "}
-              <strong>
-                {t("labelings.upload.emptyFields.highlightUnexpected")}
-              </strong>
-              , {t("labelings.upload.emptyFields.textEnd")}
+              {t('labelings.upload.emptyFields.textStart')} <strong>{t('labelings.upload.emptyFields.highlightEmpty')}</strong>{' '}
+              {t('labelings.upload.emptyFields.textMiddle')} <strong>{t('labelings.upload.emptyFields.highlightMissingInfo')}</strong>;{' '}
+              {t('labelings.upload.emptyFields.textAfter')} <strong>{t('labelings.upload.emptyFields.highlightUnexpected')}</strong>,{' '}
+              {t('labelings.upload.emptyFields.textEnd')}
             </div>
           )}
 
           {/* Ações da etapa de upload */}
           <div className="mt-6 flex justify-between gap-3 w-[70%] mx-auto">
-            <Button
-              onClick={handleContinueFromUpload}
-              disabled={!canContinueUploadStep}
-            >
-              {t("labelings.upload.continue")}
+            <Button onClick={handleContinueFromUpload} disabled={!canContinueUploadStep}>
+              {t('labelings.upload.continue')}
             </Button>
           </div>
         </div>
@@ -424,65 +379,63 @@ export default function NewLabelingModal({
             {/* Identificação da rotulagem */}
             <Input
               id="csv-title"
-              label={t("labelings.upload.titleLabel")}
+              label={t('labelings.upload.titleLabel')}
               required
               error={formErrors.title}
-              placeholder={t("labelings.upload.titlePlaceholder")}
+              placeholder={t('labelings.upload.titlePlaceholder')}
               value={title}
               onChange={(e) => {
                 setTitle((e.target as HTMLInputElement).value);
-                clearFormError("title");
+                clearFormError('title');
               }}
             />
 
             <Select
               id="csv-project"
-              label={t("labelings.upload.projectLabel")}
+              label={t('labelings.upload.projectLabel')}
               required
               error={formErrors.projectId}
-              placeholder={t("common.selectPlaceholder")}
+              placeholder={t('common.selectPlaceholder')}
               options={(projects ?? []).map((p) => ({
                 value: String(p.id),
                 label: p.name,
               }))}
-              value={projectId === null ? "" : String(projectId)}
+              value={projectId === null ? '' : String(projectId)}
               onChange={(e) => {
                 const value = (e.target as HTMLSelectElement).value;
                 setProjectId(value ? Number(value) : null);
-                clearFormError("projectId");
+                clearFormError('projectId');
               }}
             />
 
             {/* Aviso quando não há projetos disponíveis para seleção */}
             {!isLoadingProjects && !(projects?.length ?? 0) && (
-              <p className="mt-1 text-xs text-orange-600">
-                {t("labelings.upload.noProjects")}
-              </p>
+              <p className="mt-1 text-xs text-orange-600">{t('labelings.upload.noProjects')}</p>
             )}
 
             {/* Janela de datas da rotulagem */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <DatePicker
                 id="csv-start"
-                label={t("labelings.upload.startDateLabel")}
+                label={t('labelings.upload.startDateLabel')}
                 required
                 error={formErrors.startDate}
                 value={startDate}
                 onChange={(e) => {
                   setStartDate((e.target as HTMLInputElement).value);
-                  clearFormError("startDate");
-                  clearFormError("finalDate");
+                  clearFormError('startDate');
+                  clearFormError('finalDate');
                 }}
               />
               <DatePicker
                 id="csv-final"
-                label={t("labelings.upload.finalDateLabel")}
+                label={t('labelings.upload.finalDateLabel')}
                 required
                 error={formErrors.finalDate}
                 value={finalDate}
                 onChange={(e) => {
                   setFinalDate((e.target as HTMLInputElement).value);
-                  clearFormError("finalDate");
+                  clearFormError('finalDate');
                 }}
               />
             </div>
@@ -497,7 +450,7 @@ export default function NewLabelingModal({
                       checked={decisionEnabled}
                       onChange={(value) => {
                         setDecisionEnabled(value);
-                        if (!value) setDecisionMode("manual");
+                        if (!value) setDecisionMode('manual');
                       }}
                       disabled={isPerPerson}
                       variant="square"
@@ -506,50 +459,33 @@ export default function NewLabelingModal({
                       className="shrink-0"
                     />
                     <div className="flex items-center gap-1">
-                      <label
-                        htmlFor="csv-decision"
-                        className="cursor-pointer text-sm font-medium text-metal-900"
-                      >
-                        {t("labelings.upload.decisionLabel")}
+                      <label htmlFor="csv-decision" className="cursor-pointer text-sm font-medium text-metal-900">
+                        {t('labelings.upload.decisionLabel')}
                       </label>
-                      <Tooltip
-                        content={t("labelings.upload.decisionTooltip")}
-                        color="var(--metal-700)"
-                        size="sm"
-                      />
+                      <Tooltip content={t('labelings.upload.decisionTooltip')} color="var(--metal-700)" size="sm" />
                     </div>
                   </div>
 
                   {decisionEnabled && !isPerPerson ? (
                     <div className="mt-2 rounded-md border border-metal-200 bg-white p-2">
                       <div className="mb-2 flex items-center gap-1">
-                        <span className="text-sm text-metal-700">
-                          {t("labelings.upload.decisionModeLabel")}
-                        </span>
-                        <Tooltip
-                          content={t("labelings.upload.decisionModeTooltip")}
-                          color="var(--metal-700)"
-                          size="sm"
-                        />
+                        <span className="text-sm text-metal-700">{t('labelings.upload.decisionModeLabel')}</span>
+                        <Tooltip content={t('labelings.upload.decisionModeTooltip')} color="var(--metal-700)" size="sm" />
                       </div>
                       <Select
                         id="csv-decision-mode"
                         options={[
                           {
-                            value: "manual",
-                            label: t("labelings.upload.decisionMode.manual"),
+                            value: 'manual',
+                            label: t('labelings.upload.decisionMode.manual'),
                           },
                           {
-                            value: "llm",
-                            label: t("labelings.upload.decisionMode.llm"),
+                            value: 'llm',
+                            label: t('labelings.upload.decisionMode.llm'),
                           },
                         ]}
                         value={decisionMode}
-                        onChange={(e) =>
-                          setDecisionMode(
-                            (e.target as HTMLSelectElement).value as DecisionMode,
-                          )
-                        }
+                        onChange={(e) => setDecisionMode((e.target as HTMLSelectElement).value as DecisionMode)}
                       />
                     </div>
                   ) : null}
@@ -567,17 +503,10 @@ export default function NewLabelingModal({
                   className="shrink-0"
                 />
                 <div className="flex items-center gap-1">
-                  <label
-                    htmlFor="csv-background-form"
-                    className="cursor-pointer text-sm font-medium text-metal-900"
-                  >
-                    {t("labelings.upload.backgroundFormLabel")}
+                  <label htmlFor="csv-background-form" className="cursor-pointer text-sm font-medium text-metal-900">
+                    {t('labelings.upload.backgroundFormLabel')}
                   </label>
-                  <Tooltip
-                    content={t("labelings.upload.backgroundFormTooltip")}
-                    color="var(--metal-700)"
-                    size="sm"
-                  />
+                  <Tooltip content={t('labelings.upload.backgroundFormTooltip')} color="var(--metal-700)" size="sm" />
                 </div>
               </div>
             </div>
@@ -585,67 +514,57 @@ export default function NewLabelingModal({
             {/* Estratégia de distribuição dos itens entre usuários */}
             <Select
               id="csv-distribution-strategy"
-              label={t("labelings.upload.distributionStrategyLabel")}
+              label={t('labelings.upload.distributionStrategyLabel')}
               options={[
                 {
-                  value: "auto",
-                  label: t("labelings.upload.distributionStrategy.auto"),
+                  value: 'auto',
+                  label: t('labelings.upload.distributionStrategy.auto'),
                 },
                 // {
                 //   value: "specified",
                 //   label: t("labelings.upload.distributionStrategy.specified"),
                 // },
                 {
-                  value: "per_person",
-                  label: t("labelings.upload.distributionStrategy.per_person"),
+                  value: 'per_person',
+                  label: t('labelings.upload.distributionStrategy.per_person'),
                 },
               ]}
               value={distributionStrategy}
-              onChange={(e) =>
-                setDistributionStrategy(
-                  (e.target as HTMLSelectElement).value as DistributionStrategy,
-                )
-              }
-              tooltip={t("labelings.upload.distributionStrategyTooltip")}
+              onChange={(e) => setDistributionStrategy((e.target as HTMLSelectElement).value as DistributionStrategy)}
+              tooltip={t('labelings.upload.distributionStrategyTooltip')}
             />
 
             {/* Quantidade de usuários por item (desabilitado em per_person) */}
             <Input
               id="csv-users-per-item"
-              label={t("labelings.upload.usersPerItemLabel")}
+              label={t('labelings.upload.usersPerItemLabel')}
               error={formErrors.usersPerItem}
               type="number"
               min={1}
               value={usersPerItem}
               onChange={(e) => {
                 setUsersPerItem((e.target as HTMLInputElement).value);
-                clearFormError("usersPerItem");
+                clearFormError('usersPerItem');
               }}
               disabled={isPerPerson}
               placeholder="1"
-              tooltip={t("labelings.upload.usersPerItemTooltip")}
+              tooltip={t('labelings.upload.usersPerItemTooltip')}
             />
           </div>
 
           {/* Rodapé da etapa de detalhes (voltar + criar) */}
           <div className="mt-6 flex justify-between gap-3">
-            <Button
-              type="button"
-              variant="white"
-              fill={true}
-              onClick={handleBackToUpload}
-              disabled={isSubmitting}
-            >
-              {t("common.back")}
+            <Button type="button" variant="white" fill={true} onClick={handleBackToUpload} disabled={isSubmitting}>
+              {t('common.back')}
             </Button>
             <Button onClick={handleConfirm} disabled={isSubmitting}>
               {isSubmitting ? (
                 <span className="inline-flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  {t("labelings.upload.processing")}
+                  {t('labelings.upload.processing')}
                 </span>
               ) : (
-                t("labelings.upload.create")
+                t('labelings.upload.create')
               )}
             </Button>
           </div>

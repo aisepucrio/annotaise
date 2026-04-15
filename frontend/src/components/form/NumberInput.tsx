@@ -1,12 +1,9 @@
-import React, { forwardRef, InputHTMLAttributes, ReactNode } from "react";
-import { cn } from "@/lib/utils";
-import FormFieldBase from "./base/FormFieldBase";
-import { formFieldClasses } from "./base/formFieldClasses";
+import React, { forwardRef, InputHTMLAttributes, ReactNode } from 'react';
+import { cn } from '@/lib/utils';
+import FormFieldBase from './base/FormFieldBase';
+import { formFieldClasses } from './base/formFieldClasses';
 
-export type NumberInputProps = Omit<
-  InputHTMLAttributes<HTMLInputElement>,
-  "size" | "type" | "onChange" | "value"
-> & {
+export type NumberInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'size' | 'type' | 'onChange' | 'value'> & {
   /** Label do input */
   label?: string;
   /** Mensagem de erro */
@@ -45,8 +42,8 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
       icon,
       leftIcon,
       required = false,
-      className = "",
-      containerClassName = "",
+      className = '',
+      containerClassName = '',
       id,
       disabled = false,
       tooltip,
@@ -57,16 +54,16 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
       autoValidate = false,
       ...props
     },
-    ref,
+    ref
   ) => {
     const baseClasses = cn(
       formFieldClasses.base,
       formFieldClasses.placeholder,
       formFieldClasses.getBorderColor(!!error),
       formFieldClasses.disabled,
-      leftIcon && "pl-11",
-      icon && "pr-11",
-      className,
+      leftIcon && 'pl-11',
+      icon && 'pr-11',
+      className
     );
 
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -75,8 +72,8 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
       const inputValue = event.target.value;
 
       // Se o campo está vazio, retorna string vazia
-      if (inputValue === "") {
-        onChange("");
+      if (inputValue === '') {
+        onChange('');
         return;
       }
 
@@ -96,20 +93,9 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
     };
 
     return (
-      <FormFieldBase
-        label={label}
-        id={id}
-        error={error}
-        required={required}
-        className={containerClassName}
-        tooltip={tooltip}
-      >
+      <FormFieldBase label={label} id={id} error={error} required={required} className={containerClassName} tooltip={tooltip}>
         <div className="relative">
-          {leftIcon && (
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-metal-200">
-              {leftIcon}
-            </div>
-          )}
+          {leftIcon && <div className="absolute left-3 top-1/2 -translate-y-1/2 text-metal-200">{leftIcon}</div>}
 
           <input
             ref={ref}
@@ -124,17 +110,13 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
             {...props}
           />
 
-          {icon && (
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 text-metal-200">
-              {icon}
-            </div>
-          )}
+          {icon && <div className="absolute right-2 top-1/2 -translate-y-1/2 text-metal-200">{icon}</div>}
         </div>
       </FormFieldBase>
     );
-  },
+  }
 );
 
-NumberInput.displayName = "NumberInput";
+NumberInput.displayName = 'NumberInput';
 
 export default NumberInput;

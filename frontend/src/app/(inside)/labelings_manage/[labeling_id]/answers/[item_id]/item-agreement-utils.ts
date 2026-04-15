@@ -1,9 +1,5 @@
-import type { TranslateFn } from "@/i18n/types";
-import type {
-  AnswerResponse,
-  LabelingStructureElement,
-  LabelingStructureSection,
-} from "@/modules/labelings/labelingsTypes";
+import type { TranslateFn } from '@/i18n/types';
+import type { AnswerResponse, LabelingStructureElement, LabelingStructureSection } from '@/modules/labelings/labelingsTypes';
 
 export type AgreementOptionSummary = {
   label: string;
@@ -43,20 +39,16 @@ export function buildAgreementSections({
   t: TranslateFn;
 }): AgreementSectionGroup[] {
   const latestAnswers = selectLatestAnswersByUser(answers);
-  const orderedSections = [...structureSections].sort(
-    (a, b) => (a.order ?? 0) - (b.order ?? 0),
-  );
+  const orderedSections = [...structureSections].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
   const groupsByTitle = new Map<string, AgreementSectionGroup>();
   const orderedGroups: AgreementSectionGroup[] = [];
 
   orderedSections.forEach((section, sectionIndex) => {
-    const orderedElements = [...(section.elements ?? [])].sort(
-      (a, b) => (a.order ?? 0) - (b.order ?? 0),
-    );
+    const orderedElements = [...(section.elements ?? [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
     orderedElements.forEach((element, elementIndex) => {
-      if (element.question_type !== "multiple_choice") return;
+      if (element.question_type !== 'multiple_choice') return;
       if (!element.id) return;
 
       const summary = buildQuestionAgreementSummary({
@@ -147,36 +139,24 @@ function buildQuestionAgreementSummary({
         label,
         count,
         userIds: users,
-        percentOfResponders:
-          totalResponders > 0 ? Math.round((count / totalResponders) * 100) : 0,
+        percentOfResponders: totalResponders > 0 ? Math.round((count / totalResponders) * 100) : 0,
       };
     })
     .filter((option) => option.count > 0);
 
-  const topCount = optionSummaries.reduce(
-    (max, option) => Math.max(max, option.count),
-    0,
-  );
-  const topLabels =
-    topCount > 0
-      ? optionSummaries
-          .filter((option) => option.count === topCount)
-          .map((option) => option.label)
-      : [];
+  const topCount = optionSummaries.reduce((max, option) => Math.max(max, option.count), 0);
+  const topLabels = topCount > 0 ? optionSummaries.filter((option) => option.count === topCount).map((option) => option.label) : [];
 
   const answeredResponders = usersWhoAnswered.size;
   const missingResponders = Math.max(0, totalResponders - answeredResponders);
 
-  const label =
-    element.text?.trim() || t("labelings.create.summary.questionFallback");
+  const label = element.text?.trim() || t('labelings.create.summary.questionFallback');
 
-  const baseSectionLabel = t("labelings.create.summary.sectionLabel", {
+  const baseSectionLabel = t('labelings.create.summary.sectionLabel', {
     order: section.order ?? sectionIndex + 1,
   });
   const sectionTitle = section.title?.trim();
-  const sectionLabel = sectionTitle
-    ? `${baseSectionLabel} - ${sectionTitle}`
-    : baseSectionLabel;
+  const sectionLabel = sectionTitle ? `${baseSectionLabel} - ${sectionTitle}` : baseSectionLabel;
 
   return {
     key,
@@ -195,21 +175,15 @@ function buildQuestionAgreementSummary({
   };
 }
 
-function resolveAnswerValue(
-  payload: Record<string, unknown> | null | undefined,
-  questionId: string,
-): unknown {
-  if (!payload || typeof payload !== "object") return undefined;
+function resolveAnswerValue(payload: Record<string, unknown> | null | undefined, questionId: string): unknown {
+  if (!payload || typeof payload !== 'object') return undefined;
   if (Object.prototype.hasOwnProperty.call(payload, questionId)) {
     return payload[questionId];
   }
 
   const numericKey = Number(questionId);
   const numericKeyAsString = String(numericKey);
-  if (
-    Number.isFinite(numericKey) &&
-    Object.prototype.hasOwnProperty.call(payload, numericKeyAsString)
-  ) {
+  if (Number.isFinite(numericKey) && Object.prototype.hasOwnProperty.call(payload, numericKeyAsString)) {
     return payload[numericKeyAsString];
   }
 
@@ -219,9 +193,7 @@ function resolveAnswerValue(
 function normalizeChoiceValues(value: unknown): string[] {
   const entries = Array.isArray(value) ? value : [value];
 
-  const normalized = entries
-    .map((entry) => normalizeChoiceValue(entry))
-    .filter((entry): entry is string => entry !== null);
+  const normalized = entries.map((entry) => normalizeChoiceValue(entry)).filter((entry): entry is string => entry !== null);
 
   return Array.from(new Set(normalized));
 }
@@ -229,12 +201,12 @@ function normalizeChoiceValues(value: unknown): string[] {
 function normalizeChoiceValue(value: unknown): string | null {
   if (value === null || value === undefined) return null;
 
-  if (typeof value === "string") {
+  if (typeof value === 'string') {
     const trimmed = value.trim();
     return trimmed.length > 0 ? trimmed : null;
   }
 
-  if (typeof value === "number" || typeof value === "boolean") {
+  if (typeof value === 'number' || typeof value === 'boolean') {
     return String(value);
   }
 
@@ -245,10 +217,7 @@ function normalizeChoiceValue(value: unknown): string | null {
 function selectLatestAnswersByUser(answers: AnswerResponse[]): AnswerResponse[] {
   const latestByUser = new Map<number, AnswerResponse>();
 
-  for (const answer of [...answers].sort(
-    (a, b) =>
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-  )) {
+  for (const answer of [...answers].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())) {
     if (!latestByUser.has(answer.answered_by)) {
       latestByUser.set(answer.answered_by, answer);
     }

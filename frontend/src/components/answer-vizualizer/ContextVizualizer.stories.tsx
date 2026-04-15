@@ -1,20 +1,18 @@
-import type { ReactNode } from "react";
-import type { Meta, StoryObj } from "@storybook/nextjs";
-import ContextVizualizer from "./ContextVizualizer";
+import type { ReactNode } from 'react';
+import type { Meta, StoryObj } from '@storybook/nextjs';
+import ContextVizualizer from './ContextVizualizer';
 
-const SAMPLE_IMAGE =
-  "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
+const SAMPLE_IMAGE = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
 
 const meta = {
-  title: "AnswerVizualizer/ContextVizualizer",
+  title: 'AnswerVizualizer/ContextVizualizer',
   component: ContextVizualizer,
-  tags: ["autodocs"],
+  tags: ['autodocs'],
   parameters: {
-    layout: "centered",
+    layout: 'centered',
     docs: {
       description: {
-        component:
-          "Exibe blocos de contexto com título e conteúdo, incluindo modo de imagem para contextos visuais.",
+        component: 'Exibe blocos de contexto com título e conteúdo, incluindo modo de imagem para contextos visuais.',
       },
     },
   },
@@ -24,11 +22,7 @@ export default meta;
 type Story = StoryObj<typeof ContextVizualizer>;
 
 function Frame({ children }: { children: ReactNode }) {
-  return (
-    <div className="w-[760px] rounded-xl border border-metal-100 bg-white p-5">
-      {children}
-    </div>
-  );
+  return <div className="w-[760px] rounded-xl border border-metal-100 bg-white p-5">{children}</div>;
 }
 
 export const TextContext: Story = {
@@ -59,12 +53,7 @@ export const ImageContext: Story = {
 export const EmptyImageContext: Story = {
   render: () => (
     <Frame>
-      <ContextVizualizer
-        text="Imagem opcional"
-        contextType="image"
-        value=""
-        emptyText="Sem imagem disponível"
-      />
+      <ContextVizualizer text="Imagem opcional" contextType="image" value="" emptyText="Sem imagem disponível" />
     </Frame>
   ),
 };

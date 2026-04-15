@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { useEffect, useState, ReactNode } from "react";
-import PageHeader from "./PageHeader";
-import FilterBar from "@/components/filter-bar/FilterBar";
-import GridLayout from "@/components/grid/GridLayout";
-import Button from "@/components/button/Button";
-import Loader from "@/components/Loader";
-import { Plus } from "lucide-react";
+import { useEffect, useState, ReactNode } from 'react';
+import PageHeader from './PageHeader';
+import FilterBar from '@/components/filter-bar/FilterBar';
+import GridLayout from '@/components/grid/GridLayout';
+import Button from '@/components/button/Button';
+import Loader from '@/components/Loader';
+import { Plus } from 'lucide-react';
 
 interface PageLayoutProps {
   // Page Header
@@ -55,13 +55,13 @@ export default function PageLayout({
   children,
   isLoading = false,
   message,
-  minColumnWidth = "420px",
+  minColumnWidth = '420px',
   modal,
 }: PageLayoutProps) {
   // State - Search with debounce
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
   useEffect(() => {
     const handle = setTimeout(() => setDebouncedSearch(searchTerm), 300);
@@ -77,11 +77,7 @@ export default function PageLayout({
   return (
     <>
       {/* Header */}
-      <PageHeader
-        page_title={pageTitle}
-        tooltip={tooltip}
-        description={description}
-      />
+      <PageHeader page_title={pageTitle} tooltip={tooltip} description={description} />
 
       {/* Search Bar + Action Button */}
       <div className="flex flex-nowrap items-center mt-5">

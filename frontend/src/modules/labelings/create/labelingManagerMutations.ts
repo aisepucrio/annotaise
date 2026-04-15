@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   deleteLabeling,
   updateLabeling,
@@ -7,12 +7,8 @@ import {
   updateLabelingMembership,
   deleteLabelingMembership,
   addItemsCsvToLabeling,
-} from "../labelingService";
-import type {
-  LabelingPayload,
-  SectionDTO,
-  LabelingMembershipRole,
-} from "@/modules/labelings/labelingsTypes";
+} from '../labelingService';
+import type { LabelingPayload, SectionDTO, LabelingMembershipRole } from '@/modules/labelings/labelingsTypes';
 
 // Utilizada para deletar labeling
 export function useDeleteLabelingMutation() {
@@ -21,8 +17,8 @@ export function useDeleteLabelingMutation() {
   return useMutation({
     mutationFn: (id: number) => deleteLabeling(id),
     onSuccess: (_data, id) => {
-      qc.removeQueries({ queryKey: ["labelings", id] });
-      qc.invalidateQueries({ queryKey: ["labelings"] });
+      qc.removeQueries({ queryKey: ['labelings', id] });
+      qc.invalidateQueries({ queryKey: ['labelings'] });
     },
   });
 }
@@ -32,16 +28,10 @@ export function useUpdateLabelingMutation() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      id,
-      payload,
-    }: {
-      id: number;
-      payload: Partial<LabelingPayload>;
-    }) => updateLabeling(id, payload),
+    mutationFn: ({ id, payload }: { id: number; payload: Partial<LabelingPayload> }) => updateLabeling(id, payload),
     onSuccess: (_data, { id }) => {
-      qc.invalidateQueries({ queryKey: ["labelings", id] });
-      qc.invalidateQueries({ queryKey: ["labelings"] });
+      qc.invalidateQueries({ queryKey: ['labelings', id] });
+      qc.invalidateQueries({ queryKey: ['labelings'] });
     },
   });
 }
@@ -51,18 +41,11 @@ export function useSaveLabelingStructureMutation() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      id,
-      sections,
-      formType,
-    }: {
-      id: number;
-      sections: SectionDTO[];
-      formType?: "main" | "background";
-    }) => saveLabelingStructure(id, { sections }, formType ?? "main"),
+    mutationFn: ({ id, sections, formType }: { id: number; sections: SectionDTO[]; formType?: 'main' | 'background' }) =>
+      saveLabelingStructure(id, { sections }, formType ?? 'main'),
     onSuccess: (_data, { id, formType }) => {
       qc.invalidateQueries({
-        queryKey: ["labelings", id, "structure", formType ?? "main"],
+        queryKey: ['labelings', id, 'structure', formType ?? 'main'],
       });
     },
   });
@@ -73,14 +56,10 @@ export function useCreateMembershipMutation() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: {
-      labeling: number;
-      user: number;
-      role: LabelingMembershipRole;
-    }) => createLabelingMembership(payload),
+    mutationFn: (payload: { labeling: number; user: number; role: LabelingMembershipRole }) => createLabelingMembership(payload),
     onSuccess: (_data, { labeling }) => {
       qc.invalidateQueries({
-        queryKey: ["labelings", labeling, "memberships"],
+        queryKey: ['labelings', labeling, 'memberships'],
       });
     },
   });
@@ -91,17 +70,11 @@ export function useUpdateMembershipMutation() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      id,
-      role,
-    }: {
-      id: number;
-      labelingId: number;
-      role: LabelingMembershipRole;
-    }) => updateLabelingMembership(id, { role }),
+    mutationFn: ({ id, role }: { id: number; labelingId: number; role: LabelingMembershipRole }) =>
+      updateLabelingMembership(id, { role }),
     onSuccess: (_data, { labelingId }) => {
       qc.invalidateQueries({
-        queryKey: ["labelings", labelingId, "memberships"],
+        queryKey: ['labelings', labelingId, 'memberships'],
       });
     },
   });
@@ -112,11 +85,10 @@ export function useAddItemsCsvMutation() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ labelingId, file }: { labelingId: number; file: File }) =>
-      addItemsCsvToLabeling(labelingId, file),
+    mutationFn: ({ labelingId, file }: { labelingId: number; file: File }) => addItemsCsvToLabeling(labelingId, file),
     onSuccess: (_data, { labelingId }) => {
-      qc.invalidateQueries({ queryKey: ["labelings", labelingId] });
-      qc.invalidateQueries({ queryKey: ["labelings"] });
+      qc.invalidateQueries({ queryKey: ['labelings', labelingId] });
+      qc.invalidateQueries({ queryKey: ['labelings'] });
     },
   });
 }
@@ -126,11 +98,10 @@ export function useDeleteMembershipMutation() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id }: { id: number; labelingId: number }) =>
-      deleteLabelingMembership(id),
+    mutationFn: ({ id }: { id: number; labelingId: number }) => deleteLabelingMembership(id),
     onSuccess: (_data, { labelingId }) => {
       qc.invalidateQueries({
-        queryKey: ["labelings", labelingId, "memberships"],
+        queryKey: ['labelings', labelingId, 'memberships'],
       });
     },
   });

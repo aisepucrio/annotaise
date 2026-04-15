@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useCallback } from "react";
-import { useCreateInvitationMutation } from "@/modules/user/userMutations";
-import type { CreateInvitationPayload } from "@/modules/user/userTypes";
+import { useCallback } from 'react';
+import { useCreateInvitationMutation } from '@/modules/user/userMutations';
+import type { CreateInvitationPayload } from '@/modules/user/userTypes';
 
 export default function useInvitationCreator() {
   const createInvitationMutation = useCreateInvitationMutation();
@@ -12,7 +12,7 @@ export default function useInvitationCreator() {
       const { link } = await createInvitationMutation.mutateAsync(payload);
       return link;
     },
-    [createInvitationMutation],
+    [createInvitationMutation]
   );
 
   return handleCreateInvitation;

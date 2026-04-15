@@ -1,18 +1,18 @@
-import type { Meta, StoryObj } from "@storybook/nextjs";
-import { useState } from "react";
-import Checkbox from "./Checkbox";
+import type { Meta, StoryObj } from '@storybook/nextjs';
+import { useState } from 'react';
+import Checkbox from './Checkbox';
 
 const meta = {
   component: Checkbox,
-  tags: ["autodocs"],
+  tags: ['autodocs'],
   parameters: {
-    layout: "centered",
+    layout: 'centered',
   },
   args: {
-    id: "checkbox-playground",
-    variant: "square",
-    hoverColor: "var(--blueberry-500)",
-    checkedColor: "var(--blueberry-700)",
+    id: 'checkbox-playground',
+    variant: 'square',
+    hoverColor: 'var(--blueberry-500)',
+    checkedColor: 'var(--blueberry-700)',
     disabled: false,
   },
 } satisfies Meta<typeof Checkbox>;
@@ -31,10 +31,7 @@ export const Playground: Story = {
     return (
       <div className="flex w-md items-center gap-2">
         <Checkbox {...args} checked={checked} onChange={setChecked} />
-        <label
-          htmlFor={args.id}
-          className="cursor-pointer text-sm text-metal-900"
-        >
+        <label htmlFor={args.id} className="cursor-pointer text-sm text-metal-900">
           Aceito os termos
         </label>
       </div>
@@ -43,8 +40,7 @@ export const Playground: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Componente de checkbox visual (somente o item de marcação). O layout de texto fica fora do componente.",
+        story: 'Componente de checkbox visual (somente o item de marcação). O layout de texto fica fora do componente.',
       },
     },
   },
@@ -62,30 +58,14 @@ export const Shapes: Story = {
     return (
       <div className="flex w-md flex-col gap-3">
         <div className="flex items-center gap-2">
-          <Checkbox
-            id="checkbox-shape-circle"
-            variant="circle"
-            checked={circleChecked}
-            onChange={setCircleChecked}
-          />
-          <label
-            htmlFor="checkbox-shape-circle"
-            className="cursor-pointer text-sm text-metal-900"
-          >
+          <Checkbox id="checkbox-shape-circle" variant="circle" checked={circleChecked} onChange={setCircleChecked} />
+          <label htmlFor="checkbox-shape-circle" className="cursor-pointer text-sm text-metal-900">
             Formato circular
           </label>
         </div>
         <div className="flex items-center gap-2">
-          <Checkbox
-            id="checkbox-shape-square"
-            variant="square"
-            checked={squareChecked}
-            onChange={setSquareChecked}
-          />
-          <label
-            htmlFor="checkbox-shape-square"
-            className="cursor-pointer text-sm text-metal-900"
-          >
+          <Checkbox id="checkbox-shape-square" variant="square" checked={squareChecked} onChange={setSquareChecked} />
+          <label htmlFor="checkbox-shape-square" className="cursor-pointer text-sm text-metal-900">
             Formato quadrado
           </label>
         </div>
@@ -110,10 +90,7 @@ export const CustomColors: Story = {
           hoverColor="var(--green-blueberry)"
           checkedColor="var(--red-blueberry)"
         />
-        <label
-          htmlFor="checkbox-custom-colors"
-          className="cursor-pointer text-sm text-metal-900"
-        >
+        <label htmlFor="checkbox-custom-colors" className="cursor-pointer text-sm text-metal-900">
           Hover verde e marcado vermelho
         </label>
       </div>

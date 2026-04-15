@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
-import { Trash2 } from "lucide-react";
-import Button from "./Button";
+import type { ReactNode } from 'react';
+import { Trash2 } from 'lucide-react';
+import Button from './Button';
 
 type DeleteIconButtonProps = {
   onClick: () => void;
@@ -9,19 +9,19 @@ type DeleteIconButtonProps = {
   className?: string;
   children?: ReactNode;
   fill?: boolean;
-  size?: "normal" | "icon";
+  size?: 'normal' | 'icon';
 };
 
 export default function DeleteIconButton({
   onClick,
   disabled = false,
   ariaLabel,
-  className = "p-2.5",
+  className = 'p-2.5',
   children,
   fill = false,
   size,
 }: DeleteIconButtonProps) {
-  const resolvedSize = size ?? (children ? "normal" : "icon");
+  const resolvedSize = size ?? (children ? 'normal' : 'icon');
 
   return (
     <Button

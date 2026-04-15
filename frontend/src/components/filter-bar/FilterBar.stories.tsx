@@ -1,13 +1,13 @@
-import type { Meta, StoryObj } from "@storybook/nextjs";
-import { useState } from "react";
-import FilterBar from "./FilterBar";
+import type { Meta, StoryObj } from '@storybook/nextjs';
+import { useState } from 'react';
+import FilterBar from './FilterBar';
 
 const meta = {
-  title: "FilterBar",
+  title: 'FilterBar',
   component: FilterBar,
-  tags: ["autodocs"],
+  tags: ['autodocs'],
   parameters: {
-    layout: "padded",
+    layout: 'padded',
   },
 } satisfies Meta<typeof FilterBar>;
 
@@ -19,12 +19,12 @@ export default meta;
 
 export const Playground: StoryObj<typeof FilterBar> = {
   render: (args) => {
-    const [value, setValue] = useState("");
+    const [value, setValue] = useState('');
     return <FilterBar {...args} value={value} onChange={setValue} />;
   },
   args: {
-    placeholder: "Buscar itens...",
-    filterButtonText: "Filtrar",
+    placeholder: 'Buscar itens...',
+    filterButtonText: 'Filtrar',
     showFilterButton: true,
     disabled: false,
   },
@@ -47,14 +47,8 @@ Use os controles para testar **placeholder**, **filterButtonText**, **showFilter
 
 export const Basic: StoryObj<typeof FilterBar> = {
   render: () => {
-    const [value, setValue] = useState("");
-    return (
-      <FilterBar
-        value={value}
-        onChange={setValue}
-        placeholder="Buscar projetos..."
-      />
-    );
+    const [value, setValue] = useState('');
+    return <FilterBar value={value} onChange={setValue} placeholder="Buscar projetos..." />;
   },
   parameters: {
     docs: {
@@ -75,15 +69,8 @@ A busca funciona com **estado controlado** (controlled component).
 
 export const WithoutFilterButton: StoryObj<typeof FilterBar> = {
   render: () => {
-    const [value, setValue] = useState("");
-    return (
-      <FilterBar
-        value={value}
-        onChange={setValue}
-        placeholder="Buscar usuários..."
-        showFilterButton={false}
-      />
-    );
+    const [value, setValue] = useState('');
+    return <FilterBar value={value} onChange={setValue} placeholder="Buscar usuários..." showFilterButton={false} />;
   },
   parameters: {
     docs: {
@@ -104,15 +91,8 @@ Use \`showFilterButton={false}\` para ocultar o botão.
 
 export const Disabled: StoryObj<typeof FilterBar> = {
   render: () => {
-    const [value, setValue] = useState("");
-    return (
-      <FilterBar
-        value={value}
-        onChange={setValue}
-        placeholder="A busca está desabilitada"
-        disabled
-      />
-    );
+    const [value, setValue] = useState('');
+    return <FilterBar value={value} onChange={setValue} placeholder="A busca está desabilitada" disabled />;
   },
   parameters: {
     docs: {
@@ -133,14 +113,8 @@ O campo fica visualmente diferente e não aceita input.
 
 export const WithValue: StoryObj<typeof FilterBar> = {
   render: () => {
-    const [value, setValue] = useState("Componentes React");
-    return (
-      <FilterBar
-        value={value}
-        onChange={setValue}
-        placeholder="Buscar projetos..."
-      />
-    );
+    const [value, setValue] = useState('Componentes React');
+    return <FilterBar value={value} onChange={setValue} placeholder="Buscar projetos..." />;
   },
   parameters: {
     docs: {
@@ -161,14 +135,14 @@ Campo com **valor inicial**.
 
 export const Customized: StoryObj<typeof FilterBar> = {
   render: () => {
-    const [value, setValue] = useState("");
+    const [value, setValue] = useState('');
     return (
       <FilterBar
         value={value}
         onChange={setValue}
         placeholder="Digite para buscar rotulagens..."
         filterButtonText="Filtros avançados"
-        onFilterClick={() => alert("Filtro clicado!")}
+        onFilterClick={() => alert('Filtro clicado!')}
       />
     );
   },
@@ -191,30 +165,15 @@ Use \`filterButtonText\` para mudar o texto e \`onFilterClick\` para adicionar a
 
 export const MultipleBars: StoryObj<typeof FilterBar> = {
   render: () => {
-    const [search1, setSearch1] = useState("");
-    const [search2, setSearch2] = useState("");
-    const [search3, setSearch3] = useState("");
+    const [search1, setSearch1] = useState('');
+    const [search2, setSearch2] = useState('');
+    const [search3, setSearch3] = useState('');
 
     return (
       <div className="space-y-4">
-        <FilterBar
-          value={search1}
-          onChange={setSearch1}
-          placeholder="Buscar projetos..."
-          filterButtonText="Filtros"
-        />
-        <FilterBar
-          value={search2}
-          onChange={setSearch2}
-          placeholder="Buscar usuários..."
-          showFilterButton={false}
-        />
-        <FilterBar
-          value={search3}
-          onChange={setSearch3}
-          placeholder="Buscar rotulagens..."
-          filterButtonText="Avançado"
-        />
+        <FilterBar value={search1} onChange={setSearch1} placeholder="Buscar projetos..." filterButtonText="Filtros" />
+        <FilterBar value={search2} onChange={setSearch2} placeholder="Buscar usuários..." showFilterButton={false} />
+        <FilterBar value={search3} onChange={setSearch3} placeholder="Buscar rotulagens..." filterButtonText="Avançado" />
       </div>
     );
   },

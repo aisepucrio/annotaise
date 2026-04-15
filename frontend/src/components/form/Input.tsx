@@ -1,9 +1,9 @@
-import React, { forwardRef, InputHTMLAttributes, ReactNode } from "react";
-import { cn } from "@/lib/utils";
-import FormFieldBase from "./base/FormFieldBase";
-import { formFieldClasses } from "./base/formFieldClasses";
+import React, { forwardRef, InputHTMLAttributes, ReactNode } from 'react';
+import { cn } from '@/lib/utils';
+import FormFieldBase from './base/FormFieldBase';
+import { formFieldClasses } from './base/formFieldClasses';
 
-export type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "size"> & {
+export type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> & {
   /** Label do input */
   label?: string;
   /** Mensagem de erro */
@@ -41,8 +41,8 @@ const Input = forwardRef<HTMLInputElement | HTMLTextAreaElement, InputProps>(
       onIconClick,
       leftIcon,
       required = false,
-      className = "",
-      containerClassName = "",
+      className = '',
+      containerClassName = '',
       id,
       disabled = false,
       multiline = false,
@@ -51,34 +51,23 @@ const Input = forwardRef<HTMLInputElement | HTMLTextAreaElement, InputProps>(
       tooltip,
       ...props
     },
-    ref,
+    ref
   ) => {
     const baseClasses = cn(
       formFieldClasses.base,
       formFieldClasses.placeholder,
       formFieldClasses.getBorderColor(!!error),
       formFieldClasses.disabled,
-      leftIcon && "pl-11",
-      icon && "pr-11",
-      !resizable && multiline && "resize-none",
-      className,
+      leftIcon && 'pl-11',
+      icon && 'pr-11',
+      !resizable && multiline && 'resize-none',
+      className
     );
 
     return (
-      <FormFieldBase
-        label={label}
-        id={id}
-        error={error}
-        required={required}
-        className={containerClassName}
-        tooltip={tooltip}
-      >
+      <FormFieldBase label={label} id={id} error={error} required={required} className={containerClassName} tooltip={tooltip}>
         <div className="relative">
-          {leftIcon && !multiline && (
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-metal-200">
-              {leftIcon}
-            </div>
-          )}
+          {leftIcon && !multiline && <div className="absolute left-3 top-1/2 -translate-y-1/2 text-metal-200">{leftIcon}</div>}
 
           {multiline ? (
             <textarea
@@ -90,23 +79,13 @@ const Input = forwardRef<HTMLInputElement | HTMLTextAreaElement, InputProps>(
               {...(props as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
             />
           ) : (
-            <input
-              ref={ref as React.Ref<HTMLInputElement>}
-              id={id}
-              disabled={disabled}
-              className={baseClasses}
-              {...props}
-            />
+            <input ref={ref as React.Ref<HTMLInputElement>} id={id} disabled={disabled} className={baseClasses} {...props} />
           )}
 
           {icon && !multiline && (
             <div className="absolute right-2 top-1/2 -translate-y-1/2 text-metal-200">
               {onIconClick ? (
-                <button
-                  type="button"
-                  onClick={onIconClick}
-                  className="focus:outline-none hover:text-metal-500 transition-colors"
-                >
+                <button type="button" onClick={onIconClick} className="focus:outline-none hover:text-metal-500 transition-colors">
                   {icon}
                 </button>
               ) : (
@@ -117,9 +96,9 @@ const Input = forwardRef<HTMLInputElement | HTMLTextAreaElement, InputProps>(
         </div>
       </FormFieldBase>
     );
-  },
+  }
 );
 
-Input.displayName = "Input";
+Input.displayName = 'Input';
 
 export default Input;
