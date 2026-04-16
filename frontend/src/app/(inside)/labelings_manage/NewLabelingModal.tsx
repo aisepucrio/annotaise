@@ -16,6 +16,7 @@ import Button from '@/components/button/Button';
 import Tooltip from '@/components/Tooltip';
 
 import { useTranslations } from '@/i18n/use-translations';
+import { csvFileHasEmptyFields, isCsvFileName } from '@/lib/csvUtils';
 
 import type { CreateLabelingWithCsvPayload, LabelingPayload } from '@/modules/labelings/labelingsTypes';
 import type { DecisionMode, DistributionStrategy } from '@/modules/labelings/labelingsTypes';
@@ -112,21 +113,7 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
   async function parseHasEmptyFields(file: File) {
     setIsAnalyzingFile(true);
     try {
-      const content = await file.text();
-      const lines = content.split(/\r?\n/).filter((line) => line.trim() !== '');
-      if (lines.length <= 1) {
-        setHasEmptyFields(false);
-        return;
-      }
-
-      const headers = parseCsvLine(lines[0]);
-      const emptyFound = lines.slice(1).some((line) => {
-        const cells = parseCsvLine(line);
-        if (cells.length < headers.length) return true;
-        return cells.some((cell) => cell.trim() === '');
-      });
-
-      setHasEmptyFields(emptyFound);
+      setHasEmptyFields(await csvFileHasEmptyFields(file));
     } catch {
       setHasEmptyFields(false);
     } finally {
@@ -229,7 +216,7 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
 
   // Basic file validation before moving forward
   function validateFile(file: File) {
-    if (!file.name.toLowerCase().endsWith('.csv')) {
+    if (!isCsvFileName(file.name)) {
       throw new Error(t('labelings.upload.error.invalidFileExtension'));
     }
   }
@@ -274,34 +261,6 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
   function handleDragOver(event: React.DragEvent<HTMLDivElement>) {
     event.preventDefault();
     event.stopPropagation();
-  }
-
-  // Simple CSV line parser (supports quotes and escaped double quotes)
-  function parseCsvLine(line: string): string[] {
-    const cells: string[] = [];
-    let current = '';
-    let inQuotes = false;
-
-    for (let i = 0; i < line.length; i += 1) {
-      const char = line[i];
-      if (char === '"') {
-        const nextChar = line[i + 1];
-        if (inQuotes && nextChar === '"') {
-          current += '"';
-          i += 1;
-        } else {
-          inQuotes = !inQuotes;
-        }
-      } else if (char === ',' && !inQuotes) {
-        cells.push(current);
-        current = '';
-      } else {
-        current += char;
-      }
-    }
-    cells.push(current);
-
-    return cells;
   }
 
   if (!open) return null;

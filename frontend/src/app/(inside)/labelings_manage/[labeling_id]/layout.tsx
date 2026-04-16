@@ -7,16 +7,20 @@ import { toast } from 'sonner';
 import LabelingHeader from './LabelingHeader';
 import EditLabelingModal from './EditLabelingModal';
 import AddItemsCsvModal from './AddItemsCsvModal';
+
+import { useTranslations } from '@/i18n/use-translations';
+
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
+
 import { useLabelingHeaderQuery } from '@/modules/labelings/manage/labelingManagerQueries';
 import {
   useAddItemsCsvMutation,
   useDeleteLabelingMutation,
+  useExportImportedLabelingCsvMutation,
   useUpdateLabelingMutation,
 } from '@/modules/labelings/manage/labelingManagerMutations';
-import { exportImportedLabelingCsv } from '@/modules/labelings/labelingService';
 import type { LabelingPayload } from '@/modules/labelings/labelingsTypes';
-import { useTranslations } from '@/i18n/use-translations';
+
 import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 
 type LayoutProps = {
@@ -25,6 +29,7 @@ type LayoutProps = {
 
 type HeaderTabKey = 'form' | 'assign' | 'answers' | 'guide' | 'decision';
 
+// Maps the current nested route to the header tab that should be highlighted.
 function getActiveTabFromPath(pathname: string): HeaderTabKey {
   if (pathname.includes('/assign')) return 'assign';
   if (pathname.includes('/answers')) return 'answers';
@@ -41,6 +46,7 @@ export default function LabelingsManageLayout({ children }: LayoutProps) {
 
   const headerRef = useRef<HTMLDivElement | null>(null);
 
+  // The route owns the selected tab, so derive it from the pathname instead of storing local tab state.
   const labelingId = useMemo(() => Number(params?.labeling_id), [params]);
   const activeTab = useMemo(() => getActiveTabFromPath(pathname), [pathname]);
   const showSaveButton = activeTab === 'form' || activeTab === 'guide';
@@ -48,7 +54,6 @@ export default function LabelingsManageLayout({ children }: LayoutProps) {
   const [isEditInfoOpen, setIsEditInfoOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isImportCsvOpen, setIsImportCsvOpen] = useState(false);
-  const [isDownloadingCsv, setIsDownloadingCsv] = useState(false);
 
   const headerQuery = useLabelingHeaderQuery(labelingId);
   const labeling = headerQuery.data?.labeling;
@@ -57,6 +62,7 @@ export default function LabelingsManageLayout({ children }: LayoutProps) {
   const deleteMutation = useDeleteLabelingMutation();
   const updateMutation = useUpdateLabelingMutation();
   const addItemsCsvMutation = useAddItemsCsvMutation();
+  const exportImportedCsvMutation = useExportImportedLabelingCsvMutation();
 
   const handleUpdateLabeling = (payload: Partial<LabelingPayload>) => {
     if (!labeling) return;
@@ -115,9 +121,9 @@ export default function LabelingsManageLayout({ children }: LayoutProps) {
   const handleDownloadCsv = useCallback(async () => {
     if (Number.isNaN(labelingId)) return;
 
-    setIsDownloadingCsv(true);
     try {
-      const { blob, filename } = await exportImportedLabelingCsv(labelingId);
+      const { blob, filename } = await exportImportedCsvMutation.mutateAsync(labelingId);
+      // The API returns a blob, so the browser download must be triggered manually on the client.
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement('a');
       anchor.href = url;
@@ -127,10 +133,8 @@ export default function LabelingsManageLayout({ children }: LayoutProps) {
       toast.success(t('labelings.create.header.downloadCsvSuccess'));
     } catch (error: unknown) {
       toast.error(getApiErrorMessage(error, t('labelings.create.header.downloadCsvError')));
-    } finally {
-      setIsDownloadingCsv(false);
     }
-  }, [labelingId, t]);
+  }, [exportImportedCsvMutation, labelingId, t]);
 
   const tabs = useMemo(() => {
     const base = [
@@ -144,6 +148,7 @@ export default function LabelingsManageLayout({ children }: LayoutProps) {
   }, [labeling?.decision, t]);
 
   useEffect(() => {
+    // Prevent deep links to the decision tab when this labeling does not support decisions.
     if (!labeling?.decision && activeTab === 'decision') {
       router.replace(`/labelings_manage/${labelingId}/form`);
     }
@@ -158,6 +163,7 @@ export default function LabelingsManageLayout({ children }: LayoutProps) {
 
   const handleHeaderSave = useCallback(() => {
     if (typeof window === 'undefined') return;
+    // Child pages listen to this event and handle persistence for their own tab-specific form state.
     window.dispatchEvent(
       new CustomEvent('labelings-manage:save', {
         detail: { tab: activeTab },
@@ -182,7 +188,7 @@ export default function LabelingsManageLayout({ children }: LayoutProps) {
         showSaveButton={showSaveButton}
         onSave={handleHeaderSave}
         onDownloadCsv={() => void handleDownloadCsv()}
-        isDownloadingCsv={isDownloadingCsv}
+        isDownloadingCsv={exportImportedCsvMutation.isPending}
         onImportCsv={() => setIsImportCsvOpen(true)}
       />
 

@@ -23,7 +23,7 @@ interface LabelingHeaderProps {
   onDelete: () => void;
   headerRef?: RefObject<HTMLDivElement | null>;
 
-  // Optional save button
+  // Save is only available on tabs that expose editable content.
   showSaveButton?: boolean;
   onSave?: () => void;
   isSaving?: boolean;
@@ -61,8 +61,7 @@ export default function LabelingHeader({
   return (
     <div ref={headerRef} className="bg-blueberry-700 text-white px-4 py-2 shadow-md shrink-0 sticky top-0 z-20">
       <div className="flex items-center justify-between">
-        {/* Esquerda: título, informações do projeto, datas e ação de editar */}
-        {/* Botão */}
+        {/* Left section: back navigation, labeling identity, and quick metadata. */}
         <div className="flex items-center gap-3">
           <Button
             variant="light"
@@ -75,7 +74,7 @@ export default function LabelingHeader({
             <ArrowLeft size={22} />
           </Button>
 
-          {/* Título e nome do projeto */}
+          {/* Primary title row with project context. */}
           <div className="flex flex-col">
             <div className="flex items-center gap-3">
               <span className="text-xl font-semibold leading-tight">
@@ -91,14 +90,14 @@ export default function LabelingHeader({
               </span>
             </div>
 
-            {/* Data */}
+            {/* Date range and compact status badges. */}
             <div className="flex items-center gap-3 text-md mt-0.5">
               <span className="flex items-center gap-1">
                 <Calendar size={14} />
                 {`${formatDate(labeling?.start_date ?? null, locale)} - ${formatDate(labeling?.final_date ?? null, locale)}`}
               </span>
 
-              {/* Badges */}
+              {/* These badges summarize configuration that is relevant across all tabs. */}
               {labeling?.users_per_item !== undefined && (
                 <span className="px-2 py-1 bg-white/20 text-white text-[11px] font-semibold uppercase tracking-wide">
                   {t('labelings.create.header.usersPerItem', {
@@ -127,7 +126,7 @@ export default function LabelingHeader({
           </button>
         </div>
 
-        {/*botão de salvar (opcional) e botão de excluir */}
+        {/* Right section: data import/export, optional save, and destructive action. */}
         <div className="flex items-center gap-2">
           {onImportCsv && (
             <Button
@@ -175,10 +174,10 @@ export default function LabelingHeader({
         </div>
       </div>
 
-      {/* Separador visual */}
+      {/* Visual divider between metadata and tab navigation. */}
       <div className="mt-3 h-0.5 bg-white/80 rounded-full" />
 
-      {/* Navegação das abas */}
+      {/* Tabs only route between nested pages; they do not hold content state themselves. */}
       <div className="flex gap-6 mt-2 text-sm justify-center">
         {tabs.map((tab) => (
           <button

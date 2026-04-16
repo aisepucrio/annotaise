@@ -7,6 +7,7 @@ import {
   updateLabelingMembership,
   deleteLabelingMembership,
   addItemsCsvToLabeling,
+  exportImportedLabelingCsv,
 } from '../labelingService';
 import type { LabelingPayload, SectionDTO, LabelingMembershipRole } from '@/modules/labelings/labelingsTypes';
 
@@ -90,6 +91,14 @@ export function useAddItemsCsvMutation() {
       qc.invalidateQueries({ queryKey: ['labelings', labelingId] });
       qc.invalidateQueries({ queryKey: ['labelings'] });
     },
+  });
+}
+
+// Utilizada para exportar o CSV de itens importados do labeling
+export function useExportImportedLabelingCsvMutation() {
+  return useMutation({
+    // Treat CSV export as a user-triggered side effect instead of cached query data.
+    mutationFn: (labelingId: number) => exportImportedLabelingCsv(labelingId),
   });
 }
 
