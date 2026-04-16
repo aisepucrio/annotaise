@@ -2,7 +2,7 @@
 
 import { useEffect, useState, ReactNode } from 'react';
 import PageHeader from './PageHeader';
-import FilterBar from '@/components/filter-bar/FilterBar';
+import FilterBar from '@/components/FilterBar';
 import GridLayout from '@/components/grid/GridLayout';
 import Button from '@/components/button/Button';
 import Loader from '@/components/Loader';

@@ -6,7 +6,7 @@ import remarkGfm from 'remark-gfm';
 import ContextVizualizer from '@/components/answer-vizualizer/ContextVizualizer';
 import QuestionVizualizer from '@/components/answer-vizualizer/QuestionVizualizer';
 import SectionVizualizer from '@/components/answer-vizualizer/SectionVizualizer';
-import Modal from '@/components/modal/Modal';
+import Modal from '@/components/Modal';
 import {
   type BackgroundAnswerResponse,
   type LabelingMembershipDashboard,

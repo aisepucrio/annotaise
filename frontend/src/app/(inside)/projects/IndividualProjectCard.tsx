@@ -2,7 +2,7 @@
 
 import { NotebookPen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import StatPill from '@/components/stat-pill/StatPill';
+import StatPill from '@/components/StatPill';
 import Button from '@/components/button/Button';
 import { ArrowUpRight } from 'lucide-react';
 import { useTranslations } from '@/i18n/use-translations';

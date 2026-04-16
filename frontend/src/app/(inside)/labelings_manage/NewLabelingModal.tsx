@@ -7,13 +7,13 @@ import { toast } from 'sonner';
 
 import { useProjectsQuery } from '@/modules/projects/projectsQueries';
 
-import Modal from '@/components/modal/Modal';
+import Modal from '@/components/Modal';
 import Input from '@/components/form/Input';
 import Select from '@/components/form/Select';
 import DatePicker from '@/components/form/DatePicker';
 import Checkbox from '@/components/form/Checkbox';
 import Button from '@/components/button/Button';
-import Tooltip from '@/components/tooltip/Tooltip';
+import Tooltip from '@/components/Tooltip';
 
 import { useTranslations } from '@/i18n/use-translations';
 

@@ -1,6 +1,6 @@
 'use client';
 
-import Tooltip from '@/components/tooltip/Tooltip';
+import Tooltip from '@/components/Tooltip';
 
 type SelectorOption<TValue extends string> = {
   value: TValue;

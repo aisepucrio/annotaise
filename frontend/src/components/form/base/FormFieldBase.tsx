@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import Tooltip from '@/components/tooltip/Tooltip';
+import Tooltip from '@/components/Tooltip';
 
 export type FormFieldBaseProps = {
   /** Label do campo */

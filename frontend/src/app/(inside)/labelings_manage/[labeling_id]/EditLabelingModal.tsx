@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import type { Labeling, LabelingPayload } from '@/modules/labelings/labelingsTypes';
 import type { Project } from '@/modules/projects/projectsTypes';
-import Modal from '@/components/modal/Modal';
+import Modal from '@/components/Modal';
 import Input from '@/components/form/Input';
 import Select from '@/components/form/Select';
 import DatePicker from '@/components/form/DatePicker';

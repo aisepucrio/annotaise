@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, ReactNode } from 'react';
-import Modal from '@/components/modal/Modal';
+import Modal from '@/components/Modal';
 import Button from '@/components/button/Button';
 import Input from '@/components/form/Input';
 import { useTranslations } from '@/i18n/use-translations';

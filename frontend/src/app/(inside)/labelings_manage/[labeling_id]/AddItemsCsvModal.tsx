@@ -3,7 +3,7 @@
 import { Loader2, TriangleAlert, Upload } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import Modal from '@/components/modal/Modal';
+import Modal from '@/components/Modal';
 import Button from '@/components/button/Button';
 import { useTranslations } from '@/i18n/use-translations';
 

@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 
 import { useTranslations } from '@/i18n/use-translations';
 import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
-import Modal from '@/components/modal/Modal';
+import Modal from '@/components/Modal';
 import Select from '@/components/form/Select';
 import Checkbox from '@/components/form/Checkbox';
 import Button from '@/components/button/Button';

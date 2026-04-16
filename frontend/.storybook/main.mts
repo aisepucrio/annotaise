@@ -6,7 +6,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const config: StorybookConfig = {
-  stories: ['../src/components/**/*.stories.@(ts|tsx)'],
+  stories: ['../src/stories/**/*.mdx', '../src/stories/**/*.stories.@(ts|tsx)'],
   addons: [
     '@chromatic-com/storybook',
     '@storybook/addon-vitest',

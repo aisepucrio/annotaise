@@ -12,7 +12,7 @@ import NewLabelingModal from './NewLabelingModal';
 import PageLayout from '@/components/inside-pages-layout/PageLayout';
 import GridItemCard from '@/components/grid/GridItemCard';
 import Button from '@/components/button/Button';
-import IndividualLabelingCard from '@/components/labeling-card/IndividualLabelingCard';
+import IndividualLabelingCard from '@/components/IndividualLabelingCard';
 
 import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 
