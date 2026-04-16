@@ -2,8 +2,11 @@
 
 import { Loader2, TriangleAlert, Upload } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useProjectsQuery } from '@/modules/projects/projectsQueries';
+
 import { toast } from 'sonner';
+
+import { useProjectsQuery } from '@/modules/projects/projectsQueries';
+
 import Modal from '@/components/modal/Modal';
 import Input from '@/components/form/Input';
 import Select from '@/components/form/Select';
@@ -11,71 +14,67 @@ import DatePicker from '@/components/form/DatePicker';
 import Checkbox from '@/components/form/Checkbox';
 import Button from '@/components/button/Button';
 import Tooltip from '@/components/tooltip/Tooltip';
+
 import { useTranslations } from '@/i18n/use-translations';
+
+import type { CreateLabelingWithCsvPayload, LabelingPayload } from '@/modules/labelings/labelingsTypes';
 import type { DecisionMode, DistributionStrategy } from '@/modules/labelings/labelingsTypes';
 
-// Props esperadas pelo modal de criação de nova rotulagem
+// Props expected by the new labeling creation modal
 type NewLabelingModalProps = {
   open: boolean;
   onClose: () => void;
-  onConfirm: (payload: {
-    file: File;
-    title: string;
-    projectId: number;
-    usersPerItem: number;
-    startDate?: string;
-    finalDate?: string;
-    blockSectionBack?: boolean;
-    decision: boolean;
-    decisionMode: DecisionMode;
-    hasBackgroundForm: boolean;
-    distributionStrategy: DistributionStrategy;
-  }) => Promise<void>;
+  onConfirm: (payload: CreateLabelingWithCsvPayload) => Promise<void>;
 };
 
-// Etapas internas do fluxo (upload -> detalhes)
+// Internal flow steps (upload -> details)
 type Step = 'upload' | 'details';
 type DetailFormField = 'title' | 'projectId' | 'startDate' | 'finalDate' | 'usersPerItem';
 type DetailFormErrors = Partial<Record<DetailFormField, string>>;
+type CreateLabelingWithCsvDraft = {
+  file: File | null;
+  payload: Omit<LabelingPayload, 'project' | 'users_per_item'> & {
+    project: number | null;
+    users_per_item: number | null;
+  };
+};
+
+function createInitialState(): CreateLabelingWithCsvDraft {
+  return {
+    file: null,
+    payload: {
+      title: '',
+      project: null,
+      users_per_item: 1,
+      start_date: new Date().toISOString().split('T')[0],
+      final_date: '',
+      block_section_back: true,
+      decision: false,
+      decision_mode: 'manual',
+      has_background_form: false,
+      distribution_strategy: 'auto',
+    },
+  };
+}
 
 export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabelingModalProps) {
   const { t } = useTranslations();
 
-  // Referência para acionar o input de arquivo via botão
+  // Reference used to trigger the file input from the button
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Estado principal do formulário
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [title, setTitle] = useState('');
-  const [projectId, setProjectId] = useState<number | null>(null);
-  const [startDate, setStartDate] = useState('');
-  const [finalDate, setFinalDate] = useState('');
-  const [usersPerItem, setUsersPerItem] = useState<string>('1');
-  const [distributionStrategy, setDistributionStrategy] = useState<DistributionStrategy>('auto');
-  const [decisionEnabled, setDecisionEnabled] = useState(false);
-  const [decisionMode, setDecisionMode] = useState<DecisionMode>('manual');
-  const [hasBackgroundForm, setHasBackgroundForm] = useState(false);
+  // Main form state
+  const [draft, setDraft] = useState<CreateLabelingWithCsvDraft>(() => createInitialState());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState<Step>('upload');
   const [hasEmptyFields, setHasEmptyFields] = useState(false);
   const [isAnalyzingFile, setIsAnalyzingFile] = useState(false);
   const [formErrors, setFormErrors] = useState<DetailFormErrors>({});
 
-  const { data: projects, isLoading: isLoadingProjects } = useProjectsQuery();
-
-  // Efeito: limpa todo o estado local quando o modal é fechado
+  // Effect: reset the entire local state when the modal closes
   useEffect(() => {
     if (!open) {
-      setSelectedFile(null);
-      setTitle('');
-      setProjectId(null);
-      setStartDate('');
-      setFinalDate('');
-      setUsersPerItem('1');
-      setDistributionStrategy('auto');
-      setDecisionEnabled(false);
-      setDecisionMode('manual');
-      setHasBackgroundForm(false);
+      setDraft(createInitialState());
       setIsSubmitting(false);
       setHasEmptyFields(false);
       setIsAnalyzingFile(false);
@@ -85,14 +84,19 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
     }
   }, [open]);
 
-  const isPerPerson = distributionStrategy === 'per_person';
-
-  // Efeito: estratégia "per_person" força configurações incompatíveis
+  // Effect: the "per_person" strategy forces: decision = false, decison_mode = manual, users_per_item = 1
+  const isPerPerson = draft.payload.distribution_strategy === 'per_person';
   useEffect(() => {
     if (isPerPerson) {
-      setDecisionEnabled(false);
-      setDecisionMode('manual');
-      setUsersPerItem('1');
+      setDraft((prev) => ({
+        ...prev,
+        payload: {
+          ...prev.payload,
+          decision: false,
+          decision_mode: 'manual',
+          users_per_item: 1,
+        },
+      }));
       setFormErrors((prev) => {
         if (!prev.usersPerItem) return prev;
         const next = { ...prev };
@@ -102,30 +106,9 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
     }
   }, [isPerPerson]);
 
-  function clearFormError(field: DetailFormField) {
-    setFormErrors((prev) => {
-      if (!prev[field]) return prev;
-      const next = { ...prev };
-      delete next[field];
-      return next;
-    });
-  }
+  const { data: projects, isLoading: isLoadingProjects } = useProjectsQuery();
 
-  // Efeito: define a data inicial com a data atual na abertura
-  useEffect(() => {
-    if (open && !startDate) {
-      setStartDate(new Date().toISOString().split('T')[0]);
-    }
-  }, [open, startDate]);
-
-  // Validação básica do arquivo antes de prosseguir
-  function validateFile(file: File) {
-    if (!file.name.toLowerCase().endsWith('.csv')) {
-      throw new Error(t('labelings.upload.error.invalidFileExtension'));
-    }
-  }
-
-  // Analisa o CSV para sinalizar linhas com campos vazios
+  // Analyze the CSV to flag rows with empty fields
   async function parseHasEmptyFields(file: File) {
     setIsAnalyzingFile(true);
     try {
@@ -151,49 +134,38 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
     }
   }
 
-  // Handler do input de arquivo (seleção via explorador)
-  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) {
-      setSelectedFile(null);
-      setHasEmptyFields(false);
-      return;
-    }
-
-    try {
-      validateFile(file);
-      setSelectedFile(file);
-      void parseHasEmptyFields(file);
-    } catch (err) {
-      setSelectedFile(null);
-      setHasEmptyFields(false);
-      const message = err instanceof Error ? err.message : t('labelings.upload.error.invalidFile');
-      toast.error(message);
-    }
+  function clearFormError(field: DetailFormField) {
+    setFormErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
   }
 
-  // Confirmação final: valida campos e dispara callback externo
+  // Final confirmation: validate fields and trigger the external callback
   async function handleConfirm() {
     const nextFormErrors: DetailFormErrors = {};
+    const { payload, file } = draft;
 
-    if (!title.trim()) {
+    if (!payload.title.trim()) {
       nextFormErrors.title = t('labelings.upload.error.missingTitle');
     }
 
-    if (!projectId) {
+    if (!payload.project) {
       nextFormErrors.projectId = t('labelings.upload.error.missingProject');
     }
 
-    if (!finalDate.trim()) {
+    if (!payload.final_date.trim()) {
       nextFormErrors.finalDate = t('labelings.upload.error.missingFinalDate');
     }
 
-    const parsedUsersPerItem = Number(usersPerItem);
-    if (!Number.isInteger(parsedUsersPerItem) || parsedUsersPerItem <= 0) {
+    const parsedUsersPerItem = payload.users_per_item;
+    if (parsedUsersPerItem === null || !Number.isInteger(parsedUsersPerItem) || parsedUsersPerItem <= 0) {
       nextFormErrors.usersPerItem = t('labelings.upload.error.invalidUsersPerItem');
     }
 
-    if (startDate && finalDate && startDate > finalDate) {
+    if (payload.start_date && payload.final_date && payload.start_date > payload.final_date) {
       nextFormErrors.finalDate = t('labelings.upload.error.invalidDates');
     }
 
@@ -204,29 +176,30 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
 
     setFormErrors({});
 
-    if (!selectedFile) {
+    if (!file) {
       toast.error(t('labelings.upload.error.missingFile'));
       return;
     }
 
-    const confirmedProjectId = projectId;
+    const confirmedProjectId = payload.project;
     if (confirmedProjectId === null) return;
+
+    const confirmedUsersPerItem = parsedUsersPerItem;
+    if (confirmedUsersPerItem === null) return;
 
     setIsSubmitting(true);
 
     try {
       await onConfirm({
-        file: selectedFile,
-        title: title.trim(),
-        projectId: confirmedProjectId,
-        usersPerItem: parsedUsersPerItem,
-        startDate: startDate || undefined,
-        finalDate: finalDate || undefined,
-        blockSectionBack: true,
-        decision: decisionEnabled,
-        decisionMode,
-        hasBackgroundForm,
-        distributionStrategy,
+        file,
+        payload: {
+          ...payload,
+          title: payload.title.trim(),
+          project: confirmedProjectId,
+          users_per_item: confirmedUsersPerItem,
+          start_date: payload.start_date,
+          final_date: payload.final_date.trim(),
+        },
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : t('labelings.upload.error.createFailed');
@@ -236,12 +209,12 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
     }
   }
 
-  // Regra de navegação para avançar da etapa de upload
-  const canContinueUploadStep = useMemo(() => Boolean(selectedFile) && !isAnalyzingFile, [selectedFile, isAnalyzingFile]);
+  // Navigation guard to advance from the upload step
+  const canContinueUploadStep = useMemo(() => Boolean(draft.file) && !isAnalyzingFile, [draft.file, isAnalyzingFile]);
 
-  // Navegação entre etapas
+  // Step navigation
   function handleContinueFromUpload() {
-    if (!selectedFile) {
+    if (!draft.file) {
       toast.error(t('labelings.upload.error.continueMissingFile'));
       return;
     }
@@ -254,7 +227,35 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
     setStep('upload');
   }
 
-  // Drag and drop de arquivo na área de upload
+  // Basic file validation before moving forward
+  function validateFile(file: File) {
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      throw new Error(t('labelings.upload.error.invalidFileExtension'));
+    }
+  }
+
+  // File input handler for picker-based selection
+  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) {
+      setDraft((prev) => ({ ...prev, file: null }));
+      setHasEmptyFields(false);
+      return;
+    }
+
+    try {
+      validateFile(file);
+      setDraft((prev) => ({ ...prev, file }));
+      void parseHasEmptyFields(file);
+    } catch (err) {
+      setDraft((prev) => ({ ...prev, file: null }));
+      setHasEmptyFields(false);
+      const message = err instanceof Error ? err.message : t('labelings.upload.error.invalidFile');
+      toast.error(message);
+    }
+  }
+
+  // File drag-and-drop handler for the upload area
   function handleDrop(event: React.DragEvent<HTMLDivElement>) {
     event.preventDefault();
     event.stopPropagation();
@@ -262,7 +263,7 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
     if (!file) return;
     try {
       validateFile(file);
-      setSelectedFile(file);
+      setDraft((prev) => ({ ...prev, file }));
       void parseHasEmptyFields(file);
     } catch (err) {
       const message = err instanceof Error ? err.message : t('labelings.upload.error.invalidFile');
@@ -275,7 +276,7 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
     event.stopPropagation();
   }
 
-  // Parser simples de linha CSV (suporta aspas e escape por aspas duplas)
+  // Simple CSV line parser (supports quotes and escaped double quotes)
   function parseCsvLine(line: string): string[] {
     const cells: string[] = [];
     let current = '';
@@ -305,7 +306,7 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
 
   if (!open) return null;
 
-  // Descrição muda conforme a etapa ativa do modal
+  // The description changes according to the active modal step
   const modalDescription =
     step === 'upload' ? (
       <p>
@@ -317,10 +318,10 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
 
   return (
     <Modal open={open} onClose={onClose} title={t('labelings.upload.title')} description={modalDescription} maxWidth="lg">
-      {/* Render: etapa de upload */}
+      {/* Render: upload step */}
       {step === 'upload' ? (
         <div>
-          {/* Área principal de upload (botão + drag and drop + status) */}
+          {/* Main upload area (button + drag and drop + status) */}
           <div
             className="flex flex-col items-center gap-3 border-2 border-dashed border-blueberry-700 rounded-xl p-6 text-center"
             onDrop={handleDrop}
@@ -339,9 +340,9 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
             </Button>
 
             <p className="text-xs text-gray-600">
-              {selectedFile
+              {draft.file
                 ? t('labelings.upload.selectedFile', {
-                    name: selectedFile.name,
+                    name: draft.file.name,
                   })
                 : t('labelings.upload.placeholder')}
             </p>
@@ -354,7 +355,7 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
             )}
           </div>
 
-          {/* Alerta de qualidade do CSV quando há células vazias */}
+          {/* CSV quality warning when empty cells are detected */}
           {hasEmptyFields && (
             <div className="mt-4 rounded-lg border border-red-blueberry bg-red-50 px-3 py-2 text-sm text-red-blueberry">
               <TriangleAlert className="inline-block mr-1 mb-0.5 w-4 h-4" />
@@ -365,7 +366,7 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
             </div>
           )}
 
-          {/* Ações da etapa de upload */}
+          {/* Upload step actions */}
           <div className="mt-6 flex justify-between gap-3 w-[70%] mx-auto">
             <Button onClick={handleContinueFromUpload} disabled={!canContinueUploadStep}>
               {t('labelings.upload.continue')}
@@ -373,19 +374,25 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
           </div>
         </div>
       ) : (
-        // Render: etapa de detalhes
+        // Render: details step
         <div>
           <div className="space-y-5">
-            {/* Identificação da rotulagem */}
+            {/* Labeling identification */}
             <Input
               id="csv-title"
               label={t('labelings.upload.titleLabel')}
               required
               error={formErrors.title}
               placeholder={t('labelings.upload.titlePlaceholder')}
-              value={title}
+              value={draft.payload.title}
               onChange={(e) => {
-                setTitle((e.target as HTMLInputElement).value);
+                setDraft((prev) => ({
+                  ...prev,
+                  payload: {
+                    ...prev.payload,
+                    title: (e.target as HTMLInputElement).value,
+                  },
+                }));
                 clearFormError('title');
               }}
             />
@@ -400,29 +407,41 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
                 value: String(p.id),
                 label: p.name,
               }))}
-              value={projectId === null ? '' : String(projectId)}
+              value={draft.payload.project === null ? '' : String(draft.payload.project)}
               onChange={(e) => {
                 const value = (e.target as HTMLSelectElement).value;
-                setProjectId(value ? Number(value) : null);
+                setDraft((prev) => ({
+                  ...prev,
+                  payload: {
+                    ...prev.payload,
+                    project: value ? Number(value) : null,
+                  },
+                }));
                 clearFormError('projectId');
               }}
             />
 
-            {/* Aviso quando não há projetos disponíveis para seleção */}
+            {/* Warning shown when no projects are available for selection */}
             {!isLoadingProjects && !(projects?.length ?? 0) && (
               <p className="mt-1 text-xs text-orange-600">{t('labelings.upload.noProjects')}</p>
             )}
 
-            {/* Janela de datas da rotulagem */}
+            {/* Labeling date window */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <DatePicker
                 id="csv-start"
                 label={t('labelings.upload.startDateLabel')}
                 required
                 error={formErrors.startDate}
-                value={startDate}
+                value={draft.payload.start_date}
                 onChange={(e) => {
-                  setStartDate((e.target as HTMLInputElement).value);
+                  setDraft((prev) => ({
+                    ...prev,
+                    payload: {
+                      ...prev.payload,
+                      start_date: (e.target as HTMLInputElement).value,
+                    },
+                  }));
                   clearFormError('startDate');
                   clearFormError('finalDate');
                 }}
@@ -432,25 +451,37 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
                 label={t('labelings.upload.finalDateLabel')}
                 required
                 error={formErrors.finalDate}
-                value={finalDate}
+                value={draft.payload.final_date}
                 onChange={(e) => {
-                  setFinalDate((e.target as HTMLInputElement).value);
+                  setDraft((prev) => ({
+                    ...prev,
+                    payload: {
+                      ...prev.payload,
+                      final_date: (e.target as HTMLInputElement).value,
+                    },
+                  }));
                   clearFormError('finalDate');
                 }}
               />
             </div>
 
-            {/* Configurações booleanas extras (checkboxes) */}
+            {/* Extra boolean settings (checkboxes) */}
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <div className="rounded-lg border border-metal-200 bg-metal-50 px-3 py-2">
                 <div className="w-full">
                   <div className="flex items-center gap-2">
                     <Checkbox
                       id="csv-decision"
-                      checked={decisionEnabled}
+                      checked={draft.payload.decision}
                       onChange={(value) => {
-                        setDecisionEnabled(value);
-                        if (!value) setDecisionMode('manual');
+                        setDraft((prev) => ({
+                          ...prev,
+                          payload: {
+                            ...prev.payload,
+                            decision: value,
+                            decision_mode: value ? prev.payload.decision_mode : 'manual',
+                          },
+                        }));
                       }}
                       disabled={isPerPerson}
                       variant="square"
@@ -466,7 +497,7 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
                     </div>
                   </div>
 
-                  {decisionEnabled && !isPerPerson ? (
+                  {draft.payload.decision && !isPerPerson ? (
                     <div className="mt-2 rounded-md border border-metal-200 bg-white p-2">
                       <div className="mb-2 flex items-center gap-1">
                         <span className="text-sm text-metal-700">{t('labelings.upload.decisionModeLabel')}</span>
@@ -484,8 +515,16 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
                             label: t('labelings.upload.decisionMode.llm'),
                           },
                         ]}
-                        value={decisionMode}
-                        onChange={(e) => setDecisionMode((e.target as HTMLSelectElement).value as DecisionMode)}
+                        value={draft.payload.decision_mode ?? 'manual'}
+                        onChange={(e) =>
+                          setDraft((prev) => ({
+                            ...prev,
+                            payload: {
+                              ...prev.payload,
+                              decision_mode: (e.target as HTMLSelectElement).value as DecisionMode,
+                            },
+                          }))
+                        }
                       />
                     </div>
                   ) : null}
@@ -495,8 +534,16 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
               <div className="flex items-center gap-2 rounded-lg border border-metal-200 bg-metal-50 px-3 py-2">
                 <Checkbox
                   id="csv-background-form"
-                  checked={hasBackgroundForm}
-                  onChange={setHasBackgroundForm}
+                  checked={draft.payload.has_background_form ?? false}
+                  onChange={(value) =>
+                    setDraft((prev) => ({
+                      ...prev,
+                      payload: {
+                        ...prev.payload,
+                        has_background_form: value,
+                      },
+                    }))
+                  }
                   variant="square"
                   hoverColor="var(--metal-500)"
                   checkedColor="var(--metal-700)"
@@ -511,7 +558,7 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
               </div>
             </div>
 
-            {/* Estratégia de distribuição dos itens entre usuários */}
+            {/* Item distribution strategy across users */}
             <Select
               id="csv-distribution-strategy"
               label={t('labelings.upload.distributionStrategyLabel')}
@@ -529,21 +576,36 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
                   label: t('labelings.upload.distributionStrategy.per_person'),
                 },
               ]}
-              value={distributionStrategy}
-              onChange={(e) => setDistributionStrategy((e.target as HTMLSelectElement).value as DistributionStrategy)}
+              value={draft.payload.distribution_strategy ?? 'auto'}
+              onChange={(e) =>
+                setDraft((prev) => ({
+                  ...prev,
+                  payload: {
+                    ...prev.payload,
+                    distribution_strategy: (e.target as HTMLSelectElement).value as DistributionStrategy,
+                  },
+                }))
+              }
               tooltip={t('labelings.upload.distributionStrategyTooltip')}
             />
 
-            {/* Quantidade de usuários por item (desabilitado em per_person) */}
+            {/* Number of users per item (disabled for per_person) */}
             <Input
               id="csv-users-per-item"
               label={t('labelings.upload.usersPerItemLabel')}
               error={formErrors.usersPerItem}
               type="number"
               min={1}
-              value={usersPerItem}
+              value={draft.payload.users_per_item ?? ''}
               onChange={(e) => {
-                setUsersPerItem((e.target as HTMLInputElement).value);
+                const value = e.currentTarget.valueAsNumber;
+                setDraft((prev) => ({
+                  ...prev,
+                  payload: {
+                    ...prev.payload,
+                    users_per_item: Number.isNaN(value) ? null : value,
+                  },
+                }));
                 clearFormError('usersPerItem');
               }}
               disabled={isPerPerson}
@@ -552,7 +614,7 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
             />
           </div>
 
-          {/* Rodapé da etapa de detalhes (voltar + criar) */}
+          {/* Details step footer (back + create) */}
           <div className="mt-6 flex justify-between gap-3">
             <Button type="button" variant="white" fill={true} onClick={handleBackToUpload} disabled={isSubmitting}>
               {t('common.back')}

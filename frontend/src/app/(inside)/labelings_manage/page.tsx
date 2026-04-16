@@ -1,44 +1,33 @@
 'use client';
+
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import { Pen } from 'lucide-react';
 
-import { useTranslations } from '@/i18n/use-translations';
-
 import { toast } from 'sonner';
 
-import IndividualLabelingCard from '@/components/labeling-card/IndividualLabelingCard';
 import NewLabelingModal from './NewLabelingModal';
 
 import PageLayout from '@/components/inside-pages-layout/PageLayout';
 import GridItemCard from '@/components/grid/GridItemCard';
 import Button from '@/components/button/Button';
-import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
-import { useLabelingDashboardEditQuery } from '@/modules/labelings/labelingQueries';
-import { useCreateLabelingWithCsvMutation } from '@/modules/labelings/labelingMutations';
-import type { DecisionMode, DistributionStrategy } from '@/modules/labelings/labelingsTypes';
+import IndividualLabelingCard from '@/components/labeling-card/IndividualLabelingCard';
 
-type UploadPayload = {
-  file: File;
-  title: string;
-  projectId: number;
-  usersPerItem: number;
-  startDate?: string;
-  finalDate?: string;
-  blockSectionBack?: boolean;
-  decision: boolean;
-  decisionMode: DecisionMode;
-  hasBackgroundForm: boolean;
-  distributionStrategy: DistributionStrategy;
-};
+import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
+
+import { useLabelingDashboardEditQuery } from '@/modules/labelings/labelingQueries';
+import type { CreateLabelingWithCsvPayload } from '@/modules/labelings/labelingsTypes';
+import { useCreateLabelingWithCsvMutation } from '@/modules/labelings/labelingMutations';
+
+import { useTranslations } from '@/i18n/use-translations';
 
 export default function LabelingsPage() {
   const { t } = useTranslations();
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [open, setOpen] = useState(false);
+  const [openCreateLabelingModal, setopenCreateLabelingModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const { data: labelings, error, isLoading } = useLabelingDashboardEditQuery(searchQuery);
@@ -60,25 +49,10 @@ export default function LabelingsPage() {
     }
   }, [searchParams]);
 
-  async function handleConfirmCreateNewLabeling(payload: UploadPayload) {
+  async function handleConfirmCreateNewLabeling(payload: CreateLabelingWithCsvPayload) {
     try {
-      await createLabelingWithCsv.mutateAsync({
-        // Translate the modal payload into the API contract expected by the backend.
-        payload: {
-          title: payload.title,
-          project: payload.projectId,
-          users_per_item: payload.usersPerItem,
-          start_date: payload.startDate || undefined,
-          final_date: payload.finalDate || undefined,
-          block_section_back: payload.blockSectionBack,
-          decision: payload.decision,
-          decision_mode: payload.decisionMode,
-          has_background_form: payload.hasBackgroundForm,
-          distribution_strategy: payload.distributionStrategy,
-        },
-        file: payload.file,
-      });
-      setOpen(false);
+      await createLabelingWithCsv.mutateAsync(payload);
+      setopenCreateLabelingModal(false);
     } catch (err) {
       toast.error(getApiErrorMessage(err, t('labelings.manage.createError')));
     }
@@ -102,11 +76,17 @@ export default function LabelingsPage() {
       filterButtonText={t('filterBar.filterButton')}
       hasButton
       buttonText={t('labelings.manage.newButton')}
-      onButtonClick={() => setOpen(true)}
+      onButtonClick={() => setopenCreateLabelingModal(true)}
       isLoading={isLoading}
       message={!isLoading && labelingsList.length === 0 ? t('labelings.manage.empty') : undefined}
       minColumnWidth="420px"
-      modal={<NewLabelingModal open={open} onClose={() => setOpen(false)} onConfirm={handleConfirmCreateNewLabeling} />}
+      modal={
+        <NewLabelingModal
+          open={openCreateLabelingModal}
+          onClose={() => setopenCreateLabelingModal(false)}
+          onConfirm={handleConfirmCreateNewLabeling}
+        />
+      }
     >
       {labelingsList.map((l, index) => (
         <GridItemCard

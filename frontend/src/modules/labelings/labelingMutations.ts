@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createLabeling, importLabelingItemsCsv } from './labelingService';
-import type { LabelingPayload } from './labelingsTypes';
+import type { CreateLabelingWithCsvPayload, LabelingPayload } from './labelingsTypes';
 
-// Utilizada para criar labeling
+// Used to create a labeling
 export function useCreateLabelingMutation() {
   const qc = useQueryClient();
 
@@ -14,7 +14,7 @@ export function useCreateLabelingMutation() {
   });
 }
 
-// Utilizada para importar itens de labeling via CSV
+// Used to import labeling items via CSV
 export function useImportLabelingItemsCsvMutation() {
   const qc = useQueryClient();
 
@@ -27,14 +27,14 @@ export function useImportLabelingItemsCsvMutation() {
   });
 }
 
-// Utilizada para criar labeling e importar itens via CSV em sequência
+// Used to create a labeling and import items via CSV in sequence
 export function useCreateLabelingWithCsvMutation() {
   const qc = useQueryClient();
   const createLabeling = useCreateLabelingMutation();
   const importCsv = useImportLabelingItemsCsvMutation();
 
   return useMutation({
-    mutationFn: async ({ payload, file }: { payload: LabelingPayload; file: File }) => {
+    mutationFn: async ({ payload, file }: CreateLabelingWithCsvPayload) => {
       const labeling = await createLabeling.mutateAsync(payload);
       await importCsv.mutateAsync({ labelingId: labeling.id, file });
       return labeling;
