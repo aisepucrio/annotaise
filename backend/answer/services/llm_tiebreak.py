@@ -7,20 +7,17 @@ from pathlib import Path
 from urllib import error, request
 
 
-# TEMPORARIO (modelos leves para não travar local em desempate).
-# pra reverter para o comportamento original, é só restaurar OLLAMA_MODELS_ORIGINAL.
-OLLAMA_MODELS_ORIGINAL = [
+OLLAMA_MODELS_CODE = [
     "qwen3-coder:30b",
-    "devstral-small-2",
     "qwen2.5-coder:32b",
     "deepseek-coder-v2:16b",
-    "qwen3-coder-next",
 ]
 
-OLLAMA_MODELS = [
-    "tinyllama:latest",
-    "llama3.2:1b",
-    "qwen2.5:0.5b",
+OLLAMA_MODELS_GENERAL = [
+    "llama3.1:8b",
+    "llama3.2:3b",
+    "qwen2.5:7b",
+    "mistral-nemo:12b",
 ]
 
 
@@ -33,6 +30,16 @@ VIDEO_CONTEXT_ERROR_MESSAGE = (
 
 def _normalize_key(value):
     return str(value).strip().casefold()
+
+
+def _select_models_for_contexts(contexts):
+    has_code_context = any(
+        str((context or {}).get("context_type") or "").strip().lower() == "code"
+        for context in (contexts or [])
+    )
+    if has_code_context:
+        return OLLAMA_MODELS_CODE, "code"
+    return OLLAMA_MODELS_GENERAL, "general"
 
 
 def _is_http_url(value):
@@ -342,12 +349,13 @@ def run_llm_tiebreak_decision(*, labeling_guide, question_text, options, context
             "error_message": context_error["error_message"],
         }
 
+    selected_models, selected_pool = _select_models_for_contexts(contexts)
     prompt = _build_prompt(labeling_guide, contexts_text, question_text, valid_options)
 
     model_results = []
     counter = Counter()
 
-    for model_name in OLLAMA_MODELS:
+    for model_name in selected_models:
         try:
             raw_response = _call_ollama_model(
                 base_url=base_url,
@@ -399,6 +407,8 @@ def run_llm_tiebreak_decision(*, labeling_guide, question_text, options, context
 
     return {
         "attempted_at": attempt_time,
+        "model_pool": selected_pool,
+        "models_used": selected_models,
         "models": model_results,
         "vote_count": dict(counter),
         "winner": winner,
