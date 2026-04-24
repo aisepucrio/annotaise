@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { Meta, StoryObj } from '@storybook/nextjs';
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import type { TranslateFn } from '@/i18n/types';
 import QuestionStatisticsVizualizer from '@/components/answer-vizualizer/QuestionStatisticsVizualizer';
 import type { QuestionSummary } from '@/components/answer-vizualizer/SummaryVizualizer';

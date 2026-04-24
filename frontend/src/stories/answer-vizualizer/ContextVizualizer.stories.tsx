@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { Meta, StoryObj } from '@storybook/nextjs';
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import ContextVizualizer from '@/components/answer-vizualizer/ContextVizualizer';
 
 const SAMPLE_IMAGE = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';

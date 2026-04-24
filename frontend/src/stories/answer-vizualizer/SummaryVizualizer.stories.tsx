@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/nextjs';
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import type { TranslateFn } from '@/i18n/types';
 import type { AnswerResponse, LabelingStructureSection } from '@/modules/labelings/labelingsTypes';
 import SectionVizualizer from '@/components/answer-vizualizer/SectionVizualizer';

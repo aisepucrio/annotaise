@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/nextjs';
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { Hash, Calculator, Percent } from 'lucide-react';
 import { useState } from 'react';
 import NumberInput from '@/components/form/NumberInput';

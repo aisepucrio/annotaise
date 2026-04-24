@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/nextjs';
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { Building2, MapPin, Globe } from 'lucide-react';
 import Select from '@/components/form/Select';
 

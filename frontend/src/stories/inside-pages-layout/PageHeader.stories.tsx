@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/nextjs';
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import PageHeader from '@/components/inside-pages-layout/PageHeader';
 
 const meta = {

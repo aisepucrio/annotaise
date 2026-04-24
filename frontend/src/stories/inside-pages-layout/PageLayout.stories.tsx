@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/nextjs';
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { Tag } from 'lucide-react';
 import PageLayout from '@/components/inside-pages-layout/PageLayout';
 import GridItemCard from '@/components/grid/GridItemCard';

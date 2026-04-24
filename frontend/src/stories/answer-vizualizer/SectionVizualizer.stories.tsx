@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/nextjs';
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import ContextVizualizer from '@/components/answer-vizualizer/ContextVizualizer';
 import QuestionVizualizer from '@/components/answer-vizualizer/QuestionVizualizer';
 import SectionVizualizer from '@/components/answer-vizualizer/SectionVizualizer';

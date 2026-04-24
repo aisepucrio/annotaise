@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/nextjs';
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import AuthLayout from '@/components/auth-layout/AuthLayout';
 
 const meta = {

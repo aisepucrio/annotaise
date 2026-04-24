@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/nextjs';
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { Pen, Tag } from 'lucide-react';
 import Button from '@/components/button/Button';
 import { LanguageProvider } from '@/i18n/language-context';

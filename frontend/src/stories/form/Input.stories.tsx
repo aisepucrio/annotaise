@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/nextjs';
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { Mail, Lock, User, Search, EyeIcon, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 import Input from '@/components/form/Input';

@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/nextjs';
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import GridItemCard from '@/components/grid/GridItemCard';
 import GridLayout from '@/components/grid/GridLayout';
 
