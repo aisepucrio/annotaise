@@ -5,9 +5,25 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { TranslateFn } from '@/i18n/types';
 import type { AnswerResponse, LabelingStructureSection } from '@/modules/labelings/labelingsTypes';
-import SectionVizualizer from '@/components/answer-vizualizer/SectionVizualizer';
-import { splitSummarySectionGroupTitle } from '@/components/answer-vizualizer/summary-vizualizer-utils';
+import { ResponseVisualizationSectionWrapper } from '@/components/context-question';
 import { type AgreementQuestionSummary, buildAgreementSections } from './item-agreement-utils';
+
+function splitSectionGroupTitle(sectionGroupTitle: string): {
+  sectionLabel?: string;
+  title: string;
+} {
+  const separator = ' - ';
+  const separatorIndex = sectionGroupTitle.indexOf(separator);
+
+  if (separatorIndex < 0) {
+    return { title: sectionGroupTitle };
+  }
+
+  return {
+    sectionLabel: sectionGroupTitle.slice(0, separatorIndex),
+    title: sectionGroupTitle.slice(separatorIndex + separator.length),
+  };
+}
 
 type ItemAgreementProps = {
   answers: AnswerResponse[];
@@ -41,15 +57,15 @@ export default function ItemAgreement({ answers, sections, t, getUserLabel }: It
   return (
     <div className="mb-12">
       {agreementSections.map((sectionGroup, sectionIndex) => {
-        const parsed = splitSummarySectionGroupTitle(sectionGroup.title);
+        const parsed = splitSectionGroupTitle(sectionGroup.title);
 
         return (
           <div key={sectionGroup.title} className={sectionIndex > 0 ? 'mt-12' : undefined}>
-            <SectionVizualizer title={parsed.title} sectionLabel={parsed.sectionLabel}>
+            <ResponseVisualizationSectionWrapper title={parsed.title} sectionLabel={parsed.sectionLabel}>
               {sectionGroup.items.map((summary) => (
                 <AgreementQuestionCard key={summary.key} summary={summary} t={t} getUserLabel={getUserLabel} />
               ))}
-            </SectionVizualizer>
+            </ResponseVisualizationSectionWrapper>
           </div>
         );
       })}

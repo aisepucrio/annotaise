@@ -3,10 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { AnswerResponse, LabelingStructureSection } from '@/modules/labelings/labelingsTypes';
 import { useTranslations } from '@/i18n/use-translations';
-import SectionVizualizer from '@/components/answer-vizualizer/SectionVizualizer';
-import SummaryVizualizer from '@/components/answer-vizualizer/SummaryVizualizer';
+import { ResponseVisualizationSectionWrapper } from '@/components/context-question';
 import { useLabelingAgreementSummaryQuery } from '@/modules/labelings/manage/labelingManagerQueries';
-import { buildSummarySections, splitSummarySectionGroupTitle } from '@/components/answer-vizualizer/summary-vizualizer-utils';
 
 type SummaryTabProps = {
   labelingId: number;
@@ -65,16 +63,12 @@ export default function SummaryTab({ labelingId, usersPerItem, answers, answersL
   }, [labelingId]);
 
   const numberFormatter = useMemo(() => new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }), [locale]);
-  const sectionGroups = useMemo(
+  const orderedQuestionSections = useMemo(
     () =>
-      buildSummarySections({
-        answers,
-        structureSections,
-        agreementSummary,
-        t,
-        numberFormatter,
-      }),
-    [agreementSummary, answers, numberFormatter, structureSections, t]
+      [...structureSections]
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+        .filter((section) => section.elements.some((element) => element.question_type !== 'context')),
+    [structureSections]
   );
 
   if (answersLoading) {
@@ -87,33 +81,29 @@ export default function SummaryTab({ labelingId, usersPerItem, answers, answersL
 
   return (
     <div className="max-w-6xl mx-auto mt-2">
-      {sectionGroups.length === 0 ? (
+      {orderedQuestionSections.length === 0 ? (
         <p className="text-sm text-gray-600">{t('labelings.create.summary.empty')}</p>
       ) : (
         <div>
-          {sectionGroups.map((sectionGroup, sectionIndex) => {
-            const parsed = splitSummarySectionGroupTitle(sectionGroup.title);
-
-            return (
-              <div key={sectionGroup.title} className={sectionIndex > 0 ? 'mt-12' : undefined}>
-                <SectionVizualizer title={parsed.title} sectionLabel={parsed.sectionLabel}>
-                  {sectionGroup.items.map((summary) => (
-                    <SummaryVizualizer
-                      key={summary.key}
-                      summary={summary}
-                      numberFormatter={numberFormatter}
-                      t={t}
-                      showTypeLabel
-                      showMultipleChoiceAgreement={shouldShowAgreement}
-                      minAgreement={minAgreement}
-                      agreementThresholdOptions={thresholdOptions}
-                      onMinAgreementChange={setMinAgreement}
-                    />
-                  ))}
-                </SectionVizualizer>
-              </div>
-            );
-          })}
+          {orderedQuestionSections.map((section, sectionIndex) => (
+            <div key={section.id ?? section.order ?? sectionIndex} className={sectionIndex > 0 ? 'mt-12' : undefined}>
+              <ResponseVisualizationSectionWrapper
+                section={section}
+                sectionLabel={t('labelings.create.summary.sectionLabel', {
+                  order: section.order ?? sectionIndex + 1,
+                })}
+                answerResponses={answers}
+                agreementSummary={agreementSummary}
+                numberFormatter={numberFormatter}
+                includeContexts={false}
+                showTypeLabel
+                showMultipleChoiceAgreement={shouldShowAgreement}
+                minAgreement={minAgreement}
+                agreementThresholdOptions={thresholdOptions}
+                onMinAgreementChange={setMinAgreement}
+              />
+            </div>
+          ))}
         </div>
       )}
     </div>

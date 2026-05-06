@@ -3,9 +3,7 @@
 import { useMemo } from 'react';
 import type { TranslateFn } from '@/i18n/types';
 import type { AnswerResponse, LabelingStructureSection } from '@/modules/labelings/labelingsTypes';
-import SectionVizualizer from '@/components/answer-vizualizer/SectionVizualizer';
-import SummaryVizualizer from '@/components/answer-vizualizer/SummaryVizualizer';
-import { buildSummarySections, splitSummarySectionGroupTitle } from '@/components/answer-vizualizer/summary-vizualizer-utils';
+import { ResponseVisualizationSectionWrapper } from '@/components/context-question';
 
 type ItemSummaryProps = {
   answers: AnswerResponse[];
@@ -16,44 +14,35 @@ type ItemSummaryProps = {
 
 export default function ItemSummary({ answers, sections, t, locale }: ItemSummaryProps) {
   const numberFormatter = useMemo(() => new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }), [locale]);
-
-  const sectionGroups = useMemo(
+  const orderedQuestionSections = useMemo(
     () =>
-      buildSummarySections({
-        answers,
-        structureSections: sections,
-        t,
-        numberFormatter,
-      }),
-    [answers, numberFormatter, sections, t]
+      [...sections]
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+        .filter((section) => section.elements.some((element) => element.question_type !== 'context')),
+    [sections]
   );
 
-  if (sectionGroups.length === 0) {
+  if (orderedQuestionSections.length === 0) {
     return <p className="text-sm text-gray-600">{t('labelings.create.answers.modal.itemSummaryEmpty')}</p>;
   }
 
   return (
     <div>
-      {sectionGroups.map((sectionGroup, sectionIndex) => {
-        const parsed = splitSummarySectionGroupTitle(sectionGroup.title);
-
-        return (
-          <div key={sectionGroup.title} className={sectionIndex > 0 ? 'mt-12' : undefined}>
-            <SectionVizualizer title={parsed.title} sectionLabel={parsed.sectionLabel}>
-              {sectionGroup.items.map((summary) => (
-                <SummaryVizualizer
-                  key={summary.key}
-                  summary={summary}
-                  numberFormatter={numberFormatter}
-                  t={t}
-                  showTypeLabel
-                  showResponseCount={false}
-                />
-              ))}
-            </SectionVizualizer>
-          </div>
-        );
-      })}
+      {orderedQuestionSections.map((section, sectionIndex) => (
+        <div key={section.id ?? section.order ?? sectionIndex} className={sectionIndex > 0 ? 'mt-12' : undefined}>
+          <ResponseVisualizationSectionWrapper
+            section={section}
+            sectionLabel={t('labelings.create.summary.sectionLabel', {
+              order: section.order ?? sectionIndex + 1,
+            })}
+            answerResponses={answers}
+            numberFormatter={numberFormatter}
+            includeContexts={false}
+            showTypeLabel
+            showResponseCount={false}
+          />
+        </div>
+      ))}
     </div>
   );
 }

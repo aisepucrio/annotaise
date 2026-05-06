@@ -1,19 +1,14 @@
 'use client';
 
 import { forwardRef, useImperativeHandle, useMemo, useState } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import ContextVizualizer from '@/components/answer-vizualizer/ContextVizualizer';
-import QuestionVizualizer from '@/components/answer-vizualizer/QuestionVizualizer';
-import SectionVizualizer from '@/components/answer-vizualizer/SectionVizualizer';
 import Modal from '@/components/Modal';
+import { ResponseVisualizationSectionWrapper } from '@/components/context-question';
 import {
   type BackgroundAnswerResponse,
   type LabelingMembershipDashboard,
   type LabelingStructureSection,
 } from '@/modules/labelings/labelingsTypes';
 import { useTranslations } from '@/i18n/use-translations';
-import type { TranslateFn } from '@/i18n/types';
 import { fetchLabelingBackgroundAnswers, fetchLabelingStructure } from '@/modules/labelings/labelingService';
 
 type BackgroundModalProps = {
@@ -92,37 +87,15 @@ const BackgroundModal = forwardRef<BackgroundModalHandle, BackgroundModalProps>(
         <p className="text-sm text-gray-600">{t('labelings.create.assign.background.formNotConfigured')}</p>
       ) : (
         <div className="space-y-6">
-          {orderedSections.map((section) => {
-            const orderedElements = [...section.elements].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-
-            return (
-              <SectionVizualizer
-                key={section.id ?? section.order}
-                title={
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {section.title?.trim() || t('labelings.create.answers.modal.sectionFallback')}
-                  </ReactMarkdown>
-                }
-              >
-                {orderedElements.map((element, idx) => {
-                  if (element.question_type === 'context') {
-                    return <ContextVizualizer key={element.id ?? `${section.id}-ctx-${idx}`} text={element.text} />;
-                  }
-
-                  const value = answersByQuestion.get(String(element.id ?? element.order ?? idx));
-                  const label = element.text?.trim() || t('labelings.create.answers.modal.questionFallback');
-
-                  return (
-                    <QuestionVizualizer
-                      key={element.id ?? `${section.id}-q-${idx}`}
-                      question={<ReactMarkdown remarkPlugins={[remarkGfm]}>{label}</ReactMarkdown>}
-                      answer={formatAnswerValue(value, t)}
-                    />
-                  );
-                })}
-              </SectionVizualizer>
-            );
-          })}
+          {orderedSections.map((section) => (
+            <ResponseVisualizationSectionWrapper
+              key={section.id ?? section.order}
+              section={section}
+              itemPayload={backgroundAnswer?.answer_payload ?? {}}
+              answersByQuestion={answersByQuestion}
+              showContextValues={false}
+            />
+          ))}
         </div>
       )}
     </Modal>
@@ -132,18 +105,3 @@ const BackgroundModal = forwardRef<BackgroundModalHandle, BackgroundModalProps>(
 BackgroundModal.displayName = 'BackgroundModal';
 
 export default BackgroundModal;
-
-// Formata qualquer tipo de resposta para exibição textual no modal.
-function formatAnswerValue(value: unknown, t: TranslateFn): string {
-  if (value === null || value === undefined) return '-';
-  if (Array.isArray(value)) return value.map((v) => formatAnswerValue(v, t)).join(', ');
-  if (typeof value === 'boolean') return value ? t('common.yes') : t('common.no');
-  if (typeof value === 'object') {
-    try {
-      return JSON.stringify(value);
-    } catch {
-      return String(value);
-    }
-  }
-  return String(value);
-}

@@ -1,7 +1,10 @@
 import type { Preview } from '@storybook/nextjs-vite';
+import { createElement } from 'react';
+import { LanguageProvider } from '../src/i18n/language-context';
 import '../src/app/globals.css';
 
 const preview: Preview = {
+  decorators: [(Story) => createElement(LanguageProvider, null, createElement(Story))],
   parameters: {
     controls: {
       matchers: {
