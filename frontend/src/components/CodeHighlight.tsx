@@ -1,8 +1,5 @@
 type HLJS = {
-  highlightAuto: (
-    code: string,
-    languages?: string[],
-  ) => { value: string; language?: string; relevance?: number };
+  highlightAuto: (code: string, languages?: string[]) => { value: string; language?: string; relevance?: number };
 };
 
 declare const hljs: HLJS;
@@ -12,21 +9,15 @@ type CodeHighlightProps = {
   className?: string;
 };
 
-function CodeHighlight({ code, className = "" }: CodeHighlightProps) {
-  const highlighted = hljs.highlightAuto(code ?? "");
-  const classes = [
-    "overflow-x-auto rounded-md bg-slate-50 p-3 text-xs font-mono leading-relaxed text-gray-800",
-    className,
-  ]
+function CodeHighlight({ code, className = '' }: CodeHighlightProps) {
+  const highlighted = hljs.highlightAuto(code ?? '');
+  const classes = ['overflow-x-auto rounded-md bg-slate-50 p-3 text-xs font-mono leading-relaxed text-gray-800', className]
     .filter(Boolean)
-    .join(" ");
+    .join(' ');
 
   return (
     <pre className={classes}>
-      <code
-        className="hljs"
-        dangerouslySetInnerHTML={{ __html: highlighted.value }}
-      />
+      <code className="hljs" dangerouslySetInnerHTML={{ __html: highlighted.value }} />
     </pre>
   );
 }

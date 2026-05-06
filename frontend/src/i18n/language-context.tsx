@@ -1,15 +1,8 @@
-"use client";
+'use client';
 
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
-export type Language = "pt-BR" | "en";
+export type Language = 'pt-BR' | 'en';
 
 type LanguageContextValue = {
   language: Language;
@@ -19,8 +12,8 @@ type LanguageContextValue = {
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
-const STORAGE_KEY = "annotaise-language";
-const DEFAULT_LANGUAGE: Language = "pt-BR";
+const STORAGE_KEY = 'annotaise-language';
+const DEFAULT_LANGUAGE: Language = 'pt-BR';
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>(DEFAULT_LANGUAGE);
@@ -28,7 +21,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (stored === "pt-BR" || stored === "en") {
+    if (stored === 'pt-BR' || stored === 'en') {
       setLanguageState(stored);
     }
     setHydrated(true);
@@ -44,23 +37,18 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     () => ({
       language,
       setLanguage: (next) => setLanguageState(next),
-      toggleLanguage: () =>
-        setLanguageState((prev) => (prev === "pt-BR" ? "en" : "pt-BR")),
+      toggleLanguage: () => setLanguageState((prev) => (prev === 'pt-BR' ? 'en' : 'pt-BR')),
     }),
     [language]
   );
 
-  return (
-    <LanguageContext.Provider value={value}>
-      {children}
-    </LanguageContext.Provider>
-  );
+  return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }
 
 export function useLanguage() {
   const context = useContext(LanguageContext);
   if (!context) {
-    throw new Error("useLanguage must be used within LanguageProvider");
+    throw new Error('useLanguage must be used within LanguageProvider');
   }
   return context;
 }

@@ -16,6 +16,10 @@ class Item(models.Model):
     status = models.CharField(max_length=50, default="pending")
 
     decision_payload = models.JSONField(null=True,blank=True)
+    llm_tiebreak_attempted = models.BooleanField(default=False)
+    llm_tiebreak_result = models.JSONField(null=True, blank=True)
+    final_decision_source = models.CharField(max_length=16, null=True, blank=True)
+    final_decision_value = models.CharField(max_length=300, null=True, blank=True)
 
     def __str__(self):
         return self.name

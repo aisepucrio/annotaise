@@ -23,46 +23,46 @@ from project.models import Project, ProjectMembership
 
 
 PROJECT_NAME = "ReSellia QA"
-LABELING_TITLE = "Verificação Multimodal de Anúncio (v1)"
+LABELING_TITLE = "Multimodal Listing Verification (v1)"
 
 PROJECT_DESCRIPTION = (
-    "Enriquecimento + QA de anúncios de marketplace para reduzir fraude/mismatch "
-    "e melhorar busca/ranking."
+    "Marketplace listing enrichment and QA to reduce fraud/mismatch and improve "
+    "search/ranking."
 )
 
 LABELING_GUIDE_MARKDOWN = dedent(
     """
-    # ReSellia QA — Guia de Rotulação (v1)
+    # ReSellia QA - Labeling Guide (v1)
 
-    ## Objetivo
-    Você vai ajudar a medir **qualidade e confiabilidade** de anúncios de marketplace.
+    ## Goal
+    You will help measure **quality and trustworthiness** in marketplace listings.
 
-    ## Regras rápidas
-    - Use apenas o que aparece na ferramenta.
-    - Não pesquise fora e não adivinhe.
-    - Se faltar prova, marque isso.
+    ## Quick rules
+    - Use only what appears in the tool.
+    - Do not search externally and do not guess.
+    - If evidence is missing, mark that.
 
-    ## Fluxo
+    ## Flow
     1) Background
-    2) Sessão 1 — Primeira impressão (texto)
-    3) Sessão 2 — Revisão com evidências (fotos + ficha técnica + conversa)
+    2) Session 1 - First impression (text)
+    3) Session 2 - Evidence review (photos + technical specs + chat)
 
-    Ao avançar, não dá para voltar.
+    After moving forward, you cannot go back.
 
-    ## O que avaliar
-    **Sessão 1**
-    - Percepção de preço (de muito caro a muito barato)
-    - Sinais no texto
-    - Risco (0–100)
-    - O que falta para confiar
+    ## What to evaluate
+    **Session 1**
+    - Price perception (from very expensive to very cheap)
+    - Signals in the text
+    - Risk on a linear scale
+    - What is missing to trust the listing
 
-    **Sessão 2**
-    - Percepção de preço novamente
-    - Se as evidências sustentam o anúncio
-    - Alertas visuais
-    - Condição geral e justificativa curta
+    **Session 2**
+    - Price perception again
+    - Whether the evidence supports the listing
+    - Visual alerts
+    - Overall condition on a linear scale and short justification
 
-    Dica: use **Parcialmente** quando o anúncio parecer real, mas sem prova de algum ponto importante.
+    Tip: use **Partially** when the listing seems real but lacks proof for an important point.
     """
 ).strip()
 
@@ -72,58 +72,58 @@ COLUMN_NAMES = [
     "description",
     "price_brl",
     "city_state",
-    "ficha_tecnica",
-    "conversa",
+    "technical_specs",
+    "chat_excerpt",
     "image_main_url",
     "image_detail_url",
 ]
 
 PRICE_PERCEPTION_OPTIONS = [
-    "Muito caro",
-    "Caro",
-    "Normal",
-    "Barato",
-    "Muito barato",
+    "Very expensive",
+    "Expensive",
+    "Fair",
+    "Cheap",
+    "Very cheap",
 ]
 
 SAMPLE_ROWS: list[dict[str, Any]] = [
     {
         "listing_id": "RS_0001",
-        "title": "Nintendo Switch v2 + dock + joy-cons (sem drift)",
+        "title": "Nintendo Switch v2 + dock + Joy-Cons (no drift)",
         "description": (
-            "Console usado em casa. Vai com dock, 2 joy-cons, HDMI e fonte. "
-            "Sem caixa e sem NF. Testado, funciona ok. Retiro em mãos."
+            "Console used at home. Includes dock, 2 Joy-Cons, HDMI cable, and power adapter. "
+            "No box and no invoice. Tested, works fine. Local pickup only."
         ),
         "price_brl": 1550,
-        "city_state": "São Paulo-SP",
-        "ficha_tecnica": dedent(
+        "city_state": "Sao Paulo-SP",
+        "technical_specs": dedent(
             """
-            **Modelo:** `HAC-001(-01)`
-            **Armazenamento:** 32GB
-            **Inclui:**
+            **Model:** `HAC-001(-01)`
+            **Storage:** 32GB
+            **Includes:**
             - Console
             - Dock
             - 2 Joy-Con
-            - Fonte
+            - Power adapter
             - HDMI
 
             ```txt
-            Estado informado: usado / testado
-            Motivo da venda: parado
+            Reported condition: used / tested
+            Reason for sale: unused
             ```
             """
         ).strip(),
-        "conversa": dedent(
+        "chat_excerpt": dedent(
             """
             **Chat:**
 
-            **Comprador:** tem nota fiscal?
+            **Buyer:** do you have the invoice?
 
-            **Vendedor:** não tenho, foi presente.
+            **Seller:** I don't have it, it was a gift.
 
-            **Comprador:** aceita ML envios?
+            **Buyer:** do you accept marketplace shipping?
 
-            **Vendedor:** só retirada.
+            **Seller:** pickup only.
             """
         ).strip(),
         "image_main_url": (
@@ -139,33 +139,33 @@ SAMPLE_ROWS: list[dict[str, Any]] = [
         "listing_id": "RS_0002",
         "title": 'MacBook Pro 13" 2019 Touch Bar 16GB/512GB',
         "description": (
-            "Notebook bem cuidado, bateria segura bem. Tela ok. Vai com carregador. "
-            "Sem caixa. Formatei e deixei pronto."
+            "Well-kept notebook, battery still holds well. Screen is ok. Includes charger. "
+            "No box. Formatted and ready to use."
         ),
         "price_brl": 4200,
         "city_state": "Curitiba-PR",
-        "ficha_tecnica": dedent(
+        "technical_specs": dedent(
             """
-            **Modelo:** MacBook Pro 13" (2019)
+            **Model:** MacBook Pro 13" (2019)
             **CPU/RAM/SSD:** `i5 / 16GB / 512GB`
-            **Bateria:** `ciclos ~ 320`
-            **Acompanha:** carregador
+            **Battery:** `cycles ~ 320`
+            **Includes:** charger
 
-            - Sem sinais de queda
-            - Teclado PT/US a confirmar na foto
+            - No signs of drops
+            - PT/US keyboard to confirm in the photo
             """
         ).strip(),
-        "conversa": dedent(
+        "chat_excerpt": dedent(
             """
             **Chat:**
 
-            **Comprador:** tem algum defeito no teclado?
+            **Buyer:** any keyboard issue?
 
-            **Vendedor:** nunca deu problema, sempre usei capa.
+            **Seller:** never had a problem, always used a cover.
 
-            **Comprador:** manda foto do serial?
+            **Buyer:** can you send a photo of the serial?
 
-            **Vendedor:** prefiro não expor aqui.
+            **Seller:** I prefer not to expose it here.
             """
         ).strip(),
         "image_main_url": (
@@ -179,34 +179,34 @@ SAMPLE_ROWS: list[dict[str, Any]] = [
     },
     {
         "listing_id": "RS_0003",
-        "title": "Adidas Stan Smith (par) tam 41 - pouco uso",
+        "title": "Adidas Stan Smith pair size 41 - lightly used",
         "description": (
-            "Usei poucas vezes, ficou guardado. Sem rasgos. Solado bom. Entrego limpo."
+            "Used a few times, then stored. No tears. Sole is good. Delivered clean."
         ),
         "price_brl": 280,
         "city_state": "Belo Horizonte-MG",
-        "ficha_tecnica": dedent(
+        "technical_specs": dedent(
             """
-            **Tamanho:** `41 BR`
-            **Cor:** branco/verde
-            **Condição declarada:** pouco uso
+            **Size:** `41 BR`
+            **Color:** white/green
+            **Reported condition:** lightly used
 
             Checklist:
-            - costuras ok
-            - solado sem descolar
+            - stitching ok
+            - sole not detached
             """
         ).strip(),
-        "conversa": dedent(
+        "chat_excerpt": dedent(
             """
             **Chat:**
 
-            **Comprador:** tem caixa?
+            **Buyer:** does it come with the box?
 
-            **Vendedor:** não, só o par mesmo.
+            **Seller:** no, just the pair.
 
-            **Comprador:** manda foto do solado?
+            **Buyer:** can you send a photo of the sole?
 
-            **Vendedor:** tá nas fotos, é de boa.
+            **Seller:** it is in the photos, it is fine.
             """
         ).strip(),
         "image_main_url": (
@@ -220,37 +220,37 @@ SAMPLE_ROWS: list[dict[str, Any]] = [
     },
     {
         "listing_id": "RS_0004",
-        "title": "Bicicleta speed (quadro 54) pronta pra rodar",
+        "title": "Road bike frame 54 ready to ride",
         "description": (
-            "Speed leve, boa pra treino. Troquei fita do guidão recente. "
-            "Precisa revisão simples no câmbio. Não aceito troca."
+            "Light road bike, good for training. Handlebar tape was replaced recently. "
+            "Needs a simple derailleur tune-up. No trades."
         ),
         "price_brl": 3500,
-        "city_state": "Florianópolis-SC",
-        "ficha_tecnica": dedent(
+        "city_state": "Florianopolis-SC",
+        "technical_specs": dedent(
             """
-            **Tipo:** speed/road bike
-            **Quadro:** `54` (declarado)
-            **Pontos:**
-            - revisão no câmbio
-            - fita do guidão nova
+            **Type:** road bike
+            **Frame:** `54` (reported)
+            **Notes:**
+            - derailleur tune-up needed
+            - new handlebar tape
 
             ```txt
-            Acessórios: sem pedal
+            Accessories: no pedals
             ```
             """
         ).strip(),
-        "conversa": dedent(
+        "chat_excerpt": dedent(
             """
             **Chat:**
 
-            **Comprador:** qual grupo? Shimano qual?
+            **Buyer:** which groupset? Which Shimano?
 
-            **Vendedor:** não sei, comprei assim.
+            **Seller:** I do not know, I bought it like this.
 
-            **Comprador:** tem nota ou numeração do quadro?
+            **Buyer:** do you have invoice or frame number?
 
-            **Vendedor:** nunca olhei isso.
+            **Seller:** I never checked that.
             """
         ).strip(),
         "image_main_url": (
@@ -263,36 +263,36 @@ SAMPLE_ROWS: list[dict[str, Any]] = [
     },
     {
         "listing_id": "RS_0005",
-        "title": "Câmera DSLR Canon + lente 50mm (leia)",
+        "title": "Canon DSLR camera + 50mm lens (read)",
         "description": (
-            "Câmera funcionando. Vai com lente 50mm e tampa. Não acompanha cartão. "
-            "Tô vendendo pq migrei pra mirrorless."
+            "Camera works. Includes 50mm lens and cap. No memory card included. "
+            "Selling because I moved to mirrorless."
         ),
         "price_brl": 1900,
         "city_state": "Recife-PE",
-        "ficha_tecnica": dedent(
+        "technical_specs": dedent(
             """
-            **Marca:** Canon (declarado)
-            **Tipo:** DSLR
-            **Inclui:**
-            - corpo
+            **Brand:** Canon (reported)
+            **Type:** DSLR
+            **Includes:**
+            - body
             - lente `50mm`
-            - tampa
+            - cap
 
-            Observação: sem cartão / sem bolsa
+            Note: no card / no bag
             """
         ).strip(),
-        "conversa": dedent(
+        "chat_excerpt": dedent(
             """
             **Chat:**
 
-            **Comprador:** quantos cliques?
+            **Buyer:** how many shutter clicks?
 
-            **Vendedor:** não sei informar.
+            **Seller:** I do not know.
 
-            **Comprador:** tem fungo na lente?
+            **Buyer:** is there fungus in the lens?
 
-            **Vendedor:** nunca reparei.
+            **Seller:** I never noticed.
             """
         ).strip(),
         "image_main_url": (
@@ -306,34 +306,34 @@ SAMPLE_ROWS: list[dict[str, Any]] = [
     },
     {
         "listing_id": "RS_0006",
-        "title": "Violão acústico - ótimo pra estudo",
+        "title": "Acoustic guitar - great for practice",
         "description": (
-            "Violão bom pra iniciante, som ok. Tem marcas de uso normal. "
-            "Cordas trocadas faz 2 meses."
+            "Good beginner guitar, sound is ok. Has normal signs of use. "
+            "Strings were replaced 2 months ago."
         ),
         "price_brl": 450,
         "city_state": "Porto Alegre-RS",
-        "ficha_tecnica": dedent(
+        "technical_specs": dedent(
             """
-            **Tipo:** violão acústico
-            **Uso:** estudo
-            **Estado declarado:** marcas normais
+            **Type:** acoustic guitar
+            **Use:** practice
+            **Reported condition:** normal marks
 
-            - cordas trocadas há ~2 meses
-            - sem case
+            - strings replaced ~2 months ago
+            - no case
             """
         ).strip(),
-        "conversa": dedent(
+        "chat_excerpt": dedent(
             """
             **Chat:**
 
-            **Comprador:** trasteja?
+            **Buyer:** does it buzz?
 
-            **Vendedor:** não, só altura padrão.
+            **Seller:** no, just standard action.
 
-            **Comprador:** tem rachadura?
+            **Buyer:** any cracks?
 
-            **Vendedor:** não vi nada.
+            **Seller:** I did not see anything.
             """
         ).strip(),
         "image_main_url": (
@@ -349,8 +349,8 @@ SAMPLE_ROWS: list[dict[str, Any]] = [
 
 class Command(BaseCommand):
     help = (
-        "Cria seed ReSellia QA com projeto, rotulação, background, sessões de "
-        "formulário e itens."
+        "Creates the ReSellia QA seed with project, labeling, background, form "
+        "sessions, and items."
     )
 
     def add_arguments(self, parser):
@@ -358,16 +358,15 @@ class Command(BaseCommand):
             "--admin-email",
             type=str,
             help=(
-                "Email do administrador ao qual a criação do projeto/rotulação "
-                "será atribuída."
+                "Administrator email that will own the generated project/labeling."
             ),
         )
         parser.add_argument(
             "--no-input",
             action="store_true",
             help=(
-                "Não pergunta no terminal. Exige --admin-email para executar em "
-                "modo não interativo."
+                "Do not prompt in the terminal. Requires --admin-email for "
+                "non-interactive execution."
             ),
         )
 
@@ -389,12 +388,12 @@ class Command(BaseCommand):
 
         self.stdout.write(
             self.style.SUCCESS(
-                "Seed ReSellia QA concluído com sucesso:\n"
-                f"- Projeto: {project.name} (id={project.id})\n"
-                f"- Rotulação: {labeling.title} (id={labeling.id})\n"
-                f"- Itens carregados: {items_count}\n"
-                f"- Itens pré-preenchidos pelo criador: {prefilled_answers}\n"
-                f"- Criador atribuído a: {admin_user.email}"
+                "ReSellia QA seed completed successfully:\n"
+                f"- Project: {project.name} (id={project.id})\n"
+                f"- Labeling: {labeling.title} (id={labeling.id})\n"
+                f"- Loaded items: {items_count}\n"
+                f"- Creator prefilled items: {prefilled_answers}\n"
+                f"- Creator assigned to: {admin_user.email}"
             )
         )
 
@@ -406,14 +405,14 @@ class Command(BaseCommand):
 
         if no_input:
             raise CommandError(
-                "Informe --admin-email quando usar --no-input."
+                "Provide --admin-email when using --no-input."
             )
 
         typed = input(
-            "Digite o email do administrador para atribuir a criação do seed: "
+            "Enter the administrator email that should own the seed: "
         ).strip().lower()
         if not typed:
-            raise CommandError("Email do administrador não pode ser vazio.")
+            raise CommandError("Administrator email cannot be empty.")
         return typed
 
     def _get_admin_user(self, email: str):
@@ -421,11 +420,11 @@ class Command(BaseCommand):
         user = user_model.objects.filter(email__iexact=email).first()
         if user is None:
             raise CommandError(
-                f"Nenhum usuário encontrado com o email '{email}'."
+                f"No user found with email '{email}'."
             )
         if user.account_type != "admin" and not user.is_superuser:
             raise CommandError(
-                f"O usuário '{email}' existe, mas não é administrador."
+                f"User '{email}' exists, but is not an administrator."
             )
         return user
 
@@ -469,6 +468,12 @@ class Command(BaseCommand):
             .order_by("id")
             .first()
         )
+        if labeling is None:
+            labeling = (
+                Labeling.objects.filter(project=project, guide__contains="ReSellia QA")
+                .order_by("id")
+                .first()
+            )
 
         if labeling is None:
             labeling = Labeling.objects.create(
@@ -490,6 +495,7 @@ class Command(BaseCommand):
         fields_to_update: list[str] = []
         desired_values = {
             "created_by": admin_user,
+            "title": LABELING_TITLE,
             "start_date": today,
             "final_date": final_date,
             "decision": True,
@@ -539,29 +545,32 @@ class Command(BaseCommand):
         self._create_number_question(
             section=section,
             order=1,
-            text="Idade",
+            text="Age",
             required=True,
+            start=0,
+            end=120,
         )
         self._create_range_question(
             section=section,
             order=2,
-            text="Familiaridade com compra/venda online (0 a 10)",
+            text="Familiarity with online buying/selling",
             start=0,
             end=10,
-            step=1,
             required=True,
+            start_label="Not familiar",
+            end_label="Very familiar",
         )
         self._create_multiple_choice_question(
             section=section,
             order=3,
-            text="Categorias que você se sente confortável em avaliar",
+            text="Categories you feel comfortable evaluating",
             options=[
-                "Eletrônicos",
-                "Computadores",
-                "Moda (tênis/roupa)",
+                "Electronics",
+                "Computers",
+                "Fashion (sneakers/clothing)",
                 "Bikes",
-                "Instrumentos musicais",
-                "Fotografia",
+                "Musical instruments",
+                "Photography",
             ],
             allow_multiple=True,
             required=True,
@@ -569,10 +578,10 @@ class Command(BaseCommand):
         self._create_multiple_choice_question(
             section=section,
             order=4,
-            text="Compromisso",
+            text="Commitment",
             options=[
-                "Vou rotular só com o que aparece aqui (sem buscar fora)",
-                "Não concordo",
+                "I will label only with what appears here (no outside search)",
+                "I do not agree",
             ],
             allow_multiple=False,
             required=True,
@@ -582,35 +591,35 @@ class Command(BaseCommand):
         section = LabelingSection.objects.create(
             labeling=labeling,
             form_type=LabelingSection.FormType.MAIN,
-            title="1 - Primeira impressão",
+            title="1 - First impression",
             order=1,
         )
 
         self._create_context(
             section=section,
             order=1,
-            text="Título do anúncio",
+            text="Listing title",
             column_name="title",
             context_type=LabelingElement.ContextType.TEXT,
         )
         self._create_context(
             section=section,
             order=2,
-            text="Descrição do anúncio",
+            text="Listing description",
             column_name="description",
             context_type=LabelingElement.ContextType.TEXT,
         )
         self._create_context(
             section=section,
             order=3,
-            text="Preço (R$)",
+            text="Price (BRL)",
             column_name="price_brl",
             context_type=LabelingElement.ContextType.NUMBER,
         )
         self._create_context(
             section=section,
             order=4,
-            text="Localização",
+            text="Location",
             column_name="city_state",
             context_type=LabelingElement.ContextType.TEXT,
         )
@@ -618,7 +627,7 @@ class Command(BaseCommand):
         self._create_multiple_choice_question(
             section=section,
             order=5,
-            text="Com base no que você viu até agora, o preço parece:",
+            text="Based on what you have seen so far, the price seems:",
             options=PRICE_PERCEPTION_OPTIONS,
             allow_multiple=False,
             required=True,
@@ -626,18 +635,18 @@ class Command(BaseCommand):
         self._create_multiple_choice_question(
             section=section,
             order=6,
-            text="O texto contém quais sinais abaixo?",
+            text="Which signals does the text contain?",
             options=[
-                "Sem nota fiscal",
-                "Sem caixa",
-                "Aceita troca",
-                "Só retirada",
-                "Envio disponível",
-                "“Pouco uso”",
-                "“Testado/funcionando”",
-                "Precisa manutenção",
-                "Vendedor evita detalhes",
-                "Outro",
+                "No invoice",
+                "No box",
+                "Accepts trade",
+                "Pickup only",
+                "Shipping available",
+                "Lightly used",
+                "Tested/working",
+                "Needs maintenance",
+                "Seller avoids details",
+                "Other",
             ],
             allow_multiple=True,
             required=True,
@@ -645,22 +654,24 @@ class Command(BaseCommand):
         self._create_number_question(
             section=section,
             order=7,
-            text="Quantos itens o vendedor diz que inclui no pacote? (0 se não fala)",
+            text="How many items does the seller say are included? (0 if not stated)",
             required=True,
+            start=0,
         )
         self._create_range_question(
             section=section,
             order=8,
-            text="Risco do anúncio ser problemático só pelo texto (0 a 100)",
-            start=0,
-            end=100,
-            step=1,
+            text="Risk that the listing is problematic based on text only",
+            start=1,
+            end=5,
             required=True,
+            start_label="Very low",
+            end_label="Very high",
         )
         self._create_text_question(
             section=section,
             order=9,
-            text="O que está faltando para você confiar? (1 frase objetiva)",
+            text="What is missing for you to trust it? (1 objective sentence)",
             required=True,
         )
 
@@ -668,43 +679,43 @@ class Command(BaseCommand):
         section = LabelingSection.objects.create(
             labeling=labeling,
             form_type=LabelingSection.FormType.MAIN,
-            title="2 — Revisão com evidências",
+            title="2 - Evidence review",
             order=2,
         )
 
         self._create_context(
             section=section,
             order=1,
-            text="Foto principal",
+            text="Main photo",
             column_name="image_main_url",
             context_type=LabelingElement.ContextType.IMAGE,
         )
         self._create_context(
             section=section,
             order=2,
-            text="Foto detalhe",
+            text="Detail photo",
             column_name="image_detail_url",
             context_type=LabelingElement.ContextType.IMAGE,
         )
         self._create_context(
             section=section,
             order=3,
-            text="Ficha técnica (do vendedor)",
-            column_name="ficha_tecnica",
+            text="Technical specs (from seller)",
+            column_name="technical_specs",
             context_type=LabelingElement.ContextType.TEXT,
         )
         self._create_context(
             section=section,
             order=4,
-            text="Trecho de conversa",
-            column_name="conversa",
+            text="Chat excerpt",
+            column_name="chat_excerpt",
             context_type=LabelingElement.ContextType.TEXT,
         )
 
         self._create_multiple_choice_question(
             section=section,
             order=5,
-            text="Com base no que você viu até agora, o preço parece:",
+            text="Based on what you have seen so far, the price seems:",
             options=PRICE_PERCEPTION_OPTIONS,
             allow_multiple=False,
             required=True,
@@ -712,23 +723,23 @@ class Command(BaseCommand):
         self._create_multiple_choice_question(
             section=section,
             order=6,
-            text="As fotos, a ficha técnica e a conversa sustentam o que o vendedor afirma?",
-            options=["Sim", "Parcialmente", "Não", "Não dá pra concluir"],
+            text="Do the photos, technical specs, and chat support what the seller claims?",
+            options=["Yes", "Partially", "No", "Cannot conclude"],
             allow_multiple=False,
             required=True,
         )
         self._create_multiple_choice_question(
             section=section,
             order=7,
-            text="Problemas/alertas visuais",
+            text="Visual problems/alerts",
             options=[
-                "Foto borrada/escura",
-                "Item diferente entre fotos",
-                "Marcas fortes (riscos/trincas)",
-                "Peças faltando",
-                "Sinais de mau armazenamento (mofo/ferrugem)",
-                "Marca/modelo não visível",
-                "Nada disso",
+                "Blurry/dark photo",
+                "Different item across photos",
+                "Strong marks (scratches/cracks)",
+                "Missing parts",
+                "Poor storage signs (mold/rust)",
+                "Brand/model not visible",
+                "None of these",
             ],
             allow_multiple=True,
             required=True,
@@ -736,22 +747,25 @@ class Command(BaseCommand):
         self._create_number_question(
             section=section,
             order=8,
-            text="Quantos itens físicos aparecem claramente nas fotos?",
+            text="How many physical items are clearly visible in the photos?",
             required=True,
+            start=0,
+            end=10,
         )
         self._create_range_question(
             section=section,
             order=9,
-            text="Condição geral (0 quebrado, 100 cara de novo)",
-            start=0,
-            end=100,
-            step=1,
+            text="Perceived overall condition",
+            start=1,
+            end=5,
             required=True,
+            start_label="Very poor",
+            end_label="Very good",
         )
         self._create_text_question(
             section=section,
             order=10,
-            text="Justificativa curta do score (máx. 200 caracteres)",
+            text="Short score justification (max. 200 characters)",
             required=True,
         )
 
@@ -798,8 +812,10 @@ class Command(BaseCommand):
         order: int,
         text: str,
         required: bool,
+        start: float | None = None,
+        end: float | None = None,
     ) -> LabelingElement:
-        return LabelingElement.objects.create(
+        element = LabelingElement.objects.create(
             labeling_section=section,
             order=order,
             text=text,
@@ -807,6 +823,13 @@ class Command(BaseCommand):
             question_type=LabelingElement.QuestionType.NUMBER,
             allow_multiple=False,
         )
+        if start is not None or end is not None:
+            QuestionRange.objects.create(
+                labeling_element=element,
+                start=start,
+                end=end,
+            )
+        return element
 
     def _create_range_question(
         self,
@@ -816,8 +839,9 @@ class Command(BaseCommand):
         text: str,
         start: float,
         end: float,
-        step: float,
         required: bool,
+        start_label: str = "",
+        end_label: str = "",
     ) -> LabelingElement:
         element = LabelingElement.objects.create(
             labeling_section=section,
@@ -831,7 +855,8 @@ class Command(BaseCommand):
             labeling_element=element,
             start=start,
             end=end,
-            step=step,
+            start_label=start_label,
+            end_label=end_label,
         )
         return element
 
@@ -910,7 +935,7 @@ class Command(BaseCommand):
                     continue
 
                 if question.question_type == LabelingElement.QuestionType.TEXT:
-                    background_payload[question_key] = "Resposta de background"
+                    background_payload[question_key] = "Background answer"
                     continue
 
                 if question.question_type == LabelingElement.QuestionType.MULTIPLE_CHOICE:
@@ -923,21 +948,21 @@ class Command(BaseCommand):
                         continue
 
                     if question.allow_multiple:
-                        preferred = ["Eletrônicos", "Computadores", "Fotografia"]
+                        preferred = ["Electronics", "Computers", "Photography"]
                         selected = [option for option in preferred if option in options]
                         background_payload[question_key] = selected or options[:2]
                         continue
 
-                    preferred_single = "Vou rotular só com o que aparece aqui (sem buscar fora)"
+                    preferred_single = "I will label only with what appears here (no outside search)"
                     if preferred_single in options:
                         background_payload[question_key] = preferred_single
                     else:
                         background_payload[question_key] = options[0]
                     continue
 
-                if "idade" in question_text:
+                if "age" in question_text:
                     background_payload[question_key] = 32
-                elif "familiaridade" in question_text:
+                elif "familiarity" in question_text:
                     background_payload[question_key] = 8
                 else:
                     background_payload[question_key] = ""
@@ -957,7 +982,7 @@ class Command(BaseCommand):
         )
         if len(main_sections) < 2:
             raise CommandError(
-                "Não foi possível gerar respostas exemplo: faltam seções principais."
+                "Could not generate sample answers: main sections are missing."
             )
 
         session_1_questions = list(
@@ -972,7 +997,7 @@ class Command(BaseCommand):
         )
         if len(session_1_questions) != 5 or len(session_2_questions) != 6:
             raise CommandError(
-                "Não foi possível gerar respostas exemplo: estrutura da rotulação diferente do esperado."
+                "Could not generate sample answers: labeling structure is not as expected."
             )
 
         question_ids = {
@@ -993,68 +1018,68 @@ class Command(BaseCommand):
             {
                 "row_index": 0,
                 "payload": {
-                    question_ids["s1_price"]: "Normal",
+                    question_ids["s1_price"]: "Fair",
                     question_ids["s1_signals"]: [
-                        "Sem nota fiscal",
-                        "Sem caixa",
-                        "Só retirada",
-                        "“Testado/funcionando”",
+                        "No invoice",
+                        "No box",
+                        "Pickup only",
+                        "Tested/working",
                     ],
                     question_ids["s1_items"]: 6,
-                    question_ids["s1_risk"]: 62,
+                    question_ids["s1_risk"]: 4,
                     question_ids["s1_missing"]: (
-                        "Falta comprovar origem e mostrar melhor o estado dos controles."
+                        "Origin needs proof and controller condition needs clearer photos."
                     ),
-                    question_ids["s2_price"]: "Normal",
-                    question_ids["s2_supports"]: "Parcialmente",
-                    question_ids["s2_alerts"]: ["Nada disso"],
+                    question_ids["s2_price"]: "Fair",
+                    question_ids["s2_supports"]: "Partially",
+                    question_ids["s2_alerts"]: ["None of these"],
                     question_ids["s2_visible_items"]: 4,
-                    question_ids["s2_condition"]: 78,
+                    question_ids["s2_condition"]: 4,
                     question_ids["s2_reason"]: (
-                        "As fotos parecem coerentes, mas não provam tudo do anúncio."
+                        "The photos seem consistent, but do not prove everything in the listing."
                     ),
                 },
             },
             {
                 "row_index": 3,
                 "payload": {
-                    question_ids["s1_price"]: "Caro",
+                    question_ids["s1_price"]: "Expensive",
                     question_ids["s1_signals"]: [
-                        "Precisa manutenção",
-                        "Vendedor evita detalhes",
+                        "Needs maintenance",
+                        "Seller avoids details",
                     ],
                     question_ids["s1_items"]: 0,
-                    question_ids["s1_risk"]: 74,
+                    question_ids["s1_risk"]: 5,
                     question_ids["s1_missing"]: (
-                        "Faltam grupo, numeração do quadro e detalhes de desgaste."
+                        "Groupset, frame number, and wear details are missing."
                     ),
-                    question_ids["s2_price"]: "Caro",
-                    question_ids["s2_supports"]: "Parcialmente",
-                    question_ids["s2_alerts"]: ["Marca/modelo não visível"],
+                    question_ids["s2_price"]: "Expensive",
+                    question_ids["s2_supports"]: "Partially",
+                    question_ids["s2_alerts"]: ["Brand/model not visible"],
                     question_ids["s2_visible_items"]: 1,
-                    question_ids["s2_condition"]: 55,
+                    question_ids["s2_condition"]: 3,
                     question_ids["s2_reason"]: (
-                        "Parece usada e real, mas falta prova clara dos componentes."
+                        "It seems used and real, but lacks clear proof of the components."
                     ),
                 },
             },
             {
                 "row_index": 4,
                 "payload": {
-                    question_ids["s1_price"]: "Normal",
-                    question_ids["s1_signals"]: ["Outro"],
+                    question_ids["s1_price"]: "Fair",
+                    question_ids["s1_signals"]: ["Other"],
                     question_ids["s1_items"]: 3,
-                    question_ids["s1_risk"]: 45,
+                    question_ids["s1_risk"]: 3,
                     question_ids["s1_missing"]: (
-                        "Falta informar shutter count e estado óptico da lente."
+                        "Shutter count and optical condition of the lens are missing."
                     ),
-                    question_ids["s2_price"]: "Normal",
-                    question_ids["s2_supports"]: "Parcialmente",
-                    question_ids["s2_alerts"]: ["Marca/modelo não visível"],
+                    question_ids["s2_price"]: "Fair",
+                    question_ids["s2_supports"]: "Partially",
+                    question_ids["s2_alerts"]: ["Brand/model not visible"],
                     question_ids["s2_visible_items"]: 2,
-                    question_ids["s2_condition"]: 72,
+                    question_ids["s2_condition"]: 4,
                     question_ids["s2_reason"]: (
-                        "Fotos mostram o conjunto, mas sem detalhe técnico suficiente."
+                        "Photos show the kit, but without enough technical detail."
                     ),
                 },
             },
@@ -1068,7 +1093,7 @@ class Command(BaseCommand):
             ).first()
             if item is None:
                 raise CommandError(
-                    f"Item row_index={answer_data['row_index']} não encontrado para preencher resposta exemplo."
+                    f"Item row_index={answer_data['row_index']} not found for sample answer."
                 )
 
             Answer.objects.create(

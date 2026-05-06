@@ -1,17 +1,14 @@
-"use client";
+'use client';
 
-import { ArrowLeft } from "lucide-react";
-import Button from "@/components/button/Button";
+import { ArrowLeft } from 'lucide-react';
+import Button from '@/components/button/Button';
 
 interface InnerPageHeaderProps {
   onBack: () => void;
   children?: React.ReactNode;
 }
 
-export default function InnerPageHeader({
-  onBack,
-  children,
-}: InnerPageHeaderProps) {
+export default function InnerPageHeader({ onBack, children }: InnerPageHeaderProps) {
   return (
     <header className="flex items-center bg-blueberry-700 px-6 py-4 text-white shadow-md">
       <div className="flex items-center gap-3 w-full">
@@ -25,9 +22,7 @@ export default function InnerPageHeader({
         >
           <ArrowLeft size={22} />
         </Button>
-        <div className="flex-1 flex items-center justify-between">
-          {children}
-        </div>
+        <div className="flex-1 flex items-center justify-between">{children}</div>
       </div>
     </header>
   );

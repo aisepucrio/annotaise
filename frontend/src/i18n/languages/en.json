@@ -64,7 +64,7 @@
     "logout": "Logout",
     "expandMenu": "Expand sidebar",
     "collapseMenu": "Collapse sidebar",
-    "groups" : "Groups"
+    "groups": "Groups"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -382,8 +382,7 @@
     "numberQuestionNoConfig": "Number questions have no additional configuration.",
     "rangeMin": "Minimum value",
     "rangeMax": "Maximum value",
-    "rangeStep": "Step",
-    "rangeSummary": "Range configured: {min} to {max} (step {step})",
+    "rangeSummary": "Range configured: {min} to {max}",
     "optionLabel": "Option {index}"
   },
   "assignTab": {

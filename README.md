@@ -12,7 +12,7 @@
 - [Target Users](#target-users)
 - [Project Dependencies](#project-dependencies)
 - [Installation](#installation)
-- [Seed ReSellia QA](#seed-resellia-qa)
+- [Seed](#seed)
 - [Run AnnotAISE](#run-annotaise)
 
 ---
@@ -183,13 +183,25 @@ docker compose start
 
 ## Seed
 
-Use this seed to create the real marketplace use case (**ReSellia QA**) in the backend.
-
 - The command prompts in the terminal for the **administrator email** to assign project/labeling creation.
 - The provided user must exist and have an admin profile.
+
+### ReSellia QA
+
+Use this seed to create a mock marketplace use case (**ReSellia QA**) in the backend.
 
 - **With Docker (run from the repository root):**
 
 ```bash
 docker compose exec api uv run manage.py seed_resellia_qa
+```
+
+### Context Question Test
+
+Use this seed to create an extensive test case for frontend modules.
+
+- **With Docker (run from the repository root):**
+
+```bash
+docker compose exec api uv run manage.py seed_context_question_test
 ```

@@ -11,19 +11,10 @@ type InvitationCompactCardProps = {
   };
 };
 
-function InvitationCompactCard({
-  email,
-  roleLabel,
-  invitedByEmail,
-  expiresAtText,
-  labels,
-}: InvitationCompactCardProps) {
-  const itemRowClass =
-    "flex items-start justify-between gap-3 rounded-sm px-2 py-0.5 transition-colors hover:bg-white/60";
-  const itemLabelClass =
-    "shrink-0 text-[0.75rem] font-medium tracking-wide text-slate-600";
-  const itemValueClass =
-    "min-w-0 flex-1 break-all text-right text-[0.95rem] font-semibold leading-snug tracking-tight text-slate-900";
+function InvitationCompactCard({ email, roleLabel, invitedByEmail, expiresAtText, labels }: InvitationCompactCardProps) {
+  const itemRowClass = 'flex items-start justify-between gap-3 rounded-sm px-2 py-0.5 transition-colors hover:bg-white/60';
+  const itemLabelClass = 'shrink-0 text-[0.75rem] font-medium tracking-wide text-slate-600';
+  const itemValueClass = 'min-w-0 flex-1 break-all text-right text-[0.95rem] font-semibold leading-snug tracking-tight text-slate-900';
 
   return (
     <div className="mt-5 w-full rounded-lg bg-blueberry-700-15 p-2 ring-1 ring-black/5 shadow-sm">

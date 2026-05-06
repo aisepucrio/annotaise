@@ -3,12 +3,15 @@ from .models import Labeling, LabelingSection, LabelingElement, MultipleChoiceIt
 from django.db import transaction
 from django.utils import timezone
 
+LLM_TIEBREAK_USERNAME = "llm_tiebreak_bot"
+LLM_TIEBREAK_EMAIL = "llm_tiebreak_bot@annotaise.local"
+
 
 class LabelingSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Labeling
-        fields = ['id', 'project', 'title', 'created_at','status','column_names','start_date','final_date','users_per_item','block_section_back','has_background_form','guide','decision','decisive_question','distribution_strategy']
+        fields = ['id', 'project', 'title', 'created_at','status','column_names','start_date','final_date','users_per_item','block_section_back','has_background_form','guide','decision','decision_mode','decisive_question','distribution_strategy']
         read_only_fields = ['id', 'created_at','created_by','column_names','status']
 
     def create(self, validated_data):
@@ -20,15 +23,25 @@ class LabelingSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
       
 class MultipleChoiceItemSerializer(serializers.ModelSerializer):
+    follow_up_question = serializers.SerializerMethodField()
+
     class Meta:
         model = MultipleChoiceItem
-        fields = ["id", "text", "value", "order"]
+        fields = ["id", "text", "value", "order", "follow_up_question"]
+
+    def get_follow_up_question(self, obj):
+        if obj.follow_up_question is None or self.context.get('_no_followup'):
+            return None
+        return LabelingElementSerializer(
+            obj.follow_up_question,
+            context={**self.context, '_no_followup': True},
+        ).data
 
 class QuestionRangeSerializer(serializers.ModelSerializer):
     class Meta:
         model = QuestionRange
-        fields = ["id", "start", "end", "step"]  # idem
-
+        fields = ["id", "start", "end", "start_label", "end_label"]
+    
 class LabelingElementSerializer(serializers.ModelSerializer):
     multiple_choice_items = MultipleChoiceItemSerializer(many=True, read_only=True)
     question_range = QuestionRangeSerializer(read_only=True)
@@ -49,11 +62,21 @@ class LabelingElementSerializer(serializers.ModelSerializer):
         ]
 
 class LabelingSectionSerializer(serializers.ModelSerializer):
-    elements = LabelingElementSerializer(many=True, read_only=True)
+    elements = serializers.SerializerMethodField()
 
     class Meta:
         model = LabelingSection
         fields = ["id", "title", "order", "elements"]
+
+    def get_elements(self, obj):
+        follow_up_ids = set(
+            MultipleChoiceItem.objects.filter(
+                labeling_element__labeling_section=obj,
+                follow_up_question__isnull=False,
+            ).values_list("follow_up_question_id", flat=True)
+        )
+        elements = obj.elements.exclude(id__in=follow_up_ids)
+        return LabelingElementSerializer(elements, many=True, context=self.context).data
         
 
 class LabelingMembershipSerializer(serializers.ModelSerializer):
@@ -61,6 +84,15 @@ class LabelingMembershipSerializer(serializers.ModelSerializer):
         model = LabelingMembership
         fields = ['id', 'user', 'labeling', 'items_done', 'role', 'joined_at']
         read_only_fields = ['id', 'joined_at','items_done']
+
+    def validate_user(self, user):
+        username = (getattr(user, "username", "") or "").strip().lower()
+        email = (getattr(user, "email", "") or "").strip().lower()
+        if username == LLM_TIEBREAK_USERNAME or email == LLM_TIEBREAK_EMAIL:
+            raise serializers.ValidationError(
+                "Este usuário técnico não pode ser adicionado como membro de rotulação."
+            )
+        return user
 
     def update(self, instance, validated_data):
         # bloqueia a troca de rotulação
@@ -81,17 +113,6 @@ class LabelingMembershipSerializer(serializers.ModelSerializer):
 
 # ---------- SERIALIZERS DE ESCRITA ----------
 
-class MultipleChoiceItemWriteSerializer(serializers.ModelSerializer):
-    """
-    Usado dentro do elemento. Não expõe labeling_element, pois vem do pai.
-    """
-    id = serializers.IntegerField(required=False)
-    class Meta:
-        model = MultipleChoiceItem
-        fields = ['id', 'text', 'value', 'order']
-        read_only_fields = []
-
-
 class QuestionRangeWriteSerializer(serializers.ModelSerializer):
     """
     Usado dentro do elemento. Não expõe labeling_element, pois vem do pai.
@@ -99,12 +120,60 @@ class QuestionRangeWriteSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
     class Meta:
         model = QuestionRange
-        fields = ['id', 'start', 'end', 'step']
+        fields = ['id', 'start', 'end', 'start_label', 'end_label']
         read_only_fields = []
     def validate(self, attrs):
         if(attrs['start'] >= attrs['end']):
             raise serializers.ValidationError({'detail':'o campo start deve ser menor que end'})
         return super().validate(attrs)
+
+
+class MultipleChoiceItemWriteSerializer(serializers.ModelSerializer):
+    """
+    Usado dentro do elemento. Não expõe labeling_element, pois vem do pai.
+    follow_up_question é definido no __init__ para evitar referência circular.
+    """
+    id = serializers.IntegerField(required=False)
+
+    class Meta:
+        model = MultipleChoiceItem
+        fields = ['id', 'text', 'value', 'order', 'follow_up_question']
+        read_only_fields = []
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if '_no_followup' not in self.context:
+            self.fields['follow_up_question'] = FollowUpElementWriteSerializer(
+                required=False, allow_null=True
+            )
+        else:
+            self.fields.pop('follow_up_question', None)
+
+
+class FollowUpElementWriteSerializer(serializers.ModelSerializer):
+    """
+    Versão do LabelingElementWriteSerializer para follow-up questions.
+    Limita a um nível de profundidade (sem follow-ups aninhados).
+    """
+    id = serializers.IntegerField(required=False)
+    multiple_choice_items = None  # será sobrescrito no __init__
+    question_range = QuestionRangeWriteSerializer(required=False, allow_null=True)
+
+    class Meta:
+        model = LabelingElement
+        fields = [
+            'id', 'order', 'text', 'required', 'question_type',
+            'column_name', 'context_type', 'allow_multiple',
+            'multiple_choice_items', 'question_range',
+        ]
+        read_only_fields = []
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['multiple_choice_items'] = MultipleChoiceItemWriteSerializer(
+            many=True, required=False,
+            context={'_no_followup': True},
+        )
 
 
 # ---------- ELEMENTO (pergunta / texto / etc) ----------
@@ -179,6 +248,8 @@ class LabelingSectionsBulkCreateSerializer(serializers.Serializer):
             )
             created_sections.append(section)
 
+            follow_up_order_counter = 10000
+
             for element_data in elements_data:
                 mc_items_data = element_data.pop('multiple_choice_items', [])
                 range_data = element_data.pop('question_range', None)
@@ -189,8 +260,34 @@ class LabelingSectionsBulkCreateSerializer(serializers.Serializer):
                 )
 
                 for item_data in mc_items_data:
+                    follow_up_data = item_data.pop('follow_up_question', None)
+                    follow_up_element = None
+
+                    if follow_up_data:
+                        follow_up_data.pop('id', None)
+                        follow_up_data.pop('order', None)
+                        fu_mc_items = follow_up_data.pop('multiple_choice_items', [])
+                        fu_range = follow_up_data.pop('question_range', None)
+                        follow_up_order_counter += 1
+                        follow_up_element = LabelingElement.objects.create(
+                            labeling_section=section,
+                            order=follow_up_order_counter,
+                            **follow_up_data,
+                        )
+                        for fu_item in fu_mc_items:
+                            MultipleChoiceItem.objects.create(
+                                labeling_element=follow_up_element,
+                                **fu_item,
+                            )
+                        if fu_range is not None:
+                            QuestionRange.objects.create(
+                                labeling_element=follow_up_element,
+                                **fu_range,
+                            )
+
                     MultipleChoiceItem.objects.create(
                         labeling_element=element,
+                        follow_up_question=follow_up_element,
                         **item_data,
                     )
 

@@ -8,7 +8,7 @@ from item.models import Item
 from .serializers import LabelingElementSerializer
 
 from django.shortcuts import render, get_object_or_404
-from django.db import transaction
+from django.db import models, transaction
 
 from rest_framework import viewsets, status
 
@@ -24,6 +24,9 @@ from datetime import datetime, timedelta
 import json
 from answer.models import BackgroundAnswer, Answer
 from collections import defaultdict
+
+LLM_TIEBREAK_USERNAME = "llm_tiebreak_bot"
+LLM_TIEBREAK_EMAIL = "llm_tiebreak_bot@annotaise.local"
 
 class LabelingViewSet(viewsets.ModelViewSet):
     serializer_class = LabelingSerializer
@@ -101,7 +104,13 @@ class LabelingViewSet(viewsets.ModelViewSet):
     @action(methods=['get'], detail=True, url_path='memberships')
     def list_labeling_memberships(self,request, pk=None):
         labeling = get_object_or_404(Labeling,pk=pk)
-        memberships = LabelingMembership.objects.filter(labeling=labeling).select_related('user')
+        memberships = (
+            LabelingMembership.objects
+            .filter(labeling=labeling)
+            .exclude(user__username=LLM_TIEBREAK_USERNAME)
+            .exclude(user__email__iexact=LLM_TIEBREAK_EMAIL)
+            .select_related('user')
+        )
         background_users = set(
             BackgroundAnswer.objects.filter(labeling=labeling).values_list("answered_by_id", flat=True)
         )
@@ -431,7 +440,12 @@ class LabelingMembershipViewSet(viewsets.ModelViewSet):
     '''Só o owner/colaborator pode mexer nisso'''
     serializer_class = LabelingMembershipSerializer
     permission_classes = [IsAdminAccount, CanEditLabelingsInProjectPermission]
-    queryset = LabelingMembership.objects.select_related('labeling', 'user')
+    queryset = (
+        LabelingMembership.objects
+        .select_related('labeling', 'user')
+        .exclude(user__username=LLM_TIEBREAK_USERNAME)
+        .exclude(user__email__iexact=LLM_TIEBREAK_EMAIL)
+    )
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     
@@ -573,6 +587,7 @@ class CreateReadLabelingStructureView(APIView):
 
             existing_elements = {el.id: el for el in section.elements.all()}
             elements_to_keep = set()
+            follow_up_order_counter = 10000
 
             for element_idx, element_data in enumerate(elements_data):
                 mc_items_data = element_data.pop("multiple_choice_items", [])
@@ -608,9 +623,48 @@ class CreateReadLabelingStructureView(APIView):
                         element.question_range.delete()
 
                 # ressincroniza múltipla escolha recriando (simplifica)
+                # remove old follow-up elements before deleting items
+                old_follow_up_ids = list(
+                    element.multiple_choice_items
+                    .filter(follow_up_question__isnull=False)
+                    .values_list("follow_up_question_id", flat=True)
+                )
                 element.multiple_choice_items.all().delete()
+                if old_follow_up_ids:
+                    LabelingElement.objects.filter(id__in=old_follow_up_ids).delete()
                 for item_data in mc_items_data:
-                    MultipleChoiceItem.objects.create(labeling_element=element, **item_data)
+                    follow_up_data = item_data.pop('follow_up_question', None)
+                    follow_up_element = None
+
+                    if follow_up_data:
+                        follow_up_data.pop('id', None)
+                        follow_up_data.pop('order', None)
+                        fu_mc_items = follow_up_data.pop('multiple_choice_items', [])
+                        fu_range = follow_up_data.pop('question_range', None)
+                        follow_up_order_counter += 1
+                        follow_up_element = LabelingElement.objects.create(
+                            labeling_section=section,
+                            order=follow_up_order_counter,
+                            **follow_up_data,
+                        )
+                        for fu_item in fu_mc_items:
+                            MultipleChoiceItem.objects.create(
+                                labeling_element=follow_up_element,
+                                **fu_item,
+                            )
+                        if fu_range is not None:
+                            QuestionRange.objects.create(
+                                labeling_element=follow_up_element,
+                                **fu_range,
+                            )
+
+                    MultipleChoiceItem.objects.create(
+                        labeling_element=element,
+                        follow_up_question=follow_up_element,
+                        **item_data,
+                    )
+                    if follow_up_element:
+                        elements_to_keep.add(follow_up_element.id)
 
             # remove elementos não enviados
             to_delete_elements = [el_id for el_id in existing_elements.keys() if el_id not in elements_to_keep]

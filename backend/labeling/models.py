@@ -1,7 +1,6 @@
 from django.db import models
 from django.utils import timezone
 from django.conf import settings
-from django.core.validators import MinValueValidator
 from user.models import UserGroup
 from django.core.exceptions import ValidationError
 
@@ -16,6 +15,10 @@ class Labeling(models.Model):
         AUTO = "auto", "Automática" 
         SPECIFIED = "specified", "Estipulada"
         PER_PERSON = "per_person", "Por pessoa"
+
+    class DecisionMode(models.TextChoices):
+        MANUAL = "manual", "Manual"
+        LLM = "llm", "LLM"
     
     #background_labeling = models.ForeignKey(null=True, blank=True, on_delete=models.SET_NULL)
     status = models.CharField(choices=Status.choices,default="draft")
@@ -28,6 +31,11 @@ class Labeling(models.Model):
     start_date = models.DateField(default=timezone.now)
     final_date = models.DateField(null=False, blank=False)
     decision = models.BooleanField(default=False, null=False, blank=False)
+    decision_mode = models.CharField(
+        max_length=16,
+        choices=DecisionMode.choices,
+        default=DecisionMode.MANUAL,
+    )
     distribution_strategy = models.CharField(max_length=32, default=DistributionStrategy.AUTO, choices=DistributionStrategy.choices)
 
 
@@ -115,6 +123,9 @@ class LabelingElement(models.Model):
         DATE = "date", "Data"
         CATEGORY = "category", "categoria"
         CODE = "code", "Código"
+        AUDIO = "audio", "Áudio"
+        VIDEO = "video", "Vídeo"
+        PDF = "pdf", "PDF"
 
     labeling_section = models.ForeignKey(
         LabelingSection, on_delete=models.CASCADE, related_name="elements"
@@ -127,7 +138,6 @@ class LabelingElement(models.Model):
     column_name = models.CharField(max_length=200, blank=True)
     allow_multiple = models.BooleanField(default=False)
     
-
     class Meta:
         ordering = ["labeling_section_id", "order", "id"]
         constraints = [
@@ -136,8 +146,6 @@ class LabelingElement(models.Model):
                 name="unique_element_order_per_section"
             ),
         ]
-
-
         
     def save(self, *args, **kwargs):
         self.full_clean()
@@ -155,9 +163,9 @@ class MultipleChoiceItem(models.Model):
     value = models.BooleanField(default=False)
     order = models.PositiveIntegerField(default=1)
 
-    optional_section = models.ForeignKey(
-        LabelingSection, on_delete=models.SET_NULL, null=True, blank=True, related_name="multiple_choice_item_sections")
-
+    follow_up_question = models.ForeignKey(
+        LabelingElement, on_delete=models.SET_NULL, null=True, blank=True, related_name="follow_up_for"
+    )
     class Meta:
         ordering = ["labeling_element_id", "order", "id"]
         constraints = [
@@ -174,18 +182,25 @@ class QuestionRange(models.Model):
     labeling_element = models.OneToOneField(
         LabelingElement, on_delete=models.CASCADE, related_name="question_range", db_index=True
     )
-    start = models.FloatField()
-    end = models.FloatField()
-    step = models.FloatField(default=1.0, validators=[MinValueValidator(0.0000001)])
+    start = models.FloatField(null=True, blank=True)
+    end = models.FloatField(null=True, blank=True)
+    start_label = models.CharField(max_length=300, blank=True, default="")
+    end_label = models.CharField(max_length=300, blank=True, default="")
 
     class Meta:
         constraints = [
-            models.CheckConstraint(condition=models.Q(end__gt=models.F("start")),#garante que o valor final é maior que o inicial
-                                   name="range_end_gt_start"),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(start__isnull=True)
+                    | models.Q(end__isnull=True)
+                    | models.Q(end__gt=models.F("start"))
+                ),
+                name="range_end_gt_start_when_both",
+            ),
         ]
 
     def __str__(self):
-        return f"{self.start} … {self.end} (step {self.step})"
+        return f"{self.start} … {self.end}"
 
 
 class LabelingMembership(models.Model):

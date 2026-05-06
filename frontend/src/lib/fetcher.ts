@@ -1,14 +1,14 @@
-import { AxiosRequestHeaders } from "axios";
-import createAuthRefreshInterceptor from "axios-auth-refresh";
-import { api } from "@/lib/api";
-import { AuthActions } from "@/lib/authClient";
+import { AxiosRequestHeaders } from 'axios';
+import createAuthRefreshInterceptor from 'axios-auth-refresh';
+import { api } from '@/lib/api';
+import { AuthActions } from '@/lib/authClient';
 
 // Extrai utilitários
 const { storeToken, getToken, forceLogoutAndRedirect } = AuthActions();
 
 // Request interceptor: injeta Authorization se houver access
 api.interceptors.request.use((config) => {
-  const access = getToken("access");
+  const access = getToken('access');
   if (access) {
     const headers: AxiosRequestHeaders = config.headers ?? {};
     headers.Authorization = `Bearer ${access}`;
@@ -19,11 +19,11 @@ api.interceptors.request.use((config) => {
 
 // Lógica de refresh para axios-auth-refresh
 const refreshAuthLogic = async () => {
-  const refreshToken = getToken("refresh");
+  const refreshToken = getToken('refresh');
 
   if (!refreshToken) {
     forceLogoutAndRedirect();
-    return Promise.reject(new Error("Missing refresh token"));
+    return Promise.reject(new Error('Missing refresh token'));
   }
 
   try {
@@ -32,10 +32,10 @@ const refreshAuthLogic = async () => {
 
     if (!access) {
       forceLogoutAndRedirect();
-      return Promise.reject(new Error("Refresh failed"));
+      return Promise.reject(new Error('Refresh failed'));
     }
 
-    storeToken(access, "access");
+    storeToken(access, 'access');
     return Promise.resolve();
   } catch (error) {
     forceLogoutAndRedirect();

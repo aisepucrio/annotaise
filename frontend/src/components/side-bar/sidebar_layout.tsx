@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useState, type ReactNode } from "react";
-import Sidebar from "./sidebar";
-import { useSidebarState } from "./sidebar_provider";
+import { useState, type ReactNode } from 'react';
+import Sidebar from './sidebar';
+import { useSidebarState } from './sidebar_provider';
 
 interface SidebarLayoutProps {
   children: ReactNode;
@@ -22,8 +22,8 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
       transition-[grid-template-columns] duration-300
       ${
         isOpen
-          ? "grid-cols-[clamp(10.5rem,15vw,21rem)_1fr]" // 42..84
-          : "grid-cols-[clamp(3.5rem,5vw,4.5rem)_1fr]" // 14..18
+          ? 'grid-cols-[clamp(10.5rem,15vw,21rem)_1fr]' // 42..84
+          : 'grid-cols-[clamp(3.5rem,5vw,4.5rem)_1fr]' // 14..18
       }
     `}
     >

@@ -61,7 +61,6 @@ class LabelingElementSerializerTest(BaseSerializerTest):
             labeling_element=self.element,
             start=0,
             end=10,
-            step=1
         )
 
     def test_serialization_success(self):
@@ -101,14 +100,12 @@ class QuestionRangeSerializerTest(BaseSerializerTest):
             labeling_element=self.element,
             start=0,
             end=10,
-            step=1
         )
  
     def test_serialization_success(self):
         serializer = QuestionRangeSerializer(self.range)
         self.assertEqual(serializer.data['start'], 0)
         self.assertEqual(serializer.data['end'], 10)
-        self.assertEqual(serializer.data['step'], 1)
 
 class LabelingMembershipSerializerTest(BaseSerializerTest):
     def setUp(self):
@@ -565,7 +562,6 @@ class LabelingStructureViewTest(TestCase):
                             "question_range": {
                                 "start": 0,
                                 "end": 120,
-                                "step": 1,
                             },
                         },
                     ],
@@ -609,7 +605,6 @@ class LabelingStructureViewTest(TestCase):
                             "question_range": {
                                 "start": 0,
                                 "end": 24,
-                                "step": 1,
                             },
                         },
                     ],
@@ -647,7 +642,8 @@ class LabelingStructureViewTest(TestCase):
                         labeling_element=element,
                         start=question_range_data["start"],
                         end=question_range_data["end"],
-                        step=question_range_data["step"],
+                        start_label=question_range_data.get("start_label", ""),
+                        end_label=question_range_data.get("end_label", ""),
                     )
 
     def _simplify_structure(self, sections):
@@ -676,7 +672,8 @@ class LabelingStructureViewTest(TestCase):
                         else {
                             "start": question_range["start"],
                             "end": question_range["end"],
-                            "step": question_range["step"],
+                            "start_label": question_range.get("start_label", ""),
+                            "end_label": question_range.get("end_label", ""),
                         },
                     }
                 )

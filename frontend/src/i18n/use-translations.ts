@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useCallback, useMemo } from "react";
-import { useLanguage } from "./language-context";
-import { translations } from "./translations";
-import type { TranslateFn, TranslateParams } from "./types";
+import { useCallback, useMemo } from 'react';
+import { useLanguage } from './language-context';
+import { translations } from './translations';
+import type { TranslateFn, TranslateParams } from './types';
 
 function interpolate(template: string, params?: TranslateParams) {
   if (!params) return template;
@@ -15,14 +15,11 @@ function interpolate(template: string, params?: TranslateParams) {
 
 export function useTranslations() {
   const { language } = useLanguage();
-  const locale = useMemo(
-    () => (language === "en" ? "en-US" : "pt-BR"),
-    [language]
-  );
+  const locale = useMemo(() => (language === 'en' ? 'en-US' : 'pt-BR'), [language]);
 
   const t = useCallback<TranslateFn>(
     (key: string, params?: TranslateParams) => {
-      const fallback = translations["pt-BR"][key];
+      const fallback = translations['pt-BR'][key];
       const template = translations[language]?.[key] ?? fallback ?? key;
       return interpolate(template, params);
     },

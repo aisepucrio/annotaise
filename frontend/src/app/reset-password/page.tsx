@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import { isAxiosError } from "axios";
-import AuthLayout from "@/components/auth-layout/AuthLayout";
-import { useRouter, useSearchParams } from "next/navigation";
-import React, { useState, useEffect, Suspense } from "react";
-import { useForm } from "react-hook-form";
-import { AuthActions } from "@/lib/authClient";
-import { KeyRound } from "lucide-react";
-import { toast } from "sonner";
-import AuthFormButton from "@/components/auth-layout/AuthFormButton";
-import PasswordInput from "@/components/form/PasswordInput";
-import { useTranslations } from "@/i18n/use-translations";
+import AuthLayout from '@/components/auth-layout/AuthLayout';
+import { useRouter, useSearchParams } from 'next/navigation';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useForm } from 'react-hook-form';
+import { AuthActions } from '@/lib/authClient';
+import { KeyRound } from 'lucide-react';
+import { toast } from 'sonner';
+import AuthFormButton from '@/components/auth-layout/AuthFormButton';
+import PasswordInput from '@/components/form/PasswordInput';
+import { useTranslations } from '@/i18n/use-translations';
+import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 
 type FormData = {
   new_password: string;
@@ -26,13 +26,13 @@ function ResetPasswordForm() {
 
   const router = useRouter();
   const searchParams = useSearchParams();
-  const token = searchParams.get("token") ?? "";
+  const token = searchParams.get('token') ?? '';
   const { resetPassword } = AuthActions();
   const { t } = useTranslations();
 
   useEffect(() => {
     if (!token) {
-      router.push("/login");
+      router.push('/login');
     }
   }, [token, router]);
 
@@ -42,38 +42,28 @@ function ResetPasswordForm() {
     setIsLoading(true);
     try {
       await resetPassword(token, data.new_password);
-      toast.success(t("resetPassword.successMessage"));
-      router.push("/login");
+      toast.success(t('resetPassword.successMessage'));
+      router.push('/login');
     } catch (err) {
-      let message = t("resetPassword.invalidToken");
-
-      if (isAxiosError(err)) {
-        const detail = (err.response?.data as { detail?: string })?.detail;
-        if (detail) message = detail;
-      }
-
-      toast.error(message);
+      toast.error(getApiErrorMessage(err, t('resetPassword.invalidToken')));
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <AuthLayout
-      title={t("resetPassword.title")}
-      subtitle={t("resetPassword.subtitle")}
-    >
+    <AuthLayout title={t('resetPassword.title')} subtitle={t('resetPassword.subtitle')}>
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className="mt-8">
           <PasswordInput
-            label={t("resetPassword.passwordLabel")}
-            placeholder={t("resetPassword.passwordPlaceholder")}
+            label={t('resetPassword.passwordLabel')}
+            placeholder={t('resetPassword.passwordPlaceholder')}
             error={errors.new_password?.message}
-            {...register("new_password", {
-              required: t("resetPassword.passwordRequired"),
+            {...register('new_password', {
+              required: t('resetPassword.passwordRequired'),
               minLength: {
                 value: 8,
-                message: t("resetPassword.passwordMinLength"),
+                message: t('resetPassword.passwordMinLength'),
               },
             })}
           />
@@ -81,7 +71,7 @@ function ResetPasswordForm() {
 
         <AuthFormButton
           icon={<KeyRound className="w-6 h-6 mr-2" />}
-          text={isLoading ? t("resetPassword.loading") : t("resetPassword.button")}
+          text={isLoading ? t('resetPassword.loading') : t('resetPassword.button')}
         />
       </form>
     </AuthLayout>

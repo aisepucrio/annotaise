@@ -1,4 +1,4 @@
-export type ProjectStatus = "planning" | "active" | "completed" | "cancelled";
+export type ProjectStatus = 'planning' | 'active' | 'completed' | 'cancelled';
 
 export type Project = {
   id: number;
@@ -24,7 +24,7 @@ export type ProjectDashboard = {
   late_labelings: number;
 };
 
-export type ProjectMembershipRole = "owner" | "contributor" | "viewer";
+export type ProjectMembershipRole = 'owner' | 'contributor' | 'viewer';
 
 export type ProjectMembership = {
   id: number;

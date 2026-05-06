@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import { PropsWithChildren, useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
-import { AuthActions } from "@/lib/authClient";
-import { useIsAdmin } from "@/lib/AdminContext";
+import { PropsWithChildren, useEffect, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { AuthActions } from '@/lib/authClient';
+import { useIsAdmin } from '@/lib/AdminContext';
 
-const LOGIN_PATH = "/login";
+const LOGIN_PATH = '/login';
 const PUBLIC_PATHS = [LOGIN_PATH];
-const PUBLIC_PREFIXES = ["/accept-invitation"];
+const PUBLIC_PREFIXES = ['/accept-invitation'];
 
-const LABELINGS_ROOT = "/labelings";
-const LABELINGS_MANAGE = "/labelings/manage";
+const LABELINGS_ROOT = '/labelings';
+const LABELINGS_MANAGE = '/labelings_manage';
 
 export default function AuthGuard({ children }: PropsWithChildren) {
   const router = useRouter();
@@ -20,10 +20,8 @@ export default function AuthGuard({ children }: PropsWithChildren) {
   const [isAllowed, setIsAllowed] = useState(false);
 
   useEffect(() => {
-    const hasToken = Boolean(getToken("refresh") ?? getToken("access"));
-    const isPublicPath =
-      PUBLIC_PATHS.includes(pathname) ||
-      PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+    const hasToken = Boolean(getToken('refresh') ?? getToken('access'));
+    const isPublicPath = PUBLIC_PATHS.includes(pathname) || PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 
     // Público sem token: permitir
     if (isPublicPath && !hasToken) {
@@ -33,7 +31,7 @@ export default function AuthGuard({ children }: PropsWithChildren) {
 
     // Público com token: redirecionar para home
     if (isPublicPath && hasToken) {
-      router.replace("/labelings");
+      router.replace('/labelings');
       return;
     }
 
@@ -53,12 +51,10 @@ export default function AuthGuard({ children }: PropsWithChildren) {
     }
 
     // Usuário normal:
-    // - Pode acessar apenas /labelings (e subrotas), EXCETO /labelings/manage
+    // - Pode acessar apenas /labelings (e subrotas), EXCETO /labelings_manage
     // - Qualquer outra rota -> /labelings
     const isLabelingsArea = pathname.startsWith(LABELINGS_ROOT);
-    const isManageArea =
-      pathname === LABELINGS_MANAGE ||
-      pathname.startsWith(`${LABELINGS_MANAGE}/`);
+    const isManageArea = pathname === LABELINGS_MANAGE || pathname.startsWith(`${LABELINGS_MANAGE}/`);
 
     if (isLabelingsArea && !isManageArea) {
       setIsAllowed(true);

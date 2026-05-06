@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import { isAxiosError } from "axios";
-import AuthLayout from "@/components/auth-layout/AuthLayout";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { AuthActions } from "@/lib/authClient";
-import { Mail, Send } from "lucide-react";
-import { toast } from "sonner";
-import AuthFormButton from "@/components/auth-layout/AuthFormButton";
-import Input from "@/components/form/Input";
-import { useTranslations } from "@/i18n/use-translations";
+import AuthLayout from '@/components/auth-layout/AuthLayout';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { AuthActions } from '@/lib/authClient';
+import { Mail, Send } from 'lucide-react';
+import { toast } from 'sonner';
+import AuthFormButton from '@/components/auth-layout/AuthFormButton';
+import Input from '@/components/form/Input';
+import { useTranslations } from '@/i18n/use-translations';
+import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 
 type FormData = {
   email: string;
@@ -32,39 +32,29 @@ export default function ForgotPasswordPage() {
     setIsLoading(true);
     try {
       await forgotPassword(data.email);
-      toast.success(t("forgotPassword.successMessage"));
+      toast.success(t('forgotPassword.successMessage'));
     } catch (err) {
-      let message = t("forgotPassword.successMessage");
-
-      if (isAxiosError(err)) {
-        const detail = (err.response?.data as { detail?: string })?.detail;
-        if (detail) message = detail;
-      }
-
-      toast.success(message);
+      toast.success(getApiErrorMessage(err, t('forgotPassword.successMessage')));
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <AuthLayout
-      title={t("forgotPassword.title")}
-      subtitle={t("forgotPassword.subtitle")}
-    >
+    <AuthLayout title={t('forgotPassword.title')} subtitle={t('forgotPassword.subtitle')}>
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className="mt-8">
           <Input
-            label={t("forgotPassword.emailLabel")}
+            label={t('forgotPassword.emailLabel')}
             type="email"
-            placeholder={t("forgotPassword.emailPlaceholder")}
+            placeholder={t('forgotPassword.emailPlaceholder')}
             icon={<Mail className="w-8 h-8" />}
             error={errors.email?.message}
-            {...register("email", {
-              required: t("forgotPassword.emailRequired"),
+            {...register('email', {
+              required: t('forgotPassword.emailRequired'),
               pattern: {
                 value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                message: t("forgotPassword.emailInvalid"),
+                message: t('forgotPassword.emailInvalid'),
               },
             })}
           />
@@ -72,15 +62,15 @@ export default function ForgotPasswordPage() {
 
         <AuthFormButton
           icon={<Send className="w-6 h-6 mr-2" />}
-          text={isLoading ? t("forgotPassword.loading") : t("forgotPassword.button")}
+          text={isLoading ? t('forgotPassword.loading') : t('forgotPassword.button')}
         />
 
         <div className="flex w-full justify-center mt-4">
           <a
-            onClick={() => router.push("/login")}
+            onClick={() => router.push('/login')}
             className="text-sm text-blueberry-900 underline cursor-pointer hover:text-blueberry-700"
           >
-            {t("forgotPassword.backToLogin")}
+            {t('forgotPassword.backToLogin')}
           </a>
         </div>
       </form>

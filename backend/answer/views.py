@@ -18,6 +18,7 @@ from user.permissions import IsAdminAccount
 from django.http import HttpResponse
 from .permissions import CanAnswerLabelingPermission
 from labeling.permissions import CanEditLabelingsInProjectPermission
+from .services.llm_tiebreak import run_llm_tiebreak_decision
 
 import pandas as pd
 
@@ -25,6 +26,7 @@ from rest_framework.generics import ListAPIView
 from django.db.models import Q
 from django.db import transaction
 from rest_framework.permissions import IsAuthenticated
+from django.contrib.auth import get_user_model
 #TODO aqui é melhor usar permission pra ver se o item membership existe!
 class AnswerViewset(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
@@ -56,6 +58,79 @@ class AnswerViewset(viewsets.ModelViewSet):
             qs = qs.filter(labeling_id=int(labeling_id))
 
         return qs
+
+    def _get_or_create_llm_tiebreak_user(self):
+        User = get_user_model()
+        username = "llm_tiebreak_bot"
+        email = "llm_tiebreak_bot@annotaise.local"
+
+        user = User.objects.filter(username=username).first()
+        if user:
+            return user
+
+        user = User.objects.filter(email__iexact=email).first()
+        if user:
+            if not user.username:
+                user.username = username
+                user.save(update_fields=["username"])
+            return user
+
+        user = User.objects.create(
+            username=username,
+            email=email,
+            first_name="LLM",
+            last_name="TieBreak",
+            account_type="standard",
+            is_active=True,
+            onboarding_status="active",
+        )
+        user.set_unusable_password()
+        user.save(update_fields=["password"])
+        return user
+
+    def _resolve_vote_winner(self, decision_dict):
+        biggest = 0
+        winner = None
+        tied = False
+        for answer, number_of_appearences in decision_dict.items():
+            if number_of_appearences > biggest:
+                biggest = number_of_appearences
+                winner = answer
+                tied = False
+            elif number_of_appearences == biggest:
+                tied = True
+        return (winner is not None) and (not tied), winner
+
+    def _build_llm_contexts(self, item):
+        payload = item.payload if isinstance(item.payload, dict) else {}
+        contexts = []
+        context_elements = (
+            LabelingElement.objects
+            .filter(
+                labeling_section__labeling=item.labeling,
+                labeling_section__form_type=LabelingSection.FormType.MAIN,
+                question_type=LabelingElement.QuestionType.CONTEXT,
+            )
+            .order_by("labeling_section__order", "order", "id")
+        )
+
+        for element in context_elements:
+            value = None
+            if element.column_name:
+                value = payload.get(element.column_name)
+            if value is None:
+                value = payload.get(str(element.id), payload.get(element.id))
+
+            contexts.append(
+                {
+                    "context_type": element.context_type or "text",
+                    "label": element.text or element.column_name or f"contexto_{element.id}",
+                    "column_name": element.column_name,
+                    "value": value,
+                }
+            )
+
+        return contexts
 
     def create(self, request, *args, **kwargs):
         user = request.user
@@ -123,6 +198,14 @@ class AnswerViewset(viewsets.ModelViewSet):
             decisive_answer = str(answer_value)
 
         with transaction.atomic():
+            item = (
+                Item.objects
+                .select_for_update()
+                .select_related("labeling")
+                .get(id=item_id)
+            )
+            labeling = item.labeling
+            decision_warning = None
             self.perform_create(serializer)
 
             # Remove a reserva do item
@@ -130,36 +213,90 @@ class AnswerViewset(viewsets.ModelViewSet):
 
             if labeling.decision == True:
                 decision_dict = item.decision_payload or {}
-                '''a ideia e primeiro adicionar tudo no dicionario e depois checar se ja terminou (todas as questoes alvo ja tem decisao)'''
+                fields_to_update = ["decision_payload"]
 
-                if not decision_dict.get(decisive_answer, None):
-                    decision_dict[decisive_answer] = 1
-                else:
-                    decision_dict[decisive_answer] += 1
-
+                decision_dict[decisive_answer] = decision_dict.get(decisive_answer, 0) + 1
                 item.decision_payload = decision_dict
-                item.save()
-                if labeling.users_per_item <= Answer.objects.filter(item__id=item_id).count():
-                    #agora checando se terminou (isso futuramente pode ser uma função)
-                    done = False
-                    biggest = 0
-                    for answer, number_of_appearences in decision_dict.items():
-                        if number_of_appearences > biggest:
-                            biggest = number_of_appearences
-                            biggest_answer = answer
-                            done = True
-                        elif number_of_appearences == biggest:
-                            done = False # empate, decisao nao tomada ainda
-                    if done == True:
-                            #decisao tomada
-                        item.status = 'finished'
-                        item.save()
-                        
+
+                answer_count = Answer.objects.filter(item_id=item_id).count()
+                if labeling.users_per_item <= answer_count:
+                    has_winner, biggest_answer = self._resolve_vote_winner(decision_dict)
+                    if has_winner:
+                        item.status = "finished"
+                        item.final_decision_source = "human"
+                        item.final_decision_value = biggest_answer
+                        fields_to_update.extend(
+                            ["status", "final_decision_source", "final_decision_value"]
+                        )
+                    elif (
+                        labeling.decision_mode == Labeling.DecisionMode.LLM
+                        and not item.llm_tiebreak_attempted
+                    ):
+                        options = list(
+                            decisive_element.multiple_choice_items.order_by("order", "id").values_list(
+                                "text", flat=True
+                            )
+                        )
+                        try:
+                            llm_result = run_llm_tiebreak_decision(
+                                labeling_guide=labeling.guide,
+                                question_text=decisive_element.text,
+                                options=options,
+                                contexts=self._build_llm_contexts(item),
+                            )
+                        except Exception as exc:
+                            llm_result = {
+                                "models": [],
+                                "vote_count": {},
+                                "winner": None,
+                                "tied": False,
+                                "valid_votes": 0,
+                                "error": str(exc),
+                                "error_message": (
+                                    "Não foi possível executar a decisão por LLM neste item."
+                                ),
+                            }
+                        item.llm_tiebreak_attempted = True
+                        item.llm_tiebreak_result = llm_result
+                        fields_to_update.extend(
+                            ["llm_tiebreak_attempted", "llm_tiebreak_result"]
+                        )
+                        decision_warning = llm_result.get("error_message")
+
+                        llm_winner = llm_result.get("winner")
+                        if llm_winner:
+                            llm_user = self._get_or_create_llm_tiebreak_user()
+                            llm_answer_payload = {str(decisive_element.id): llm_winner}
+                            Answer.objects.create(
+                                item=item,
+                                labeling=labeling,
+                                answered_by=llm_user,
+                                answer_payload=llm_answer_payload,
+                            )
+                            decision_dict[llm_winner] = decision_dict.get(llm_winner, 0) + 1
+                            item.decision_payload = decision_dict
+                            item.status = "finished"
+                            item.final_decision_source = "llm"
+                            item.final_decision_value = llm_winner
+                            fields_to_update.extend(
+                                [
+                                    "status",
+                                    "final_decision_source",
+                                    "final_decision_value",
+                                    "decision_payload",
+                                ]
+                            )
+
+                item.save(update_fields=list(dict.fromkeys(fields_to_update)))
+
                 if not labeling.items.filter(~Q(status='finished')).exists():
                     labeling.status = 'finished'
                     labeling.save()
 
-                return Response(serializer.data, status=201)
+                response_data = dict(serializer.data)
+                if decision_warning:
+                    response_data["decision_warning"] = decision_warning
+                return Response(response_data, status=201)
 
             else:
                 obj = Item.objects.select_related('labeling').get(id=item_id)
@@ -321,21 +458,46 @@ class ExportAnswersView(APIView):
         ).exclude(question_type="context").values('id','text')
 
         questions = {int(q["id"]): q["text"] for q in questions_qs}
+
+        # build follow-up label map: "followup_103_144" -> "Q : parent text > follow-up text"
+        follow_up_labels = {}
+        from labeling.models import MultipleChoiceItem
+        follow_up_items = (
+            MultipleChoiceItem.objects
+            .filter(
+                labeling_element__labeling_section__labeling_id=labeling_id,
+                follow_up_question__isnull=False,
+            )
+            .select_related("labeling_element", "follow_up_question")
+        )
+        for mc_item in follow_up_items:
+            key = f"followup_{mc_item.labeling_element_id}_{mc_item.id}"
+            parent_text = questions.get(mc_item.labeling_element_id, "?")
+            fu_text = mc_item.follow_up_question.text or "?"
+            follow_up_labels[key] = f"Q : {parent_text} > {mc_item.text} > {fu_text}"
+
         rows = []
         for answer in answers:
             payload = answer.answer_payload
             item_payload = answer.item.payload
             row = {}
+            row["context_id"] = (answer.item.row_index or 0) + 1
+            row["user_id"] = answer.answered_by.id
             for question_number, response in payload.items():
-                row["context_id"] = (answer.item.row_index or 0) + 1
-                row["user_id"] = answer.answered_by.id
-
-                q_id = int(question_number)
-                question_text = questions.get(q_id)
-                if not question_text:
-                    # pula perguntas que não estão mais na estrutura ou não tem label
-                    continue
-                col_name = "Q : " + question_text
+                # follow-up answer key
+                if question_number.startswith("followup_"):
+                    col_name = follow_up_labels.get(question_number)
+                    if not col_name:
+                        continue
+                else:
+                    try:
+                        q_id = int(question_number)
+                    except ValueError:
+                        continue
+                    question_text = questions.get(q_id)
+                    if not question_text:
+                        continue
+                    col_name = "Q : " + question_text
 
                 if isinstance(response, list):
                     row[col_name] = ", ".join(str(x) for x in response)

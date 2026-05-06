@@ -6,6 +6,22 @@ from item.serializers import ItemSerializer
 class AnswerSerializer(serializers.ModelSerializer):
     answer_payload = serializers.DictField()
     item_detail = ItemSerializer(source="item", read_only=True)
+    answered_by_username = serializers.CharField(
+        source="answered_by.username",
+        read_only=True,
+    )
+    answered_by_email = serializers.EmailField(
+        source="answered_by.email",
+        read_only=True,
+    )
+    answered_by_first_name = serializers.CharField(
+        source="answered_by.first_name",
+        read_only=True,
+    )
+    answered_by_last_name = serializers.CharField(
+        source="answered_by.last_name",
+        read_only=True,
+    )
 
     class Meta:
         model = Answer
@@ -15,6 +31,10 @@ class AnswerSerializer(serializers.ModelSerializer):
             'item',
             'item_detail',
             'answered_by',
+            'answered_by_username',
+            'answered_by_email',
+            'answered_by_first_name',
+            'answered_by_last_name',
             'answer_payload',
             'created_at',
         ]

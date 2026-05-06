@@ -2,6 +2,9 @@ from rest_framework import serializers
 from .models import Project, ProjectMembership
 from user.serializers import AdminUserReadSerializer
 
+LLM_TIEBREAK_USERNAME = "llm_tiebreak_bot"
+LLM_TIEBREAK_EMAIL = "llm_tiebreak_bot@annotaise.local"
+
 class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
@@ -15,6 +18,16 @@ class ProjectMembershipSerializer(serializers.ModelSerializer):
         model = ProjectMembership
         fields = ['id', 'role', 'project', 'user', 'user_detail', 'joined_at']
         read_only_fields = ['id', 'joined_at', 'user_detail']
+
+    def validate_user(self, user):
+        username = (getattr(user, "username", "") or "").strip().lower()
+        email = (getattr(user, "email", "") or "").strip().lower()
+        if username == LLM_TIEBREAK_USERNAME or email == LLM_TIEBREAK_EMAIL:
+            raise serializers.ValidationError(
+                "Este usuário técnico não pode ser adicionado como membro de projeto."
+            )
+        return user
+
     def update (self, instance, validated_data):
         # bloqueia a troca de projeto
         if "project" in validated_data and validated_data["project"].id != instance.project_id:

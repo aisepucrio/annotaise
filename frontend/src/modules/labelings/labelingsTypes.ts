@@ -1,7 +1,8 @@
-export type LabelingStatus = "draft" | "active" | "archived" | "finished";
-export type DistributionStrategy = "auto" | "specified" | "per_person";
+export type LabelingStatus = 'draft' | 'active' | 'archived' | 'finished';
+export type DistributionStrategy = 'auto' | 'specified' | 'per_person';
+export type DecisionMode = 'manual' | 'llm';
 
-// Campos que o backend retorna para um labeling
+// Fields returned by the backend for a labeling
 export type Labeling = {
   id: number;
   title: string;
@@ -9,10 +10,11 @@ export type Labeling = {
   status: LabelingStatus;
   has_background_form?: boolean;
   decision: boolean;
+  decision_mode?: DecisionMode;
   decisive_question?: number | null;
   guide?: string;
-  start_date?: string | null;
-  final_date?: string | null;
+  start_date: string;
+  final_date: string;
   users_per_item: number;
   column_names: string[];
   created_at: string;
@@ -21,47 +23,36 @@ export type Labeling = {
   distribution_strategy?: DistributionStrategy;
 };
 
-// Campos que o backend aceita pra criar/editar (sem id/created_at/etc)
-export type LabelingPayload = Pick<
-  Labeling,
-  | "title"
-  | "project"
-  | "users_per_item"
-  | "has_background_form"
-  | "decision"
-  | "decisive_question"
-  | "guide"
-  | "block_section_back"
-  | "distribution_strategy"
-> & {
-  status?: LabelingStatus;
-  start_date?: string;
-  final_date?: string;
+// Fields accepted by the backend to create or update a labeling.
+export type LabelingPayload = Omit<Labeling, 'id' | 'status' | 'column_names' | 'created_at' | 'created_by'>;
+
+// Types related to labeling creation with CSV
+export type CreateLabelingWithCsvPayload = {
+  payload: LabelingPayload;
+  file: File;
 };
 
-// Estrutura do labeling (formulário) - tipos compartilhados entre frontend e backend
-export type QuestionTypeDTO =
-  | "text"
-  | "number"
-  | "range"
-  | "multiple_choice"
-  | "context";
+// Labeling structure (form) - shared types between frontend and backend
+export type QuestionTypeDTO = 'text' | 'number' | 'range' | 'multiple_choice' | 'context';
 
-// DTOs para criação/edição da estrutura do labeling
+// DTOs for creating/editing the labeling structure
 export type MultipleChoiceItemDTO = {
+  id?: number;
   text: string;
   value?: boolean;
   order?: number;
+  follow_up_question?: ElementDTO | null;
 };
 
-// Para perguntas do tipo "range"
+// For "range" type questions
 export type QuestionRangeDTO = {
-  start: number;
-  end: number;
-  step: number;
+  start?: number | null;
+  end?: number | null;
+  start_label?: string;
+  end_label?: string;
 };
 
-// Elemento genérico da estrutura do labeling, que pode ser uma pergunta ou um contexto
+// Generic labeling structure element, which can be a question or a context block
 export type ElementDTO = {
   id?: number;
   order?: number;
@@ -75,7 +66,7 @@ export type ElementDTO = {
   question_range?: QuestionRangeDTO | null;
 };
 
-// Seção da estrutura do labeling, que contém múltiplos elementos
+// Labeling structure section containing multiple elements
 export type SectionDTO = {
   id?: number;
   title?: string;
@@ -83,12 +74,12 @@ export type SectionDTO = {
   elements: ElementDTO[];
 };
 
-// Payload para salvar a estrutura do labeling (formulário)
+// Payload used to save the labeling structure (form)
 export type LabelingStructureDTO = {
   sections: SectionDTO[];
 };
 
-// Tipos específicos para o frontend, derivados dos DTOs acima, mas com campos opcionais para facilitar a edição
+// Frontend-specific types derived from the DTOs above, with optional fields to ease editing
 export type LabelingStructureElement = ElementDTO & {
   id?: number;
   multiple_choice_items: Array<{
@@ -96,16 +87,18 @@ export type LabelingStructureElement = ElementDTO & {
     text: string;
     value?: boolean;
     order?: number;
+    follow_up_question?: ElementDTO | null;
   }>;
   question_range?: {
     id?: number;
-    start: number;
-    end: number;
-    step: number;
+    start?: number | null;
+    end?: number | null;
+    start_label?: string;
+    end_label?: string;
   } | null;
 };
 
-// Seção da estrutura do labeling, com elementos do tipo frontend
+// Labeling structure section with frontend-specific elements
 export type LabelingStructureSection = {
   id?: number;
   title?: string;
@@ -113,20 +106,20 @@ export type LabelingStructureSection = {
   elements: LabelingStructureElement[];
 };
 
-// Elemento simplificado usado em listagens de questões (ex.: configuração de decisão)
+// Simplified element used in question listings (e.g. decision configuration)
 export type LabelingElementSummary = {
   id: number;
   text: string | null;
   order?: number | null;
 };
 
-// Payload para salvar a estrutura do labeling (formulário) vindo do frontend, com campos opcionais para facilitar a edição
+// Payload used to save the labeling structure (form) coming from the frontend, with optional fields to ease editing
 export type LabelingStructurePayload = {
   sections: SectionDTO[];
 };
 
-// Tipos relacionados a memberships
-export type LabelingMembershipRole = "owner" | "admin" | "annotator" | "viewer";
+// Membership-related types
+export type LabelingMembershipRole = 'owner' | 'admin' | 'annotator' | 'viewer';
 
 export type LabelingMembership = {
   id: number;
@@ -155,7 +148,7 @@ export type LabelingMembershipDashboard = {
   background_answered?: boolean;
 };
 
-// Tipos relacionados a dashboard
+// Dashboard-related types
 export type LabelingDashboard = {
   id: number;
   labeling_name: string;
@@ -168,13 +161,18 @@ export type LabelingDashboard = {
   background_answered?: boolean;
 };
 
-// Tipos relacionados a items e answers
+// Item- and answer-related types
 export type ItemStructure = {
   id: number;
   labeling: number;
   payload: Record<string, unknown>;
   row_index: number;
   status: string;
+  decision_payload?: Record<string, number> | null;
+  llm_tiebreak_attempted?: boolean;
+  llm_tiebreak_result?: Record<string, unknown> | null;
+  final_decision_source?: string | null;
+  final_decision_value?: string | null;
 };
 
 export type AnswerStructure = {
@@ -191,8 +189,13 @@ export type AnswerPayload = {
 export type AnswerResponse = AnswerPayload & {
   id: number;
   answered_by: number;
+  answered_by_username?: string;
+  answered_by_email?: string;
+  answered_by_first_name?: string;
+  answered_by_last_name?: string;
   created_at: string;
   item_detail?: ItemStructure;
+  decision_warning?: string;
 };
 
 export type BackgroundAnswerPayload = {

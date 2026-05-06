@@ -1,15 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
-import {
-  fetchProjects,
-  fetchProject,
-  fetchProjectDashboard,
-  fetchProjectMemberships,
-} from "./projectService";
+import { useQuery } from '@tanstack/react-query';
+import { fetchProjects, fetchProject, fetchProjectDashboard, fetchProjectMemberships } from './projectService';
 
 // Utilizada para listar todos os projetos
 export function useProjectsQuery() {
   return useQuery({
-    queryKey: ["projects"],
+    queryKey: ['projects'],
     queryFn: fetchProjects,
   });
 }
@@ -17,7 +12,7 @@ export function useProjectsQuery() {
 // Utilizada para obter detalhes de um projeto específico
 export function useProjectQuery(id: number) {
   return useQuery({
-    queryKey: ["projects", id],
+    queryKey: ['projects', id],
     queryFn: () => fetchProject(id),
     enabled: !Number.isNaN(id) && id > 0,
   });
@@ -26,7 +21,7 @@ export function useProjectQuery(id: number) {
 // Utilizada para dashboard de projetos com busca
 export function useProjectDashboardQuery(search?: string) {
   return useQuery({
-    queryKey: ["projects", "dashboard", search],
+    queryKey: ['projects', 'dashboard', search],
     queryFn: () => fetchProjectDashboard(search),
   });
 }
@@ -34,7 +29,7 @@ export function useProjectDashboardQuery(search?: string) {
 // Utilizada para obter membros do projeto
 export function useProjectMembershipsQuery(projectId: number) {
   return useQuery({
-    queryKey: ["projects", projectId, "memberships"],
+    queryKey: ['projects', projectId, 'memberships'],
     queryFn: () => fetchProjectMemberships(projectId),
     enabled: !Number.isNaN(projectId) && projectId > 0,
   });

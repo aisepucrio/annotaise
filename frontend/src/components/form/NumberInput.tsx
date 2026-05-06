@@ -1,12 +1,9 @@
-import React, { forwardRef, InputHTMLAttributes, ReactNode } from "react";
-import { cn } from "@/lib/utils";
-import FormFieldBase from "./base/FormFieldBase";
-import { formFieldClasses } from "./base/formFieldClasses";
+import React, { forwardRef, InputHTMLAttributes, ReactNode } from 'react';
+import { cn } from '@/lib/utils';
+import FormFieldBase from './base/FormFieldBase';
+import { formFieldClasses } from './base/formFieldClasses';
 
-export type NumberInputProps = Omit<
-  InputHTMLAttributes<HTMLInputElement>,
-  "size" | "type" | "onChange" | "value"
-> & {
+export type NumberInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'size' | 'type' | 'onChange' | 'value'> & {
   /** Label do input */
   label?: string;
   /** Mensagem de erro */
@@ -25,19 +22,17 @@ export type NumberInputProps = Omit<
   min?: number;
   /** Valor máximo permitido */
   max?: number;
-  /** Incremento/decremento do valor */
-  step?: number;
   /** Valor do input */
   value?: number | string;
   /** Callback chamado quando o valor muda */
   onChange?: (value: number | string) => void;
-  /** Se true, aplica validação automática de min/max/step */
+  /** Se true, aplica validação automática de min/max */
   autoValidate?: boolean;
 };
 
 /**
  * Componente de Input numérico padronizado com label flutuante e suporte para ícones
- * Suporta validação automática de min, max e step
+ * Suporta validação automática de min e max
  */
 const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
   (
@@ -47,29 +42,28 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
       icon,
       leftIcon,
       required = false,
-      className = "",
-      containerClassName = "",
+      className = '',
+      containerClassName = '',
       id,
       disabled = false,
       tooltip,
       min,
       max,
-      step,
       value,
       onChange,
       autoValidate = false,
       ...props
     },
-    ref,
+    ref
   ) => {
     const baseClasses = cn(
       formFieldClasses.base,
       formFieldClasses.placeholder,
       formFieldClasses.getBorderColor(!!error),
       formFieldClasses.disabled,
-      leftIcon && "pl-11",
-      icon && "pr-11",
-      className,
+      leftIcon && 'pl-11',
+      icon && 'pr-11',
+      className
     );
 
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -78,8 +72,8 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
       const inputValue = event.target.value;
 
       // Se o campo está vazio, retorna string vazia
-      if (inputValue === "") {
-        onChange("");
+      if (inputValue === '') {
+        onChange('');
         return;
       }
 
@@ -93,29 +87,15 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
         if (max !== undefined && numValue > max) {
           numValue = max;
         }
-        if (step !== undefined && step !== 0 && numValue % step !== 0) {
-          numValue = Math.round(numValue / step) * step;
-        }
       }
 
       onChange(numValue);
     };
 
     return (
-      <FormFieldBase
-        label={label}
-        id={id}
-        error={error}
-        required={required}
-        className={containerClassName}
-        tooltip={tooltip}
-      >
+      <FormFieldBase label={label} id={id} error={error} required={required} className={containerClassName} tooltip={tooltip}>
         <div className="relative">
-          {leftIcon && (
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-metal-200">
-              {leftIcon}
-            </div>
-          )}
+          {leftIcon && <div className="absolute left-3 top-1/2 -translate-y-1/2 text-metal-200">{leftIcon}</div>}
 
           <input
             ref={ref}
@@ -125,23 +105,18 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
             className={baseClasses}
             min={min}
             max={max}
-            step={step}
             value={value}
             onChange={handleChange}
             {...props}
           />
 
-          {icon && (
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 text-metal-200">
-              {icon}
-            </div>
-          )}
+          {icon && <div className="absolute right-2 top-1/2 -translate-y-1/2 text-metal-200">{icon}</div>}
         </div>
       </FormFieldBase>
     );
-  },
+  }
 );
 
-NumberInput.displayName = "NumberInput";
+NumberInput.displayName = 'NumberInput';
 
 export default NumberInput;

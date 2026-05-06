@@ -382,8 +382,7 @@
     "numberQuestionNoConfig": "Perguntas numéricas não possuem configurações adicionais.",
     "rangeMin": "Valor mínimo",
     "rangeMax": "Valor máximo",
-    "rangeStep": "Passo",
-    "rangeSummary": "Faixa configurada: {min} até {max} (passo {step})",
+    "rangeSummary": "Faixa configurada: {min} até {max}",
     "optionLabel": "Opção {index}"
   },
   "assignTab": {

@@ -27,8 +27,12 @@ from .serializers import (
     InvitationSerializer,
 )
 from project.models import ProjectMembership
+from labeling.models import Labeling, LabelingMembership
 
 import uuid
+
+LLM_TIEBREAK_USERNAME = "llm_tiebreak_bot"
+LLM_TIEBREAK_EMAIL = "llm_tiebreak_bot@annotaise.local"
 
 #TODO falta um endpoint de alterar a senha... caso não tenha questoes de segurança, tem como fazer por aqui, mas nao é o ideal
 class CurrentAPIView(RetrieveUpdateDestroyAPIView):
@@ -43,7 +47,12 @@ class CurrentAPIView(RetrieveUpdateDestroyAPIView):
 User = get_user_model()
 
 class AdminUserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all().order_by("-date_joined")
+    queryset = (
+        User.objects
+        .exclude(username=LLM_TIEBREAK_USERNAME)
+        .exclude(email__iexact=LLM_TIEBREAK_EMAIL)
+        .order_by("-date_joined")
+    )
     permission_classes = [IsAdminAccount]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["username", "email", "first_name", "last_name"]
@@ -113,7 +122,7 @@ class InvitationViewSet(viewsets.ModelViewSet):
     lookup_field = "token"
 
     def get_permissions(self):
-        if self.action in ["create", "destroy", "list"]:
+        if self.action in ["create", "destroy", "list", "assignment_options"]:
             permission_classes = [IsAdminAccount]
         elif self.action in ["retrieve", "accept_invitation"]:
             permission_classes = [permissions.AllowAny]
@@ -150,20 +159,20 @@ class InvitationViewSet(viewsets.ModelViewSet):
         user.save(update_fields=["password"])
         return user, None
 
-    def _assign_user_to_projects(self, request_user, target_user, project_ids):
-        if not project_ids:
-            return None
-
-        valid_project_ids = []
-        invalid_project_ids = []
-        for raw_id in project_ids:
+    def _parse_int_ids(self, raw_ids):
+        valid_ids = []
+        invalid_ids = []
+        for raw_id in raw_ids or []:
             try:
-                valid_project_ids.append(int(raw_id))
+                valid_ids.append(int(raw_id))
             except (TypeError, ValueError):
-                invalid_project_ids.append(raw_id)
+                invalid_ids.append(raw_id)
+        return valid_ids, invalid_ids
 
+    def _resolve_labeling_assignment_ids(self, request_user, project_ids, labeling_ids):
+        valid_project_ids, invalid_project_ids = self._parse_int_ids(project_ids)
         if invalid_project_ids:
-            return Response(
+            return None, Response(
                 {
                     "detail": "Há project_ids inválidos.",
                     "code": "INVALID_PROJECT_IDS",
@@ -172,36 +181,132 @@ class InvitationViewSet(viewsets.ModelViewSet):
                 status=400,
             )
 
+        valid_labeling_ids, invalid_labeling_ids = self._parse_int_ids(labeling_ids)
+        if invalid_labeling_ids:
+            return None, Response(
+                {
+                    "detail": "Há labeling_ids inválidos.",
+                    "code": "INVALID_LABELING_IDS",
+                    "invalid_labeling_ids": invalid_labeling_ids,
+                },
+                status=400,
+            )
+
         owner_project_ids = set(
             ProjectMembership.objects.filter(
                 user=request_user,
                 role=ProjectMembership.RoleChoices.OWNER,
-                project_id__in=valid_project_ids,
             ).values_list("project_id", flat=True)
         )
+
         requested_project_ids = set(valid_project_ids)
-        unauthorized_ids = sorted(requested_project_ids - owner_project_ids)
-        if unauthorized_ids:
-            return Response(
+        unauthorized_project_ids = sorted(requested_project_ids - owner_project_ids)
+        if unauthorized_project_ids:
+            return None, Response(
                 {
-                    "detail": "Você só pode vincular usuários a projetos onde é owner.",
+                    "detail": "Você só pode atribuir usuários em projetos onde é owner.",
                     "code": "PROJECT_ASSIGNMENT_FORBIDDEN",
-                    "project_ids": unauthorized_ids,
+                    "project_ids": unauthorized_project_ids,
                 },
                 status=403,
             )
 
-        for project_id in owner_project_ids:
-            membership, created = ProjectMembership.objects.get_or_create(
-                project_id=project_id,
-                user=target_user,
-                defaults={"role": ProjectMembership.RoleChoices.CONTRIBUTOR},
+        requested_labeling_ids = set(valid_labeling_ids)
+        requested_labeling_map = {
+            item["id"]: item["project_id"]
+            for item in Labeling.objects.filter(id__in=requested_labeling_ids).values("id", "project_id")
+        }
+        missing_labeling_ids = sorted(requested_labeling_ids - set(requested_labeling_map.keys()))
+        if missing_labeling_ids:
+            return None, Response(
+                {
+                    "detail": "Há labeling_ids inexistentes.",
+                    "code": "LABELING_NOT_FOUND",
+                    "labeling_ids": missing_labeling_ids,
+                },
+                status=400,
             )
-            if not created and membership.role == ProjectMembership.RoleChoices.VIEWER:
-                membership.role = ProjectMembership.RoleChoices.CONTRIBUTOR
+
+        unauthorized_labeling_ids = sorted(
+            labeling_id
+            for labeling_id, project_id in requested_labeling_map.items()
+            if project_id not in owner_project_ids
+        )
+        if unauthorized_labeling_ids:
+            return None, Response(
+                {
+                    "detail": "Você só pode atribuir usuários em rotulações de projetos onde é owner.",
+                    "code": "LABELING_ASSIGNMENT_FORBIDDEN",
+                    "labeling_ids": unauthorized_labeling_ids,
+                },
+                status=403,
+            )
+
+        expanded_from_projects = set(
+            Labeling.objects.filter(project_id__in=requested_project_ids).values_list("id", flat=True)
+        )
+        resolved_labeling_ids = expanded_from_projects | requested_labeling_ids
+        return resolved_labeling_ids, None
+
+    def _assign_user_to_labelings(self, target_user, labeling_ids):
+        if not labeling_ids:
+            return
+
+        memberships = LabelingMembership.objects.filter(
+            labeling_id__in=labeling_ids,
+            user=target_user,
+        )
+        memberships_by_labeling = {membership.labeling_id: membership for membership in memberships}
+
+        for labeling_id in labeling_ids:
+            membership = memberships_by_labeling.get(labeling_id)
+            if membership is None:
+                LabelingMembership.objects.create(
+                    labeling_id=labeling_id,
+                    user=target_user,
+                    role=LabelingMembership.Role.ANNOTATOR,
+                )
+                continue
+
+            if membership.role == LabelingMembership.Role.VIEWER:
+                membership.role = LabelingMembership.Role.ANNOTATOR
                 membership.save(update_fields=["role"])
 
-        return None
+    @action(detail=False, methods=["get"], url_path="assignment-options")
+    def assignment_options(self, request):
+        owner_projects = (
+            ProjectMembership.objects.filter(
+                user=request.user,
+                role=ProjectMembership.RoleChoices.OWNER,
+            )
+            .select_related("project")
+            .order_by("project__name", "project__id")
+        )
+        owner_project_ids = [membership.project_id for membership in owner_projects]
+
+        labelings_by_project = {}
+        labelings_qs = (
+            Labeling.objects.filter(project_id__in=owner_project_ids)
+            .order_by("title", "id")
+            .values("id", "title", "project_id")
+        )
+        for labeling in labelings_qs:
+            labelings_by_project.setdefault(labeling["project_id"], []).append(
+                {"id": labeling["id"], "title": labeling["title"]}
+            )
+
+        output = []
+        for membership in owner_projects:
+            project = membership.project
+            output.append(
+                {
+                    "id": project.id,
+                    "name": project.name,
+                    "labelings": labelings_by_project.get(project.id, []),
+                }
+            )
+
+        return Response({"projects": output}, status=200)
 
     def create(self, request, *args, **kwargs):
         '''apos a criação do convite é enviado um email com o token para o email convidado'''
@@ -212,6 +317,7 @@ class InvitationViewSet(viewsets.ModelViewSet):
         email = serializer.validated_data.get("email", None)
         role = serializer.validated_data.get("role")
         project_ids = serializer.validated_data.get("project_ids", [])
+        labeling_ids = serializer.validated_data.get("labeling_ids", [])
 
         with transaction.atomic():
             user, err = self._create_or_get_pending_user(email, role)
@@ -221,9 +327,15 @@ class InvitationViewSet(viewsets.ModelViewSet):
                     status=400,
                 )
 
-            project_response = self._assign_user_to_projects(request.user, user, project_ids)
-            if project_response is not None:
-                return project_response
+            resolved_labeling_ids, assignment_error = self._resolve_labeling_assignment_ids(
+                request_user=request.user,
+                project_ids=project_ids,
+                labeling_ids=labeling_ids,
+            )
+            if assignment_error is not None:
+                return assignment_error
+
+            self._assign_user_to_labelings(user, resolved_labeling_ids)
 
             invitation = serializer.save(invited_by=request.user, user=user)
         link = FRONTEND_URL + f"/accept-invitation/{invitation.token}"
