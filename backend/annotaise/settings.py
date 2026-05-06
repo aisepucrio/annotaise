@@ -257,10 +257,10 @@ STORAGES = {
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "http://annotaise.devc.uk",
-    "http://annotaise-api.devc.uk",
-    "https://annotaise.devc.uk",
-    "https://annotaise-api.devc.uk",
+    "http://annotaise.aise-lab.com",
+    "http://annotaise-api.aise-lab.com",
+    "https://annotaise.aise-lab.com",
+    "https://annotaise-api.aise-lab.com",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
@@ -269,14 +269,14 @@ CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:8000",
     "http://localhost:8080",
-    "http://annotaise.devc.uk",
-    "https://annotaise.devc.uk",
-    "http://annotaise-api.devc.uk",
-    "https://annotaise-api.devc.uk",
+    "http://annotaise.aise-lab.com",
+    "https://annotaise.aise-lab.com",
+    "http://annotaise-api.aise-lab.com",
+    "https://annotaise-api.aise-lab.com",
 ]
 
-CSRF_COOKIE_DOMAIN = ".devc.uk"   
-SESSION_COOKIE_DOMAIN = ".devc.uk"
+CSRF_COOKIE_DOMAIN = ".aise-lab.com"   
+SESSION_COOKIE_DOMAIN = ".aise-lab.com"
 
 SESSION_COOKIE_SAMESITE = "None"
 
