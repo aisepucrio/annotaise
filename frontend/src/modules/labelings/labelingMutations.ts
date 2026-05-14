@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createLabeling, importLabelingItemsCsv } from './labelingService';
+import { createLabeling, createTestLabeling, importLabelingItemsCsv } from './labelingService';
 import type { CreateLabelingWithCsvPayload, LabelingPayload } from './labelingsTypes';
 
 // Used to create a labeling
@@ -23,6 +23,19 @@ export function useImportLabelingItemsCsvMutation() {
     onSuccess: (_data, { labelingId }) => {
       qc.invalidateQueries({ queryKey: ['labelings', labelingId] });
       qc.invalidateQueries({ queryKey: ['labelings'] });
+    },
+  });
+}
+
+// Used to create a quick test labeling (project + form + items + seeded answers)
+export function useCreateTestLabelingMutation() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => createTestLabeling(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['labelings'] });
+      qc.invalidateQueries({ queryKey: ['projects'] });
     },
   });
 }

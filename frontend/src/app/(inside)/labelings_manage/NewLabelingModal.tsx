@@ -2,10 +2,12 @@
 
 import { Loader2, TriangleAlert, Upload } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 import { toast } from 'sonner';
 
 import { useProjectsQuery } from '@/modules/projects/projectsQueries';
+import { useCreateTestLabelingMutation } from '@/modules/labelings/labelingMutations';
 
 import Modal from '@/components/Modal';
 import Input from '@/components/form/Input';
@@ -17,6 +19,7 @@ import Tooltip from '@/components/Tooltip';
 
 import { useTranslations } from '@/i18n/use-translations';
 import { csvFileHasEmptyFields, isCsvFileName } from '@/lib/csvUtils';
+import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 
 import type { CreateLabelingWithCsvPayload, LabelingPayload } from '@/modules/labelings/labelingsTypes';
 import type { DecisionMode, DistributionStrategy } from '@/modules/labelings/labelingsTypes';
@@ -60,6 +63,7 @@ function createInitialState(): CreateLabelingWithCsvDraft {
 
 export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabelingModalProps) {
   const { t } = useTranslations();
+  const router = useRouter();
 
   // Reference used to trigger the file input from the button
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -71,6 +75,19 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
   const [hasEmptyFields, setHasEmptyFields] = useState(false);
   const [isAnalyzingFile, setIsAnalyzingFile] = useState(false);
   const [formErrors, setFormErrors] = useState<DetailFormErrors>({});
+
+  const createTestLabeling = useCreateTestLabelingMutation();
+
+  async function handleCreateTestLabeling() {
+    try {
+      const result = await createTestLabeling.mutateAsync();
+      toast.success(`TEST_LABELING criada: ${result.title}`);
+      onClose();
+      router.push(`/labelings_manage/${result.id}/form`);
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'Falha ao criar TEST_LABELING'));
+    }
+  }
 
   // Effect: reset the entire local state when the modal closes
   useEffect(() => {
@@ -277,6 +294,21 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
 
   return (
     <Modal open={open} onClose={onClose} title={t('labelings.upload.title')} description={modalDescription} maxWidth="lg">
+      {/* Dev-only: cria uma rotulação de teste pronta para uso */}
+      {step === 'upload' && (
+        <div className="mb-2 flex justify-end">
+          <button
+            type="button"
+            onClick={() => void handleCreateTestLabeling()}
+            disabled={createTestLabeling.isPending}
+            className="rounded border border-dashed border-gray-400 px-2 py-0.5 text-[10px] font-mono uppercase tracking-wide text-gray-500 hover:bg-gray-100 disabled:opacity-50"
+            title="Cria um projeto + rotulação de teste (code smells) com decisão por LLM, 2 usuários por item e 1 resposta pré-existente"
+          >
+            {createTestLabeling.isPending ? 'criando…' : 'TEST_LABELING'}
+          </button>
+        </div>
+      )}
+
       {/* Render: upload step */}
       {step === 'upload' ? (
         <div>
