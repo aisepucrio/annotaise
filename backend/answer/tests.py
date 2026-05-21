@@ -489,6 +489,33 @@ class LLMDecisionTieBreakTest(TestCase):
         self.assertIn("decision_warning", response.data)
         self.assertIn("tipo 'video'", response.data["decision_warning"])
 
+    @patch("answer.views.run_llm_tiebreak_decision")
+    def test_returns_warning_when_audio_context_is_not_supported(self, mocked_llm):
+        self.context_element.context_type = LabelingElement.ContextType.AUDIO
+        self.context_element.save(update_fields=["context_type"])
+        self.item.payload = {"code_snippet": "https://example.com/audio.mp3"}
+        self.item.save(update_fields=["payload"])
+
+        mocked_llm.return_value = {
+            "winner": None,
+            "tied": False,
+            "models": [],
+            "vote_count": {},
+            "valid_votes": 0,
+            "error": "UNSUPPORTED_AUDIO_CONTEXT",
+            "error_message": (
+                "Não foi possível fazer essa pergunta decisiva porque existe contexto "
+                "do tipo 'audio' que a decisão por LLM não consegue rotular."
+            ),
+        }
+
+        self._answer(self.user1, "yes")
+        response = self._answer(self.user2, "no")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIn("decision_warning", response.data)
+        self.assertIn("tipo 'audio'", response.data["decision_warning"])
+
 
 class LabelingCompletionTest(TestCase):
     """

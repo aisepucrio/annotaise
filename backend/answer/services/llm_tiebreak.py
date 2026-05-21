@@ -27,6 +27,12 @@ VIDEO_CONTEXT_ERROR_MESSAGE = (
     "'video' que a decisão por LLM não consegue rotular."
 )
 
+AUDIO_CONTEXT_ERROR_CODE = "UNSUPPORTED_AUDIO_CONTEXT"
+AUDIO_CONTEXT_ERROR_MESSAGE = (
+    "Não foi possível fazer essa pergunta decisiva porque existe contexto do tipo "
+    "'audio' que a decisão por LLM não consegue rotular."
+)
+
 
 def _normalize_key(value):
     return str(value).strip().casefold()
@@ -59,15 +65,6 @@ def _looks_like_file_path(value):
     if text.startswith("/") or text.startswith("./") or text.startswith("../"):
         return True
     return any(text.lower().endswith(ext) for ext in (".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp"))
-
-
-def _looks_like_audio_reference(value):
-    text = str(value).strip().lower()
-    if not text:
-        return False
-    if _is_http_url(text) or text.startswith("/") or text.startswith("./") or text.startswith("../"):
-        return True
-    return any(text.endswith(ext) for ext in (".mp3", ".wav", ".ogg", ".m4a", ".flac", ".aac"))
 
 
 def _read_url_bytes(url, timeout_seconds):
@@ -158,29 +155,6 @@ def _describe_image_with_ollama(base_url, timeout_seconds, image_value):
         return None, f"IMAGE_DESCRIPTION_ERROR: {exc}"
 
 
-def _extract_audio_transcript(value):
-    if isinstance(value, dict):
-        for key in ("transcript", "text", "content", "caption"):
-            transcript = value.get(key)
-            if transcript is not None and str(transcript).strip():
-                return str(transcript).strip(), None
-
-    if isinstance(value, str):
-        raw = value.strip()
-        if not raw:
-            return None, "AUDIO_VALUE_EMPTY"
-        if _looks_like_audio_reference(raw):
-            return None, (
-                "AUDIO_TRANSCRIPT_REQUIRED: contexto de áudio sem transcrição textual."
-            )
-        return raw, None
-
-    if value is None:
-        return None, "AUDIO_VALUE_EMPTY"
-
-    return str(value), None
-
-
 def _format_contexts_for_prompt(contexts, base_url, timeout_seconds):
     lines = []
 
@@ -198,6 +172,12 @@ def _format_contexts_for_prompt(contexts, base_url, timeout_seconds):
                 "error_message": VIDEO_CONTEXT_ERROR_MESSAGE,
             }
 
+        if context_type == "audio":
+            return None, {
+                "error": AUDIO_CONTEXT_ERROR_CODE,
+                "error_message": AUDIO_CONTEXT_ERROR_MESSAGE,
+            }
+
         if context_type == "image":
             description, err = _describe_image_with_ollama(
                 base_url=base_url,
@@ -210,16 +190,6 @@ def _format_contexts_for_prompt(contexts, base_url, timeout_seconds):
                     "error_message": f"Não foi possível processar contexto de imagem ({label}): {err}",
                 }
             lines.append(f"{idx}. {label} [image]\nDescrição: {description}")
-            continue
-
-        if context_type == "audio":
-            transcript, err = _extract_audio_transcript(value)
-            if err:
-                return None, {
-                    "error": "AUDIO_CONTEXT_PROCESSING_ERROR",
-                    "error_message": f"Não foi possível processar contexto de áudio ({label}): {err}",
-                }
-            lines.append(f"{idx}. {label} [audio]\nTranscrição: {transcript}")
             continue
 
         if context_type == "code":
