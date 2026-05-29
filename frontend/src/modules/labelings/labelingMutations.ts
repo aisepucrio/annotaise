@@ -49,7 +49,9 @@ export function useCreateLabelingWithCsvMutation() {
   return useMutation({
     mutationFn: async ({ payload, file }: CreateLabelingWithCsvPayload) => {
       const labeling = await createLabeling.mutateAsync(payload);
-      await importCsv.mutateAsync({ labelingId: labeling.id, file });
+      if (file) {
+        await importCsv.mutateAsync({ labelingId: labeling.id, file });
+      }
       return labeling;
     },
     onSuccess: () => {

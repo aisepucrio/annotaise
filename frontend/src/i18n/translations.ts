@@ -242,6 +242,9 @@ export const translations: Record<Language, TranslationMap> = {
     'labelings.upload.error.invalidDates': 'A data final deve ser maior ou igual à data inicial.',
     'labelings.upload.error.createFailed': 'Não foi possível criar a rotulação.',
     'labelings.upload.error.continueMissingFile': 'Selecione um arquivo .csv para continuar.',
+    'labelings.upload.formModeLabel': 'Apenas formulário (sem importar itens)',
+    'labelings.upload.formModeTooltip':
+      'Ative para criar a rotulação sem importar um CSV. Nenhum item será atribuído — útil quando a rotulação consiste apenas em formulário.',
     'labelings.create.tabs.form': 'Formulário',
     'labelings.create.tabs.assign': 'Atribuir usuários',
     'labelings.create.tabs.answers': 'Respostas',
@@ -911,6 +914,9 @@ export const translations: Record<Language, TranslationMap> = {
     'labelings.upload.error.invalidDates': 'The end date must be on or after the start date.',
     'labelings.upload.error.createFailed': 'Unable to create the annotation task.',
     'labelings.upload.error.continueMissingFile': 'Select a .csv file to continue.',
+    'labelings.upload.formModeLabel': 'Form only (do not import items)',
+    'labelings.upload.formModeTooltip':
+      'Enable to create the annotation task without importing a CSV. No items will be assigned — useful when the task is form-only.',
     'labelings.create.tabs.form': 'Form',
     'labelings.create.tabs.assign': 'Assign annotators',
     'labelings.create.tabs.answers': 'Annotations',

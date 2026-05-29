@@ -21,6 +21,7 @@ export type Labeling = {
   created_by: number;
   block_section_back?: boolean;
   distribution_strategy?: DistributionStrategy;
+  form_mode?: boolean;
 };
 
 // Fields accepted by the backend to create or update a labeling.
@@ -29,7 +30,7 @@ export type LabelingPayload = Omit<Labeling, 'id' | 'status' | 'column_names' | 
 // Types related to labeling creation with CSV
 export type CreateLabelingWithCsvPayload = {
   payload: LabelingPayload;
-  file: File;
+  file: File | null;
 };
 
 // Labeling structure (form) - shared types between frontend and backend

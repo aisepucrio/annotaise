@@ -15,13 +15,14 @@ class Labeling(models.Model):
         AUTO = "auto", "Automática" 
         SPECIFIED = "specified", "Estipulada"
         PER_PERSON = "per_person", "Por pessoa"
+        ANONYMOUS_MODE = "anonymous_mode", "Modo anônimo"
 
     class DecisionMode(models.TextChoices):
         MANUAL = "manual", "Manual"
         LLM = "llm", "LLM"
     
-    #background_labeling = models.ForeignKey(null=True, blank=True, on_delete=models.SET_NULL)
     status = models.CharField(choices=Status.choices,default="draft")
+    created_at = models.DateTimeField(default=timezone.now)
     project = models.ForeignKey("project.Project", on_delete=models.CASCADE, related_name="labelings", db_index=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, related_name="labelings_created", null=True
@@ -38,8 +39,9 @@ class Labeling(models.Model):
     )
     distribution_strategy = models.CharField(max_length=32, default=DistributionStrategy.AUTO, choices=DistributionStrategy.choices)
 
-
     guide = models.TextField(default="",blank=True)
+
+    form_mode = models.BooleanField(default=False)
 
     users_per_item = models.PositiveIntegerField(null=False, blank=False,default=1)
     block_section_back = models.BooleanField(default=False)
@@ -49,8 +51,6 @@ class Labeling(models.Model):
         default=list, blank=True,
     )
 
-    status = models.CharField(max_length=16, choices=Status.choices, default=Status.DRAFT)
-    created_at = models.DateTimeField(default=timezone.now)
 
     decisive_question = models.ForeignKey("LabelingElement", on_delete=models.SET_NULL, null=True, blank=True)
 

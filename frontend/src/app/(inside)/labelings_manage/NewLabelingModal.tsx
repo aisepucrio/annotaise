@@ -57,6 +57,7 @@ function createInitialState(): CreateLabelingWithCsvDraft {
       decision_mode: 'manual',
       has_background_form: false,
       distribution_strategy: 'auto',
+      form_mode: false,
     },
   };
 }
@@ -165,7 +166,10 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
     }
 
     const parsedUsersPerItem = payload.users_per_item;
-    if (parsedUsersPerItem === null || !Number.isInteger(parsedUsersPerItem) || parsedUsersPerItem <= 0) {
+    if (
+      !payload.form_mode &&
+      (parsedUsersPerItem === null || !Number.isInteger(parsedUsersPerItem) || parsedUsersPerItem <= 0)
+    ) {
       nextFormErrors.usersPerItem = t('labelings.upload.error.invalidUsersPerItem');
     }
 
@@ -180,7 +184,7 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
 
     setFormErrors({});
 
-    if (!file) {
+    if (!payload.form_mode && !file) {
       toast.error(t('labelings.upload.error.missingFile'));
       return;
     }
@@ -188,14 +192,14 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
     const confirmedProjectId = payload.project;
     if (confirmedProjectId === null) return;
 
-    const confirmedUsersPerItem = parsedUsersPerItem;
+    const confirmedUsersPerItem = payload.form_mode ? (parsedUsersPerItem ?? 1) : parsedUsersPerItem;
     if (confirmedUsersPerItem === null) return;
 
     setIsSubmitting(true);
 
     try {
       await onConfirm({
-        file,
+        file: payload.form_mode ? null : file,
         payload: {
           ...payload,
           title: payload.title.trim(),
@@ -213,12 +217,17 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
     }
   }
 
+  const isFormMode = draft.payload.form_mode ?? false;
+
   // Navigation guard to advance from the upload step
-  const canContinueUploadStep = useMemo(() => Boolean(draft.file) && !isAnalyzingFile, [draft.file, isAnalyzingFile]);
+  const canContinueUploadStep = useMemo(
+    () => (isFormMode || Boolean(draft.file)) && !isAnalyzingFile,
+    [draft.file, isAnalyzingFile, isFormMode],
+  );
 
   // Step navigation
   function handleContinueFromUpload() {
-    if (!draft.file) {
+    if (!isFormMode && !draft.file) {
       toast.error(t('labelings.upload.error.continueMissingFile'));
       return;
     }
@@ -312,42 +321,73 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
       {/* Render: upload step */}
       {step === 'upload' ? (
         <div>
-          {/* Main upload area (button + drag and drop + status) */}
-          <div
-            className="flex flex-col items-center gap-3 border-2 border-dashed border-blueberry-700 rounded-xl p-6 text-center"
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-          >
-            <input ref={fileInputRef} type="file" accept=".csv" onChange={handleFile} className="hidden" />
-
-            <Button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isAnalyzingFile}
-              icon={<Upload size={18} />}
-              fill={false}
-            >
-              {t('labelings.upload.button')}
-            </Button>
-
-            <p className="text-xs text-gray-600">
-              {draft.file
-                ? t('labelings.upload.selectedFile', {
-                    name: draft.file.name,
-                  })
-                : t('labelings.upload.placeholder')}
-            </p>
-
-            {isAnalyzingFile && (
-              <div className="flex items-center gap-2 text-xs text-gray-500">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                {t('labelings.upload.analyzing')}
-              </div>
-            )}
+          {/* Form mode toggle: skips CSV import and creates the labeling without items */}
+          <div className="mb-4 flex items-center gap-2 rounded-lg border border-metal-200 bg-metal-50 px-3 py-2">
+            <Checkbox
+              id="csv-form-mode"
+              checked={isFormMode}
+              onChange={(value) => {
+                setDraft((prev) => ({
+                  ...prev,
+                  file: value ? null : prev.file,
+                  payload: { ...prev.payload, form_mode: value },
+                }));
+                if (value) {
+                  setHasEmptyFields(false);
+                  if (fileInputRef.current) fileInputRef.current.value = '';
+                }
+              }}
+              variant="square"
+              hoverColor="var(--metal-500)"
+              checkedColor="var(--metal-700)"
+              className="shrink-0"
+            />
+            <div className="flex items-center gap-1">
+              <label htmlFor="csv-form-mode" className="cursor-pointer text-sm font-medium text-metal-900">
+                {t('labelings.upload.formModeLabel')}
+              </label>
+              <Tooltip content={t('labelings.upload.formModeTooltip')} color="var(--metal-700)" size="sm" />
+            </div>
           </div>
 
+          {/* Main upload area (button + drag and drop + status) */}
+          {!isFormMode && (
+            <div
+              className="flex flex-col items-center gap-3 border-2 border-dashed border-blueberry-700 rounded-xl p-6 text-center"
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+            >
+              <input ref={fileInputRef} type="file" accept=".csv" onChange={handleFile} className="hidden" />
+
+              <Button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isAnalyzingFile}
+                icon={<Upload size={18} />}
+                fill={false}
+              >
+                {t('labelings.upload.button')}
+              </Button>
+
+              <p className="text-xs text-gray-600">
+                {draft.file
+                  ? t('labelings.upload.selectedFile', {
+                      name: draft.file.name,
+                    })
+                  : t('labelings.upload.placeholder')}
+              </p>
+
+              {isAnalyzingFile && (
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {t('labelings.upload.analyzing')}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* CSV quality warning when empty cells are detected */}
-          {hasEmptyFields && (
+          {!isFormMode && hasEmptyFields && (
             <div className="mt-4 rounded-lg border border-red-blueberry bg-red-50 px-3 py-2 text-sm text-red-blueberry">
               <TriangleAlert className="inline-block mr-1 mb-0.5 w-4 h-4" />
               {t('labelings.upload.emptyFields.textStart')} <strong>{t('labelings.upload.emptyFields.highlightEmpty')}</strong>{' '}
@@ -456,6 +496,7 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
               />
             </div>
 
+            {!isFormMode && (<>
             {/* Extra boolean settings (checkboxes) */}
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <div className="rounded-lg border border-metal-200 bg-metal-50 px-3 py-2">
@@ -603,6 +644,7 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
               placeholder="1"
               tooltip={t('labelings.upload.usersPerItemTooltip')}
             />
+            </>)}
           </div>
 
           {/* Details step footer (back + create) */}
