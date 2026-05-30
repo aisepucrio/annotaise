@@ -17,7 +17,16 @@ class LabelingSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         if not validated_data.get("start_date"):
             validated_data["start_date"] = timezone.now().date()
-        return super().create(validated_data)
+        labeling = super().create(validated_data)
+        if labeling.form_mode:
+            from item.models import Item
+            Item.objects.create(
+                labeling=labeling,
+                payload={},
+                row_index=0,
+                status="pending",
+            )
+        return labeling
 
     def update (self, instance, validated_data):
         return super().update(instance, validated_data)

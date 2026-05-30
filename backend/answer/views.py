@@ -301,13 +301,13 @@ class AnswerViewset(viewsets.ModelViewSet):
             else:
                 obj = Item.objects.select_related('labeling').get(id=item_id)
 
-                if obj.labeling.users_per_item <= Answer.objects.filter(item__id=item_id).count():
+                if not labeling.form_mode and obj.labeling.users_per_item <= Answer.objects.filter(item__id=item_id).count():
                     obj.status = 'finished'
                     obj.save()
 
                 headers = self.get_success_headers(serializer.data)
 
-            if not labeling.items.filter(~Q(status='finished')).exists():
+            if not labeling.form_mode and not labeling.items.filter(~Q(status='finished')).exists():
                 labeling.status = 'finished'
                 labeling.save()
 

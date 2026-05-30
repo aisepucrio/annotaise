@@ -362,6 +362,19 @@ class NextItemView(RetrieveAPIView):
                 return item
         return None
 
+    def _get_item_form_mode(self, labeling, user):
+        item = (
+            Item.objects
+            .filter(labeling=labeling)
+            .exclude(answers__answered_by=user)
+            .order_by('row_index', 'id')
+            .first()
+        )
+        if item:
+            self.ensure_membership(item, user)
+            return item
+        return None
+
     def _get_item_per_person_strategy(self, labeling, user):
         item = (
             Item.objects
@@ -377,13 +390,16 @@ class NextItemView(RetrieveAPIView):
         return None
     
     def get_next_item_for_user(self, labeling, user):
-        
+
         if labeling.status == "finished":
             return Response(
                 {"detail": "Essa rotulação já foi finalizada", "code": "ROTULACAO_FINALIZADA"},
                 status=400,
             )
-        
+
+        if labeling.form_mode:
+            return self._get_item_form_mode(labeling, user)
+
         if labeling.distribution_strategy == Labeling.DistributionStrategy.AUTO:
             return self._get_item_auto_strategy(labeling, user)
         elif labeling.distribution_strategy == Labeling.DistributionStrategy.SPECIFIED:
