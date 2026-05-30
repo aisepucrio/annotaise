@@ -25,7 +25,7 @@ import pandas as pd
 from rest_framework.generics import ListAPIView
 from django.db.models import Q
 from django.db import transaction
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.contrib.auth import get_user_model
 #TODO aqui é melhor usar permission pra ver se o item membership existe!
 class AnswerViewset(viewsets.ModelViewSet):
@@ -336,6 +336,81 @@ class AnswerViewset(viewsets.ModelViewSet):
         answer = self.get_object()
         self._assert_owner_or_admin(answer)
         return super().destroy(request, *args, **kwargs)
+
+
+class AnonymousSubmitAnswerView(APIView):
+    """
+    Submissão pública/anônima de respostas para rotulações em modo anônimo.
+
+    Identifica a rotulação pelo token da URL e dispensa autenticação e
+    verificações de usuário/membership. A resposta é gravada sem autor
+    (answered_by=None). Como no modo anônimo assume-se users_per_item=1
+    (cada visitante responde um item uma única vez), o item é marcado como
+    finalizado assim que recebe uma resposta — exceto em form_mode, em que os
+    itens permanecem abertos.
+    """
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    @transaction.atomic
+    def post(self, request, token):
+        labeling = get_object_or_404(
+            Labeling,
+            anonymous_token=token,
+            distribution_strategy=Labeling.DistributionStrategy.ANONYMOUS_MODE,
+        )
+
+        if labeling.status == "finished":
+            return Response(
+                {"detail": "Essa rotulação já foi finalizada", "code": "ROTULACAO_FINALIZADA"},
+                status=400,
+            )
+
+        item = (
+            Item.objects
+            .select_for_update()
+            .filter(pk=request.data.get("item"), labeling=labeling)
+            .first()
+        )
+        if item is None:
+            return Response({"detail": "Item não encontrado para esta rotulação.", "item": "Item é obrigatório."}, status=400)
+
+        if not labeling.form_mode and item.status == "finished":
+            return Response(
+                {"detail": "Esse item já foi finalizado e não pode mais receber respostas."},
+                status=403,
+            )
+
+        answer_payload = request.data.get("answer_payload", {})
+        if not isinstance(answer_payload, dict):
+            return Response({"answer_payload": "Formato inválido."}, status=400)
+
+        answer = Answer.objects.create(
+            item=item,
+            labeling=labeling,
+            answered_by=None,
+            answer_payload=answer_payload,
+        )
+
+        # users_per_item == 1 no modo anônimo: uma resposta já finaliza o item.
+        if not labeling.form_mode:
+            item.status = "finished"
+            item.save(update_fields=["status"])
+
+            if not labeling.items.filter(~Q(status="finished")).exists():
+                labeling.status = "finished"
+                labeling.save(update_fields=["status"])
+
+        return Response(
+            {
+                "id": answer.id,
+                "item": answer.item_id,
+                "labeling": answer.labeling_id,
+                "answer_payload": answer.answer_payload,
+                "created_at": answer.created_at,
+            },
+            status=201,
+        )
 
 
 class AnswersDashboardView(ListAPIView):

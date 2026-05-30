@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { Users } from 'lucide-react';
+import { Copy, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { type LabelingMembershipDashboard, type LabelingMembershipRole } from '@/modules/labelings/labelingsTypes';
 import { type User } from '@/modules/user/userTypes';
@@ -26,6 +26,8 @@ import BackgroundModal, { type BackgroundModalHandle } from './BackgroundModal';
 type AssignTabProps = {
   labelingId: number;
   hasBackgroundForm: boolean;
+  isAnonymous: boolean;
+  anonymousUrl: string | null;
   memberships: LabelingMembershipDashboard[];
   membershipLoading: boolean;
   membershipSaving: boolean;
@@ -43,6 +45,8 @@ type AssignTabProps = {
 function AssignTabView({
   labelingId,
   hasBackgroundForm,
+  isAnonymous,
+  anonymousUrl,
   memberships,
   membershipLoading,
   membershipSaving,
@@ -68,6 +72,52 @@ function AssignTabView({
   const handleInspectBackground = async (membership: LabelingMembershipDashboard) => {
     await backgroundModalRef.current?.open(membership);
   };
+
+  const handleCopyAnonymousUrl = async () => {
+    if (!anonymousUrl) return;
+    try {
+      await navigator.clipboard.writeText(anonymousUrl);
+      toast.success(t('labelings.create.edit.anonymousUrlCopied'));
+    } catch {
+      toast.error(t('labelings.create.edit.anonymousUrlCopyError'));
+    }
+  };
+
+  // Anonymous-mode labelings are not assigned to individual annotators: instead of the
+  // add-users flow, share a public link that annotators open without an account.
+  if (isAnonymous) {
+    return (
+      <div className="w-[80%] mx-auto mt-2">
+        <div className="rounded-lg border border-gray-200 p-4">
+          <label className="mb-1 block text-sm font-medium text-gray-900">
+            {t('labelings.create.edit.anonymousUrlLabel')}
+          </label>
+          <p className="mb-2 text-xs text-gray-600">{t('labelings.create.edit.anonymousUrlDescription')}</p>
+          {anonymousUrl ? (
+            <div className="flex items-center gap-2">
+              <input
+                readOnly
+                value={anonymousUrl}
+                onFocus={(e) => e.currentTarget.select()}
+                className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700"
+              />
+              <Button
+                type="button"
+                variant="white"
+                fill={true}
+                onClick={() => void handleCopyAnonymousUrl()}
+                icon={<Copy size={16} />}
+              >
+                {t('common.copy')}
+              </Button>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500">{t('labelings.create.assign.anonymousUrlUnavailable')}</p>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -175,12 +225,18 @@ export default function AssignPage() {
   const [newMemberRole, setNewMemberRole] = useState<LabelingMembershipRole>('annotator');
 
   const headerQuery = useLabelingHeaderQuery(labelingId);
-  const membershipsQuery = useLabelingMembershipsQuery(labelingId);
-  const usersQuery = useAvailableUsersQuery();
+  const labeling = headerQuery.data?.labeling;
+  // In anonymous mode the assign tab shows the shareable link instead of the add-users flow,
+  // so the memberships and available-users queries are not needed.
+  const isAnonymous = labeling?.distribution_strategy === 'anonymous_mode';
+  const anonymousUrl = isAnonymous ? labeling?.anonymous_url ?? null : null;
+
+  const membershipsQuery = useLabelingMembershipsQuery(labelingId, !isAnonymous);
+  const usersQuery = useAvailableUsersQuery(!isAnonymous);
 
   const memberships = membershipsQuery.data ?? [];
   const availableUsers = usersQuery.data ?? [];
-  const hasBackgroundForm = Boolean(headerQuery.data?.labeling?.has_background_form);
+  const hasBackgroundForm = Boolean(labeling?.has_background_form);
 
   const createMembershipMutation = useCreateMembershipMutation();
   const updateMembershipMutation = useUpdateMembershipMutation();
@@ -252,6 +308,8 @@ export default function AssignPage() {
     <AssignTabView
       labelingId={labelingId}
       hasBackgroundForm={hasBackgroundForm}
+      isAnonymous={isAnonymous}
+      anonymousUrl={anonymousUrl}
       memberships={memberships}
       membershipLoading={membershipsQuery.isLoading}
       membershipSaving={membershipSaving}

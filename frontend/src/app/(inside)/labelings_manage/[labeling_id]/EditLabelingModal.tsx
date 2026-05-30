@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Copy } from 'lucide-react';
+import { toast } from 'sonner';
 import type { Labeling, LabelingPayload } from '@/modules/labelings/labelingsTypes';
 import type { Project } from '@/modules/projects/projectsTypes';
 import Modal from '@/components/Modal';
@@ -98,6 +100,20 @@ export default function EditLabelingModal({ open, labeling, project, onClose, on
   // Only the current project is available here because project switching is not exposed in this flow yet.
   const projectOptions = project ? [{ value: String(project.id), label: project.name }] : [];
 
+  // Anonymous-mode labelings expose a shareable URL that annotators can use without an account.
+  const anonymousUrl =
+    labeling?.distribution_strategy === 'anonymous_mode' ? labeling.anonymous_url ?? null : null;
+
+  const handleCopyAnonymousUrl = async () => {
+    if (!anonymousUrl) return;
+    try {
+      await navigator.clipboard.writeText(anonymousUrl);
+      toast.success(t('labelings.create.edit.anonymousUrlCopied'));
+    } catch {
+      toast.error(t('labelings.create.edit.anonymousUrlCopyError'));
+    }
+  };
+
   return (
     <Modal
       open={open}
@@ -159,6 +175,33 @@ export default function EditLabelingModal({ open, labeling, project, onClose, on
                 }}
               />
             </div>
+
+            {/* Shareable URL for anonymous-mode labelings */}
+            {anonymousUrl && (
+              <div>
+                <label className="mb-1 block text-sm font-medium text-metal-900">
+                  {t('labelings.create.edit.anonymousUrlLabel')}
+                </label>
+                <p className="mb-2 text-xs text-metal-600">{t('labelings.create.edit.anonymousUrlDescription')}</p>
+                <div className="flex items-center gap-2">
+                  <input
+                    readOnly
+                    value={anonymousUrl}
+                    onFocus={(e) => e.currentTarget.select()}
+                    className="flex-1 rounded-lg border border-metal-200 bg-metal-50 px-3 py-2 text-sm text-metal-700"
+                  />
+                  <Button
+                    type="button"
+                    variant="white"
+                    fill={true}
+                    onClick={() => void handleCopyAnonymousUrl()}
+                    icon={<Copy size={16} />}
+                  >
+                    {t('common.copy')}
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Save action */}

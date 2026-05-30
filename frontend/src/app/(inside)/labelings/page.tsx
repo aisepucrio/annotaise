@@ -49,6 +49,8 @@ export default function LabelingsPage() {
               daysPassed={l.days_passed}
               daysTotal={l.total_days}
               labelingsDone={l.items_done}
+              formMode={l.form_mode}
+              answersCollected={l.answers_collected}
               variant="labelings"
               actionButton={
                 <Button

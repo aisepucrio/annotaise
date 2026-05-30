@@ -65,8 +65,8 @@ function deriveColumnsFromStructure(sections: LabelingStructureSection[]): strin
 }
 
 // Utilizada para buscar os membros do labeling
-export function useLabelingMembershipsQuery(labelingId: number) {
-  const enabled = !Number.isNaN(labelingId);
+export function useLabelingMembershipsQuery(labelingId: number, shouldFetch = true) {
+  const enabled = !Number.isNaN(labelingId) && shouldFetch;
 
   return useQuery({
     queryKey: ['labelings', labelingId, 'memberships'],
@@ -76,9 +76,10 @@ export function useLabelingMembershipsQuery(labelingId: number) {
 }
 
 // Utilizada para buscar os usuários disponíveis (para adicionar como membros)
-export function useAvailableUsersQuery() {
+export function useAvailableUsersQuery(shouldFetch = true) {
   return useQuery({
     queryKey: ['users'],
+    enabled: shouldFetch,
     queryFn: () => fetchUsers(),
   });
 }

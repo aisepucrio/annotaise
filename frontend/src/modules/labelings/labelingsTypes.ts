@@ -1,5 +1,5 @@
 export type LabelingStatus = 'draft' | 'active' | 'archived' | 'finished';
-export type DistributionStrategy = 'auto' | 'specified' | 'per_person';
+export type DistributionStrategy = 'auto' | 'specified' | 'per_person' | 'anonymous_mode';
 export type DecisionMode = 'manual' | 'llm';
 
 // Fields returned by the backend for a labeling
@@ -22,10 +22,16 @@ export type Labeling = {
   block_section_back?: boolean;
   distribution_strategy?: DistributionStrategy;
   form_mode?: boolean;
+  // Read-only: present when the labeling runs in anonymous mode.
+  anonymous_token?: string | null;
+  anonymous_url?: string | null;
 };
 
 // Fields accepted by the backend to create or update a labeling.
-export type LabelingPayload = Omit<Labeling, 'id' | 'status' | 'column_names' | 'created_at' | 'created_by'>;
+export type LabelingPayload = Omit<
+  Labeling,
+  'id' | 'status' | 'column_names' | 'created_at' | 'created_by' | 'anonymous_token' | 'anonymous_url'
+>;
 
 // Types related to labeling creation with CSV
 export type CreateLabelingWithCsvPayload = {
@@ -160,6 +166,8 @@ export type LabelingDashboard = {
   total_items?: number;
   background_required?: boolean;
   background_answered?: boolean;
+  form_mode?: boolean;
+  answers_collected?: number;
 };
 
 // Item- and answer-related types

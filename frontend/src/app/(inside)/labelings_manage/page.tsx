@@ -101,6 +101,8 @@ export default function LabelingsPage() {
             daysTotal={l.total_days}
             labelingsDone={l.items_done}
             labelingsPending={Math.max((l.total_items ?? 0) - (l.items_done ?? 0), 0)}
+            formMode={l.form_mode}
+            answersCollected={l.answers_collected}
             variant="manage"
             actionButton={
               <Button

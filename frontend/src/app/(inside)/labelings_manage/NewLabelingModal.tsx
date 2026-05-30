@@ -327,11 +327,20 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
               id="csv-form-mode"
               checked={isFormMode}
               onChange={(value) => {
-                setDraft((prev) => ({
-                  ...prev,
-                  file: value ? null : prev.file,
-                  payload: { ...prev.payload, form_mode: value },
-                }));
+                setDraft((prev) => {
+                  const prevStrategy = prev.payload.distribution_strategy ?? 'auto';
+                  const nextStrategy: DistributionStrategy =
+                    value && prevStrategy !== 'auto' && prevStrategy !== 'anonymous_mode' ? 'auto' : prevStrategy;
+                  return {
+                    ...prev,
+                    file: value ? null : prev.file,
+                    payload: {
+                      ...prev.payload,
+                      form_mode: value,
+                      distribution_strategy: nextStrategy,
+                    },
+                  };
+                });
                 if (value) {
                   setHasEmptyFields(false);
                   if (fileInputRef.current) fileInputRef.current.value = '';
@@ -496,6 +505,35 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
               />
             </div>
 
+            {/* Item distribution strategy across users — shown for both regular and form modes */}
+            <Select
+              id="csv-distribution-strategy"
+              label={t('labelings.upload.distributionStrategyLabel')}
+              options={
+                isFormMode
+                  ? [
+                      { value: 'auto', label: t('labelings.upload.distributionStrategy.auto') },
+                      { value: 'anonymous_mode', label: t('labelings.upload.distributionStrategy.anonymous_mode') },
+                    ]
+                  : [
+                      { value: 'auto', label: t('labelings.upload.distributionStrategy.auto') },
+                      { value: 'per_person', label: t('labelings.upload.distributionStrategy.per_person') },
+                      { value: 'anonymous_mode', label: t('labelings.upload.distributionStrategy.anonymous_mode') },
+                    ]
+              }
+              value={draft.payload.distribution_strategy ?? 'auto'}
+              onChange={(e) =>
+                setDraft((prev) => ({
+                  ...prev,
+                  payload: {
+                    ...prev.payload,
+                    distribution_strategy: (e.target as HTMLSelectElement).value as DistributionStrategy,
+                  },
+                }))
+              }
+              tooltip={t('labelings.upload.distributionStrategyTooltip')}
+            />
+
             {!isFormMode && (<>
             {/* Extra boolean settings (checkboxes) */}
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -589,37 +627,6 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
                 </div>
               </div>
             </div>
-
-            {/* Item distribution strategy across users */}
-            <Select
-              id="csv-distribution-strategy"
-              label={t('labelings.upload.distributionStrategyLabel')}
-              options={[
-                {
-                  value: 'auto',
-                  label: t('labelings.upload.distributionStrategy.auto'),
-                },
-                // {
-                //   value: "specified",
-                //   label: t("labelings.upload.distributionStrategy.specified"),
-                // },
-                {
-                  value: 'per_person',
-                  label: t('labelings.upload.distributionStrategy.per_person'),
-                },
-              ]}
-              value={draft.payload.distribution_strategy ?? 'auto'}
-              onChange={(e) =>
-                setDraft((prev) => ({
-                  ...prev,
-                  payload: {
-                    ...prev.payload,
-                    distribution_strategy: (e.target as HTMLSelectElement).value as DistributionStrategy,
-                  },
-                }))
-              }
-              tooltip={t('labelings.upload.distributionStrategyTooltip')}
-            />
 
             {/* Number of users per item (disabled for per_person) */}
             <Input

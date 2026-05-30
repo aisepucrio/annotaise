@@ -14,6 +14,8 @@ type IndividualManageLabelingCardProps = {
   labelingsPending?: number;
   variant: LabelingCardVariant;
   actionButton: ReactNode;
+  formMode?: boolean;
+  answersCollected?: number;
   colors?: {
     normal: {
       bg: string;
@@ -31,6 +33,8 @@ export default function IndividualLabelingCard({
   labelingsPending,
   variant,
   actionButton,
+  formMode,
+  answersCollected,
   colors,
 }: IndividualManageLabelingCardProps) {
   const { t } = useTranslations();
@@ -81,7 +85,16 @@ export default function IndividualLabelingCard({
       <div className="mt-2 h-0.75 rounded-full bg-metal-50" />
 
       <div className="mt-3 flex flex-col gap-3 min-w-0 w-full">
-        {isManageVariant ? (
+        {formMode ? (
+          <div className="-ml-3 w-full">
+            <StatPill
+              label={t('labelings.progress.answersCollected')}
+              value={answersCollected ?? 0}
+              color="blue"
+              cut="right"
+            />
+          </div>
+        ) : isManageVariant ? (
           <ProgressBar
             value={labelingsDone}
             max={totalLabelings}

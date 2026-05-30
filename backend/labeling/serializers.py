@@ -1,3 +1,5 @@
+import uuid
+
 from rest_framework import serializers
 from .models import Labeling, LabelingSection, LabelingElement, MultipleChoiceItem, QuestionRange, LabelingMembership
 from django.db import transaction
@@ -8,15 +10,19 @@ LLM_TIEBREAK_EMAIL = "llm_tiebreak_bot@annotaise.local"
 
 
 class LabelingSerializer(serializers.ModelSerializer):
+    anonymous_url = serializers.ReadOnlyField()
 
     class Meta:
         model = Labeling
-        fields = ['id', 'project', 'title', 'created_at','status','column_names','start_date','final_date','users_per_item','block_section_back','has_background_form','guide','decision','decision_mode','decisive_question','distribution_strategy','form_mode']
-        read_only_fields = ['id', 'created_at','created_by','column_names','status']
+        fields = ['id', 'project', 'title', 'created_at','status','column_names','start_date','final_date','users_per_item','block_section_back','has_background_form','guide','decision','decision_mode','decisive_question','distribution_strategy','form_mode','anonymous_token','anonymous_url']
+        read_only_fields = ['id', 'created_at','created_by','column_names','status','anonymous_token','anonymous_url']
 
     def create(self, validated_data):
         if not validated_data.get("start_date"):
             validated_data["start_date"] = timezone.now().date()
+        # Anonymous mode needs a stable token so a shareable URL can be generated.
+        if validated_data.get("distribution_strategy") == Labeling.DistributionStrategy.ANONYMOUS_MODE:
+            validated_data["anonymous_token"] = uuid.uuid4()
         labeling = super().create(validated_data)
         if labeling.form_mode:
             from item.models import Item
@@ -29,6 +35,10 @@ class LabelingSerializer(serializers.ModelSerializer):
         return labeling
 
     def update (self, instance, validated_data):
+        # Lazily mint a token the first time a labeling is moved into anonymous mode.
+        strategy = validated_data.get("distribution_strategy", instance.distribution_strategy)
+        if strategy == Labeling.DistributionStrategy.ANONYMOUS_MODE and not instance.anonymous_token:
+            validated_data["anonymous_token"] = uuid.uuid4()
         return super().update(instance, validated_data)
       
 class MultipleChoiceItemSerializer(serializers.ModelSerializer):
@@ -321,6 +331,8 @@ class LabelingDashboardSerializer(serializers.Serializer):
     total_items = serializers.IntegerField(required=False, allow_null=True)
     background_required = serializers.BooleanField(required=False)
     background_answered = serializers.BooleanField(required=False)
+    form_mode = serializers.BooleanField(required=False)
+    answers_collected = serializers.IntegerField(required=False, allow_null=True)
 #TODO validações individuais de cada serializer, pra não cair em internal server error
 
 class LabelingMembershipDashboardSerializer(serializers.Serializer):

@@ -79,6 +79,7 @@ class LabelingViewSet(viewsets.ModelViewSet):
                     'items',
                     filter=Q(items__status='finished'),
                     distinct=True),
+                answers_collected=Count('answers', distinct=True),
             )
         )
         if not qs.exists():
@@ -97,6 +98,8 @@ class LabelingViewSet(viewsets.ModelViewSet):
                 "days_passed" : (today - element.start_date).days,
                 "items_done" : element.done_labelings,
                 "total_items" : element.total_labelings,
+                "form_mode": bool(element.form_mode),
+                "answers_collected": element.answers_collected,
             })
         ser = self.get_serializer_class() 
         ser = ser(data=output,many=True)   
@@ -167,6 +170,7 @@ class LabelingViewSet(viewsets.ModelViewSet):
                     'answers',
                     filter=Q(answers__answered_by=request.user),
                     distinct=True),
+                answers_collected=Count('answers', distinct=True),
             )
         )
         if search:
@@ -194,6 +198,8 @@ class LabelingViewSet(viewsets.ModelViewSet):
                 "items_done" : element.done_labelings,
                 "background_required": bool(element.has_background_form),
                 "background_answered": background_answered,
+                "form_mode": bool(element.form_mode),
+                "answers_collected": element.answers_collected,
             })
         ser = self.get_serializer_class() 
         ser = ser(data=output,many=True)   

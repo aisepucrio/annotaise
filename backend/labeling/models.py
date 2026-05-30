@@ -39,6 +39,9 @@ class Labeling(models.Model):
     )
     distribution_strategy = models.CharField(max_length=32, default=DistributionStrategy.AUTO, choices=DistributionStrategy.choices)
 
+    # Token used to build a public/shareable URL when the labeling runs in anonymous mode.
+    anonymous_token = models.UUIDField(null=True, blank=True, unique=True, editable=False)
+
     guide = models.TextField(default="",blank=True)
 
     form_mode = models.BooleanField(default=False)
@@ -64,6 +67,13 @@ class Labeling(models.Model):
                 " Só questões de múltipla escolha podem ser decisivas.")
         super().clean()
         
+
+    @property
+    def anonymous_url(self):
+        """Public URL annotators can use to access this labeling in anonymous mode."""
+        if not self.anonymous_token:
+            return None
+        return f"{settings.FRONTEND_URL}/anonymous/{self.anonymous_token}"
 
     def __str__(self):
         return f"Rotulação:{self.title} Status:({self.get_status_display()})"

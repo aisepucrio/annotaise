@@ -1,5 +1,6 @@
 from .views import (
     AddItemsToExistingLabelingView,
+    AnonymousNextItemView,
     ExportImportedItemsCsvView,
     ImportItemsCsvView,
     ListItemsView,
@@ -13,6 +14,7 @@ urlpatterns = [
     path('labelings/<int:labeling_id>/imported-items-csv/', ExportImportedItemsCsvView.as_view(),name="export-imported-items-csv"),
     path('labelings/<int:labeling_id>/items/', ListItemsView.as_view(),name='list-items'),
     path('items/<int:labeling_id>/', NextItemView.as_view(),name='next-item'),
+    path('items/anonymous/<uuid:token>/', AnonymousNextItemView.as_view(),name='next-item-anonymous'),
 ]
 
 

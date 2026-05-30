@@ -15,7 +15,7 @@ from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 from django.shortcuts import get_object_or_404
 from django.db.models import Count, Exists, F, OuterRef, Value
@@ -446,4 +446,54 @@ class NextItemView(RetrieveAPIView):
             return Response({'detail': 'Você não tem mais rotulações para responder.','code':'NO_LABELINGS_TO_ANSWER'}, status=400)
 
         return self.serialize_and_return(item)
-    
+
+
+class AnonymousNextItemView(RetrieveAPIView):
+    """
+    Variante pública/anônima da NextItemView.
+
+    Identifica a rotulação pelo token de modo anônimo presente na URL (em vez
+    do labeling_id) e dispensa autenticação e qualquer verificação de
+    usuário/membership, já que rotuladores anônimos não possuem conta.
+    Retorna a mesma estrutura: as seções do formulário e um item pendente.
+    """
+    serializer_class = NextItemResponseSerializer
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def serialize_and_return(self, item):
+        serializer = self.get_serializer(item)
+        return Response(serializer.data, status=200)
+
+    @transaction.atomic
+    def retrieve(self, request, *args, **kwargs):
+        labeling = get_object_or_404(
+            Labeling,
+            anonymous_token=kwargs['token'],
+            distribution_strategy=Labeling.DistributionStrategy.ANONYMOUS_MODE,
+        )
+
+        if labeling.status == "finished":
+            return Response(
+                {"detail": "Essa rotulação já foi finalizada", "code": "ROTULACAO_FINALIZADA"},
+                status=400,
+            )
+
+        if not LabelingSection.objects.filter(
+            labeling=labeling,
+            form_type=LabelingSection.FormType.MAIN,
+        ).exists():
+            return Response({'detail': 'o formulário dessa rotulação está vazio', 'code': 'EMPTY_FORM'}, status=403)
+
+        # Sem usuário para diferenciar, devolvemos simplesmente o próximo item pendente.
+        item = (
+            Item.objects
+            .filter(labeling=labeling, status='pending')
+            .order_by('row_index', 'id')
+            .first()
+        )
+        if not item:
+            return Response({'detail': 'Não há mais itens para rotular.', 'code': 'NO_LABELINGS_TO_ANSWER'}, status=400)
+
+        return self.serialize_and_return(item)
+
