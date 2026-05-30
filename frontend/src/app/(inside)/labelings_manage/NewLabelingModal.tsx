@@ -103,10 +103,15 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
     }
   }, [open]);
 
-  // Effect: the "per_person" strategy forces: decision = false, decison_mode = manual, users_per_item = 1
+  // Both "per_person" and "anonymous_mode" force a single answer per item:
+  // decision = false, decision_mode = manual, users_per_item = 1.
+  // Anonymous mode relies on this because the public submit endpoint assumes
+  // users_per_item === 1 and does not run the decision/tiebreak logic.
   const isPerPerson = draft.payload.distribution_strategy === 'per_person';
+  const isAnonymous = draft.payload.distribution_strategy === 'anonymous_mode';
+  const forcesSingleAnswer = isPerPerson || isAnonymous;
   useEffect(() => {
-    if (isPerPerson) {
+    if (forcesSingleAnswer) {
       setDraft((prev) => ({
         ...prev,
         payload: {
@@ -123,7 +128,7 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
         return next;
       });
     }
-  }, [isPerPerson]);
+  }, [forcesSingleAnswer]);
 
   const { data: projects, isLoading: isLoadingProjects } = useProjectsQuery();
 
@@ -553,7 +558,7 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
                           },
                         }));
                       }}
-                      disabled={isPerPerson}
+                      disabled={forcesSingleAnswer}
                       variant="square"
                       hoverColor="var(--metal-500)"
                       checkedColor="var(--metal-700)"
@@ -567,7 +572,7 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
                     </div>
                   </div>
 
-                  {draft.payload.decision && !isPerPerson ? (
+                  {draft.payload.decision && !forcesSingleAnswer ? (
                     <div className="mt-2 rounded-md border border-metal-200 bg-white p-2">
                       <div className="mb-2 flex items-center gap-1">
                         <span className="text-sm text-metal-700">{t('labelings.upload.decisionModeLabel')}</span>
@@ -647,7 +652,7 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
                 }));
                 clearFormError('usersPerItem');
               }}
-              disabled={isPerPerson}
+              disabled={forcesSingleAnswer}
               placeholder="1"
               tooltip={t('labelings.upload.usersPerItemTooltip')}
             />

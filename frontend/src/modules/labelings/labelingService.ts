@@ -221,6 +221,21 @@ export async function submitAnswer(payload: AnswerPayload): Promise<AnswerRespon
   return data;
 }
 
+// Busca o próximo item de uma rotulação em modo anônimo (sem autenticação), pelo token público
+export async function fetchNextAnonymousAnswer(token: string): Promise<AnswerStructure> {
+  const { data } = await api.get<AnswerStructure>(`/items/anonymous/${token}/`);
+  return data;
+}
+
+// Submete uma resposta anônima (sem autenticação) usando o token público da rotulação
+export async function submitAnonymousAnswer(
+  token: string,
+  payload: { item: number; answer_payload: Record<string, unknown> },
+): Promise<{ id: number; item: number; labeling: number; answer_payload: Record<string, unknown>; created_at: string }> {
+  const { data } = await api.post(`/answers/anonymous/${token}/`, payload);
+  return data;
+}
+
 // Busca as respostas do usuário atual em um labeling
 export async function fetchMyAnswers(labelingId: number): Promise<AnswerResponse[]> {
   const { data } = await api.get<AnswerResponse[]>(`/answers/`, {

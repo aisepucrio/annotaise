@@ -20,9 +20,12 @@ class LabelingSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         if not validated_data.get("start_date"):
             validated_data["start_date"] = timezone.now().date()
-        # Anonymous mode needs a stable token so a shareable URL can be generated.
+        # Anonymous mode needs a stable token so a shareable URL can be generated,
+        # and always runs with a single answer per item (the public submit endpoint
+        # finalizes an item after one answer), so we force users_per_item = 1.
         if validated_data.get("distribution_strategy") == Labeling.DistributionStrategy.ANONYMOUS_MODE:
             validated_data["anonymous_token"] = uuid.uuid4()
+            validated_data["users_per_item"] = 1
         labeling = super().create(validated_data)
         if labeling.form_mode:
             from item.models import Item

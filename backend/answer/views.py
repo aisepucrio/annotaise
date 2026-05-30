@@ -557,7 +557,8 @@ class ExportAnswersView(APIView):
             item_payload = answer.item.payload
             row = {}
             row["context_id"] = (answer.item.row_index or 0) + 1
-            row["user_id"] = answer.answered_by.id
+            # Anonymous-mode answers have no author; label them explicitly.
+            row["user_id"] = answer.answered_by.id if answer.answered_by_id else "anonymous"
             for question_number, response in payload.items():
                 # follow-up answer key
                 if question_number.startswith("followup_"):

@@ -187,6 +187,8 @@ export type ItemStructure = {
 export type AnswerStructure = {
   item: ItemStructure;
   sections: LabelingStructureSection[];
+  // True when the labeling is a single shared form (no per-item progression).
+  form_mode?: boolean;
 };
 
 export type AnswerPayload = {
