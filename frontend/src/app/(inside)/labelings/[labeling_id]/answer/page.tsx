@@ -5,9 +5,6 @@ import { useParams, useRouter } from 'next/navigation';
 import axios from 'axios';
 import { Send, Info } from 'lucide-react';
 import { toast } from 'sonner';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import { ExternalLink } from 'lucide-react';
 
 import {
   buildInitialUserAnswers,
@@ -22,6 +19,7 @@ import type { LabelingStructureSection } from '@/modules/labelings/labelingsType
 
 import InnerPageHeader from '@/components/InnerPageHeader';
 import Button from '@/components/button/Button';
+import GuidePanel from '@/components/answer/GuidePanel';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 
 export default function LabelingAnswerPage() {
@@ -262,37 +260,6 @@ export default function LabelingAnswerPage() {
     </div>
   );
 
-  // Side panel that renders the labeling guide markdown.
-  const GuidePanel = (
-    <div className="h-full rounded-xl  bg-white p-4 overflow-auto space-y-3">
-      <div className="flex items-center justify-end gap-2">
-        {/* Open the full guide route while preserving this answer session. */}
-        <span
-          role="button"
-          tabIndex={0}
-          className="inline-flex items-center gap-1 text-sm text-primary underline underline-offset-2 cursor-pointer hover:opacity-80"
-          onClick={() => {
-            if (Number.isNaN(labelingId)) return;
-            window.open(`/labelings/${labelingId}/guide`, '_blank', 'noopener,noreferrer');
-          }}
-        >
-          {t('answer.openNewTab')}
-          <ExternalLink className="h-3 w-3" />
-        </span>
-      </div>
-
-      <div className="mt-1 space-y-4">
-        {guideText ? (
-          <div className="prose prose-sm max-w-none text-gray-900">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{guideText}</ReactMarkdown>
-          </div>
-        ) : (
-          <p className="text-sm text-gray-600">{t('answer.noGuide')}</p>
-        )}
-      </div>
-    </div>
-  );
-
   // Main answer panel: current section plus navigation or submit action.
   const MainPanel = (
     <section className="rounded-xl bg-white p-4 h-full overflow-y-auto ">
@@ -366,7 +333,10 @@ export default function LabelingAnswerPage() {
             </ResizablePanel>
             <ResizableHandle withHandle />
             <ResizablePanel defaultSize={30} minSize={25}>
-              {GuidePanel}
+              <GuidePanel
+                guideText={guideText}
+                externalHref={Number.isNaN(labelingId) ? undefined : `/labelings/${labelingId}/guide`}
+              />
             </ResizablePanel>
           </ResizablePanelGroup>
         ) : (

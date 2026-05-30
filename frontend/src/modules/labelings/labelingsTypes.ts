@@ -189,6 +189,9 @@ export type AnswerStructure = {
   sections: LabelingStructureSection[];
   // True when the labeling is a single shared form (no per-item progression).
   form_mode?: boolean;
+  // Labeling-level annotation guide (markdown). Present so token-based clients
+  // can show the guide without a separate labeling fetch.
+  guide?: string;
 };
 
 export type AnswerPayload = {
