@@ -30,6 +30,7 @@ class NextItemResponseSerializer(serializers.Serializer):
     sections = serializers.SerializerMethodField()
     item = ItemSerializer(source='*', read_only=True)
     form_mode = serializers.BooleanField(source='labeling.form_mode', read_only=True)
+    guide = serializers.CharField(source='labeling.guide', read_only=True)
 
     def get_sections(self, item):
         sections = item.labeling.sections.filter(
