@@ -13,7 +13,17 @@ function normalizeImageSrc(value: string): string {
   return value;
 }
 
-function ImageContextValue({ value, emptyText, invalidText }: { value: unknown; emptyText: string; invalidText: string }) {
+function ImageContextValue({
+  value,
+  emptyText,
+  invalidText,
+  altText,
+}: {
+  value: unknown;
+  emptyText: string;
+  invalidText: string;
+  altText: string;
+}) {
   const [hasError, setHasError] = useState(false);
   const raw = typeof value === 'string' ? value.trim() : '';
 
@@ -33,7 +43,7 @@ function ImageContextValue({ value, emptyText, invalidText }: { value: unknown; 
   return (
     <img
       src={normalizeImageSrc(raw)}
-      alt="Context image"
+      alt={altText}
       className="mx-auto max-h-[50vh] w-auto max-w-full rounded-md border border-blue-100 object-contain"
       loading="lazy"
       onError={() => setHasError(true)}
@@ -48,12 +58,26 @@ function AdminForm() {
 
 // =-=-=-=-= LABELING
 function UserLabeling({ value, t }: UserContextModuleProps) {
-  return <ImageContextValue value={value} emptyText={t('answer.context.noValue')} invalidText={t('answer.context.invalidImage')} />;
+  return (
+    <ImageContextValue
+      value={value}
+      emptyText={t('answer.context.noValue')}
+      invalidText={t('answer.context.invalidImage')}
+      altText={t('answer.context.imageAlt')}
+    />
+  );
 }
 
 // =:=:=:=:= VIZUALIZATION
 function ResponseVisualization({ value, t }: ResponseContextModuleProps) {
-  return <ImageContextValue value={value} emptyText={t('answer.context.noValue')} invalidText={t('answer.context.invalidImage')} />;
+  return (
+    <ImageContextValue
+      value={value}
+      emptyText={t('answer.context.noValue')}
+      invalidText={t('answer.context.invalidImage')}
+      altText={t('answer.context.imageAlt')}
+    />
+  );
 }
 
 export const ImageContextModule: ContextModule = {

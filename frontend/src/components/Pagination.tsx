@@ -1,6 +1,9 @@
+'use client';
+
 import { useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useTranslations } from "@/i18n/use-translations";
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [9, 18, 36];
 
@@ -21,6 +24,7 @@ export default function Pagination({
   onPageSizeChange,
   pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
 }: PaginationProps) {
+  const { t } = useTranslations();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -51,7 +55,7 @@ export default function Pagination({
   return (
     <div className="flex items-center justify-center gap-4 mt-6">
       <div className="flex items-center gap-1 text-sm text-gray-500">
-        <span>Itens por página:</span>
+        <span>{t('pagination.itemsPerPage')}</span>
         <select
           value={pageSize}
           onChange={(e) => handlePageSizeChange(Number(e.target.value))}
@@ -71,7 +75,7 @@ export default function Pagination({
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
             className="p-1 rounded disabled:opacity-30 hover:bg-gray-100 transition-colors"
-            aria-label="Página anterior"
+            aria-label={t('pagination.previousPage')}
           >
             <ChevronLeft size={18} />
           </button>
@@ -84,7 +88,7 @@ export default function Pagination({
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
             className="p-1 rounded disabled:opacity-30 hover:bg-gray-100 transition-colors"
-            aria-label="Próxima página"
+            aria-label={t('pagination.nextPage')}
           >
             <ChevronRight size={18} />
           </button>

@@ -39,10 +39,10 @@ function sanitizeAdminQuestion() {
 // =-=-=-=-= LABELING
 // =-=-=-=-= LABELING
 
-function UserLabeling({ value, onChange }: UserQuestionModuleProps) {
+function UserLabeling({ value, onChange, t }: UserQuestionModuleProps) {
   return (
     <Input
-      placeholder="Resposta..."
+      placeholder={t('answer.question.textPlaceholder')}
       multiline
       rows={4}
       resizable

@@ -415,7 +415,7 @@ export default function SectionWrapper({
           <div className="absolute -left-12 top-5 flex flex-col items-center gap-1">
             <button
               type="button"
-              aria-label="Mover seção para cima"
+              aria-label={t('labelings.create.section.moveUp')}
               className="flex h-8 w-8 items-center justify-center rounded-md bg-blueberry-900 text-white disabled:opacity-40"
               onClick={onMoveUp}
               disabled={index === 0}
@@ -424,7 +424,7 @@ export default function SectionWrapper({
             </button>
             <button
               type="button"
-              aria-label="Mover seção para baixo"
+              aria-label={t('labelings.create.section.moveDown')}
               className="flex h-8 w-8 items-center justify-center rounded-md bg-blueberry-900 text-white disabled:opacity-40"
               onClick={onMoveDown}
               disabled={index === total - 1}

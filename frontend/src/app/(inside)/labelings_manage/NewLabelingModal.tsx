@@ -316,7 +316,7 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
             onClick={() => void handleCreateTestLabeling()}
             disabled={createTestLabeling.isPending}
             className="rounded border border-dashed border-gray-400 px-2 py-0.5 text-[10px] font-mono uppercase tracking-wide text-gray-500 hover:bg-gray-100 disabled:opacity-50"
-            title="Cria um projeto + rotulação de teste (code smells) com decisão por LLM, 2 usuários por item e 1 resposta pré-existente"
+            title={t('labelings.upload.createTestTitle')}
           >
             {createTestLabeling.isPending ? 'criando…' : 'TEST_LABELING'}
           </button>

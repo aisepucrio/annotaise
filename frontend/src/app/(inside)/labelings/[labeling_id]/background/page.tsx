@@ -152,7 +152,7 @@ export default function LabelingBackgroundPage() {
           {isLoading ? (
             <p className="text-sm text-gray-600">{t('common.loading')}</p>
           ) : orderedSections.length === 0 ? (
-            <p className="text-sm text-gray-600">Formulário background ainda não foi configurado.</p>
+            <p className="text-sm text-gray-600">{t('answer.background.empty')}</p>
           ) : currentSection ? (
             <div className="space-y-6">
               <UserLabelingSectionWrapper

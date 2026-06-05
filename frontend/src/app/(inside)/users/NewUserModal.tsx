@@ -168,7 +168,7 @@ export default function NewUserModal({ open, onClose, onSubmit }: NewUserModalPr
             onChange={(e) => setEmailsRaw(e.target.value)}
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blueberry-600 resize-none"
           />
-          <span className="text-xs text-gray-400">Separe múltiplos emails por vírgula, ponto e vírgula ou quebra de linha.</span>
+          <span className="text-xs text-gray-400">{t('users.new.emailHelp')}</span>
         </div>
 
         {/* Tipo de conta */}
@@ -183,11 +183,11 @@ export default function NewUserModal({ open, onClose, onSubmit }: NewUserModalPr
         </div>
 
         <div className="space-y-2">
-          <p className="text-sm font-medium text-gray-800">Atribuição automática por projeto/rotulação (opcional)</p>
+          <p className="text-sm font-medium text-gray-800">{t('users.new.assignmentTitle')}</p>
           {assignmentOptionsLoading ? (
-            <p className="text-xs text-gray-500">Carregando opções...</p>
+            <p className="text-xs text-gray-500">{t('users.new.assignmentLoading')}</p>
           ) : !assignmentProjects || assignmentProjects.length === 0 ? (
-            <p className="text-xs text-gray-500">Nenhum projeto elegível encontrado.</p>
+            <p className="text-xs text-gray-500">{t('users.new.assignmentEmpty')}</p>
           ) : (
             <div className="max-h-36 overflow-auto rounded-md border border-gray-200 p-2 space-y-2">
               {assignmentProjects.map((project) => {
@@ -211,7 +211,7 @@ export default function NewUserModal({ open, onClose, onSubmit }: NewUserModalPr
 
                     <div className="ml-6 space-y-1">
                       {project.labelings.length === 0 ? (
-                        <p className="text-xs text-gray-400">Sem rotulações neste projeto.</p>
+                        <p className="text-xs text-gray-400">{t('users.new.assignmentNoLabelings')}</p>
                       ) : (
                         project.labelings.map((labeling) => {
                           const labelingChecked = selectedLabelingIds.includes(labeling.id);
