@@ -1,4 +1,4 @@
-import type { Language } from './language-context';
+import type { Language } from './types';
 
 type TranslationMap = Record<string, string>;
 
