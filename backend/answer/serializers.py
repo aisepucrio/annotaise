@@ -23,6 +23,11 @@ class AnswerSerializer(serializers.ModelSerializer):
         read_only=True,
     )
 
+    responded_as_name = serializers.CharField(
+        source="responded_as.name",
+        read_only=True,
+    )
+
     class Meta:
         model = Answer
         fields = [
@@ -36,13 +41,21 @@ class AnswerSerializer(serializers.ModelSerializer):
             'answered_by_first_name',
             'answered_by_last_name',
             'answer_payload',
+            'responded_as',
+            'responded_as_name',
             'created_at',
         ]
-        read_only_fields = ['id', 'created_at', 'answered_by']
+        read_only_fields = ['id', 'created_at', 'answered_by', 'responded_as', 'responded_as_name']
 
     def create(self, validated_data):
         user = self.context["request"].user
-        return super().create({**validated_data, "answered_by": user})
+        item = validated_data["item"]
+        responded_as = item.pick_responded_as_for(user)
+        return super().create({
+            **validated_data,
+            "answered_by": user,
+            "responded_as": responded_as,
+        })
 
     def update(self, instance, validated_data):
         if "item" in validated_data and validated_data["item"].id != instance.item_id:

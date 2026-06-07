@@ -8,6 +8,16 @@ class Answer(models.Model):
     answered_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, related_name="answers_given", null=True
     )
+    # Grupo que essa resposta preenche na cota da rotulação. null = preenche o slot
+    # residual "any". Define-se na criação para evitar dupla contagem quando o
+    # respondente pertence a múltiplos grupos relevantes para a mesma rotulação.
+    responded_as = models.ForeignKey(
+        "user.UserGroup",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="answers_filling_quota",
+    )
     answer_payload = models.JSONField()
     created_at = models.DateTimeField(auto_now_add=True)
     

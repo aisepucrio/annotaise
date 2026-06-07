@@ -375,6 +375,9 @@ class NextItemView(RetrieveAPIView):
             return item
         return None
 
+    def _get_remaining_groups_list(self, item):
+        return item.remaining_groups()
+
     def _get_item_per_person_strategy(self, labeling, user):
         item = (
             Item.objects
@@ -388,7 +391,7 @@ class NextItemView(RetrieveAPIView):
             self.ensure_membership(item, user)
             return item
         return None
-    
+
     def get_next_item_for_user(self, labeling, user):
 
         if labeling.status == "finished":

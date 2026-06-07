@@ -1,7 +1,8 @@
-import uuid
-
-from rest_framework import serializers
 from .models import Labeling, LabelingSection, LabelingElement, MultipleChoiceItem, QuestionRange, LabelingMembership
+
+
+import uuid
+from rest_framework import serializers
 from django.db import transaction
 from django.utils import timezone
 
@@ -37,12 +38,36 @@ class LabelingSerializer(serializers.ModelSerializer):
             )
         return labeling
 
-    def update (self, instance, validated_data):
-        # Lazily mint a token the first time a labeling is moved into anonymous mode.
-        strategy = validated_data.get("distribution_strategy", instance.distribution_strategy)
-        if strategy == Labeling.DistributionStrategy.ANONYMOUS_MODE and not instance.anonymous_token:
-            validated_data["anonymous_token"] = uuid.uuid4()
+    def update(self, instance, validated_data):
+        # strategy = validated_data.get("distribution_strategy", instance.distribution_strategy)
+        # if strategy == Labeling.DistributionStrategy.ANONYMOUS_MODE and not instance.anonymous_token:
+        #     validated_data["anonymous_token"] = uuid.uuid4()
+        # acho que não precisa disso, porque a estratégia só pode ser definida na criação, e se for anonymous mode já gera o token lá. Deixar como está por enquanto, e se precisar a gente reavalia.
+
+        validated_data["items_per_group"] = self.get_valid_items_per_group(instance, validated_data)
         return super().update(instance, validated_data)
+        
+    def get_valid_items_per_group(self, instance, validated_data):
+        '''valida se a soma dos items por grupo é igual ao número de usuários por item.
+        caso seja menor, preenche o resto com qualquer grupo. caso seja maior, retorna 400'''
+        users_per_item = validated_data.get("users_per_item", instance.users_per_item)
+        items_per_group = validated_data.get("items_per_group", instance.items_per_group)
+        
+        if items_per_group.empty():
+            items_per_group = {"any": users_per_item}
+            return items_per_group
+        
+        sum = 0
+        for key, value in items_per_group.items():
+            sum += value
+        
+        if sum < users_per_item:
+            items_per_group["any"] = users_per_item - sum
+        elif sum > users_per_item:
+            raise serializers.ValidationError(
+                "A soma dos itens por grupo não pode ser maior que o número de usuários por item."
+            )
+        return items_per_group
       
 class MultipleChoiceItemSerializer(serializers.ModelSerializer):
     follow_up_question = serializers.SerializerMethodField()

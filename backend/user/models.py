@@ -1,8 +1,10 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-import uuid
 from django.conf import settings
 from django.utils import timezone
+from django.core.exceptions import ValidationError
+
+import uuid
 from datetime import timedelta
 
 class CustomUser(AbstractUser):
@@ -88,8 +90,20 @@ class UserGroup(models.Model):
     description = models.TextField(blank=True)
     created_by = models.ForeignKey(CustomUser,on_delete=models.SET_NULL,null=True)
 
+    def validate(self):
+        if self.name == "any":
+            raise ValidationError("O nome 'any' é reservado e não pode ser usado para grupos de usuários.")
+
 class UserGroupMembership(models.Model):
     group = models.ForeignKey(UserGroup,on_delete=models.CASCADE,related_name="memberships")
     user = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="memberships")
 
     joined_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["group", "user"],
+                name="unique_membership_between_user_and_group"
+            ),
+        ]
