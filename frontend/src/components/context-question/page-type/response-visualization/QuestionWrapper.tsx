@@ -135,7 +135,7 @@ export default function QuestionWrapper({
   );
 }
 
-function resolveQuestionTypeLabel(type: 'text' | 'number' | 'linear-scale' | 'multiple-choice', t: TranslateFn): string {
+function resolveQuestionTypeLabel(type: 'text' | 'number' | 'linear-scale' | 'multiple-choice' | 'email', t: TranslateFn): string {
   switch (type) {
     case 'number':
       return t('labelings.create.question.type.number');
@@ -143,6 +143,8 @@ function resolveQuestionTypeLabel(type: 'text' | 'number' | 'linear-scale' | 'mu
       return t('labelings.create.question.type.range');
     case 'multiple-choice':
       return t('labelings.create.question.type.multipleChoice');
+    case 'email':
+      return t('labelings.create.question.type.email');
     case 'text':
     default:
       return t('labelings.create.question.type.text');

@@ -12,8 +12,8 @@ export type { ElementDTO, LabelingStructureElement, LabelingStructureSection };
 
 export type ContextDataType = 'text' | 'number' | 'date' | 'category' | 'code' | 'image' | 'audio' | 'video' | 'pdf';
 export const CONTEXT_DATA_TYPES: ContextDataType[] = ['text', 'number', 'date', 'category', 'code', 'image', 'audio', 'video', 'pdf'];
-export type QuestionDataType = 'text' | 'number' | 'linear-scale' | 'multiple-choice';
-export const QUESTION_DATA_TYPES: QuestionDataType[] = ['text', 'number', 'linear-scale', 'multiple-choice'];
+export type QuestionDataType = 'text' | 'number' | 'linear-scale' | 'multiple-choice' | 'email';
+export const QUESTION_DATA_TYPES: QuestionDataType[] = ['text', 'number', 'linear-scale', 'multiple-choice', 'email'];
 
 export type ContextQuestionCommonProps = {
   t: TranslateFn;

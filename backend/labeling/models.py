@@ -124,6 +124,7 @@ class LabelingElement(models.Model):
         NUMBER = "number", "Numérico"
         MULTIPLE_CHOICE = "multiple_choice", "Múltipla escolha"
         RANGE = "range", "Faixa"
+        EMAIL = "email", "Email"
         CONTEXT = "context", "Contexto"
 
     class ContextType(models.TextChoices):

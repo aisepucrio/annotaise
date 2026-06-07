@@ -73,6 +73,15 @@ export function createQuestionElement(
     };
   }
 
+  if (dataType === 'email') {
+    return {
+      ...base,
+      question_type: 'email',
+      multiple_choice_items: [],
+      question_range: null,
+    };
+  }
+
   if (dataType === 'multiple-choice') {
     return {
       ...base,
@@ -349,6 +358,7 @@ function questionLabel(dataType: QuestionDataType): string {
     number: 'Number',
     'linear-scale': 'Linear scale',
     'multiple-choice': 'Multiple choice',
+    email: 'Email',
   };
   return labels[dataType];
 }
