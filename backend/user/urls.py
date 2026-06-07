@@ -1,5 +1,5 @@
 from rest_framework.routers import DefaultRouter
-from .views import CurrentAPIView
+from .views import CurrentAPIView, UserGroupMembershipViewset, UserGroupViewset
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.urls import path
 from .views import AdminUserViewSet,InvitationViewSet
@@ -10,5 +10,7 @@ urlpatterns = [
 router = DefaultRouter()
 router.register(r"users", AdminUserViewSet, basename="admin-users")
 router.register(r"invitations", InvitationViewSet, basename="invitations")
+router.register(r"groups", UserGroupViewset, basename="groups")
+router.register(r"group-memberships", UserGroupMembershipViewset, basename="group-memberships")
 
 urlpatterns += router.urls

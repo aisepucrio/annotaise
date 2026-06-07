@@ -11,6 +11,8 @@ import Input from '@/components/form/Input';
 import Select from '@/components/form/Select';
 import Button from '@/components/button/Button';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
+import GroupSelector, { type GroupSelectionValue } from './GroupSelector';
+import { useApplyUserGroupChangesMutation } from '@/modules/group/groupMutations';
 
 type EditUserModalProps = {
   open: boolean;
@@ -30,9 +32,16 @@ export default function EditUserModal({ open, user, onClose, onSubmit, onDelete 
   const [lastName, setLastName] = useState('');
   const [password, setPassword] = useState('');
   const [accountType, setAccountType] = useState<'standard' | 'editor' | 'admin'>('standard');
+  const [groupSelection, setGroupSelection] = useState<GroupSelectionValue>({
+    selectedGroupIds: [],
+    newGroupNames: [],
+    removedMembershipIds: [],
+  });
   const [submitting, setSubmitting] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  const applyGroupChangesMutation = useApplyUserGroupChangesMutation(user?.id);
 
   // Opções do select
   const accountOptions = useMemo(
@@ -51,6 +60,7 @@ export default function EditUserModal({ open, user, onClose, onSubmit, onDelete 
       setLastName('');
       setPassword('');
       setAccountType('standard');
+      setGroupSelection({ selectedGroupIds: [], newGroupNames: [], removedMembershipIds: [] });
       setSubmitting(false);
       setConfirmDeleteOpen(false);
       setDeleting(false);
@@ -62,6 +72,7 @@ export default function EditUserModal({ open, user, onClose, onSubmit, onDelete 
     setLastName(user.last_name ?? '');
     setPassword('');
     setAccountType(user.account_type ?? 'standard');
+    setGroupSelection({ selectedGroupIds: [], newGroupNames: [], removedMembershipIds: [] });
     setSubmitting(false);
   }, [open, user]);
 
@@ -90,6 +101,13 @@ export default function EditUserModal({ open, user, onClose, onSubmit, onDelete 
       };
 
       await onSubmit(payload);
+
+      // Aplica as alterações de grupos: remove os marcados, cria os novos e adiciona os selecionados.
+      const { selectedGroupIds, newGroupNames, removedMembershipIds } = groupSelection;
+      if (user && (selectedGroupIds.length > 0 || newGroupNames.length > 0 || removedMembershipIds.length > 0)) {
+        await applyGroupChangesMutation.mutateAsync({ groupIds: selectedGroupIds, newGroupNames, removedMembershipIds });
+      }
+
       toast.success(t('users.edit.success'));
       onClose();
     } catch (err) {
@@ -171,6 +189,9 @@ export default function EditUserModal({ open, user, onClose, onSubmit, onDelete 
             value={accountType}
             onChange={(e) => setAccountType((e.target as HTMLSelectElement).value as 'standard' | 'editor' | 'admin')}
           />
+
+          {/* Grupos */}
+          <GroupSelector userId={user.id} value={groupSelection} onChange={setGroupSelection} />
 
           {/* Ações */}
           <div className="flex items-center justify-between gap-3 pt-2">

@@ -84,10 +84,11 @@ class Invitation(models.Model):
         return timezone.now() > self.expires_at
     
 class UserGroup(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True)
     created_by = models.ForeignKey(CustomUser,on_delete=models.SET_NULL,null=True)
 
-class GroupMembership(models.Model):
+class UserGroupMembership(models.Model):
     group = models.ForeignKey(UserGroup,on_delete=models.CASCADE,related_name="memberships")
     user = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="memberships")
 

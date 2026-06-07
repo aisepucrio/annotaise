@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     'project',
     'labeling',
     'rest_framework',
+    'django_filters',
     'health_check',
 ]
 

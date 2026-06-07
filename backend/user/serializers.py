@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import CustomUser
+from .models import CustomUser, UserGroup, UserGroupMembership
 from django.contrib.auth import get_user_model
 import uuid
 from .models import Invitation
@@ -160,3 +160,20 @@ class InvitationSerializer(serializers.ModelSerializer):
             "invited_by", getattr(self.context.get("request"), "user", None)
         )
         return Invitation.objects.create(**validated_data, invited_by=invited_by)
+
+class UserGroupSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserGroup
+        fields = ['id', 'name', 'description', 'created_by']
+        read_only_fields = ['id', 'created_by']
+    def create(self, validated_data):
+        user = self.context.get("request").user
+        return UserGroup.objects.create(created_by=user, **validated_data)
+
+
+class UserGroupMembershipSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = UserGroupMembership
+        fields = ['id', 'user', 'group', 'joined_at']
+        read_only_fields = ['id']
