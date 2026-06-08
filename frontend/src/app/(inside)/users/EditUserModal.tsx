@@ -28,7 +28,6 @@ export default function EditUserModal({ open, user, onClose, onSubmit, onDelete 
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [password, setPassword] = useState('');
   const [accountType, setAccountType] = useState<'standard' | 'editor' | 'admin'>('standard');
   const [submitting, setSubmitting] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
@@ -49,7 +48,6 @@ export default function EditUserModal({ open, user, onClose, onSubmit, onDelete 
       setEmail('');
       setFirstName('');
       setLastName('');
-      setPassword('');
       setAccountType('standard');
       setSubmitting(false);
       setConfirmDeleteOpen(false);
@@ -60,7 +58,6 @@ export default function EditUserModal({ open, user, onClose, onSubmit, onDelete 
     setEmail(user.email ?? '');
     setFirstName(user.first_name ?? '');
     setLastName(user.last_name ?? '');
-    setPassword('');
     setAccountType(user.account_type ?? 'standard');
     setSubmitting(false);
   }, [open, user]);
@@ -79,14 +76,12 @@ export default function EditUserModal({ open, user, onClose, onSubmit, onDelete 
     try {
       const trimmedFirst = firstName.trim();
       const trimmedLast = lastName.trim();
-      const trimmedPass = password.trim();
 
       const payload: UpdateUserPayload = {
         email: trimmedEmail,
         first_name: trimmedFirst || undefined,
         last_name: trimmedLast || undefined,
         account_type: accountType,
-        ...(trimmedPass ? { password: trimmedPass } : {}),
       };
 
       await onSubmit(payload);
@@ -148,18 +143,6 @@ export default function EditUserModal({ open, user, onClose, onSubmit, onDelete 
               placeholder={t('users.edit.lastNamePlaceholder')}
               value={lastName}
               onChange={(e) => setLastName((e.target as HTMLInputElement).value)}
-            />
-          </div>
-
-          {/* Senha */}
-          <div>
-            <Input
-              id="edit-password"
-              label={t('users.edit.passwordLabel')}
-              type="password"
-              placeholder={t('users.edit.passwordPlaceholder')}
-              value={password}
-              onChange={(e) => setPassword((e.target as HTMLInputElement).value)}
             />
           </div>
 
