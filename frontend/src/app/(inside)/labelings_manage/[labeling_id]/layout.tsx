@@ -187,9 +187,9 @@ export default function LabelingsManageLayout({ children }: LayoutProps) {
         onDelete={() => setIsDeleteOpen(true)}
         showSaveButton={showSaveButton}
         onSave={handleHeaderSave}
-        onDownloadCsv={() => void handleDownloadCsv()}
+        onDownloadCsv={labeling?.form_mode ? undefined : () => void handleDownloadCsv()}
         isDownloadingCsv={exportImportedCsvMutation.isPending}
-        onImportCsv={() => setIsImportCsvOpen(true)}
+        onImportCsv={labeling?.form_mode ? undefined : () => setIsImportCsvOpen(true)}
       />
 
       <div className="flex-1 min-h-0 overflow-y-auto">{children}</div>
