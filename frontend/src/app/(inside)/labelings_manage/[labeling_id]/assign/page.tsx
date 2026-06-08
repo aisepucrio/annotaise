@@ -19,6 +19,7 @@ import {
   useUpdateMembershipMutation,
 } from '@/modules/labelings/manage/labelingManagerMutations';
 import Select from '@/components/form/Select';
+import SearchableSelect from '@/components/form/SearchableSelect';
 import Button from '@/components/button/Button';
 import DeleteIconButton from '@/components/button/DeleteIconButton';
 import BackgroundModal, { type BackgroundModalHandle } from './BackgroundModal';
@@ -127,9 +128,9 @@ function AssignTabView({
             <p className="text-sm font-medium text-gray-900">{t('labelings.create.assign.addTitle')}</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-            <Select
+            <SearchableSelect
               value={newMemberId}
-              onChange={(e) => onChangeNewMemberId(e.target.value)}
+              onChange={onChangeNewMemberId}
               disabled={membershipSaving}
               options={availableUsers.map((user) => ({
                 value: String(user.id),
