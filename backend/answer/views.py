@@ -524,7 +524,7 @@ class ExportAnswersView(APIView):
         labeling = Labeling.objects.get(id=labeling_id)
         answers = (
             Answer.objects.filter(labeling_id=labeling_id)
-            .select_related("item")
+            .select_related("item", "answered_by")
             .order_by("item__row_index", "id")
         )
         questions_qs = LabelingElement.objects.filter(
@@ -552,13 +552,25 @@ class ExportAnswersView(APIView):
             follow_up_labels[key] = f"Q : {parent_text} > {mc_item.text} > {fu_text}"
 
         rows = []
+        has_llm = False
         for answer in answers:
             payload = answer.answer_payload
             item_payload = answer.item.payload
             row = {}
             row["context_id"] = (answer.item.row_index or 0) + 1
-            # Anonymous-mode answers have no author; label them explicitly.
-            row["user_id"] = answer.answered_by.id if answer.answered_by_id else "anonymous"
+            is_llm = (
+                answer.answered_by_id is not None
+                and answer.answered_by.username == "llm_tiebreak_bot"
+            )
+            if not answer.answered_by_id:
+                row["user_id"] = "anonymous"
+            elif is_llm:
+                row["user_id"] = ""
+            else:
+                row["user_id"] = answer.answered_by.id
+            row["LLM"] = "YES" if is_llm else ""
+            if is_llm:
+                has_llm = True
             for question_number, response in payload.items():
                 # follow-up answer key
                 if question_number.startswith("followup_"):
@@ -584,6 +596,8 @@ class ExportAnswersView(APIView):
 
             rows.append(row)
         df = pd.DataFrame(rows)
+        if not has_llm and "LLM" in df.columns:
+            df = df.drop(columns=["LLM"])
 
         # Gera o conteúdo do CSV como *string*, sem salvar em arquivo
         csv_data = df.to_csv(index=False)
