@@ -60,15 +60,15 @@ class Labeling(models.Model):
         if self.decisive_question and LabelingElement.objects.get(pk=self.decisive_question).question_type != LabelingElement.QuestionType.MULTIPLE_CHOICE:
             raise ValidationError(
                 " Só questões de múltipla escolha podem ser decisivas.")
-        sum = 0
-        for key, value in self.items_per_group.items():
-            sum += value
-        
-        if sum != self.users_per_item:
+        # As cotas por grupo podem somar menos que users_per_item: o restante vira
+        # o slot residual "any" (preenchível por qualquer respondente). Só recusamos
+        # quando a soma ultrapassa o limite — alinhado com LabelingSerializer.
+        total = sum((self.items_per_group or {}).values())
+        if total > self.users_per_item:
             raise ValidationError(
-                "A soma dos itens por grupo deve ser igual ao número de usuários por item."
+                "A soma dos itens por grupo não pode ser maior que o número de usuários por item."
             )
-        
+
         super().clean()
         
 

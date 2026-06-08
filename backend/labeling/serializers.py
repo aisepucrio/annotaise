@@ -15,12 +15,15 @@ class LabelingSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Labeling
-        fields = ['id', 'project', 'title', 'created_at','status','column_names','start_date','final_date','users_per_item','block_section_back','has_background_form','guide','decision','decision_mode','decisive_question','distribution_strategy','form_mode','anonymous_token','anonymous_url']
+        fields = ['id', 'project', 'title', 'created_at','status','column_names','start_date','final_date','users_per_item','block_section_back','has_background_form','guide','decision','decision_mode','decisive_question','distribution_strategy','form_mode','anonymous_token','anonymous_url','items_per_group']
         read_only_fields = ['id', 'created_at','created_by','column_names','status','anonymous_token','anonymous_url']
 
     def create(self, validated_data):
         if not validated_data.get("start_date"):
             validated_data["start_date"] = timezone.now().date()
+        
+        if len(validated_data.get("items_per_group", {})) == 0:
+            validated_data["items_per_group"] = {"any": validated_data.get("users_per_item", 1)}
         # Anonymous mode needs a stable token so a shareable URL can be generated,
         # and always runs with a single answer per item (the public submit endpoint
         # finalizes an item after one answer), so we force users_per_item = 1.
@@ -51,22 +54,23 @@ class LabelingSerializer(serializers.ModelSerializer):
         '''valida se a soma dos items por grupo é igual ao número de usuários por item.
         caso seja menor, preenche o resto com qualquer grupo. caso seja maior, retorna 400'''
         users_per_item = validated_data.get("users_per_item", instance.users_per_item)
-        items_per_group = validated_data.get("items_per_group", instance.items_per_group)
-        
-        if items_per_group.empty():
-            items_per_group = {"any": users_per_item}
-            return items_per_group
-        
-        sum = 0
-        for key, value in items_per_group.items():
-            sum += value
-        
-        if sum < users_per_item:
-            items_per_group["any"] = users_per_item - sum
-        elif sum > users_per_item:
+        items_per_group = dict(validated_data.get("items_per_group", instance.items_per_group) or {})
+
+        # "any" é o slot residual e é sempre recalculado a partir das cotas nomeadas.
+        # Removê-lo antes de somar evita contá-lo em dobro num round-trip (GET -> PATCH),
+        # o que faria o total ficar abaixo de users_per_item.
+        items_per_group.pop("any", None)
+
+        if not items_per_group:
+            return {"any": users_per_item}
+
+        total = sum(items_per_group.values())
+        if total > users_per_item:
             raise serializers.ValidationError(
                 "A soma dos itens por grupo não pode ser maior que o número de usuários por item."
             )
+        if total < users_per_item:
+            items_per_group["any"] = users_per_item - total
         return items_per_group
       
 class MultipleChoiceItemSerializer(serializers.ModelSerializer):

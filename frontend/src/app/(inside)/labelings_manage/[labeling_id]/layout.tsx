@@ -27,10 +27,11 @@ type LayoutProps = {
   children: ReactNode;
 };
 
-type HeaderTabKey = 'form' | 'assign' | 'answers' | 'guide' | 'decision';
+type HeaderTabKey = 'form' | 'assign' | 'groups' | 'answers' | 'guide' | 'decision';
 
 // Maps the current nested route to the header tab that should be highlighted.
 function getActiveTabFromPath(pathname: string): HeaderTabKey {
+  if (pathname.includes('/groups')) return 'groups';
   if (pathname.includes('/assign')) return 'assign';
   if (pathname.includes('/answers')) return 'answers';
   if (pathname.includes('/guide')) return 'guide';
@@ -140,6 +141,7 @@ export default function LabelingsManageLayout({ children }: LayoutProps) {
     const base = [
       { key: 'form', label: t('labelings.create.tabs.form') },
       { key: 'assign', label: t('labelings.create.tabs.assign') },
+      { key: 'groups', label: t('labelings.create.tabs.assignGroups') },
       { key: 'answers', label: t('labelings.create.tabs.answers') },
       { key: 'guide', label: t('labelings.create.tabs.guide') },
     ];

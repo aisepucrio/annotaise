@@ -1,6 +1,7 @@
 from django.db import models
 from django.db.models import Count
 from django.contrib.auth import get_user_model
+from user.models import UserGroup
 
 
 User = get_user_model()
@@ -83,7 +84,6 @@ class Item(models.Model):
         if not remaining:
             return None
 
-        from user.models import UserGroup
         candidates = list(
             UserGroup.objects
             .filter(memberships__user=user, name__in=remaining.keys())
@@ -95,7 +95,7 @@ class Item(models.Model):
         return max(candidates, key=lambda g: remaining[g.name])
 
     def __str__(self):
-        return self.name
+        return f"Item {self.id} da rotulação '{self.labeling.title}' (status: {self.get_status_display()})"
     
 class ItemMembership(models.Model):
     item = models.ForeignKey('Item', on_delete=models.CASCADE, related_name='memberships')
