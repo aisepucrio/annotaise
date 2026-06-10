@@ -210,6 +210,8 @@ export type AnswerResponse = AnswerPayload & {
   answered_by_email?: string;
   answered_by_first_name?: string;
   answered_by_last_name?: string;
+  responded_as?: number | null;
+  responded_as_name?: string | null;
   created_at: string;
   item_detail?: ItemStructure;
   decision_warning?: string;

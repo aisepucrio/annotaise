@@ -38,23 +38,71 @@ class Item(models.Model):
         Em decision mode com desempate em andamento (cotas configuradas já
         preenchidas mas ainda sem vencedor único), mantém um slot 'any' aberto
         para que novos respondentes possam destravar a votação.
-        """
-        quotas = dict(self.labeling.items_per_group or {})
-        if not quotas:
-            return {}
 
+        Uma query por item. Para avaliar vários itens, prefira o método de
+        classe remaining_groups_for (uma única query agregada).
+        """
         answered = (
             self.answers
             .values('responded_as__name')
             .annotate(count=Count('id'))
         )
-        for row in answered:
+        counts = {(row['responded_as__name'] or 'any'): row['count'] for row in answered}
+        return self._remaining_from_counts(counts)
+
+    @classmethod
+    def remaining_groups_for(cls, labeling, items):
+        """
+        remaining_groups para vários itens da MESMA rotulação, com uma única
+        query agregada — em vez de uma por item.
+
+        `items`: iterável de Item já carregados (usamos id, status e
+        decision_payload de cada um, sem novas queries).
+        Retorno: {item_id: {group_name: remaining}}.
+        """
+        from answer.models import Answer
+
+        items = list(items)
+        if not items:
+            return {}
+
+        item_ids = [it.id for it in items]
+        rows = (
+            Answer.objects
+            .filter(item_id__in=item_ids)
+            .values('item_id', 'responded_as__name')
+            .annotate(count=Count('id'))
+        )
+        counts_by_item = {}
+        for row in rows:
             group_name = row['responded_as__name'] or 'any'
+            counts_by_item.setdefault(row['item_id'], {})[group_name] = row['count']
+
+        return {
+            it.id: it._remaining_from_counts(counts_by_item.get(it.id, {}), labeling)
+            for it in items
+        }
+
+    def _remaining_from_counts(self, counts, labeling=None):
+        """
+        Núcleo do cálculo de cotas, compartilhado pelo caminho de item único
+        (remaining_groups) e pelo lote (remaining_groups_for).
+
+        `counts`: {group_name: respostas_registradas} já com 'any' agregando os
+        responded_as nulos. `labeling`: evita acessar self.labeling (e a query
+        que isso pode disparar) quando o chamador já o tem em mãos.
+        """
+        labeling = labeling or self.labeling
+        quotas = dict(labeling.items_per_group or {})
+        if not quotas:
+            return {}
+
+        for group_name, count in counts.items():
             if group_name in quotas:
-                quotas[group_name] -= row['count']
+                quotas[group_name] -= count
 
         if (
-            self.labeling.decision
+            labeling.decision
             and self.status != 'finished'
             and all(v <= 0 for v in quotas.values())
             and not self._decision_has_winner()
@@ -62,6 +110,19 @@ class Item(models.Model):
             quotas['any'] = max(quotas.get('any', 0), 0) + 1
 
         return {name: remaining for name, remaining in quotas.items() if remaining > 0}
+
+    @staticmethod
+    def _slot_open(remaining, user_group_names):
+        """
+        Predicado de elegibilidade sobre um dict de remaining_groups já
+        calculado: há slot 'any' em aberto, ou algum grupo do usuário ainda tem
+        cota. Usado tanto na distribuição quanto no dashboard.
+        """
+        if not remaining:
+            return False
+        if 'any' in remaining:
+            return True
+        return not user_group_names.isdisjoint(remaining.keys())
 
     def _decision_has_winner(self):
         """True se decision_payload já indica um líder único entre os votos."""
@@ -101,6 +162,10 @@ class ItemMembership(models.Model):
     item = models.ForeignKey('Item', on_delete=models.CASCADE, related_name='memberships')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='item_memberships')
     created_at = models.DateTimeField(auto_now_add=True)
+    # Renovado (via save) toda vez que o usuário rebusca o item no next-item.
+    # A expiração de reservas (roubo) usa este campo, não created_at — created_at
+    # é auto_now_add e nunca muda após a criação.
+    last_seen_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         constraints = [

@@ -5,6 +5,7 @@ from project.models import ProjectMembership
 from user.permissions import IsAdminAccount
 from .permissions import CanEditLabelingsInProjectPermission
 from item.models import Item
+from user.models import UserGroup
 from .serializers import LabelingElementSerializer
 
 from django.shortcuts import render, get_object_or_404
@@ -141,6 +142,28 @@ class LabelingViewSet(viewsets.ModelViewSet):
             return Response('Erro ao carregar membros da rotulação',ser.errors, status=400)
 
 
+    def _user_can_answer_labeling(self, labeling, user, user_group_names):
+        """
+        True se ainda há ao menos um item pendente desta rotulação onde o
+        usuário consegue preencher um grupo em aberto.
+
+        Usa Item.remaining_groups_for (uma única query agregada para todos os
+        itens) + Item._slot_open — a mesma regra da distribuição, mantendo
+        dashboard e next-item em acordo.
+        """
+        items = list(
+            Item.objects
+            .filter(labeling=labeling, status__in=["pending", "in_progress"])
+            .exclude(answers__answered_by=user)
+        )
+        if not items:
+            return False
+        remaining_by_item = Item.remaining_groups_for(labeling, items)
+        return any(
+            Item._slot_open(remaining, user_group_names)
+            for remaining in remaining_by_item.values()
+        )
+
     @action(methods=['get'], detail=False, url_path='dashboard')
     def dashboard(self, request):
         '''esse é o dashboard normal, que mostra os labelings dos projetos que o usuario participa em respostas. tirei os labelings que ja terminaram
@@ -182,7 +205,21 @@ class LabelingViewSet(viewsets.ModelViewSet):
                 labeling_id__in=labeling_ids,
             ).values_list("labeling_id", flat=True)
         )
+        # Grupos do usuário, pré-computados uma vez para avaliar elegibilidade
+        # por grupo sem uma consulta por item.
+        user_group_names = set(
+            UserGroup.objects
+            .filter(memberships__user=request.user)
+            .values_list("name", flat=True)
+        )
         for element in qs:
+            # Em rotulações com cotas por grupo, só exibe se o usuário ainda
+            # consegue preencher algum grupo em aberto em algum item — mesma
+            # regra usada na distribuição (remaining_groups_for / _slot_open).
+            if element.has_group_quotas and not self._user_can_answer_labeling(
+                element, request.user, user_group_names
+            ):
+                continue
             background_answered = (
                 not element.has_background_form
                 or element.id in background_answered_ids

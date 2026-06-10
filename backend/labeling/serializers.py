@@ -21,15 +21,23 @@ class LabelingSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         if not validated_data.get("start_date"):
             validated_data["start_date"] = timezone.now().date()
-        
-        if len(validated_data.get("items_per_group", {})) == 0:
-            validated_data["items_per_group"] = {"any": validated_data.get("users_per_item", 1)}
+
         # Anonymous mode needs a stable token so a shareable URL can be generated,
         # and always runs with a single answer per item (the public submit endpoint
         # finalizes an item after one answer), so we force users_per_item = 1.
+        # This must happen before normalizing the quotas so the residual "any" slot
+        # is computed against the forced users_per_item.
         if validated_data.get("distribution_strategy") == Labeling.DistributionStrategy.ANONYMOUS_MODE:
             validated_data["anonymous_token"] = uuid.uuid4()
             validated_data["users_per_item"] = 1
+
+        # Group quotas are defined at creation and are not editable afterwards.
+        # Normalize them the same way update does: validate the total against
+        # users_per_item and fill the residual "any" slot.
+        validated_data["items_per_group"] = self.normalize_items_per_group(
+            validated_data.get("users_per_item", 1),
+            validated_data.get("items_per_group"),
+        )
         labeling = super().create(validated_data)
         if labeling.form_mode:
             from item.models import Item
@@ -47,14 +55,16 @@ class LabelingSerializer(serializers.ModelSerializer):
         #     validated_data["anonymous_token"] = uuid.uuid4()
         # acho que não precisa disso, porque a estratégia só pode ser definida na criação, e se for anonymous mode já gera o token lá. Deixar como está por enquanto, e se precisar a gente reavalia.
 
-        validated_data["items_per_group"] = self.get_valid_items_per_group(instance, validated_data)
+        users_per_item = validated_data.get("users_per_item", instance.users_per_item)
+        items_per_group = validated_data.get("items_per_group", instance.items_per_group)
+        validated_data["items_per_group"] = self.normalize_items_per_group(users_per_item, items_per_group)
         return super().update(instance, validated_data)
-        
-    def get_valid_items_per_group(self, instance, validated_data):
+
+    @staticmethod
+    def normalize_items_per_group(users_per_item, items_per_group):
         '''valida se a soma dos items por grupo é igual ao número de usuários por item.
         caso seja menor, preenche o resto com qualquer grupo. caso seja maior, retorna 400'''
-        users_per_item = validated_data.get("users_per_item", instance.users_per_item)
-        items_per_group = dict(validated_data.get("items_per_group", instance.items_per_group) or {})
+        items_per_group = dict(items_per_group or {})
 
         # "any" é o slot residual e é sempre recalculado a partir das cotas nomeadas.
         # Removê-lo antes de somar evita contá-lo em dobro num round-trip (GET -> PATCH),

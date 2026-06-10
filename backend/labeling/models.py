@@ -73,6 +73,17 @@ class Labeling(models.Model):
         
 
     @property
+    def has_group_quotas(self):
+        """
+        True quando há cotas por grupo *nomeado*, além do slot residual 'any'.
+
+        items_per_group sempre carrega 'any' (preenchido pelo serializer), então
+        a presença de 'any' sozinho não caracteriza distribuição por grupo. Só
+        quando há outras chaves a distribuição precisa respeitar grupos.
+        """
+        return any(name != "any" for name in (self.items_per_group or {}))
+
+    @property
     def anonymous_url(self):
         """Public URL annotators can use to access this labeling in anonymous mode."""
         if not self.anonymous_token:
