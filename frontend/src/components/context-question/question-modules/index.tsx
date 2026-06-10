@@ -9,12 +9,14 @@ import TextQuestionModule from './Text';
 import NumberQuestionModule from './Number';
 import LinearScaleQuestionModule from './LinearScale';
 import MultipleChoiceQuestionModule from './MultipleChoice';
+import EmailQuestionModule from './Email';
 
 export const questionModules: Record<QuestionDataType, QuestionModule> = {
   text: TextQuestionModule,
   number: NumberQuestionModule,
   'linear-scale': LinearScaleQuestionModule,
   'multiple-choice': MultipleChoiceQuestionModule,
+  email: EmailQuestionModule,
 };
 
 type RenderQuestionModuleArgs =
@@ -51,4 +53,4 @@ export function renderQuestionModule(args: RenderQuestionModuleArgs) {
   return <Component {...args.props} dataType={args.dataType} pageType="response-visualization" />;
 }
 
-export { TextQuestionModule, NumberQuestionModule, LinearScaleQuestionModule, MultipleChoiceQuestionModule };
+export { TextQuestionModule, NumberQuestionModule, LinearScaleQuestionModule, MultipleChoiceQuestionModule, EmailQuestionModule };

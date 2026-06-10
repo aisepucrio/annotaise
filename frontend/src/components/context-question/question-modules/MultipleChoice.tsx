@@ -40,6 +40,7 @@ import {
 import TextQuestionModule from './Text';
 import NumberQuestionModule from './Number';
 import LinearScaleQuestionModule from './LinearScale';
+import EmailQuestionModule from './Email';
 
 // Shared helpers used by the form, labeling, and visualization flows.
 export function createMultipleChoiceItem(index: number, t: TranslateFn): MultipleChoiceItemDTO {
@@ -509,6 +510,7 @@ function FollowUpAdminEditor({
             { value: 'number', label: t('labelings.create.question.type.number') },
             { value: 'linear-scale', label: t('labelings.create.question.type.range') },
             { value: 'multiple-choice', label: t('labelings.create.question.type.multipleChoice') },
+            { value: 'email', label: t('labelings.create.question.type.email') },
           ]}
         />
       </div>
@@ -547,6 +549,7 @@ function renderFollowUpAdminQuestion({
   if (dataType === 'number') return <NumberQuestionModule.AdminForm {...commonProps} dataType="number" />;
   if (dataType === 'linear-scale') return <LinearScaleQuestionModule.AdminForm {...commonProps} dataType="linear-scale" />;
   if (dataType === 'multiple-choice') return <AdminForm {...commonProps} dataType="multiple-choice" />;
+  if (dataType === 'email') return <EmailQuestionModule.AdminForm {...commonProps} dataType="email" />;
   return <TextQuestionModule.AdminForm {...commonProps} dataType="text" />;
 }
 

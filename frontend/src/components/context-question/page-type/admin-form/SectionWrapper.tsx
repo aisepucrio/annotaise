@@ -6,6 +6,7 @@ import { DndContext, PointerSensor, closestCenter, useSensor, useSensors, type D
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import Input from '@/components/form/Input';
+import ConfirmModal from '@/components/ConfirmModal';
 import type { TranslateFn } from '@/i18n/types';
 import { useTranslations } from '@/i18n/use-translations';
 import type { AdminFormBuilderProps, AdminSectionWrapperProps, LabelingStructureElement, LabelingStructureSection } from '../../types';
@@ -327,6 +328,10 @@ export default function SectionWrapper({
   sectionLabel,
 }: AdminSectionWrapperProps) {
   const { t } = useTranslations();
+  // Tracks which cell (section/question/context) is awaiting delete confirmation, if any.
+  const [pendingRemoval, setPendingRemoval] = useState<
+    { kind: 'section' } | { kind: 'context' | 'question'; elementId: number | undefined } | null
+  >(null);
   // Preserve the persisted order before deriving the visible/sortable subset.
   const orderedElements = useMemo(
     () => [...(section.elements ?? [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
@@ -361,7 +366,7 @@ export default function SectionWrapper({
   };
 
   const removeElement = (elementId: number | undefined) => {
-    // Removing an element immediately compacts element order inside this section.
+    // Removing an element compacts element order inside this section.
     updateSection({
       elements: orderedElements
         .filter((element) => element.id !== elementId)
@@ -370,6 +375,34 @@ export default function SectionWrapper({
           order: elementIndex,
         })),
     });
+  };
+
+  // Deleting a section/question/context is destructive and irreversible from the user's
+  // point of view, so every removal goes through a confirmation step before it happens.
+  const removalCopyByKind: Record<'section' | 'context' | 'question', { title: string; description: string }> = {
+    section: {
+      title: t('labelings.create.section.deleteConfirmTitle'),
+      description: t('labelings.create.section.deleteConfirmDescription'),
+    },
+    context: {
+      title: t('labelings.create.context.deleteConfirmTitle'),
+      description: t('labelings.create.context.deleteConfirmDescription'),
+    },
+    question: {
+      title: t('labelings.create.question.deleteConfirmTitle'),
+      description: t('labelings.create.question.deleteConfirmDescription'),
+    },
+  };
+  const pendingRemovalCopy = pendingRemoval ? removalCopyByKind[pendingRemoval.kind] : null;
+
+  const confirmPendingRemoval = () => {
+    if (!pendingRemoval) return;
+
+    if (pendingRemoval.kind === 'section') {
+      onRemoveSection?.();
+    } else {
+      removeElement(pendingRemoval.elementId);
+    }
   };
 
   const handleElementDragEnd = (event: DragEndEvent) => {
@@ -415,7 +448,7 @@ export default function SectionWrapper({
           <div className="absolute -left-12 top-5 flex flex-col items-center gap-1">
             <button
               type="button"
-              aria-label="Mover seção para cima"
+              aria-label={t('labelings.create.section.moveUp')}
               className="flex h-8 w-8 items-center justify-center rounded-md bg-blueberry-900 text-white disabled:opacity-40"
               onClick={onMoveUp}
               disabled={index === 0}
@@ -424,7 +457,7 @@ export default function SectionWrapper({
             </button>
             <button
               type="button"
-              aria-label="Mover seção para baixo"
+              aria-label={t('labelings.create.section.moveDown')}
               className="flex h-8 w-8 items-center justify-center rounded-md bg-blueberry-900 text-white disabled:opacity-40"
               onClick={onMoveDown}
               disabled={index === total - 1}
@@ -446,7 +479,7 @@ export default function SectionWrapper({
             {onRemoveSection ? (
               <button
                 type="button"
-                onClick={onRemoveSection}
+                onClick={() => setPendingRemoval({ kind: 'section' })}
                 title={t('labelings.create.section.delete')}
                 aria-label={t('labelings.create.section.delete')}
                 className="cursor-pointer text-gray-400 hover:text-red-500"
@@ -501,14 +534,14 @@ export default function SectionWrapper({
                             columns={columns}
                             t={t}
                             onUpdate={(patch) => updateElement(element.id, patch)}
-                            onRemove={() => removeElement(element.id)}
+                            onRemove={() => setPendingRemoval({ kind: 'context', elementId: element.id })}
                           />
                         ) : (
                           <QuestionWrapper
                             element={element}
                             t={t}
                             onUpdate={(patch) => updateElement(element.id, patch)}
-                            onRemove={() => removeElement(element.id)}
+                            onRemove={() => setPendingRemoval({ kind: 'question', elementId: element.id })}
                           />
                         )}
                       </SortableElement>
@@ -536,6 +569,16 @@ export default function SectionWrapper({
           </DndContext>
         </section>
       </div>
+
+      {pendingRemoval && pendingRemovalCopy ? (
+        <ConfirmModal
+          open
+          onClose={() => setPendingRemoval(null)}
+          onConfirm={confirmPendingRemoval}
+          title={pendingRemovalCopy.title}
+          description={pendingRemovalCopy.description}
+        />
+      ) : null}
     </div>
   );
 }

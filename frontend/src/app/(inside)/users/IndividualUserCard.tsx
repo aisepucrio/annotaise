@@ -34,7 +34,9 @@ export default function IndividualUserCard({
           <span className="text-black font-semibold leading-tight max-w-40 break-words truncate flex items-center gap-2">
             {name}
             {onboardingStatus === 'pending' ? (
-              <span className="rounded bg-orange-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-orange-700">Pendente</span>
+              <span className="rounded bg-orange-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-orange-700">
+                {t('users.status.pending')}
+              </span>
             ) : null}
           </span>
 
