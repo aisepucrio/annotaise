@@ -138,6 +138,7 @@ export type AdminSectionWrapperProps = SectionWrapperBaseProps & {
   visibleInsertionPointId?: string | null;
   onUpdateSection?: (section: LabelingStructureSection) => void;
   onRemoveSection?: () => void;
+  onRemoveElement?: (elementId: number | undefined, kind: 'context' | 'question') => void;
   onAddContext?: (insertAfterId: string | number | null | 'start') => void;
   onAddQuestion?: (insertAfterId: string | number | null | 'start') => void;
   onAddSection?: (insertAfterId: string | number | null) => void;
