@@ -43,7 +43,9 @@ export default function AnonymousAnswerPage() {
 
   // Local UI flow state.
   const [currentSectionIdx, setCurrentSectionIdx] = useState(0);
-  const [showGuide, setShowGuide] = useState(false);
+  // Anonymous annotators get no onboarding, so the guide starts open on every
+  // page load; the header button still lets them hide it.
+  const [showGuide, setShowGuide] = useState(true);
   // Form-mode labelings are a single shared form: once submitted there is no
   // next item to advance to, so we lock the page into a completion state.
   const [completed, setCompleted] = useState(false);

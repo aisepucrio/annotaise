@@ -54,14 +54,6 @@ export async function createLabeling(payload: LabelingPayload): Promise<Labeling
   return data;
 }
 
-// Cria uma rotulação de teste (projeto + labeling + form + itens + respostas pré-existentes)
-export async function createTestLabeling(): Promise<{ id: number; title: string; project_id: number }> {
-  const { data } = await api.post<{ id: number; title: string; project_id: number }>(
-    '/labelings/test-labeling/'
-  );
-  return data;
-}
-
 // Atualiza um labeling existente
 export async function updateLabeling(id: number, payload: Partial<LabelingPayload>): Promise<Labeling> {
   const { data } = await api.patch<Labeling>(`/labelings/${id}/`, payload);

@@ -68,6 +68,10 @@ export default function ItemTab({ itemGroup, onBack, getUserLabel, sections }: I
     );
   }
 
+  // Só mostra a atribuição de grupo quando a rotulação usa cotas por grupo
+  // (alguma resposta do item tem responded_as); fora disso seria ruído.
+  const hasGroupAttribution = userAnswers.some((answer) => answer.responded_as_name);
+
   const answerEntries = Object.entries(selectedAnswer.answer_payload ?? {});
   const itemLabel = resolveItemLabel(
     selectedAnswer.item_detail?.row_index ?? null,
@@ -136,6 +140,14 @@ export default function ItemTab({ itemGroup, onBack, getUserLabel, sections }: I
                   </option>
                 ))}
               </select>
+              {hasGroupAttribution && (
+                <p className="mt-1 text-xs text-gray-600">
+                  {t('labelings.create.answers.modal.respondedAsLabel')}:{' '}
+                  <span className="font-semibold text-gray-800">
+                    {selectedAnswer.responded_as_name ?? t('labelings.create.answers.modal.respondedAsNone')}
+                  </span>
+                </p>
+              )}
             </div>
           </div>
         </div>

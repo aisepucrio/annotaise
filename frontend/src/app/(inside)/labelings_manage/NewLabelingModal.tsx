@@ -1,25 +1,25 @@
 'use client';
 
-import { Loader2, TriangleAlert, Upload } from 'lucide-react';
+import { Loader2, Plus, TriangleAlert, Upload, Users } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 
 import { toast } from 'sonner';
 
 import { useProjectsQuery } from '@/modules/projects/projectsQueries';
-import { useCreateTestLabelingMutation } from '@/modules/labelings/labelingMutations';
+import { useGroupsQuery } from '@/modules/group/groupQueries';
 
 import Modal from '@/components/Modal';
 import Input from '@/components/form/Input';
 import Select from '@/components/form/Select';
+import NumberInput from '@/components/form/NumberInput';
 import DatePicker from '@/components/form/DatePicker';
 import Checkbox from '@/components/form/Checkbox';
 import Button from '@/components/button/Button';
+import DeleteIconButton from '@/components/button/DeleteIconButton';
 import Tooltip from '@/components/Tooltip';
 
 import { useTranslations } from '@/i18n/use-translations';
 import { csvFileHasEmptyFields, isCsvFileName } from '@/lib/csvUtils';
-import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 
 import type { CreateLabelingWithCsvPayload, LabelingPayload } from '@/modules/labelings/labelingsTypes';
 import type { DecisionMode, DistributionStrategy } from '@/modules/labelings/labelingsTypes';
@@ -30,6 +30,10 @@ type NewLabelingModalProps = {
   onClose: () => void;
   onConfirm: (payload: CreateLabelingWithCsvPayload) => Promise<void>;
 };
+
+// One row of the per-group quota editor (group name + how many answers it must provide).
+// The residual "any" slot is computed by the backend, so it never appears as a row here.
+type GroupQuotaRow = { group: string; count: number | '' };
 
 // Internal flow steps (upload -> details)
 type Step = 'upload' | 'details';
@@ -64,7 +68,6 @@ function createInitialState(): CreateLabelingWithCsvDraft {
 
 export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabelingModalProps) {
   const { t } = useTranslations();
-  const router = useRouter();
 
   // Reference used to trigger the file input from the button
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -77,18 +80,9 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
   const [isAnalyzingFile, setIsAnalyzingFile] = useState(false);
   const [formErrors, setFormErrors] = useState<DetailFormErrors>({});
 
-  const createTestLabeling = useCreateTestLabelingMutation();
-
-  async function handleCreateTestLabeling() {
-    try {
-      const result = await createTestLabeling.mutateAsync();
-      toast.success(`TEST_LABELING criada: ${result.title}`);
-      onClose();
-      router.push(`/labelings_manage/${result.id}/form`);
-    } catch (err) {
-      toast.error(getApiErrorMessage(err, 'Falha ao criar TEST_LABELING'));
-    }
-  }
+  // Per-group quotas are defined here at creation time because they cannot be
+  // changed once items have been distributed.
+  const [groupRows, setGroupRows] = useState<GroupQuotaRow[]>([]);
 
   // Effect: reset the entire local state when the modal closes
   useEffect(() => {
@@ -98,6 +92,7 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
       setHasEmptyFields(false);
       setIsAnalyzingFile(false);
       setFormErrors({});
+      setGroupRows([]);
       setStep('upload');
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
@@ -131,6 +126,40 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
   }, [forcesSingleAnswer]);
 
   const { data: projects, isLoading: isLoadingProjects } = useProjectsQuery();
+  const { data: groups, isLoading: isLoadingGroups } = useGroupsQuery();
+
+  // Per-group quotas only make sense for the multi-annotator "auto" strategy:
+  // per_person/anonymous force a single answer per item, and form mode has no
+  // per-item distribution.
+  const showGroups = !draft.payload.form_mode && (draft.payload.distribution_strategy ?? 'auto') === 'auto';
+  const usersPerItem = Number(draft.payload.users_per_item) || 0;
+  const availableGroups = groups ?? [];
+  const noGroupsAvailable = !isLoadingGroups && availableGroups.length === 0;
+
+  const assignedToGroups = groupRows.reduce((sum, row) => sum + (Number(row.count) || 0), 0);
+  const remainingForAny = usersPerItem - assignedToGroups;
+  const exceedsUsersPerItem = remainingForAny < 0;
+  const hasIncompleteGroupRow = groupRows.some((row) => !row.group || !(Number(row.count) > 0));
+
+  const handleAddGroupRow = () => setGroupRows((prev) => [...prev, { group: '', count: 1 }]);
+  const handleRemoveGroupRow = (index: number) =>
+    setGroupRows((prev) => prev.filter((_, i) => i !== index));
+  const handleChangeGroupName = (index: number, group: string) =>
+    setGroupRows((prev) => prev.map((row, i) => (i === index ? { ...row, group } : row)));
+  const handleChangeGroupCount = (index: number, count: number | '') =>
+    setGroupRows((prev) => prev.map((row, i) => (i === index ? { ...row, count } : row)));
+
+  // A group can only be assigned once: exclude groups picked by other rows, but keep this row's own value.
+  const groupOptionsForRow = (rowIndex: number) => {
+    const usedByOthers = new Set(
+      groupRows.filter((_, i) => i !== rowIndex).map((row) => row.group).filter(Boolean)
+    );
+    const current = groupRows[rowIndex]?.group;
+    return availableGroups
+      .map((group) => group.name)
+      .filter((name) => name === current || !usedByOthers.has(name))
+      .map((name) => ({ value: name, label: name }));
+  };
 
   // Analyze the CSV to flag rows with empty fields
   async function parseHasEmptyFields(file: File) {
@@ -200,6 +229,29 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
     const confirmedUsersPerItem = payload.form_mode ? (parsedUsersPerItem ?? 1) : parsedUsersPerItem;
     if (confirmedUsersPerItem === null) return;
 
+    // Per-group quotas are validated here because they cannot be changed once the
+    // labeling exists; an inconsistent quota must be fixed before creation.
+    if (showGroups) {
+      if (exceedsUsersPerItem) {
+        toast.error(
+          t('labelings.create.groups.exceeds', { assigned: assignedToGroups, total: usersPerItem }),
+        );
+        return;
+      }
+      if (hasIncompleteGroupRow) {
+        toast.error(t('labelings.create.groups.incompleteRow'));
+        return;
+      }
+    }
+
+    // Only named-group quotas are sent; the backend fills the residual "any" slot.
+    const itemsPerGroup = showGroups
+      ? groupRows.reduce<Record<string, number>>((acc, row) => {
+          if (row.group && Number(row.count) > 0) acc[row.group] = Number(row.count);
+          return acc;
+        }, {})
+      : {};
+
     setIsSubmitting(true);
 
     try {
@@ -210,6 +262,7 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
           title: payload.title.trim(),
           project: confirmedProjectId,
           users_per_item: confirmedUsersPerItem,
+          items_per_group: itemsPerGroup,
           start_date: payload.start_date,
           final_date: payload.final_date.trim(),
         },
@@ -308,21 +361,6 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
 
   return (
     <Modal open={open} onClose={onClose} title={t('labelings.upload.title')} description={modalDescription} maxWidth="lg">
-      {/* Dev-only: cria uma rotulação de teste pronta para uso */}
-      {step === 'upload' && (
-        <div className="mb-2 flex justify-end">
-          <button
-            type="button"
-            onClick={() => void handleCreateTestLabeling()}
-            disabled={createTestLabeling.isPending}
-            className="rounded border border-dashed border-gray-400 px-2 py-0.5 text-[10px] font-mono uppercase tracking-wide text-gray-500 hover:bg-gray-100 disabled:opacity-50"
-            title={t('labelings.upload.createTestTitle')}
-          >
-            {createTestLabeling.isPending ? 'criando…' : 'TEST_LABELING'}
-          </button>
-        </div>
-      )}
-
       {/* Render: upload step */}
       {step === 'upload' ? (
         <div>
@@ -657,6 +695,85 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
               tooltip={t('labelings.upload.usersPerItemTooltip')}
             />
             </>)}
+
+            {/* Per-group quotas — set at creation only, since they cannot be changed afterwards. */}
+            {showGroups && (
+              <div className="rounded-xl border border-metal-200 bg-metal-50 px-4 py-4 space-y-4">
+                <div>
+                  <div className="flex items-center gap-1">
+                    <p className="text-sm font-medium text-metal-900">{t('labelings.create.groups.title')}</p>
+                    <Tooltip content={t('labelings.create.groups.description')} color="var(--metal-700)" size="sm" />
+                  </div>
+                  <p className="mt-1 text-xs text-gray-600">
+                    {t('labelings.create.groups.usersPerItem', { count: usersPerItem })}
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-medium text-gray-900">{t('labelings.create.groups.listTitle')}</p>
+                  <Button
+                    type="button"
+                    variant="normal"
+                    fill={false}
+                    onClick={handleAddGroupRow}
+                    disabled={noGroupsAvailable}
+                    icon={<Plus size={16} />}
+                    className="px-4"
+                  >
+                    {t('labelings.create.groups.addGroup')}
+                  </Button>
+                </div>
+
+                {noGroupsAvailable ? (
+                  <p className="text-sm text-gray-600">{t('labelings.create.groups.noGroups')}</p>
+                ) : groupRows.length === 0 ? (
+                  <p className="text-sm text-gray-600">{t('labelings.create.groups.empty')}</p>
+                ) : (
+                  <div className="space-y-2">
+                    {groupRows.map((row, index) => (
+                      <div
+                        key={index}
+                        className="flex flex-col md:flex-row md:items-center gap-3 rounded-lg border border-gray-200 bg-white p-3"
+                      >
+                        <Users size={16} className="text-blue-900 shrink-0" />
+                        <Select
+                          value={row.group}
+                          onChange={(event) => handleChangeGroupName(index, event.target.value)}
+                          options={groupOptionsForRow(index)}
+                          placeholder={t('labelings.create.groups.selectGroup')}
+                          containerClassName="flex-1"
+                        />
+                        <NumberInput
+                          value={row.count}
+                          onChange={(value) => handleChangeGroupCount(index, value === '' ? '' : Number(value))}
+                          min={1}
+                          max={usersPerItem}
+                          containerClassName="w-full md:w-40"
+                        />
+                        <DeleteIconButton
+                          onClick={() => handleRemoveGroupRow(index)}
+                          ariaLabel={t('labelings.create.groups.remove')}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {!noGroupsAvailable && groupRows.length > 0 && (
+                  <div className="text-sm">
+                    {exceedsUsersPerItem ? (
+                      <p className="text-red-600">
+                        {t('labelings.create.groups.exceeds', { assigned: assignedToGroups, total: usersPerItem })}
+                      </p>
+                    ) : remainingForAny > 0 ? (
+                      <p className="text-gray-600">{t('labelings.create.groups.remaining', { count: remainingForAny })}</p>
+                    ) : (
+                      <p className="text-gray-600">{t('labelings.create.groups.allAssigned')}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Details step footer (back + create) */}

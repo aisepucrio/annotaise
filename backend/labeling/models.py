@@ -1,7 +1,6 @@
 from django.db import models
 from django.utils import timezone
 from django.conf import settings
-from user.models import UserGroup
 from django.core.exceptions import ValidationError
 
 class Labeling(models.Model):
@@ -38,35 +37,51 @@ class Labeling(models.Model):
         default=DecisionMode.MANUAL,
     )
     distribution_strategy = models.CharField(max_length=32, default=DistributionStrategy.AUTO, choices=DistributionStrategy.choices)
-
     # Token used to build a public/shareable URL when the labeling runs in anonymous mode.
     anonymous_token = models.UUIDField(null=True, blank=True, unique=True, editable=False)
 
     guide = models.TextField(default="",blank=True)
-
     form_mode = models.BooleanField(default=False)
 
     users_per_item = models.PositiveIntegerField(null=False, blank=False,default=1)
     block_section_back = models.BooleanField(default=False)
     has_background_form = models.BooleanField(default=False)
 
-    column_names = models.JSONField(
-        default=list, blank=True,
-    )
+    column_names = models.JSONField(default=list, blank=True)
 
+    items_per_group = models.JSONField(default=dict, blank=True,)
 
     decisive_question = models.ForeignKey("LabelingElement", on_delete=models.SET_NULL, null=True, blank=True)
 
     class Meta:
-        ordering = ["-created_at", "title"] # mais recentes primeiro
+        ordering = ["-created_at", "title"]
 
     def clean(self):
-
         if self.decisive_question and LabelingElement.objects.get(pk=self.decisive_question).question_type != LabelingElement.QuestionType.MULTIPLE_CHOICE:
             raise ValidationError(
                 " Só questões de múltipla escolha podem ser decisivas.")
+        # As cotas por grupo podem somar menos que users_per_item: o restante vira
+        # o slot residual "any" (preenchível por qualquer respondente). Só recusamos
+        # quando a soma ultrapassa o limite — alinhado com LabelingSerializer.
+        total = sum((self.items_per_group or {}).values())
+        if total > self.users_per_item:
+            raise ValidationError(
+                "A soma dos itens por grupo não pode ser maior que o número de usuários por item."
+            )
+
         super().clean()
         
+
+    @property
+    def has_group_quotas(self):
+        """
+        True quando há cotas por grupo *nomeado*, além do slot residual 'any'.
+
+        items_per_group sempre carrega 'any' (preenchido pelo serializer), então
+        a presença de 'any' sozinho não caracteriza distribuição por grupo. Só
+        quando há outras chaves a distribuição precisa respeitar grupos.
+        """
+        return any(name != "any" for name in (self.items_per_group or {}))
 
     @property
     def anonymous_url(self):
@@ -77,19 +92,6 @@ class Labeling(models.Model):
 
     def __str__(self):
         return f"Rotulação:{self.title} Status:({self.get_status_display()})"
-
-class LabelingGroupQuota(models.Model):
-    labeling = models.ForeignKey(
-        Labeling,
-        related_name="role_quotas",
-        on_delete=models.CASCADE,
-    )
-    group = models.ForeignKey(UserGroup,on_delete=models.DO_NOTHING)
-    required_answers_per_item = models.PositiveSmallIntegerField()
-
-    class Meta:
-        unique_together = ("labeling", "group")
-
 
 class LabelingSection(models.Model):
     class FormType(models.TextChoices):

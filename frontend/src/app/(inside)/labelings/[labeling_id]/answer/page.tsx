@@ -223,9 +223,18 @@ export default function LabelingAnswerPage() {
       let message = t('answer.sendError');
 
       if (axios.isAxiosError(error)) {
-        const detail = (error.response?.data as { detail?: string } | undefined)?.detail;
+        const data = error.response?.data as { detail?: string; code?: string } | undefined;
 
-        if (detail) message = detail;
+        // The item's remaining slots were taken by other groups between
+        // distribution and submit; the backend already released the
+        // reservation, so just move on to a new item.
+        if (data?.code === 'NO_GROUP_SLOT') {
+          toast.error(t('answer.slotTaken'));
+          await loadItem();
+          return;
+        }
+
+        if (data?.detail) message = data.detail;
         else if (error.message) message = error.message;
       } else if (error instanceof Error) {
         message = error.message;

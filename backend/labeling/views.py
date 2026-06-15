@@ -5,6 +5,7 @@ from project.models import ProjectMembership
 from user.permissions import IsAdminAccount
 from .permissions import CanEditLabelingsInProjectPermission
 from item.models import Item
+from user.models import UserGroup
 from .serializers import LabelingElementSerializer
 
 from django.shortcuts import render, get_object_or_404
@@ -29,8 +30,6 @@ from collections import defaultdict
 
 LLM_TIEBREAK_USERNAME = "llm_tiebreak_bot"
 LLM_TIEBREAK_EMAIL = "llm_tiebreak_bot@annotaise.local"
-TEST_SEED_USERNAME = "test_seed_bot"
-TEST_SEED_EMAIL = "test_seed_bot@annotaise.local"
 
 class LabelingViewSet(viewsets.ModelViewSet):
     serializer_class = LabelingSerializer
@@ -43,7 +42,7 @@ class LabelingViewSet(viewsets.ModelViewSet):
         else: return LabelingSerializer
     
     def get_permissions(self):
-        if self.action in ['create' ,'list_labeling_memberships', 'test_labeling']:
+        if self.action in ['create' ,'list_labeling_memberships']:
             self.permission_classes = [IsAdminAccount]
         elif self.action in ['update','partial_update', 'destroy']:
             self.permission_classes = [IsAdminAccount, CanEditLabelingsInProjectPermission]
@@ -143,6 +142,28 @@ class LabelingViewSet(viewsets.ModelViewSet):
             return Response('Erro ao carregar membros da rotulação',ser.errors, status=400)
 
 
+    def _user_can_answer_labeling(self, labeling, user, user_group_names):
+        """
+        True se ainda há ao menos um item pendente desta rotulação onde o
+        usuário consegue preencher um grupo em aberto.
+
+        Usa Item.remaining_groups_for (uma única query agregada para todos os
+        itens) + Item._slot_open — a mesma regra da distribuição, mantendo
+        dashboard e next-item em acordo.
+        """
+        items = list(
+            Item.objects
+            .filter(labeling=labeling, status__in=["pending", "in_progress"])
+            .exclude(answers__answered_by=user)
+        )
+        if not items:
+            return False
+        remaining_by_item = Item.remaining_groups_for(labeling, items)
+        return any(
+            Item._slot_open(remaining, user_group_names)
+            for remaining in remaining_by_item.values()
+        )
+
     @action(methods=['get'], detail=False, url_path='dashboard')
     def dashboard(self, request):
         '''esse é o dashboard normal, que mostra os labelings dos projetos que o usuario participa em respostas. tirei os labelings que ja terminaram
@@ -184,7 +205,21 @@ class LabelingViewSet(viewsets.ModelViewSet):
                 labeling_id__in=labeling_ids,
             ).values_list("labeling_id", flat=True)
         )
+        # Grupos do usuário, pré-computados uma vez para avaliar elegibilidade
+        # por grupo sem uma consulta por item.
+        user_group_names = set(
+            UserGroup.objects
+            .filter(memberships__user=request.user)
+            .values_list("name", flat=True)
+        )
         for element in qs:
+            # Em rotulações com cotas por grupo, só exibe se o usuário ainda
+            # consegue preencher algum grupo em aberto em algum item — mesma
+            # regra usada na distribuição (remaining_groups_for / _slot_open).
+            if element.has_group_quotas and not self._user_can_answer_labeling(
+                element, request.user, user_group_names
+            ):
+                continue
             background_answered = (
                 not element.has_background_form
                 or element.id in background_answered_ids
@@ -217,327 +252,6 @@ class LabelingViewSet(viewsets.ModelViewSet):
             raise PermissionDenied(detail=perm.message)
         serializer.save(created_by=user)
 
-    @action(methods=['post'], detail=False, url_path='test-labeling')
-    def test_labeling(self, request):
-        """Cria uma rotulação de teste pronta para uso: projeto + labeling + form +
-        itens + 1 resposta pré-existente por item (de um bot), com decisão por LLM
-        e 2 usuários por item. Útil para testar discordância e tiebreak."""
-        user = request.user
-        User = get_user_model()
-
-        now = timezone.now()
-        suffix = now.strftime('%Y-%m-%d %H:%M:%S')
-
-        with transaction.atomic():
-            test_bot = (
-                User.objects.filter(username=TEST_SEED_USERNAME).first()
-                or User.objects.filter(email__iexact=TEST_SEED_EMAIL).first()
-            )
-            if test_bot is None:
-                test_bot = User.objects.create(
-                    username=TEST_SEED_USERNAME,
-                    email=TEST_SEED_EMAIL,
-                    first_name='Test',
-                    last_name='Bot',
-                    account_type='standard',
-                    is_active=True,
-                    onboarding_status='active',
-                )
-                test_bot.set_unusable_password()
-                test_bot.save(update_fields=['password'])
-
-            project = Project.objects.create(
-                name=f"TEST PROJECT ({suffix})",
-                description="Projeto de teste gerado automaticamente",
-                status='active',
-                created_by=user,
-            )
-            ProjectMembership.objects.create(
-                project=project,
-                user=user,
-                role=ProjectMembership.RoleChoices.OWNER,
-            )
-
-            labeling = Labeling.objects.create(
-                project=project,
-                created_by=user,
-                title=f"TEST LABELING ({suffix})",
-                description='',
-                start_date=now.date(),
-                final_date=(now + timedelta(days=30)).date(),
-                decision=True,
-                decision_mode=Labeling.DecisionMode.LLM,
-                distribution_strategy=Labeling.DistributionStrategy.AUTO,
-                users_per_item=2,
-                block_section_back=False,
-                has_background_form=False,
-                guide=(
-                    'Análise de code smells. Para cada trecho, identifique o code '
-                    'smell predominante, avalie a severidade e proponha refatorações.'
-                ),
-                column_names=['code', 'language'],
-                status=Labeling.Status.ACTIVE,
-            )
-
-            LabelingMembership.objects.create(
-                labeling=labeling,
-                user=user,
-                role=LabelingMembership.Role.OWNER,
-            )
-            LabelingMembership.objects.create(
-                labeling=labeling,
-                user=test_bot,
-                role=LabelingMembership.Role.ANNOTATOR,
-            )
-
-            section = LabelingSection.objects.create(
-                labeling=labeling,
-                form_type=LabelingSection.FormType.MAIN,
-                title='Análise de Code Smell',
-                order=1,
-            )
-            LabelingElement.objects.create(
-                labeling_section=section,
-                order=1,
-                text='Trecho de código',
-                required=False,
-                question_type=LabelingElement.QuestionType.CONTEXT,
-                column_name='code',
-                context_type=LabelingElement.ContextType.CODE,
-            )
-            LabelingElement.objects.create(
-                labeling_section=section,
-                order=2,
-                text='Linguagem',
-                required=False,
-                question_type=LabelingElement.QuestionType.CONTEXT,
-                column_name='language',
-                context_type=LabelingElement.ContextType.TEXT,
-            )
-
-            SMELL_OPTIONS = [
-                'Magic Numbers',
-                'Long Method',
-                'Duplicated Code',
-                'Dead Code',
-                'Deep Nesting',
-                'Poor Naming',
-                'God Function',
-                'Sem code smell',
-            ]
-            question = LabelingElement.objects.create(
-                labeling_section=section,
-                order=3,
-                text='Qual é o principal code smell presente?',
-                required=True,
-                question_type=LabelingElement.QuestionType.MULTIPLE_CHOICE,
-                allow_multiple=False,
-            )
-            for idx, opt in enumerate(SMELL_OPTIONS, start=1):
-                MultipleChoiceItem.objects.create(
-                    labeling_element=question, text=opt, order=idx,
-                )
-
-            severity = LabelingElement.objects.create(
-                labeling_section=section,
-                order=4,
-                text='Severidade do code smell',
-                required=True,
-                question_type=LabelingElement.QuestionType.RANGE,
-                allow_multiple=False,
-            )
-            QuestionRange.objects.create(
-                labeling_element=severity,
-                start=1,
-                end=5,
-                start_label='Baixa',
-                end_label='Alta',
-            )
-
-            REFACTOR_OPTIONS = [
-                'Extract Method',
-                'Rename Variable',
-                'Replace Magic Number with Constant',
-                'Remove Dead Code',
-                'Decompose Conditional',
-                'Split Function',
-                'Nenhuma',
-            ]
-            refactor = LabelingElement.objects.create(
-                labeling_section=section,
-                order=5,
-                text='Refatorações aplicáveis',
-                required=False,
-                question_type=LabelingElement.QuestionType.MULTIPLE_CHOICE,
-                allow_multiple=True,
-            )
-            for idx, opt in enumerate(REFACTOR_OPTIONS, start=1):
-                MultipleChoiceItem.objects.create(
-                    labeling_element=refactor, text=opt, order=idx,
-                )
-
-            justification = LabelingElement.objects.create(
-                labeling_section=section,
-                order=6,
-                text='Justifique a classificação em uma frase',
-                required=False,
-                question_type=LabelingElement.QuestionType.TEXT,
-                allow_multiple=False,
-            )
-
-            labeling.decisive_question = question
-            labeling.save(update_fields=['decisive_question'])
-
-            sample_items = [
-                {
-                    'code': (
-                        'def is_old_session(seconds):\n'
-                        '    return seconds * 86400 > 604800'
-                    ),
-                    'language': 'python',
-                    'smell': 'Magic Numbers',
-                    'severity': 4,
-                    'refactors': ['Replace Magic Number with Constant'],
-                    'justification': 'Constantes numéricas sem nome dificultam a leitura.',
-                },
-                {
-                    'code': (
-                        'def process_order(items, user, addr, payment, discount, log_path):\n'
-                        '    total = 0\n'
-                        '    for it in items:\n'
-                        '        total += it.price * it.qty\n'
-                        '    if discount: total *= 0.9\n'
-                        '    if user.is_vip: total *= 0.95\n'
-                        '    open(log_path, "a").write(f"{user.id}:{total}\\n")\n'
-                        '    send_email(user.email, total)\n'
-                        '    charge(payment, total)\n'
-                        '    return total'
-                    ),
-                    'language': 'python',
-                    'smell': 'Long Method',
-                    'severity': 5,
-                    'refactors': ['Extract Method', 'Split Function'],
-                    'justification': 'A função acumula múltiplas responsabilidades.',
-                },
-                {
-                    'code': (
-                        'def area_circle(r):\n'
-                        '    return 3.14159 * r * r\n'
-                        '\n'
-                        'def area_disc(radius):\n'
-                        '    return 3.14159 * radius * radius'
-                    ),
-                    'language': 'python',
-                    'smell': 'Duplicated Code',
-                    'severity': 3,
-                    'refactors': ['Extract Method'],
-                    'justification': 'A mesma fórmula está replicada em duas funções.',
-                },
-                {
-                    'code': (
-                        'def get_role(user):\n'
-                        '    if user.is_admin:\n'
-                        '        return "admin"\n'
-                        '    return "user"\n'
-                        '    return "guest"'
-                    ),
-                    'language': 'python',
-                    'smell': 'Dead Code',
-                    'severity': 4,
-                    'refactors': ['Remove Dead Code'],
-                    'justification': 'O último return nunca é alcançado.',
-                },
-                {
-                    'code': (
-                        'def categorize(x):\n'
-                        '    if x > 0:\n'
-                        '        if x < 100:\n'
-                        '            if x % 2 == 0:\n'
-                        '                if x > 10:\n'
-                        '                    return "par_grande"\n'
-                        '                else:\n'
-                        '                    return "par_pequeno"\n'
-                        '            else:\n'
-                        '                return "impar"\n'
-                        '    return "outro"'
-                    ),
-                    'language': 'python',
-                    'smell': 'Deep Nesting',
-                    'severity': 4,
-                    'refactors': ['Decompose Conditional'],
-                    'justification': 'Quatro níveis de aninhamento prejudicam a clareza.',
-                },
-                {
-                    'code': (
-                        'def f(a, b, c):\n'
-                        '    x = a + b\n'
-                        '    y = x * c\n'
-                        '    return y'
-                    ),
-                    'language': 'python',
-                    'smell': 'Poor Naming',
-                    'severity': 3,
-                    'refactors': ['Rename Variable'],
-                    'justification': 'Nomes não comunicam intenção.',
-                },
-                {
-                    'code': (
-                        'def do_all(data):\n'
-                        '    parsed = json.loads(data)\n'
-                        '    save_to_db(parsed)\n'
-                        '    send_notification(parsed)\n'
-                        '    update_cache(parsed)\n'
-                        '    log_activity(parsed)\n'
-                        '    return parsed'
-                    ),
-                    'language': 'python',
-                    'smell': 'God Function',
-                    'severity': 4,
-                    'refactors': ['Split Function', 'Extract Method'],
-                    'justification': 'A função concentra responsabilidades distintas.',
-                },
-            ]
-
-            items = [
-                Item(
-                    labeling=labeling,
-                    row_index=idx,
-                    payload={'code': info['code'], 'language': info['language']},
-                    status='pending',
-                )
-                for idx, info in enumerate(sample_items)
-            ]
-            Item.objects.bulk_create(items)
-
-            created_items = list(
-                Item.objects.filter(labeling=labeling).order_by('row_index')
-            )
-            for item in created_items:
-                info = sample_items[item.row_index]
-                answer_payload = {
-                    str(question.id): info['smell'],
-                    str(severity.id): info['severity'],
-                    str(refactor.id): info['refactors'],
-                    str(justification.id): info['justification'],
-                }
-                Answer.objects.create(
-                    labeling=labeling,
-                    item=item,
-                    answered_by=test_bot,
-                    answer_payload=answer_payload,
-                )
-                item.decision_payload = {info['smell']: 1}
-                item.save(update_fields=['decision_payload'])
-
-        return Response(
-            {
-                'id': labeling.id,
-                'title': labeling.title,
-                'project_id': project.id,
-            },
-            status=status.HTTP_201_CREATED,
-        )
-    
     @action(methods=["get"], detail=True, url_path="elements")
     def elements(self, request, pk=None):
 

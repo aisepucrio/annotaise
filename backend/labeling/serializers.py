@@ -1,7 +1,8 @@
-import uuid
-
-from rest_framework import serializers
 from .models import Labeling, LabelingSection, LabelingElement, MultipleChoiceItem, QuestionRange, LabelingMembership
+
+
+import uuid
+from rest_framework import serializers
 from django.db import transaction
 from django.utils import timezone
 
@@ -14,18 +15,29 @@ class LabelingSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Labeling
-        fields = ['id', 'project', 'title', 'created_at','status','column_names','start_date','final_date','users_per_item','block_section_back','has_background_form','guide','decision','decision_mode','decisive_question','distribution_strategy','form_mode','anonymous_token','anonymous_url']
+        fields = ['id', 'project', 'title', 'created_at','status','column_names','start_date','final_date','users_per_item','block_section_back','has_background_form','guide','decision','decision_mode','decisive_question','distribution_strategy','form_mode','anonymous_token','anonymous_url','items_per_group']
         read_only_fields = ['id', 'created_at','created_by','column_names','status','anonymous_token','anonymous_url']
 
     def create(self, validated_data):
         if not validated_data.get("start_date"):
             validated_data["start_date"] = timezone.now().date()
+
         # Anonymous mode needs a stable token so a shareable URL can be generated,
         # and always runs with a single answer per item (the public submit endpoint
         # finalizes an item after one answer), so we force users_per_item = 1.
+        # This must happen before normalizing the quotas so the residual "any" slot
+        # is computed against the forced users_per_item.
         if validated_data.get("distribution_strategy") == Labeling.DistributionStrategy.ANONYMOUS_MODE:
             validated_data["anonymous_token"] = uuid.uuid4()
             validated_data["users_per_item"] = 1
+
+        # Group quotas are defined at creation and are not editable afterwards.
+        # Normalize them the same way update does: validate the total against
+        # users_per_item and fill the residual "any" slot.
+        validated_data["items_per_group"] = self.normalize_items_per_group(
+            validated_data.get("users_per_item", 1),
+            validated_data.get("items_per_group"),
+        )
         labeling = super().create(validated_data)
         if labeling.form_mode:
             from item.models import Item
@@ -37,12 +49,39 @@ class LabelingSerializer(serializers.ModelSerializer):
             )
         return labeling
 
-    def update (self, instance, validated_data):
-        # Lazily mint a token the first time a labeling is moved into anonymous mode.
-        strategy = validated_data.get("distribution_strategy", instance.distribution_strategy)
-        if strategy == Labeling.DistributionStrategy.ANONYMOUS_MODE and not instance.anonymous_token:
-            validated_data["anonymous_token"] = uuid.uuid4()
+    def update(self, instance, validated_data):
+        # strategy = validated_data.get("distribution_strategy", instance.distribution_strategy)
+        # if strategy == Labeling.DistributionStrategy.ANONYMOUS_MODE and not instance.anonymous_token:
+        #     validated_data["anonymous_token"] = uuid.uuid4()
+        # acho que não precisa disso, porque a estratégia só pode ser definida na criação, e se for anonymous mode já gera o token lá. Deixar como está por enquanto, e se precisar a gente reavalia.
+
+        users_per_item = validated_data.get("users_per_item", instance.users_per_item)
+        items_per_group = validated_data.get("items_per_group", instance.items_per_group)
+        validated_data["items_per_group"] = self.normalize_items_per_group(users_per_item, items_per_group)
         return super().update(instance, validated_data)
+
+    @staticmethod
+    def normalize_items_per_group(users_per_item, items_per_group):
+        '''valida se a soma dos items por grupo é igual ao número de usuários por item.
+        caso seja menor, preenche o resto com qualquer grupo. caso seja maior, retorna 400'''
+        items_per_group = dict(items_per_group or {})
+
+        # "any" é o slot residual e é sempre recalculado a partir das cotas nomeadas.
+        # Removê-lo antes de somar evita contá-lo em dobro num round-trip (GET -> PATCH),
+        # o que faria o total ficar abaixo de users_per_item.
+        items_per_group.pop("any", None)
+
+        if not items_per_group:
+            return {"any": users_per_item}
+
+        total = sum(items_per_group.values())
+        if total > users_per_item:
+            raise serializers.ValidationError(
+                "A soma dos itens por grupo não pode ser maior que o número de usuários por item."
+            )
+        if total < users_per_item:
+            items_per_group["any"] = users_per_item - total
+        return items_per_group
       
 class MultipleChoiceItemSerializer(serializers.ModelSerializer):
     follow_up_question = serializers.SerializerMethodField()

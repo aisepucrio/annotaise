@@ -40,12 +40,14 @@ export default function Checkbox({
     <label
       htmlFor={id}
       className={cn(
-        'inline-flex items-center justify-center',
+        'relative inline-flex items-center justify-center',
         disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer',
         className
       )}
       style={checkboxStyle}
     >
+      {/* position: absolute relative to this label keeps the input at the visual
+          checkbox position, preventing unexpected scrollIntoView on focus. */}
       <input
         {...inputProps}
         id={id}
@@ -53,7 +55,7 @@ export default function Checkbox({
         disabled={disabled}
         checked={checked}
         onChange={(event) => onChange(event.target.checked)}
-        className="peer sr-only"
+        className="peer absolute inset-0 w-full h-full opacity-0"
       />
 
       <span

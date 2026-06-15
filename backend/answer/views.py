@@ -1,5 +1,6 @@
 from .models import Answer, BackgroundAnswer
 from item.models import ItemMembership, Item
+from user.models import UserGroup
 from .serializers import (
     AnswerSerializer,
     AnswerDashboardSerializer,
@@ -205,6 +206,29 @@ class AnswerViewset(viewsets.ModelViewSet):
                 .get(id=item_id)
             )
             labeling = item.labeling
+
+            # Cotas por grupo são checadas na distribuição, mas reservas não
+            # consomem slots: entre a reserva e o envio, outras respostas podem
+            # ter preenchido os slots que este usuário poderia ocupar. Recheca
+            # sob o lock do item (que serializa respostas concorrentes) e, se
+            # não sobrou slot compatível, libera a reserva e devolve um código
+            # para o frontend buscar outro item.
+            if labeling.has_group_quotas:
+                user_group_names = set(
+                    UserGroup.objects
+                    .filter(memberships__user=user)
+                    .values_list('name', flat=True)
+                )
+                if not Item._slot_open(item.remaining_groups(), user_group_names):
+                    membership.delete()
+                    return Response(
+                        {
+                            'detail': 'Os slots restantes deste item são reservados para outros grupos.',
+                            'code': 'NO_GROUP_SLOT',
+                        },
+                        status=409,
+                    )
+
             decision_warning = None
             self.perform_create(serializer)
 

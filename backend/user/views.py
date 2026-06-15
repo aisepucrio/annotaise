@@ -2,6 +2,7 @@ from item.models import ItemMembership
 from annotaise.settings import FRONTEND_URL
 from.utils import send_invitation_email
 
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
@@ -18,13 +19,15 @@ from django.db.models import Count, OuterRef, Subquery, IntegerField
 from django.db import connection, reset_queries
 from django.db import transaction
 
-from .models import Invitation
+from .models import Invitation, UserGroup, UserGroupMembership
 from .permissions import IsAdminAccount, IsMasterAdminAccount
 from .serializers import (
     AdminUserReadSerializer,
     AdminUserWriteSerializer,
     CustomUserSerializer,
     InvitationSerializer,
+    UserGroupMembershipSerializer,
+    UserGroupSerializer,
 )
 from project.models import ProjectMembership
 from labeling.models import Labeling, LabelingMembership
@@ -34,7 +37,6 @@ import uuid
 LLM_TIEBREAK_USERNAME = "llm_tiebreak_bot"
 LLM_TIEBREAK_EMAIL = "llm_tiebreak_bot@annotaise.local"
 
-#TODO falta um endpoint de alterar a senha... caso não tenha questoes de segurança, tem como fazer por aqui, mas nao é o ideal
 class CurrentAPIView(RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = CustomUserSerializer
@@ -388,4 +390,13 @@ class InvitationViewSet(viewsets.ModelViewSet):
 class UserGroupViewset(viewsets.ModelViewSet):
     http_method_names = ['get','delete','post','patch']
     permission_classes = [IsAdminAccount]
-    #TODO talvez seja valido depois colocar uma permissão aqui pra não permitir deletar/ editar grupo dos outros
+    serializer_class = UserGroupSerializer
+    queryset = UserGroup.objects.all().order_by("name")
+
+class UserGroupMembershipViewset(viewsets.ModelViewSet):
+    http_method_names = ['get','delete','post','patch']
+    permission_classes = [IsAdminAccount]
+    serializer_class = UserGroupMembershipSerializer
+    queryset = UserGroupMembership.objects.all().order_by("joined_at")
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["user", "group"]

@@ -16,6 +16,9 @@ export type Labeling = {
   start_date: string;
   final_date: string;
   users_per_item: number;
+  // Maps a UserGroup name to how many labels per item must come from that group.
+  // The reserved key "any" holds the residual slot fillable by any annotator.
+  items_per_group?: Record<string, number>;
   column_names: string[];
   created_at: string;
   created_by: number;
@@ -207,6 +210,8 @@ export type AnswerResponse = AnswerPayload & {
   answered_by_email?: string;
   answered_by_first_name?: string;
   answered_by_last_name?: string;
+  responded_as?: number | null;
+  responded_as_name?: string | null;
   created_at: string;
   item_detail?: ItemStructure;
   decision_warning?: string;

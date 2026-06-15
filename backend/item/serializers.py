@@ -33,7 +33,5 @@ class NextItemResponseSerializer(serializers.Serializer):
     guide = serializers.CharField(source='labeling.guide', read_only=True)
 
     def get_sections(self, item):
-        sections = item.labeling.sections.filter(
-            form_type=LabelingSection.FormType.MAIN
-        )
+        sections = item.labeling.sections.filter(form_type=LabelingSection.FormType.MAIN)
         return LabelingSectionSerializer(sections, many=True).data

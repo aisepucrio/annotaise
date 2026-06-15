@@ -2,11 +2,11 @@
 
 import { Trash2, GripVertical, ArrowDown, ArrowUp, HelpCircle, Info, PlusSquare } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { DndContext, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import Input from '@/components/form/Input';
-import ConfirmModal from '@/components/ConfirmModal';
 import type { TranslateFn } from '@/i18n/types';
 import { useTranslations } from '@/i18n/use-translations';
 import type { AdminFormBuilderProps, AdminSectionWrapperProps, LabelingStructureElement, LabelingStructureSection } from '../../types';
@@ -30,6 +30,66 @@ export function AdminFormBuilder({ sections, columns = [], allowContext = true, 
   const { visiblePointId, updateVisiblePoint, handleMouseEnter, handleMouseLeave } = useVisibleInsertionPoint();
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const pendingScrollToIdRef = useRef<string | null>(null);
+  // Holds the structure snapshot from right before the last removal, so it can be restored via the undo toast or Ctrl+Z.
+  const pendingDeletionRef = useRef<{ sections: LabelingStructureSection[]; toastId: string | number } | null>(null);
+
+  const restorePendingDeletion = useCallback(() => {
+    const pending = pendingDeletionRef.current;
+    if (!pending) return;
+
+    pendingDeletionRef.current = null;
+    onChange(pending.sections);
+  }, [onChange]);
+
+  const removeWithUndo = useCallback(
+    (nextSections: LabelingStructureSection[], message: string) => {
+      const previousSections = sections;
+
+      if (pendingDeletionRef.current) {
+        toast.dismiss(pendingDeletionRef.current.toastId);
+      }
+
+      onChange(nextSections);
+
+      const toastId = toast(message, {
+        action: {
+          label: t('common.undo'),
+          onClick: restorePendingDeletion,
+        },
+        onDismiss: () => {
+          if (pendingDeletionRef.current?.toastId === toastId) {
+            pendingDeletionRef.current = null;
+          }
+        },
+        onAutoClose: () => {
+          if (pendingDeletionRef.current?.toastId === toastId) {
+            pendingDeletionRef.current = null;
+          }
+        },
+      });
+
+      pendingDeletionRef.current = { sections: previousSections, toastId };
+    },
+    [onChange, sections, t, restorePendingDeletion]
+  );
+
+  useEffect(() => {
+    // Ctrl+Z / Cmd+Z restores the section/context/question removed by the most recent delete action.
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!pendingDeletionRef.current) return;
+
+      const isUndoShortcut = (event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === 'z';
+      if (!isUndoShortcut) return;
+
+      event.preventDefault();
+      const toastId = pendingDeletionRef.current.toastId;
+      restorePendingDeletion();
+      toast.dismiss(toastId);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [restorePendingDeletion]);
 
   useEffect(() => {
     // Recompute which insertion point should be visible when structure changes.
@@ -115,7 +175,14 @@ export function AdminFormBuilder({ sections, columns = [], allowContext = true, 
                   sectionRefs.current[sectionId] = node;
                 }}
                 onUpdateSection={(nextSection) => onChange(updateAdminSection(sections, nextSection))}
-                onRemoveSection={() => onChange(removeAdminSection(sections, section.id))}
+                onRemoveSection={() =>
+                  removeWithUndo(removeAdminSection(sections, section.id), t('labelings.create.section.deletedToast'))
+                }
+                onRemoveElement={(elementId, kind) => {
+                  const message =
+                    kind === 'context' ? t('labelings.create.context.deletedToast') : t('labelings.create.question.deletedToast');
+                  removeWithUndo(removeAdminElement(sections, section.id, elementId), message);
+                }}
                 onAddContext={(insertAfterId) => onChange(addAdminElement(sections, section.id, 'context', insertAfterId, t))}
                 onAddQuestion={(insertAfterId) => onChange(addAdminElement(sections, section.id, 'question', insertAfterId, t))}
                 onAddSection={(insertAfterId) =>
@@ -272,6 +339,28 @@ function removeAdminSection(sections: LabelingStructureSection[], sectionId: num
   return reindexSections(sections.filter((section) => section.id !== sectionId));
 }
 
+function removeAdminElement(
+  sections: LabelingStructureSection[],
+  sectionId: number | undefined,
+  elementId: number | undefined
+): LabelingStructureSection[] {
+  // Element removal operates on the full sections list so the builder can snapshot it for undo.
+  return reindexSections(
+    sections.map((section) => {
+      if (section.id !== sectionId) {
+        return section;
+      }
+
+      return {
+        ...section,
+        elements: getOrderedElements(section.elements)
+          .filter((element) => element.id !== elementId)
+          .map((element, elementIndex) => ({ ...element, order: elementIndex })),
+      };
+    })
+  );
+}
+
 function updateAdminSection(
   sections: LabelingStructureSection[],
   updatedSection: LabelingStructureSection
@@ -316,6 +405,7 @@ export default function SectionWrapper({
   visibleInsertionPointId,
   onUpdateSection,
   onRemoveSection,
+  onRemoveElement,
   onAddContext,
   onAddQuestion,
   onAddSection,
@@ -328,10 +418,6 @@ export default function SectionWrapper({
   sectionLabel,
 }: AdminSectionWrapperProps) {
   const { t } = useTranslations();
-  // Tracks which cell (section/question/context) is awaiting delete confirmation, if any.
-  const [pendingRemoval, setPendingRemoval] = useState<
-    { kind: 'section' } | { kind: 'context' | 'question'; elementId: number | undefined } | null
-  >(null);
   // Preserve the persisted order before deriving the visible/sortable subset.
   const orderedElements = useMemo(
     () => [...(section.elements ?? [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
@@ -363,46 +449,6 @@ export default function SectionWrapper({
     updateSection({
       elements: orderedElements.map((element) => (element.id === elementId ? { ...element, ...patch } : element)),
     });
-  };
-
-  const removeElement = (elementId: number | undefined) => {
-    // Removing an element compacts element order inside this section.
-    updateSection({
-      elements: orderedElements
-        .filter((element) => element.id !== elementId)
-        .map((element, elementIndex) => ({
-          ...element,
-          order: elementIndex,
-        })),
-    });
-  };
-
-  // Deleting a section/question/context is destructive and irreversible from the user's
-  // point of view, so every removal goes through a confirmation step before it happens.
-  const removalCopyByKind: Record<'section' | 'context' | 'question', { title: string; description: string }> = {
-    section: {
-      title: t('labelings.create.section.deleteConfirmTitle'),
-      description: t('labelings.create.section.deleteConfirmDescription'),
-    },
-    context: {
-      title: t('labelings.create.context.deleteConfirmTitle'),
-      description: t('labelings.create.context.deleteConfirmDescription'),
-    },
-    question: {
-      title: t('labelings.create.question.deleteConfirmTitle'),
-      description: t('labelings.create.question.deleteConfirmDescription'),
-    },
-  };
-  const pendingRemovalCopy = pendingRemoval ? removalCopyByKind[pendingRemoval.kind] : null;
-
-  const confirmPendingRemoval = () => {
-    if (!pendingRemoval) return;
-
-    if (pendingRemoval.kind === 'section') {
-      onRemoveSection?.();
-    } else {
-      removeElement(pendingRemoval.elementId);
-    }
   };
 
   const handleElementDragEnd = (event: DragEndEvent) => {
@@ -479,7 +525,7 @@ export default function SectionWrapper({
             {onRemoveSection ? (
               <button
                 type="button"
-                onClick={() => setPendingRemoval({ kind: 'section' })}
+                onClick={onRemoveSection}
                 title={t('labelings.create.section.delete')}
                 aria-label={t('labelings.create.section.delete')}
                 className="cursor-pointer text-gray-400 hover:text-red-500"
@@ -534,14 +580,14 @@ export default function SectionWrapper({
                             columns={columns}
                             t={t}
                             onUpdate={(patch) => updateElement(element.id, patch)}
-                            onRemove={() => setPendingRemoval({ kind: 'context', elementId: element.id })}
+                            onRemove={() => onRemoveElement?.(element.id, 'context')}
                           />
                         ) : (
                           <QuestionWrapper
                             element={element}
                             t={t}
                             onUpdate={(patch) => updateElement(element.id, patch)}
-                            onRemove={() => setPendingRemoval({ kind: 'question', elementId: element.id })}
+                            onRemove={() => onRemoveElement?.(element.id, 'question')}
                           />
                         )}
                       </SortableElement>
@@ -569,16 +615,6 @@ export default function SectionWrapper({
           </DndContext>
         </section>
       </div>
-
-      {pendingRemoval && pendingRemovalCopy ? (
-        <ConfirmModal
-          open
-          onClose={() => setPendingRemoval(null)}
-          onConfirm={confirmPendingRemoval}
-          title={pendingRemovalCopy.title}
-          description={pendingRemovalCopy.description}
-        />
-      ) : null}
     </div>
   );
 }
