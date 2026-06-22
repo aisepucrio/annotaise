@@ -1,6 +1,6 @@
 'use client';
 
-import { Trash2 } from 'lucide-react';
+import { Copy, Trash2 } from 'lucide-react';
 import GridItemCard from '@/components/grid/GridItemCard';
 import Input from '@/components/form/Input';
 import Select from '@/components/form/Select';
@@ -16,9 +16,10 @@ type AdminContextWrapperProps = {
   t?: TranslateFn;
   onUpdate: (patch: Partial<LabelingStructureElement>) => void;
   onRemove?: () => void;
+  onDuplicate?: () => void;
 };
 
-export default function ContextWrapper({ element, columns, t: tProp, onUpdate, onRemove }: AdminContextWrapperProps) {
+export default function ContextWrapper({ element, columns, t: tProp, onUpdate, onRemove, onDuplicate }: AdminContextWrapperProps) {
   const { t: defaultT } = useTranslations();
   const t = tProp ?? defaultT;
   const dataType = getContextDataType(element);
@@ -28,17 +29,30 @@ export default function ContextWrapper({ element, columns, t: tProp, onUpdate, o
       <div data-actions-anchor="true" data-section-element-id={element.id}>
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-blueberry-900">{t('labelings.create.context.title')}</h3>
-          {onRemove ? (
-            <button
-              type="button"
-              className="text-gray-400 hover:text-red-500"
-              aria-label={t('labelings.create.context.removeAria')}
-              title={t('labelings.create.context.removeAria')}
-              onClick={onRemove}
-            >
-              <Trash2 size={18} />
-            </button>
-          ) : null}
+          <div className="flex items-center gap-3">
+            {onDuplicate ? (
+              <button
+                type="button"
+                className="text-gray-400 hover:text-blueberry-700"
+                aria-label={t('labelings.create.context.duplicateAria')}
+                title={t('labelings.create.context.duplicateAria')}
+                onClick={onDuplicate}
+              >
+                <Copy size={16} />
+              </button>
+            ) : null}
+            {onRemove ? (
+              <button
+                type="button"
+                className="text-gray-400 hover:text-red-500"
+                aria-label={t('labelings.create.context.removeAria')}
+                title={t('labelings.create.context.removeAria')}
+                onClick={onRemove}
+              >
+                <Trash2 size={18} />
+              </button>
+            ) : null}
+          </div>
         </div>
 
         <Input

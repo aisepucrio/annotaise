@@ -1,6 +1,6 @@
 'use client';
 
-import { Trash2, GripVertical, ArrowDown, ArrowUp, HelpCircle, Info, PlusSquare } from 'lucide-react';
+import { Trash2, Copy, GripVertical, ArrowDown, ArrowUp, HelpCircle, Info, PlusSquare } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { DndContext, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
@@ -13,6 +13,8 @@ import type { AdminFormBuilderProps, AdminSectionWrapperProps, LabelingStructure
 import ContextWrapper from './ContextWrapper';
 import QuestionWrapper from './QuestionWrapper';
 import {
+  cloneAdminElement,
+  cloneAdminSection,
   createDefaultContextElement,
   createDefaultQuestionElement,
   createDefaultSection,
@@ -183,6 +185,8 @@ export function AdminFormBuilder({ sections, columns = [], allowContext = true, 
                     kind === 'context' ? t('labelings.create.context.deletedToast') : t('labelings.create.question.deletedToast');
                   removeWithUndo(removeAdminElement(sections, section.id, elementId), message);
                 }}
+                onDuplicateSection={() => onChange(duplicateAdminSection(sections, section.id))}
+                onDuplicateElement={(elementId) => onChange(duplicateAdminElement(sections, section.id, elementId))}
                 onAddContext={(insertAfterId) => onChange(addAdminElement(sections, section.id, 'context', insertAfterId, t))}
                 onAddQuestion={(insertAfterId) => onChange(addAdminElement(sections, section.id, 'question', insertAfterId, t))}
                 onAddSection={(insertAfterId) =>
@@ -361,6 +365,47 @@ function removeAdminElement(
   );
 }
 
+function duplicateAdminSection(
+  sections: LabelingStructureSection[],
+  sectionId: number | undefined
+): LabelingStructureSection[] {
+  // Inserts a deep copy of the section directly after the original.
+  const sectionIndex = sections.findIndex((section) => section.id === sectionId);
+  if (sectionIndex === -1) {
+    return sections;
+  }
+
+  return reindexSections(insertAtIndex(sections, cloneAdminSection(sections[sectionIndex]), sectionIndex + 1));
+}
+
+function duplicateAdminElement(
+  sections: LabelingStructureSection[],
+  sectionId: number | undefined,
+  elementId: number | undefined
+): LabelingStructureSection[] {
+  // Inserts a deep copy of the element directly after the original, inside the same section.
+  return reindexSections(
+    sections.map((section) => {
+      if (section.id !== sectionId) {
+        return section;
+      }
+
+      const orderedElements = getOrderedElements(section.elements);
+      const elementIndex = orderedElements.findIndex((element) => element.id === elementId);
+      if (elementIndex === -1) {
+        return section;
+      }
+
+      return {
+        ...section,
+        elements: insertAtIndex(orderedElements, cloneAdminElement(orderedElements[elementIndex]), elementIndex + 1).map(
+          (element, index) => ({ ...element, order: index })
+        ),
+      };
+    })
+  );
+}
+
 function updateAdminSection(
   sections: LabelingStructureSection[],
   updatedSection: LabelingStructureSection
@@ -406,6 +451,8 @@ export default function SectionWrapper({
   onUpdateSection,
   onRemoveSection,
   onRemoveElement,
+  onDuplicateSection,
+  onDuplicateElement,
   onAddContext,
   onAddQuestion,
   onAddSection,
@@ -522,17 +569,31 @@ export default function SectionWrapper({
               <span className="mt-8 rounded-t-md bg-blueberry-900 px-3 py-1 text-xs text-white shadow">{resolvedSectionLabel}</span>
             </div>
 
-            {onRemoveSection ? (
-              <button
-                type="button"
-                onClick={onRemoveSection}
-                title={t('labelings.create.section.delete')}
-                aria-label={t('labelings.create.section.delete')}
-                className="cursor-pointer text-gray-400 hover:text-red-500"
-              >
-                <Trash2 size={22} />
-              </button>
-            ) : null}
+            <div className="flex items-center gap-3">
+              {onDuplicateSection ? (
+                <button
+                  type="button"
+                  onClick={onDuplicateSection}
+                  title={t('labelings.create.section.duplicate')}
+                  aria-label={t('labelings.create.section.duplicate')}
+                  className="cursor-pointer text-gray-400 hover:text-blueberry-700"
+                >
+                  <Copy size={20} />
+                </button>
+              ) : null}
+
+              {onRemoveSection ? (
+                <button
+                  type="button"
+                  onClick={onRemoveSection}
+                  title={t('labelings.create.section.delete')}
+                  aria-label={t('labelings.create.section.delete')}
+                  className="cursor-pointer text-gray-400 hover:text-red-500"
+                >
+                  <Trash2 size={22} />
+                </button>
+              ) : null}
+            </div>
           </div>
 
           <div className="flex gap-5">
@@ -581,6 +642,7 @@ export default function SectionWrapper({
                             t={t}
                             onUpdate={(patch) => updateElement(element.id, patch)}
                             onRemove={() => onRemoveElement?.(element.id, 'context')}
+                            onDuplicate={onDuplicateElement ? () => onDuplicateElement(element.id, 'context') : undefined}
                           />
                         ) : (
                           <QuestionWrapper
@@ -588,6 +650,7 @@ export default function SectionWrapper({
                             t={t}
                             onUpdate={(patch) => updateElement(element.id, patch)}
                             onRemove={() => onRemoveElement?.(element.id, 'question')}
+                            onDuplicate={onDuplicateElement ? () => onDuplicateElement(element.id, 'question') : undefined}
                           />
                         )}
                       </SortableElement>

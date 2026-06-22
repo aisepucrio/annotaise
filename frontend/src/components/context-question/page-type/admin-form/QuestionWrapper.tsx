@@ -1,6 +1,6 @@
 'use client';
 
-import { Trash2 } from 'lucide-react';
+import { Copy, Trash2 } from 'lucide-react';
 import GridItemCard from '@/components/grid/GridItemCard';
 import Input from '@/components/form/Input';
 import Select from '@/components/form/Select';
@@ -17,9 +17,10 @@ type AdminQuestionWrapperProps = {
   t?: TranslateFn;
   onUpdate: (patch: Partial<LabelingStructureElement>) => void;
   onRemove?: () => void;
+  onDuplicate?: () => void;
 };
 
-export default function QuestionWrapper({ element, t: tProp, onUpdate, onRemove }: AdminQuestionWrapperProps) {
+export default function QuestionWrapper({ element, t: tProp, onUpdate, onRemove, onDuplicate }: AdminQuestionWrapperProps) {
   const { t: defaultT } = useTranslations();
   const t = tProp ?? defaultT;
   const dataType = getQuestionDataType(element);
@@ -50,6 +51,18 @@ export default function QuestionWrapper({ element, t: tProp, onUpdate, onRemove 
                 <div className="relative h-5 w-9 rounded-full bg-gray-300 transition-colors peer-checked:bg-blueberry-900 after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-transform after:content-[''] peer-checked:after:translate-x-4" />
               </label>
             </div>
+
+            {onDuplicate ? (
+              <button
+                type="button"
+                className="flex h-8 w-8 items-center justify-center text-gray-400 hover:text-blueberry-700"
+                aria-label={t('labelings.create.question.duplicateAria')}
+                title={t('labelings.create.question.duplicateAria')}
+                onClick={onDuplicate}
+              >
+                <Copy size={20} />
+              </button>
+            ) : null}
 
             {onRemove ? (
               <button

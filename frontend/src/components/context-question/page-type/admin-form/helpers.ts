@@ -1,6 +1,12 @@
 'use client';
 import type { TranslateFn } from '@/i18n/types';
-import type { ElementDTO, LabelingStructureElement, LabelingStructureSection, SectionDTO } from '@/modules/labelings/labelingsTypes';
+import type {
+  ElementDTO,
+  LabelingStructureElement,
+  LabelingStructureSection,
+  MultipleChoiceItemDTO,
+  SectionDTO,
+} from '@/modules/labelings/labelingsTypes';
 import { questionModules } from '../../question-modules';
 import { createTemporaryId, getQuestionDataType, questionDataTypeToDto } from '../../utils';
 import type { QuestionDataType } from '../../types';
@@ -68,6 +74,44 @@ export function createDefaultSection(t: TranslateFn, allowContext = true): Label
     title: '',
     order: 0,
     elements: allowContext ? [] : [createDefaultQuestionElement(t, 'text', 0)],
+  };
+}
+
+// Deep-clones a multiple choice option (and any nested follow-up question) with fresh client-side
+// ids, so a duplicated question persists as a brand-new record instead of stealing the original's ids.
+function duplicateChoice(item: MultipleChoiceItemDTO): MultipleChoiceItemDTO {
+  return {
+    ...item,
+    id: createTemporaryId(),
+    follow_up_question: item.follow_up_question ? duplicateElementDTO(item.follow_up_question) : item.follow_up_question,
+  };
+}
+
+function duplicateElementDTO(element: ElementDTO): ElementDTO {
+  return {
+    ...element,
+    id: createTemporaryId(),
+    multiple_choice_items: element.multiple_choice_items?.map(duplicateChoice),
+    question_range: element.question_range ? { ...element.question_range } : element.question_range,
+  };
+}
+
+// Deep-clones a section element, regenerating every id so the copy is saved as a new element.
+export function cloneAdminElement(element: LabelingStructureElement): LabelingStructureElement {
+  return {
+    ...element,
+    id: createTemporaryId(),
+    multiple_choice_items: (element.multiple_choice_items ?? []).map(duplicateChoice),
+    question_range: element.question_range ? { ...element.question_range } : element.question_range,
+  };
+}
+
+// Deep-clones a whole section, regenerating the section id and all of its element ids.
+export function cloneAdminSection(section: LabelingStructureSection): LabelingStructureSection {
+  return {
+    ...section,
+    id: createTemporaryId(),
+    elements: getOrderedElements(section.elements).map(cloneAdminElement),
   };
 }
 
