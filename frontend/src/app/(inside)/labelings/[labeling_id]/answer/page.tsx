@@ -127,6 +127,8 @@ export default function LabelingAnswerPage() {
 
         if (data?.code === 'NO_LABELINGS_TO_ANSWER') {
           message = data.detail ?? t('answer.noLabelings');
+        } else if (data?.code === 'ROTULACAO_FINALIZADA') {
+          message = t('answer.labelingFinished');
         } else if (data?.detail) {
           message = data.detail;
         } else if (error.message) {
@@ -321,7 +323,7 @@ export default function LabelingAnswerPage() {
 
   // The guide uses a resizable split layout only while visible.
   return (
-    <>
+    <div className="flex flex-col h-full overflow-hidden">
       <InnerPageHeader onBack={() => router.push('/labelings')}>
         {/* Prefer the loaded labeling title, then fall back to loading/default copy. */}
         <div>
@@ -334,7 +336,7 @@ export default function LabelingAnswerPage() {
         {HeaderBadges}
       </InnerPageHeader>
 
-      <div className={`mt-4 ${showGuide ? 'h-[calc(100vh-10vh)]' : 'min-h-[calc(100vh-10vh)]'}`}>
+      <div className="flex-1 min-h-0 mt-4">
         {showGuide ? (
           <ResizablePanelGroup direction="horizontal" className="h-full gap-3">
             <ResizablePanel defaultSize={70} minSize={30}>
@@ -352,6 +354,6 @@ export default function LabelingAnswerPage() {
           MainPanel
         )}
       </div>
-    </>
+    </div>
   );
 }
