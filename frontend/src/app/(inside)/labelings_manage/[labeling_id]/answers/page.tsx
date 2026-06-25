@@ -8,13 +8,17 @@ import SummaryTab from './summary/page';
 import AnswerTabHeader, { type AnswerView } from './AnswerTabHeader';
 import { useTranslations } from '@/i18n/use-translations';
 import {
+  useLabelingAnswerItemsQuery,
   useAvailableUsersQuery,
   useLabelingAnswersWithStructureQuery,
   useLabelingHeaderQuery,
+  useLabelingStructureQuery,
 } from '@/modules/labelings/manage/labelingManagerQueries';
 import { exportLabelingAnswersCsv } from '@/modules/labelings/labelingService';
+import { usePaginationState } from '@/modules/pagination';
 import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 import type { User } from '@/modules/user/userTypes';
+import type { AnswerResponse } from '@/modules/labelings/labelingsTypes';
 
 type AnswerTabProps = {
   labelingId: number;
@@ -28,10 +32,22 @@ export function AnswerTab({ labelingId, users, usersPerItem }: AnswerTabProps) {
   const [isInspectingItem, setIsInspectingItem] = useState(false);
   const [selectedResponder, setSelectedResponder] = useState<'all' | number>('all');
   const [exporting, setExporting] = useState(false);
+  const pagination = usePaginationState();
 
-  const { data, isLoading } = useLabelingAnswersWithStructureQuery(labelingId);
-  const answers = useMemo(() => data?.answers ?? [], [data?.answers]);
-  const structureSections = useMemo(() => data?.structure ?? [], [data?.structure]);
+  const answerItemsQuery = useLabelingAnswerItemsQuery({
+    labelingId,
+    ...pagination.query,
+    answeredBy: selectedResponder === 'all' ? undefined : selectedResponder,
+  });
+  const structureQuery = useLabelingStructureQuery(labelingId);
+  const summaryQuery = useLabelingAnswersWithStructureQuery(labelingId, activeView === 'summary');
+
+  const paginatedAnswers = useMemo(() => answerItemsQuery.data?.results ?? [], [answerItemsQuery.data?.results]);
+  const structureSections = useMemo(
+    () => summaryQuery.data?.structure ?? structureQuery.data?.structure ?? [],
+    [structureQuery.data?.structure, summaryQuery.data?.structure]
+  );
+  const summaryAnswers = useMemo(() => summaryQuery.data?.answers ?? [], [summaryQuery.data?.answers]);
 
   const usersById = useMemo(() => {
     const map = new Map<number, User>();
@@ -39,15 +55,29 @@ export function AnswerTab({ labelingId, users, usersPerItem }: AnswerTabProps) {
     return map;
   }, [users]);
 
+  const answerUsersById = useMemo(() => {
+    const map = new Map<number, AnswerResponse>();
+    paginatedAnswers.forEach((answer) => {
+      if (answer.answered_by != null && !map.has(answer.answered_by)) {
+        map.set(answer.answered_by, answer);
+      }
+    });
+    return map;
+  }, [paginatedAnswers]);
+
   const getUserLabel = useCallback(
     (userId: number): string => {
       const user = usersById.get(userId);
       if (!user) {
-        const answerByUser = answers.find((answer) => answer.answered_by === userId);
-        const answerUsername = (answerByUser?.answered_by_username ?? '').trim().toLowerCase();
-        const answerEmail = (answerByUser?.answered_by_email ?? '').trim().toLowerCase();
-        if (answerUsername === 'llm_tiebreak_bot' || answerEmail === 'llm_tiebreak_bot@annotaise.local') {
+        const answer = answerUsersById.get(userId);
+        const username = (answer?.answered_by_username ?? '').trim().toLowerCase();
+        const email = (answer?.answered_by_email ?? '').trim().toLowerCase();
+        if (username === 'llm_tiebreak_bot' || email === 'llm_tiebreak_bot@annotaise.local') {
           return 'LLM';
+        }
+        const fullName = `${answer?.answered_by_first_name ?? ''} ${answer?.answered_by_last_name ?? ''}`.trim();
+        if (fullName || answer?.answered_by_email || answer?.answered_by_username) {
+          return fullName || answer?.answered_by_email || answer?.answered_by_username || `User #${userId}`;
         }
         return t('labelings.create.answers.unknownUser');
       }
@@ -61,21 +91,21 @@ export function AnswerTab({ labelingId, users, usersPerItem }: AnswerTabProps) {
       const fullName = `${user.first_name ?? ''} ${user.last_name ?? ''}`.trim();
       return fullName || user.email || user.username || `User #${userId}`;
     },
-    [usersById, answers, t]
+    [usersById, answerUsersById, t]
   );
 
   const responderOptions = useMemo(() => {
-    const uniqueUsers = new Set(answers.map((a) => a.answered_by));
+    const uniqueUsers = new Set(paginatedAnswers.map((answer) => answer.answered_by).filter((id): id is number => id != null));
     return Array.from(uniqueUsers).map((userId) => ({
       id: userId,
       label: getUserLabel(userId),
     }));
-  }, [answers, getUserLabel]);
+  }, [paginatedAnswers, getUserLabel]);
 
-  const filteredAnswers = useMemo(() => {
-    if (selectedResponder === 'all') return answers;
-    return answers.filter((a) => a.answered_by === selectedResponder);
-  }, [answers, selectedResponder]);
+  const handleResponderChange = useCallback((value: 'all' | number) => {
+    setSelectedResponder(value);
+    pagination.resetPage();
+  }, [pagination]);
 
   useEffect(() => {
     if (activeView !== 'answers' && isInspectingItem) {
@@ -120,11 +150,14 @@ export function AnswerTab({ labelingId, users, usersPerItem }: AnswerTabProps) {
           <AnswersTab
             responderOptions={responderOptions}
             selectedResponder={selectedResponder}
-            onResponderChange={setSelectedResponder}
-            answersLoading={isLoading}
-            allAnswers={answers}
-            filteredAnswers={filteredAnswers}
-            totalAnswers={answers.length}
+            onResponderChange={handleResponderChange}
+            answersLoading={answerItemsQuery.isLoading}
+            answersFetching={answerItemsQuery.isFetching}
+            allAnswers={paginatedAnswers}
+            filteredAnswers={paginatedAnswers}
+            totalAnswers={answerItemsQuery.data?.count ?? paginatedAnswers.length}
+            pagination={answerItemsQuery.data}
+            paginationState={pagination}
             getUserLabel={getUserLabel}
             structureSections={structureSections}
             onInspectingChange={setIsInspectingItem}
@@ -133,8 +166,8 @@ export function AnswerTab({ labelingId, users, usersPerItem }: AnswerTabProps) {
           <SummaryTab
             labelingId={labelingId}
             usersPerItem={usersPerItem}
-            answers={answers}
-            answersLoading={isLoading}
+            answers={summaryAnswers}
+            answersLoading={summaryQuery.isLoading}
             structureSections={structureSections}
           />
         )}

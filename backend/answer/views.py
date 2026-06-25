@@ -8,7 +8,7 @@ from .serializers import (
 )
 from labeling.models import LabelingElement
 from labeling.models import Labeling, LabelingMembership, LabelingSection
-from annotaise.pagination import CustomPagination
+from annotaise.pagination import StandardPageNumberPagination
 
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
@@ -439,6 +439,7 @@ class AnonymousSubmitAnswerView(APIView):
 
 class AnswersDashboardView(ListAPIView):
     serializer_class = AnswerSerializer
+    pagination_class = StandardPageNumberPagination
 
     def get_queryset(self):
         labeling_id = self.kwargs.get("labeling_id")

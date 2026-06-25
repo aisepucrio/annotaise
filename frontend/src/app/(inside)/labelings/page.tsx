@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import PageLayout from '@/components/inside-pages-layout/PageLayout';
 import IndividualLabelingCard from '@/components/IndividualLabelingCard';
 import GridItemCard from '@/components/grid/GridItemCard';
@@ -8,6 +8,8 @@ import Button from '@/components/button/Button';
 import { Tag } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useLabelingDashboardQuery } from '@/modules/labelings/labelingQueries';
+import { usePaginationState } from '@/modules/pagination';
+import Pagination from '@/components/Pagination';
 import { toast } from 'sonner';
 import { useTranslations } from '@/i18n/use-translations';
 
@@ -15,10 +17,24 @@ export default function LabelingsPage() {
   const { t } = useTranslations();
   const router = useRouter();
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const pagination = usePaginationState();
 
-  const { data: labelings, error, isLoading } = useLabelingDashboardQuery(debouncedSearch);
+  const {
+    data: labelings,
+    error,
+    isFetching,
+    isLoading,
+  } = useLabelingDashboardQuery({
+    search: debouncedSearch,
+    ...pagination.query,
+  });
 
-  const labelingsList = labelings ?? [];
+  const labelingsList = labelings?.results ?? [];
+
+  const handleSearch = useCallback((value: string) => {
+    setDebouncedSearch(value);
+    pagination.resetPage();
+  }, [pagination]);
 
   useEffect(() => {
     if (error) {
@@ -33,11 +49,18 @@ export default function LabelingsPage() {
       tooltip={t('labelings.tooltip')}
       description={t('labelings.description')}
       searchPlaceholder={t('labelings.searchPlaceholder')}
-      onSearch={setDebouncedSearch}
+      onSearch={handleSearch}
       filterButtonText={t('filterBar.filterButton')}
       isLoading={isLoading}
       message={!isLoading && labelingsList.length === 0 ? t('labelings.empty') : undefined}
       minColumnWidth="420px"
+      footer={
+        <Pagination
+          pagination={labelings}
+          paginationState={pagination}
+          isLoading={isFetching}
+        />
+      }
     >
       {labelingsList.map((l, index) => {
         const mustAnswerBackgroundFirst = Boolean(l.background_required && !l.background_answered);

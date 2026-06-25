@@ -27,6 +27,7 @@ from datetime import datetime, timedelta
 import json
 from answer.models import BackgroundAnswer, Answer
 from collections import defaultdict
+from annotaise.pagination import StandardPageNumberPagination, paginated_response
 
 LLM_TIEBREAK_USERNAME = "llm_tiebreak_bot"
 LLM_TIEBREAK_EMAIL = "llm_tiebreak_bot@annotaise.local"
@@ -63,7 +64,7 @@ class LabelingViewSet(viewsets.ModelViewSet):
         )
 
     
-    @action(methods=['get'], detail=False, url_path='dashboard/edit')
+    @action(methods=['get'], detail=False, url_path='dashboard/edit', pagination_class=StandardPageNumberPagination)
     def editdashboard(self, request):
         '''a ideia é que esse dashboard serve pra mostrar o dashboard pro admin, entao tem todos os labelings de todos os projetos
         que o usuario é admin ou owner.'''
@@ -82,7 +83,7 @@ class LabelingViewSet(viewsets.ModelViewSet):
             )
         )
         if not qs.exists():
-            return Response([], status=200)
+            return paginated_response(self, output)
 
         if search:
             qs = qs.filter(
@@ -100,14 +101,9 @@ class LabelingViewSet(viewsets.ModelViewSet):
                 "form_mode": bool(element.form_mode),
                 "answers_collected": element.answers_collected,
             })
-        ser = self.get_serializer_class() 
-        ser = ser(data=output,many=True)   
-        if ser.is_valid():
-            return Response(ser.data, status=200)
-        else:
-            return Response('Erro ao carregar labelings dashboard' + str(ser.error_messages), status=400)
+        return paginated_response(self, output)
     
-    @action(methods=['get'], detail=True, url_path='memberships')
+    @action(methods=['get'], detail=True, url_path='memberships', pagination_class=StandardPageNumberPagination)
     def list_labeling_memberships(self,request, pk=None):
         labeling = get_object_or_404(Labeling,pk=pk)
         memberships = (
@@ -134,12 +130,7 @@ class LabelingViewSet(viewsets.ModelViewSet):
                 "background_answered": membership.user_id in background_users,
             })
         
-        ser = LabelingMembershipDashboardSerializer(data=output, many=True)
-        
-        if ser.is_valid(raise_exception=True):
-            return Response(ser.data, status=200)
-        else:
-            return Response('Erro ao carregar membros da rotulação',ser.errors, status=400)
+        return paginated_response(self, output, LabelingMembershipDashboardSerializer)
 
 
     def _user_can_answer_labeling(self, labeling, user, user_group_names):
@@ -164,7 +155,7 @@ class LabelingViewSet(viewsets.ModelViewSet):
             for remaining in remaining_by_item.values()
         )
 
-    @action(methods=['get'], detail=False, url_path='dashboard')
+    @action(methods=['get'], detail=False, url_path='dashboard', pagination_class=StandardPageNumberPagination)
     def dashboard(self, request):
         '''esse é o dashboard normal, que mostra os labelings dos projetos que o usuario participa em respostas. tirei os labelings que ja terminaram
         '''
@@ -236,12 +227,7 @@ class LabelingViewSet(viewsets.ModelViewSet):
                 "form_mode": bool(element.form_mode),
                 "answers_collected": element.answers_collected,
             })
-        ser = self.get_serializer_class() 
-        ser = ser(data=output,many=True)   
-        if ser.is_valid():
-            return Response(ser.data, status=200)
-        else:
-            return Response('Erro ao carregar labelings dashboard', status=400)
+        return paginated_response(self, output)
     
     def perform_create(self, serializer):
         user = self.request.user

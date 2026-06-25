@@ -22,6 +22,9 @@ import Select from '@/components/form/Select';
 import SearchableSelect from '@/components/form/SearchableSelect';
 import Button from '@/components/button/Button';
 import DeleteIconButton from '@/components/button/DeleteIconButton';
+import Pagination, { type PaginationControls } from '@/components/Pagination';
+import type { PaginationMeta } from '@/modules/pagination';
+import { usePaginationState } from '@/modules/pagination';
 import BackgroundModal, { type BackgroundModalHandle } from './BackgroundModal';
 
 type AssignTabProps = {
@@ -30,7 +33,9 @@ type AssignTabProps = {
   isAnonymous: boolean;
   anonymousUrl: string | null;
   memberships: LabelingMembershipDashboard[];
+  membershipsPagination?: PaginationMeta;
   membershipLoading: boolean;
+  membershipFetching: boolean;
   membershipSaving: boolean;
   availableUsers: User[];
   roleOptions: LabelingMembershipRole[];
@@ -39,6 +44,7 @@ type AssignTabProps = {
   onChangeNewMemberId: (value: string) => void;
   onChangeNewMemberRole: (role: LabelingMembershipRole) => void;
   onAddMember: () => void;
+  paginationState: PaginationControls;
   onChangeRole: (membership: LabelingMembershipDashboard, role: LabelingMembershipRole) => void;
   onRemoveMember: (membership: LabelingMembershipDashboard) => void;
 };
@@ -49,7 +55,9 @@ function AssignTabView({
   isAnonymous,
   anonymousUrl,
   memberships,
+  membershipsPagination,
   membershipLoading,
+  membershipFetching,
   membershipSaving,
   availableUsers,
   roleOptions,
@@ -58,6 +66,7 @@ function AssignTabView({
   onChangeNewMemberId,
   onChangeNewMemberRole,
   onAddMember,
+  paginationState,
   onChangeRole,
   onRemoveMember,
 }: AssignTabProps) {
@@ -90,9 +99,7 @@ function AssignTabView({
     return (
       <div className="w-[80%] mx-auto mt-2">
         <div className="rounded-lg border border-gray-200 p-4">
-          <label className="mb-1 block text-sm font-medium text-gray-900">
-            {t('labelings.create.edit.anonymousUrlLabel')}
-          </label>
+          <label className="mb-1 block text-sm font-medium text-gray-900">{t('labelings.create.edit.anonymousUrlLabel')}</label>
           <p className="mb-2 text-xs text-gray-600">{t('labelings.create.edit.anonymousUrlDescription')}</p>
           {anonymousUrl ? (
             <div className="flex items-center gap-2">
@@ -122,7 +129,7 @@ function AssignTabView({
 
   return (
     <>
-      <div className="w-[80%] mx-auto mt-2 space-y-4">
+      <div className="w-[80%] mx-auto flex h-full min-h-0 flex-col gap-4 pt-2">
         <div className=" border-b-3 border-gray-300 p-3 space-y-3">
           <div className="flex items-center justify-between gap-2">
             <p className="text-sm font-medium text-gray-900">{t('labelings.create.assign.addTitle')}</p>
@@ -158,56 +165,65 @@ function AssignTabView({
         ) : memberships.length === 0 ? (
           <p className="text-sm text-gray-600">{t('labelings.create.assign.empty')}</p>
         ) : (
-          <div className="space-y-2 w-[98%] mx-auto">
-            {memberships.map((membership) => {
-              const fullName = `${membership.first_name || ''} ${membership.last_name || ''}`.trim();
-              const canInspectBackground = hasBackgroundForm && membership.role === 'annotator';
+          <div className="flex min-h-0 flex-1 flex-col w-[98%] mx-auto">
+            <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-2">
+              {memberships.map((membership) => {
+                const fullName = `${membership.first_name || ''} ${membership.last_name || ''}`.trim();
+                const canInspectBackground = hasBackgroundForm && membership.role === 'annotator';
 
-              return (
-                <div
-                  key={membership.id}
-                  className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 rounded-lg border border-gray-200 p-3"
-                >
-                  <div className="flex items-center gap-2">
-                    <Users size={16} className="text-blue-900" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{fullName || membership.email}</p>
-                      <p className="text-xs text-gray-500">{membership.email}</p>
+                return (
+                  <div
+                    key={membership.id}
+                    className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 rounded-lg border border-gray-200 p-3"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Users size={16} className="text-blue-900" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{fullName || membership.email}</p>
+                        <p className="text-xs text-gray-500">{membership.email}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap md:flex-nowrap md:justify-end">
+                      <Select
+                        value={membership.role}
+                        onChange={(e) => onChangeRole(membership, e.target.value as LabelingMembershipRole)}
+                        disabled={membershipSaving}
+                        options={roleOptions.map((opt) => ({
+                          value: opt,
+                          label: roleLabels[opt] ?? opt,
+                        }))}
+                        containerClassName="w-auto min-w-[150px]"
+                      />
+
+                      {canInspectBackground ? (
+                        <Button
+                          type="button"
+                          onClick={() => void handleInspectBackground(membership)}
+                          variant="normal"
+                          fill={false}
+                          className="px-4"
+                        >
+                          {t('labelings.create.assign.background.button')}
+                        </Button>
+                      ) : null}
+
+                      <DeleteIconButton
+                        onClick={() => onRemoveMember(membership)}
+                        disabled={membershipSaving}
+                        ariaLabel={t('labelings.create.assign.remove')}
+                      ></DeleteIconButton>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 flex-wrap md:flex-nowrap md:justify-end">
-                    <Select
-                      value={membership.role}
-                      onChange={(e) => onChangeRole(membership, e.target.value as LabelingMembershipRole)}
-                      disabled={membershipSaving}
-                      options={roleOptions.map((opt) => ({
-                        value: opt,
-                        label: roleLabels[opt] ?? opt,
-                      }))}
-                      containerClassName="w-auto min-w-[150px]"
-                    />
-
-                    {canInspectBackground ? (
-                      <Button
-                        type="button"
-                        onClick={() => void handleInspectBackground(membership)}
-                        variant="normal"
-                        fill={false}
-                        className="px-4"
-                      >
-                        {t('labelings.create.assign.background.button')}
-                      </Button>
-                    ) : null}
-
-                    <DeleteIconButton
-                      onClick={() => onRemoveMember(membership)}
-                      disabled={membershipSaving}
-                      ariaLabel={t('labelings.create.assign.remove')}
-                    ></DeleteIconButton>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+            <div>
+              <Pagination
+                pagination={membershipsPagination}
+                paginationState={paginationState}
+                isLoading={membershipFetching}
+              />
+            </div>
           </div>
         )}
       </div>
@@ -224,19 +240,20 @@ export default function AssignPage() {
 
   const [newMemberId, setNewMemberId] = useState('');
   const [newMemberRole, setNewMemberRole] = useState<LabelingMembershipRole>('annotator');
+  const pagination = usePaginationState();
 
   const headerQuery = useLabelingHeaderQuery(labelingId);
   const labeling = headerQuery.data?.labeling;
   // In anonymous mode the assign tab shows the shareable link instead of the add-users flow,
   // so the memberships and available-users queries are not needed.
   const isAnonymous = labeling?.distribution_strategy === 'anonymous_mode';
-  const anonymousUrl = isAnonymous ? labeling?.anonymous_url ?? null : null;
+  const anonymousUrl = isAnonymous ? (labeling?.anonymous_url ?? null) : null;
 
-  const membershipsQuery = useLabelingMembershipsQuery(labelingId, !isAnonymous);
+  const membershipsQuery = useLabelingMembershipsQuery({ labelingId, ...pagination.query }, !isAnonymous);
   const usersQuery = useAvailableUsersQuery(!isAnonymous);
 
-  const memberships = membershipsQuery.data ?? [];
-  const availableUsers = usersQuery.data ?? [];
+  const memberships = useMemo(() => membershipsQuery.data?.results ?? [], [membershipsQuery.data?.results]);
+  const availableUsers = useMemo(() => usersQuery.data ?? [], [usersQuery.data]);
   const hasBackgroundForm = Boolean(labeling?.has_background_form);
 
   const createMembershipMutation = useCreateMembershipMutation();
@@ -264,6 +281,7 @@ export default function AssignPage() {
         onSuccess: () => {
           setNewMemberId('');
           setNewMemberRole('annotator');
+          pagination.resetPage();
           toast.success(t('labelings.create.success.memberAdded'));
         },
         onError: (error: unknown) => {
@@ -312,7 +330,9 @@ export default function AssignPage() {
       isAnonymous={isAnonymous}
       anonymousUrl={anonymousUrl}
       memberships={memberships}
+      membershipsPagination={membershipsQuery.data}
       membershipLoading={membershipsQuery.isLoading}
+      membershipFetching={membershipsQuery.isFetching}
       membershipSaving={membershipSaving}
       availableUsers={filteredAvailableUsers}
       roleOptions={['annotator', 'admin']}
@@ -321,6 +341,7 @@ export default function AssignPage() {
       onChangeNewMemberId={setNewMemberId}
       onChangeNewMemberRole={setNewMemberRole}
       onAddMember={handleAddMember}
+      paginationState={pagination}
       onChangeRole={handleChangeRole}
       onRemoveMember={handleRemoveMember}
     />

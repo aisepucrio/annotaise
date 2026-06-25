@@ -4,7 +4,9 @@ import { useEffect, useMemo, useState } from 'react';
 import GridItemCard from '@/components/grid/GridItemCard';
 import GridLayout from '@/components/grid/GridLayout';
 import Button from '@/components/button/Button';
+import Pagination, { type PaginationControls } from '@/components/Pagination';
 import type { AnswerResponse, LabelingStructureSection } from '@/modules/labelings/labelingsTypes';
+import type { PaginationMeta } from '@/modules/pagination';
 import { useTranslations } from '@/i18n/use-translations';
 import ItemTab from './ItemTab';
 import { resolveItemLabel } from '../answer-utils';
@@ -16,9 +18,12 @@ type AnswersTabProps = {
   selectedResponder: 'all' | number;
   onResponderChange: (value: 'all' | number) => void;
   answersLoading: boolean;
+  answersFetching: boolean;
   allAnswers: AnswerResponse[];
   filteredAnswers: AnswerResponse[];
   totalAnswers: number;
+  pagination?: PaginationMeta;
+  paginationState: PaginationControls;
   getUserLabel: (userId: number) => string;
   structureSections: LabelingStructureSection[];
   onInspectingChange?: (isInspecting: boolean) => void;
@@ -29,9 +34,12 @@ export default function AnswersTab({
   selectedResponder,
   onResponderChange,
   answersLoading,
+  answersFetching,
   allAnswers,
   filteredAnswers,
   totalAnswers,
+  pagination,
+  paginationState,
   getUserLabel,
   structureSections,
   onInspectingChange,
@@ -74,7 +82,7 @@ export default function AnswersTab({
   }
 
   return (
-    <div className="mx-auto mt-2 max-w-6xl space-y-4">
+    <div className="mx-auto flex h-full min-h-0 max-w-6xl flex-col pt-2">
       <div className="flex flex-wrap items-end gap-3">
         <div className="flex flex-col">
           <label className="text-sm font-semibold text-gray-800">{t('labelings.create.answers.responderLabel')}</label>
@@ -97,55 +105,67 @@ export default function AnswersTab({
 
         <div className="ml-auto flex items-center gap-2">
           <span className="text-sm text-gray-600">
-            {groupedFilteredItems.length}{' '}
-            {groupedFilteredItems.length === 1
+            {pagination?.count ?? groupedFilteredItems.length}{' '}
+            {(pagination?.count ?? groupedFilteredItems.length) === 1
               ? t('labelings.create.answers.itemCountSingle')
               : t('labelings.create.answers.itemCountPlural')}
           </span>
         </div>
       </div>
 
-      {answersLoading ? (
-        <p className="text-sm text-gray-500">{t('labelings.create.answers.loading')}</p>
-      ) : groupedFilteredItems.length === 0 ? (
-        <p className="text-sm text-gray-600">
-          {totalAnswers === 0 ? t('labelings.create.answers.emptyAll') : t('labelings.create.answers.emptyUser')}
-        </p>
-      ) : (
-        <GridLayout minColumnWidth="300px">
-          {groupedFilteredItems.map((group, index) => {
-            const latestAnswer = group.answers[0];
-            const answeredAt = latestAnswer ? new Date(latestAnswer.created_at).toLocaleString(locale) : '-';
-            const answeredCount = getDisplayedResponseCount(group.answers);
-            const itemLabel = resolveItemLabel(group.rowIndex, group.itemId, t);
+      <div className="mt-4 min-h-0 flex-1 overflow-y-auto pr-2">
+        {answersLoading ? (
+          <p className="text-sm text-gray-500">{t('labelings.create.answers.loading')}</p>
+        ) : groupedFilteredItems.length === 0 ? (
+          <p className="text-sm text-gray-600">
+            {totalAnswers === 0 ? t('labelings.create.answers.emptyAll') : t('labelings.create.answers.emptyUser')}
+          </p>
+        ) : (
+          <GridLayout minColumnWidth="300px">
+            {groupedFilteredItems.map((group, index) => {
+              const latestAnswer = group.answers[0];
+              const answeredAt = latestAnswer ? new Date(latestAnswer.created_at).toLocaleString(locale) : '-';
+              const answeredCount = getDisplayedResponseCount(group.answers);
+              const itemLabel = resolveItemLabel(group.rowIndex, group.itemId, t);
 
-            return (
-              <GridItemCard key={group.key} index={index}>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="space-y-1">
-                    <p className="text-sm font-semibold text-blue-900">{itemLabel}</p>
-                    <p className="text-sm text-gray-800">
-                      {answeredCount}{' '}
-                      {answeredCount === 1 ? t('labelings.create.answers.countSingle') : t('labelings.create.answers.countPlural')}
-                    </p>
-                    <p className="text-xs text-gray-500">{answeredAt}</p>
+              return (
+                <GridItemCard key={group.key} index={index}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-blue-900">{itemLabel}</p>
+                      <p className="text-sm text-gray-800">
+                        {answeredCount}{' '}
+                        {answeredCount === 1 ? t('labelings.create.answers.countSingle') : t('labelings.create.answers.countPlural')}
+                      </p>
+                      <p className="text-xs text-gray-500">{answeredAt}</p>
+                    </div>
+
+                    <Button
+                      variant="normal"
+                      fill={false}
+                      onClick={() => setInspectItemKey(group.key)}
+                      ariaLabel={t('labelings.create.answers.inspectAria')}
+                      className="px-4 py-2"
+                    >
+                      {t('labelings.create.answers.inspectButton')}
+                    </Button>
                   </div>
+                </GridItemCard>
+              );
+            })}
+          </GridLayout>
+        )}
+      </div>
 
-                  <Button
-                    variant="normal"
-                    fill={false}
-                    onClick={() => setInspectItemKey(group.key)}
-                    ariaLabel={t('labelings.create.answers.inspectAria')}
-                    className="px-4 py-2"
-                  >
-                    {t('labelings.create.answers.inspectButton')}
-                  </Button>
-                </div>
-              </GridItemCard>
-            );
-          })}
-        </GridLayout>
-      )}
+      {!answersLoading && groupedFilteredItems.length > 0 ? (
+        <div>
+          <Pagination
+            pagination={pagination}
+            paginationState={paginationState}
+            isLoading={answersFetching}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }

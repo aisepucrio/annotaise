@@ -1,4 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
+import { usePaginatedQuery } from '@/modules/pagination';
+import type { PaginatedSearchQuery } from '@/modules/pagination';
 import { fetchUsers, fetchUsersDashboard, fetchInvitationAssignmentOptions } from './userService';
 import type { InvitationAssignmentProject, User } from './userTypes';
 
@@ -10,11 +12,12 @@ export function useUsersQuery() {
   });
 }
 
-// Utilizada para dashboard de usuários com busca
-export function useUsersDashboardQuery(search?: string) {
-  return useQuery<User[]>({
-    queryKey: ['users', 'dashboard', search],
-    queryFn: () => fetchUsersDashboard(search),
+// Utilizada para dashboard de usuários com busca e paginação
+export function useUsersDashboardQuery(params: PaginatedSearchQuery) {
+  return usePaginatedQuery({
+    queryKey: ['users', 'dashboard'],
+    params,
+    queryFn: fetchUsersDashboard,
   });
 }
 

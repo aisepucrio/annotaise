@@ -1,14 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import PageLayout from '@/components/inside-pages-layout/PageLayout';
 import IndividualProjectCard from './IndividualProjectCard';
 import NewProjectModal from './NewProjectModal';
 import GridItemCard from '@/components/grid/GridItemCard';
 import { useProjectDashboardQuery } from '@/modules/projects/projectsQueries';
+import { usePaginationState } from '@/modules/pagination';
 import { useCreateProjectMutation } from '@/modules/projects/projectsMutations';
 import type { ProjectPayload } from '@/modules/projects/projectsTypes';
+import Pagination from '@/components/Pagination';
 import { toast } from 'sonner';
 import { useTranslations } from '@/i18n/use-translations';
 
@@ -17,12 +19,26 @@ export default function Projects() {
   const { t } = useTranslations();
   const [modalOpen, setModalOpen] = useState(false);
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const pagination = usePaginationState();
 
-  const { data: projects, error, isLoading } = useProjectDashboardQuery(debouncedSearch);
+  const {
+    data: projects,
+    error,
+    isFetching,
+    isLoading,
+  } = useProjectDashboardQuery({
+    search: debouncedSearch,
+    ...pagination.query,
+  });
 
   const createProjectMutation = useCreateProjectMutation();
 
-  const projectList = projects ?? [];
+  const projectList = projects?.results ?? [];
+
+  const handleSearch = useCallback((value: string) => {
+    setDebouncedSearch(value);
+    pagination.resetPage();
+  }, [pagination]);
 
   const handleCreateProject = async (payload: ProjectPayload) => {
     await createProjectMutation.mutateAsync(payload);
@@ -41,7 +57,7 @@ export default function Projects() {
       tooltip={t('projects.tooltip')}
       description={t('projects.description.admin')}
       searchPlaceholder={t('projects.searchPlaceholder')}
-      onSearch={setDebouncedSearch}
+      onSearch={handleSearch}
       filterButtonText={t('filterBar.filterButton')}
       hasButton
       buttonText={t('projects.createButton')}
@@ -49,6 +65,13 @@ export default function Projects() {
       isLoading={isLoading}
       message={!isLoading && projectList.length === 0 ? t('projects.empty') : undefined}
       minColumnWidth="480px"
+      footer={
+        <Pagination
+          pagination={projects}
+          paginationState={pagination}
+          isLoading={isFetching}
+        />
+      }
       modal={<NewProjectModal open={modalOpen} onClose={() => setModalOpen(false)} onSubmit={handleCreateProject} />}
     >
       {projectList.map((project, index) => (

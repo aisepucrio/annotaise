@@ -1,4 +1,6 @@
 import { api } from '@/lib/api';
+import { fetchPaginated } from '@/modules/pagination';
+import type { PaginatedSearchQuery } from '@/modules/pagination';
 import type {
   User,
   CreateUserPayload,
@@ -17,11 +19,8 @@ export async function fetchUsers(search?: string): Promise<User[]> {
 }
 
 // Busca usuários do dashboard com opção de busca
-export async function fetchUsersDashboard(search?: string): Promise<User[]> {
-  const { data } = await api.get<User[]>('/users/dashboard/', {
-    params: search ? { search } : undefined,
-  });
-  return data;
+export function fetchUsersDashboard(params: PaginatedSearchQuery) {
+  return fetchPaginated<User>('/users/dashboard/', params);
 }
 
 // Cria um novo usuário
