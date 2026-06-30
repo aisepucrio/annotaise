@@ -443,7 +443,17 @@ class AnswersDashboardView(ListAPIView):
 
     def get_queryset(self):
         labeling_id = self.kwargs.get("labeling_id")
-        return Answer.objects.filter(labeling_id=labeling_id)
+        qs = (
+            Answer.objects
+            .filter(labeling_id=labeling_id)
+            .select_related("item", "answered_by", "responded_as")
+        )
+
+        answered_by = self.request.query_params.get("answered_by")
+        if answered_by and answered_by.isdigit():
+            qs = qs.filter(answered_by_id=int(answered_by))
+
+        return qs.order_by("item__row_index", "id")
 
 
 class LabelingBackgroundAnswerView(APIView):

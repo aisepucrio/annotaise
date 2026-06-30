@@ -12,6 +12,7 @@ import {
   useAvailableUsersQuery,
   useLabelingAnswersWithStructureQuery,
   useLabelingHeaderQuery,
+  useLabelingMembershipsQuery,
   useLabelingStructureQuery,
 } from '@/modules/labelings/manage/labelingManagerQueries';
 import { exportLabelingAnswersCsv } from '@/modules/labelings/labelingService';
@@ -41,6 +42,10 @@ export function AnswerTab({ labelingId, users, usersPerItem }: AnswerTabProps) {
   });
   const structureQuery = useLabelingStructureQuery(labelingId);
   const summaryQuery = useLabelingAnswersWithStructureQuery(labelingId, activeView === 'summary');
+  // Lista completa de membros para alimentar o filtro por usuário. Como as
+  // respostas agora são paginadas, derivar o filtro apenas da página atual
+  // deixava o seletor incompleto e o colapsava no usuário selecionado.
+  const membersQuery = useLabelingMembershipsQuery({ labelingId, page: 1, pageSize: 100 });
 
   const paginatedAnswers = useMemo(() => answerItemsQuery.data?.results ?? [], [answerItemsQuery.data?.results]);
   const structureSections = useMemo(
@@ -48,6 +53,7 @@ export function AnswerTab({ labelingId, users, usersPerItem }: AnswerTabProps) {
     [structureQuery.data?.structure, summaryQuery.data?.structure]
   );
   const summaryAnswers = useMemo(() => summaryQuery.data?.answers ?? [], [summaryQuery.data?.answers]);
+  const labelingMembers = useMemo(() => membersQuery.data?.results ?? [], [membersQuery.data?.results]);
 
   const usersById = useMemo(() => {
     const map = new Map<number, User>();
@@ -95,12 +101,20 @@ export function AnswerTab({ labelingId, users, usersPerItem }: AnswerTabProps) {
   );
 
   const responderOptions = useMemo(() => {
-    const uniqueUsers = new Set(paginatedAnswers.map((answer) => answer.answered_by).filter((id): id is number => id != null));
-    return Array.from(uniqueUsers).map((userId) => ({
-      id: userId,
-      label: getUserLabel(userId),
-    }));
-  }, [paginatedAnswers, getUserLabel]);
+    // Membros da rotulação (fonte estável e completa) unidos a quem aparece nas
+    // respostas carregadas — assim respondentes que não são membros (ex.: o bot
+    // de desempate por LLM) continuam disponíveis quando presentes.
+    const uniqueUsers = new Set<number>();
+    labelingMembers.forEach((member) => {
+      if (member.user != null) uniqueUsers.add(member.user);
+    });
+    paginatedAnswers.forEach((answer) => {
+      if (answer.answered_by != null) uniqueUsers.add(answer.answered_by);
+    });
+    return Array.from(uniqueUsers)
+      .map((userId) => ({ id: userId, label: getUserLabel(userId) }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [labelingMembers, paginatedAnswers, getUserLabel]);
 
   const handleResponderChange = useCallback((value: 'all' | number) => {
     setSelectedResponder(value);
