@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, ReactNode } from 'react';
+import { useEffect, useRef, useState, ReactNode } from 'react';
 import PageHeader from './PageHeader';
 import FilterBar from '@/components/FilterBar';
 import GridLayout from '@/components/grid/GridLayout';
@@ -65,16 +65,23 @@ export default function PageLayout({
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
+  // Keep the latest onSearch without making the firing effect depend on its
+  // identity. Pages often recreate onSearch on every pagination change (it
+  // closes over the pagination object), and re-firing it here would reset the
+  // search term and bounce the user back to page 1.
+  const onSearchRef = useRef(onSearch);
+  useEffect(() => {
+    onSearchRef.current = onSearch;
+  }, [onSearch]);
+
   useEffect(() => {
     const handle = setTimeout(() => setDebouncedSearch(searchTerm), 300);
     return () => clearTimeout(handle);
   }, [searchTerm]);
 
   useEffect(() => {
-    if (onSearch) {
-      onSearch(debouncedSearch);
-    }
-  }, [debouncedSearch, onSearch]);
+    onSearchRef.current?.(debouncedSearch);
+  }, [debouncedSearch]);
 
   return (
     <>
