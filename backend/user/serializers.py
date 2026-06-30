@@ -3,6 +3,7 @@ from .models import CustomUser, UserGroup, UserGroupMembership
 from django.contrib.auth import get_user_model
 import uuid
 from .models import Invitation
+from .utils import DEFAULT_INVITATION_EMAIL_LANGUAGE, SUPPORTED_INVITATION_EMAIL_LANGUAGES
 
 
 '''o username a princípio será o email do usuário, mas o campo username é obrigatório no modelo padrão do django, 
@@ -122,6 +123,12 @@ class InvitationSerializer(serializers.ModelSerializer):
         required=False,
         write_only=True,
     )
+    email_language = serializers.ChoiceField(
+        choices=SUPPORTED_INVITATION_EMAIL_LANGUAGES,
+        default=DEFAULT_INVITATION_EMAIL_LANGUAGE,
+        write_only=True,
+        required=False,
+    )
 
     class Meta:
         model = Invitation
@@ -138,6 +145,7 @@ class InvitationSerializer(serializers.ModelSerializer):
             "user",
             "project_ids",
             "labeling_ids",
+            "email_language",
         ]
         read_only_fields = [
             "token",
@@ -156,6 +164,7 @@ class InvitationSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data.pop("project_ids", None)
         validated_data.pop("labeling_ids", None)
+        validated_data.pop("email_language", None)
         invited_by = validated_data.pop(
             "invited_by", getattr(self.context.get("request"), "user", None)
         )

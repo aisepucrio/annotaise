@@ -14,6 +14,7 @@ import { useInvitationAssignmentOptionsQuery } from '@/modules/user/userQueries'
 type Payload = {
   email: string;
   account_type: 'standard' | 'editor' | 'admin';
+  email_language?: 'pt-BR' | 'en';
   project_ids?: number[];
   labeling_ids?: number[];
 };
@@ -38,11 +39,12 @@ function validateEmail(email: string): boolean {
 
 export default function NewUserModal({ open, onClose, onSubmit }: NewUserModalProps) {
   // i18n
-  const { t } = useTranslations();
+  const { t, language } = useTranslations();
 
   // Estado local
   const [emailsRaw, setEmailsRaw] = useState('');
   const [accountType, setAccountType] = useState<Payload['account_type']>('standard');
+  const [emailLanguage, setEmailLanguage] = useState<NonNullable<Payload['email_language']>>(language);
   const [selectedProjectIds, setSelectedProjectIds] = useState<number[]>([]);
   const [selectedLabelingIds, setSelectedLabelingIds] = useState<number[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -56,16 +58,24 @@ export default function NewUserModal({ open, onClose, onSubmit }: NewUserModalPr
     ],
     [t]
   );
+  const emailLanguageOptions = useMemo(
+    () => [
+      { value: 'pt-BR', label: t('users.new.emailLanguage.portuguese') },
+      { value: 'en', label: t('users.new.emailLanguage.english') },
+    ],
+    [t]
+  );
 
   // Reset do estado quando o modal fecha
   useEffect(() => {
     if (open) return;
     setEmailsRaw('');
     setAccountType('standard');
+    setEmailLanguage(language);
     setSelectedProjectIds([]);
     setSelectedLabelingIds([]);
     setSubmitting(false);
-  }, [open]);
+  }, [language, open]);
 
   const toggleProjectSelection = (projectId: number, checked: boolean, projectLabelingIds: number[]) => {
     setSelectedProjectIds((prev) => {
@@ -125,6 +135,7 @@ export default function NewUserModal({ open, onClose, onSubmit }: NewUserModalPr
         onSubmit({
           email,
           account_type: accountType,
+          email_language: emailLanguage,
           project_ids: selectedProjectIds,
           labeling_ids: selectedLabelingIds,
         })
@@ -179,6 +190,16 @@ export default function NewUserModal({ open, onClose, onSubmit }: NewUserModalPr
             options={accountOptions}
             value={accountType}
             onChange={(e) => setAccountType((e.target as HTMLSelectElement).value as Payload['account_type'])}
+          />
+        </div>
+
+        <div>
+          <Select
+            id="invite-email-language"
+            label={t('users.new.emailLanguageLabel')}
+            options={emailLanguageOptions}
+            value={emailLanguage}
+            onChange={(e) => setEmailLanguage((e.target as HTMLSelectElement).value as NonNullable<Payload['email_language']>)}
           />
         </div>
 

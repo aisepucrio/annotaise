@@ -320,6 +320,7 @@ class InvitationViewSet(viewsets.ModelViewSet):
         role = serializer.validated_data.get("role")
         project_ids = serializer.validated_data.get("project_ids", [])
         labeling_ids = serializer.validated_data.get("labeling_ids", [])
+        email_language = serializer.validated_data.get("email_language", "pt-BR")
 
         with transaction.atomic():
             user, err = self._create_or_get_pending_user(email, role)
@@ -342,7 +343,7 @@ class InvitationViewSet(viewsets.ModelViewSet):
             invitation = serializer.save(invited_by=request.user, user=user)
         link = FRONTEND_URL + f"/accept-invitation/{invitation.token}"
 
-        send_invitation_email(invitation, link)
+        send_invitation_email(invitation, link, language=email_language)
 
         headers = self.get_success_headers(serializer.data)
         return Response({"link": link, "invitation": serializer.data}, status=status.HTTP_201_CREATED, headers=headers)

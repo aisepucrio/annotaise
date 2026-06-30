@@ -37,6 +37,7 @@ export async function createInvitation(payload: CreateInvitationPayload): Promis
   const { data } = await api.post<{ link: string; invitation: Invitation }>('/invitations/', {
     email: payload.email,
     role: payload.account_type,
+    email_language: payload.email_language ?? 'pt-BR',
     project_ids: payload.project_ids ?? [],
     labeling_ids: payload.labeling_ids ?? [],
   });
