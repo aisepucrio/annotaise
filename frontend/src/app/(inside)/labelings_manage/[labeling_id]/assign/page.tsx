@@ -139,10 +139,15 @@ function AssignTabView({
               value={newMemberId}
               onChange={onChangeNewMemberId}
               disabled={membershipSaving}
-              options={availableUsers.map((user) => ({
-                value: String(user.id),
-                label: `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email,
-              }))}
+              options={availableUsers.map((user) => {
+                const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+                return {
+                  value: String(user.id),
+                  label: fullName || user.email,
+                  // Only show the email as a sub-line when it isn't already the label.
+                  description: fullName ? user.email : undefined,
+                };
+              })}
               placeholder={t('labelings.create.assign.selectUser')}
             />
             <Select

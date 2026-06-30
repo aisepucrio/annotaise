@@ -59,8 +59,13 @@ export default function SearchableSelect({
 
   const filteredOptions = useMemo(() => {
     const term = trimmedQuery.toLowerCase();
-    if (!term) return [];
-    return options.filter((option) => option.label.toLowerCase().includes(term));
+    // When nothing is typed, show every option instead of forcing the user to search.
+    if (!term) return options;
+    return options.filter(
+      (option) =>
+        option.label.toLowerCase().includes(term) ||
+        (option.description?.toLowerCase().includes(term) ?? false)
+    );
   }, [options, trimmedQuery]);
 
   const openDropdown = () => {
@@ -148,9 +153,7 @@ export default function SearchableSelect({
             role="listbox"
             className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-md border border-metal-200 bg-white py-1 shadow-lg"
           >
-            {!trimmedQuery ? (
-              <li className="px-3 py-2 text-sm text-metal-400">{t('common.typeToSearch')}</li>
-            ) : filteredOptions.length === 0 ? (
+            {filteredOptions.length === 0 ? (
               <li className="px-3 py-2 text-sm text-metal-400">{t('common.noResults')}</li>
             ) : (
               filteredOptions.map((option, index) => (
@@ -168,6 +171,9 @@ export default function SearchableSelect({
                   )}
                 >
                   {option.label}
+                  {option.description ? (
+                    <span className="block text-xs text-metal-400">{option.description}</span>
+                  ) : null}
                 </li>
               ))
             )}
