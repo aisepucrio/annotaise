@@ -44,7 +44,9 @@ export default function LabelingAnswerPage() {
 
   // Local UI flow state
   const [currentSectionIdx, setCurrentSectionIdx] = useState(0);
-  const [showGuide, setShowGuide] = useState(false);
+  // The annotation guide starts open by default so annotators see it without
+  // having to look for it; the header button still lets them hide it.
+  const [showGuide, setShowGuide] = useState(true);
 
   // Loading and feedback state
   const [isLoading, setIsLoading] = useState(true);
