@@ -31,7 +31,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
         <Sidebar isOpen={isOpen} onToggle={toggle} />
       </div>
 
-      <main className="min-w-0">{children}</main>
+      <main className="h-screen min-w-0 overflow-hidden">{children}</main>
     </div>
   );
 }

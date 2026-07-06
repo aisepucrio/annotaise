@@ -344,12 +344,14 @@ class ProjectMembershipViewSetTest(TestCase):
         self.client.force_authenticate(self.owner_admin)
         response = self.client.get(self.memberships_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        project_ids = {item["project"] for item in response.data}
+        results = response.data["results"]
+        project_ids = {item["project"] for item in results}
         self.assertEqual(project_ids, {self.project_one.id, self.project_two.id})
         expected_count = ProjectMembership.objects.filter(
             project__in=[self.project_one, self.project_two]
         ).count()
-        self.assertEqual(len(response.data), expected_count)
+        self.assertEqual(len(results), expected_count)
+        self.assertEqual(response.data["count"], expected_count)
 
 
     def test_admin_owner_can_create_membership(self):

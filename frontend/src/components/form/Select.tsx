@@ -9,6 +9,8 @@ import { formFieldClasses } from './base/formFieldClasses';
 export type SelectOption = {
   value: string;
   label: string;
+  /** Texto secundário exibido abaixo do label (ex.: e-mail). Ignorado pelo Select nativo. */
+  description?: string;
 };
 
 export type SelectProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, 'size'> & {

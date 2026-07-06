@@ -1,6 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
+import { usePaginatedQuery } from '@/modules/pagination';
+import type { PaginatedQuery } from '@/modules/pagination';
 import {
   fetchLabeling,
+  fetchLabelingAnswerItems,
   fetchLabelingStructure,
   fetchLabelingMemberships,
   fetchLabelingAnswers,
@@ -9,7 +12,11 @@ import {
 } from '../labelingService';
 import { fetchProject } from '@/modules/projects/projectService';
 import { fetchUsers } from '@/modules/user/userService';
-import type { LabelingAgreementSummary, LabelingStructureSection, LabelingElementSummary } from '@/modules/labelings/labelingsTypes';
+import type {
+  LabelingAgreementSummary,
+  LabelingStructureSection,
+  LabelingElementSummary,
+} from '@/modules/labelings/labelingsTypes';
 
 // Utilizada para buscar os dados básicos do labeling + projeto (para o header)
 export function useLabelingHeaderQuery(labelingId: number) {
@@ -65,13 +72,14 @@ function deriveColumnsFromStructure(sections: LabelingStructureSection[]): strin
 }
 
 // Utilizada para buscar os membros do labeling
-export function useLabelingMembershipsQuery(labelingId: number, shouldFetch = true) {
-  const enabled = !Number.isNaN(labelingId) && shouldFetch;
+export function useLabelingMembershipsQuery(params: PaginatedQuery<{ labelingId: number }>, shouldFetch = true) {
+  const enabled = !Number.isNaN(params.labelingId) && shouldFetch;
 
-  return useQuery({
-    queryKey: ['labelings', labelingId, 'memberships'],
+  return usePaginatedQuery({
+    queryKey: ['labelings', params.labelingId, 'memberships'],
+    params,
     enabled,
-    queryFn: () => fetchLabelingMemberships(labelingId),
+    queryFn: fetchLabelingMemberships,
   });
 }
 
@@ -95,9 +103,21 @@ export function useLabelingAnswersQuery(labelingId: number) {
   });
 }
 
+// Utilizada para listar os itens respondidos com paginação por item
+export function useLabelingAnswerItemsQuery(params: PaginatedQuery<{ labelingId: number; answeredBy?: number }>) {
+  const enabled = !Number.isNaN(params.labelingId);
+
+  return usePaginatedQuery({
+    queryKey: ['labelings', params.labelingId, 'answer-items'],
+    params,
+    enabled,
+    queryFn: fetchLabelingAnswerItems,
+  });
+}
+
 // Utilizada para buscar as respostas do labeling + estrutura (para a tab de respostas, para mostrar perguntas e respostas juntas)
-export function useLabelingAnswersWithStructureQuery(labelingId: number) {
-  const enabled = !Number.isNaN(labelingId);
+export function useLabelingAnswersWithStructureQuery(labelingId: number, shouldFetch = true) {
+  const enabled = !Number.isNaN(labelingId) && shouldFetch;
 
   return useQuery({
     queryKey: ['labelings', labelingId, 'answers-with-structure'],

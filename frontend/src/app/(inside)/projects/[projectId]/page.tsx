@@ -13,6 +13,8 @@ import DeleteIconButton from '@/components/button/DeleteIconButton';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
 import Input from '@/components/form/Input';
 import Select from '@/components/form/Select';
+import Pagination from '@/components/Pagination';
+import { usePaginationState } from '@/modules/pagination';
 import { useProjectQuery, useProjectMembershipsQuery } from '@/modules/projects/projectsQueries';
 import {
   useUpdateProjectMutation,
@@ -40,6 +42,7 @@ export default function ProjectDetailsPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [newMemberId, setNewMemberId] = useState<string>('');
   const [newMemberRole, setNewMemberRole] = useState<ProjectMembershipPayload['role']>('viewer');
+  const membersPagination = usePaginationState();
 
   // Opções de status do projeto
   const STATUS_OPTIONS = [
@@ -62,7 +65,12 @@ export default function ProjectDetailsPage() {
   const { data: project, isLoading: loadingProject, error: projectError } = useProjectQuery(projectId);
 
   // Buscar membros do projeto
-  const { data: memberships, isLoading: loadingMemberships, error: membershipsError } = useProjectMembershipsQuery(projectId);
+  const {
+    data: memberships,
+    isFetching: fetchingMemberships,
+    isLoading: loadingMemberships,
+    error: membershipsError,
+  } = useProjectMembershipsQuery(projectId, membersPagination.query);
 
   // Buscar todos os usuários
   const { data: users, isLoading: loadingUsers, error: usersError } = useUsersQuery();
@@ -86,9 +94,10 @@ export default function ProjectDetailsPage() {
 
   // Usuários disponíveis para adicionar (que não são membros ainda)
   const availableUsers = useMemo(() => {
-    if (!users || !memberships) return [];
-    const assignedIds = new Set(memberships.map((m) => m.user));
-    return (users as User[]).filter((user: User) => !assignedIds.has(user.id));
+    const membershipList = memberships?.results ?? [];
+    if (!users) return [];
+    const assignedIds = new Set(membershipList.map((m) => m.user));
+    return users.filter((user) => !assignedIds.has(user.id));
   }, [users, memberships]);
 
   // Exibir nome do usuário
@@ -165,6 +174,7 @@ export default function ProjectDetailsPage() {
       });
       setNewMemberId('');
       setNewMemberRole('viewer');
+      membersPagination.resetPage();
       toast.success(t('projects.detail.addMemberSuccess'));
     } catch (error) {
       toast.error(getApiErrorMessage(error, t('projects.detail.addMemberError')));
@@ -262,7 +272,7 @@ export default function ProjectDetailsPage() {
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-8 items-start">
               {/* Coluna Esquerda: Formulário para adicionar novo membro */}
-              <div className="space-y-4">
+              <div className="flex min-h-[520px] flex-col space-y-4">
                 <h3 className="text-sm font-semibold text-metal-900">{t('projects.detail.addMemberTitle')}</h3>
 
                 <form onSubmit={handleAddMember} className="space-y-4">
@@ -313,13 +323,13 @@ export default function ProjectDetailsPage() {
               <div className="hidden lg:block w-px bg-metal-200 self-stretch" />
 
               {/* Coluna Direita: Lista de membros */}
-              <div className="space-y-4">
+              <div className="flex min-h-[520px] flex-col space-y-4">
                 <h3 className="text-sm font-semibold text-metal-900">
-                  {t('projects.detail.currentMembersTitle')} ({(memberships ?? []).length})
+                  {t('projects.detail.currentMembersTitle')} ({memberships?.count ?? memberships?.results.length ?? 0})
                 </h3>
 
-                <ul className="space-y-2 max-h-96 overflow-y-auto pr-2">
-                  {(memberships ?? []).map((membership) => {
+                <ul className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-2">
+                  {(memberships?.results ?? []).map((membership) => {
                     const userName = membership.user_detail ? getUserName(membership.user_detail) : `Usuário #${membership.user}`;
 
                     return (
@@ -350,6 +360,13 @@ export default function ProjectDetailsPage() {
                     );
                   })}
                 </ul>
+                <div>
+                  <Pagination
+                    pagination={memberships}
+                    paginationState={membersPagination}
+                    isLoading={fetchingMemberships}
+                  />
+                </div>
               </div>
             </div>
           )}

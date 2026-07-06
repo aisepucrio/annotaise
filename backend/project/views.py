@@ -9,6 +9,7 @@ from rest_framework.exceptions import PermissionDenied
 from user.permissions import IsAdminAccount, CanEditAccount
 from django.db.models import Count, Q
 from .permissions import IsProjectOwnerPermission
+from annotaise.pagination import StandardPageNumberPagination, paginated_response
 
 LLM_TIEBREAK_USERNAME = "llm_tiebreak_bot"
 LLM_TIEBREAK_EMAIL = "llm_tiebreak_bot@annotaise.local"
@@ -32,7 +33,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
             return ProjectDashboardSerializer
         return ProjectSerializer
 
-    @action(detail=False, methods=["get"], url_path="dashboard")
+    @action(detail=False, methods=["get"], url_path="dashboard", pagination_class=StandardPageNumberPagination)
     def dashboard(self, request):
         search = request.query_params.get("search")
         projects = (
@@ -75,12 +76,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
             
             response_data.append(data)
 
-        serializer = self.get_serializer(data=response_data, many=True)
-
-        if serializer.is_valid():
-            return Response(serializer.data)
-        else:
-            return Response("Erro ao retornar dados",status=403)
+        return paginated_response(self, response_data)
 
     def get_queryset(self):
         user = self.request.user
@@ -113,6 +109,7 @@ class ProjectMembershipViewSet(viewsets.ModelViewSet):
     )
     http_method_names = ['get', 'post','put', 'patch', 'delete']
     permission_classes = [IsAdminAccount,IsProjectOwnerPermission]
+    pagination_class = StandardPageNumberPagination
 
     def get_permissions(self):
         if self.action in ["update", "partial_update", "destroy", "patch","create"]:

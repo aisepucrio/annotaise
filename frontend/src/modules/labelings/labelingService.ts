@@ -1,4 +1,6 @@
 import { api } from '@/lib/api';
+import { fetchPaginated } from '@/modules/pagination';
+import type { PaginatedQuery, PaginatedSearchQuery } from '@/modules/pagination';
 import type {
   Labeling,
   LabelingPayload,
@@ -19,21 +21,13 @@ import type {
 // Funções relacionadas a Labelings
 
 // Busca labelings disponíveis para o usuário com opção de busca
-export async function fetchLabelingDashboard(search?: string): Promise<LabelingDashboard[]> {
-  const params = new URLSearchParams();
-  if (search) params.set('search', search);
-  const qs = params.toString() ? `?${params.toString()}` : '';
-  const { data } = await api.get<LabelingDashboard[]>(`/labelings/dashboard/${qs}`);
-  return data;
+export function fetchLabelingDashboard(params: PaginatedSearchQuery) {
+  return fetchPaginated<LabelingDashboard>('/labelings/dashboard/', params);
 }
 
 // Busca labelings com permissões de edição para administradores
-export async function fetchLabelingDashboardEdit(search?: string): Promise<LabelingDashboard[]> {
-  const params = new URLSearchParams();
-  if (search) params.set('search', search);
-  const qs = params.toString() ? `?${params.toString()}` : '';
-  const { data } = await api.get<LabelingDashboard[]>(`/labelings/dashboard/edit/${qs}`);
-  return data;
+export function fetchLabelingDashboardEdit(params: PaginatedSearchQuery) {
+  return fetchPaginated<LabelingDashboard>('/labelings/dashboard/edit/', params);
 }
 
 // Busca um labeling específico por ID
@@ -155,9 +149,9 @@ export async function saveLabelingStructure(
 // Funções relacionadas a memberships
 
 // Busca todos os membros de um labeling
-export async function fetchLabelingMemberships(labelingId: number): Promise<LabelingMembershipDashboard[]> {
-  const { data } = await api.get<LabelingMembershipDashboard[]>(`/labelings/${labelingId}/memberships/`);
-  return data;
+export function fetchLabelingMemberships(params: PaginatedQuery<{ labelingId: number }>) {
+  const { labelingId, ...query } = params;
+  return fetchPaginated<LabelingMembershipDashboard>(`/labelings/${labelingId}/memberships/`, query);
 }
 
 // Adiciona um membro ao labeling
@@ -192,6 +186,17 @@ export async function fetchLabelingAnswers(labelingId: number): Promise<AnswerRe
     params: { labeling: labelingId },
   });
   return data;
+}
+
+// Busca respostas paginadas da rotulação.
+export function fetchLabelingAnswerItems(params: PaginatedQuery<{ labelingId: number; answeredBy?: number }>) {
+  const { labelingId, answeredBy, ...query } = params;
+  const apiParams = {
+    ...query,
+    answered_by: answeredBy,
+  };
+
+  return fetchPaginated<AnswerResponse>(`/labelings/${labelingId}/answers/`, apiParams);
 }
 
 export async function fetchLabelingAgreementSummary(labelingId: number, minAgreement = 2): Promise<LabelingAgreementSummary> {

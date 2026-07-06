@@ -26,6 +26,7 @@ export type CreateUserPayload = {
 export type CreateInvitationPayload = {
   email: string;
   account_type: User['account_type'];
+  email_language?: 'pt-BR' | 'en';
   project_ids?: number[];
   labeling_ids?: number[];
 };

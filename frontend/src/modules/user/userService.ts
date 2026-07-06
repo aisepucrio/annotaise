@@ -1,4 +1,6 @@
 import { api } from '@/lib/api';
+import { fetchPaginated } from '@/modules/pagination';
+import type { PaginatedSearchQuery } from '@/modules/pagination';
 import type {
   User,
   CreateUserPayload,
@@ -17,11 +19,8 @@ export async function fetchUsers(search?: string): Promise<User[]> {
 }
 
 // Busca usuários do dashboard com opção de busca
-export async function fetchUsersDashboard(search?: string): Promise<User[]> {
-  const { data } = await api.get<User[]>('/users/dashboard/', {
-    params: search ? { search } : undefined,
-  });
-  return data;
+export function fetchUsersDashboard(params: PaginatedSearchQuery) {
+  return fetchPaginated<User>('/users/dashboard/', params);
 }
 
 // Cria um novo usuário
@@ -38,6 +37,7 @@ export async function createInvitation(payload: CreateInvitationPayload): Promis
   const { data } = await api.post<{ link: string; invitation: Invitation }>('/invitations/', {
     email: payload.email,
     role: payload.account_type,
+    email_language: payload.email_language ?? 'pt-BR',
     project_ids: payload.project_ids ?? [],
     labeling_ids: payload.labeling_ids ?? [],
   });

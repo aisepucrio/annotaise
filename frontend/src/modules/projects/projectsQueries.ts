@@ -1,4 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
+import { usePaginatedQuery } from '@/modules/pagination';
+import type { PaginatedSearchQuery, PaginationQuery } from '@/modules/pagination';
 import { fetchProjects, fetchProject, fetchProjectDashboard, fetchProjectMemberships } from './projectService';
 
 // Utilizada para listar todos os projetos
@@ -18,19 +20,21 @@ export function useProjectQuery(id: number) {
   });
 }
 
-// Utilizada para dashboard de projetos com busca
-export function useProjectDashboardQuery(search?: string) {
-  return useQuery({
-    queryKey: ['projects', 'dashboard', search],
-    queryFn: () => fetchProjectDashboard(search),
+// Utilizada para dashboard de projetos com busca e paginação
+export function useProjectDashboardQuery(params: PaginatedSearchQuery) {
+  return usePaginatedQuery({
+    queryKey: ['projects', 'dashboard'],
+    params,
+    queryFn: fetchProjectDashboard,
   });
 }
 
 // Utilizada para obter membros do projeto
-export function useProjectMembershipsQuery(projectId: number) {
-  return useQuery({
+export function useProjectMembershipsQuery(projectId: number, pagination: PaginationQuery) {
+  return usePaginatedQuery({
     queryKey: ['projects', projectId, 'memberships'],
-    queryFn: () => fetchProjectMemberships(projectId),
+    params: { projectId, ...pagination },
+    queryFn: fetchProjectMemberships,
     enabled: !Number.isNaN(projectId) && projectId > 0,
   });
 }

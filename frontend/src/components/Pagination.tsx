@@ -1,99 +1,85 @@
 'use client';
 
-import { useCallback } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useTranslations } from "@/i18n/use-translations";
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useTranslations } from '@/i18n/use-translations';
+import { DEFAULT_PAGE_SIZE_OPTIONS } from '@/modules/pagination';
+import type { PaginationMeta } from '@/modules/pagination';
+import Select from './form/Select';
 
-const DEFAULT_PAGE_SIZE_OPTIONS = [9, 18, 36];
+export type PaginationControls = {
+  page: number;
+  pageSize: number;
+  setPage: (page: number) => void;
+  setPageSize: (pageSize: number) => void;
+};
 
 type PaginationProps = {
-  currentPage: number;
-  totalPages: number;
-  pageSize: number;
-  onPageChange: (page: number) => void;
-  onPageSizeChange: (pageSize: number) => void;
+  pagination?: PaginationMeta;
+  paginationState: PaginationControls;
   pageSizeOptions?: number[];
+  isLoading?: boolean;
 };
 
 export default function Pagination({
-  currentPage,
-  totalPages,
-  pageSize,
-  onPageChange,
-  onPageSizeChange,
+  pagination,
+  paginationState,
   pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
+  isLoading = false,
 }: PaginationProps) {
   const { t } = useTranslations();
-  const router = useRouter();
-  const searchParams = useSearchParams();
 
-  const updateParams = useCallback(
-    (updates: Record<string, string | null>) => {
-      const params = new URLSearchParams(searchParams.toString());
-      for (const [key, value] of Object.entries(updates)) {
-        if (value === null) params.delete(key);
-        else params.set(key, value);
-      }
-      router.replace(`?${params.toString()}`, { scroll: false });
-    },
-    [router, searchParams],
-  );
+  if (!pagination) return null;
 
-  const handlePageChange = (newPage: number) => {
-    onPageChange(newPage);
-    updateParams({ page: newPage === 1 ? null : String(newPage) });
-  };
-
-  const handlePageSizeChange = (newSize: number) => {
-    onPageSizeChange(newSize);
-    updateParams({ page_size: String(newSize), page: null });
-  };
-
-  if (totalPages <= 1 && pageSizeOptions.length <= 1) return null;
+  const { page, pageSize, setPage, setPageSize } = paginationState;
+  const totalPages = Math.max(Math.ceil(pagination.count / pageSize), 1);
+  const safeCurrentPage = Math.min(page, totalPages);
+  const hasPrevious = Boolean(pagination.previous) && safeCurrentPage > 1;
+  const hasNext = Boolean(pagination.next) && safeCurrentPage < totalPages;
 
   return (
-    <div className="flex items-center justify-center gap-4 mt-6">
-      <div className="flex items-center gap-1 text-sm text-gray-500">
-        <span>{t('pagination.itemsPerPage')}</span>
-        <select
-          value={pageSize}
-          onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-          className="border border-gray-200 rounded px-1 py-0.5 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-gray-300"
+    <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-4 py-2">
+      <span className="justify-self-start text-sm text-gray-500">{pagination.count} itens</span>
+
+      <div className="flex items-center gap-2 justify-self-center">
+        <button
+          type="button"
+          onClick={() => setPage(safeCurrentPage - 1)}
+          disabled={isLoading || !hasPrevious}
+          className="p-1 rounded disabled:opacity-30 hover:bg-gray-100 transition-colors"
+          aria-label={t('pagination.previousPage')}
         >
-          {pageSizeOptions.map((size) => (
-            <option key={size} value={size}>
-              {size}
-            </option>
-          ))}
-        </select>
+          <ChevronLeft size={18} />
+        </button>
+
+        <span className="text-sm text-gray-600">
+          {safeCurrentPage} / {totalPages}
+        </span>
+
+        <button
+          type="button"
+          onClick={() => setPage(safeCurrentPage + 1)}
+          disabled={isLoading || !hasNext}
+          className="p-1 rounded disabled:opacity-30 hover:bg-gray-100 transition-colors"
+          aria-label={t('pagination.nextPage')}
+        >
+          <ChevronRight size={18} />
+        </button>
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="p-1 rounded disabled:opacity-30 hover:bg-gray-100 transition-colors"
-            aria-label={t('pagination.previousPage')}
-          >
-            <ChevronLeft size={18} />
-          </button>
-
-          <span className="text-sm text-gray-600">
-            {currentPage} / {totalPages}
-          </span>
-
-          <button
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="p-1 rounded disabled:opacity-30 hover:bg-gray-100 transition-colors"
-            aria-label={t('pagination.nextPage')}
-          >
-            <ChevronRight size={18} />
-          </button>
-        </div>
-      )}
+      <div className="flex items-center gap-1 justify-self-end text-sm text-gray-500">
+        <span>{t('pagination.itemsPerPage')}</span>
+        <Select
+          value={String(pageSize)}
+          disabled={isLoading}
+          onChange={(e) => setPageSize(Number(e.target.value))}
+          options={pageSizeOptions.map((size) => ({
+            value: String(size),
+            label: String(size),
+          }))}
+          containerClassName="w-20"
+          className="py-1 pl-2 pr-8 text-sm"
+        />
+      </div>
     </div>
   );
 }

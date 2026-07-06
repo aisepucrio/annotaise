@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, ReactNode } from 'react';
+import { useEffect, useRef, useState, ReactNode } from 'react';
 import PageHeader from './PageHeader';
 import FilterBar from '@/components/FilterBar';
 import GridLayout from '@/components/grid/GridLayout';
@@ -29,6 +29,7 @@ interface PageLayoutProps {
 
   // Content
   children: ReactNode;
+  footer?: ReactNode;
   isLoading?: boolean;
   message?: string;
 
@@ -53,6 +54,7 @@ export default function PageLayout({
   onButtonClick,
   buttonDisabled = false,
   children,
+  footer,
   isLoading = false,
   message,
   minColumnWidth = '420px',
@@ -63,58 +65,72 @@ export default function PageLayout({
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
+  // Keep the latest onSearch without making the firing effect depend on its
+  // identity. Pages often recreate onSearch on every pagination change (it
+  // closes over the pagination object), and re-firing it here would reset the
+  // search term and bounce the user back to page 1.
+  const onSearchRef = useRef(onSearch);
+  useEffect(() => {
+    onSearchRef.current = onSearch;
+  }, [onSearch]);
+
   useEffect(() => {
     const handle = setTimeout(() => setDebouncedSearch(searchTerm), 300);
     return () => clearTimeout(handle);
   }, [searchTerm]);
 
   useEffect(() => {
-    if (onSearch) {
-      onSearch(debouncedSearch);
-    }
-  }, [debouncedSearch, onSearch]);
+    onSearchRef.current?.(debouncedSearch);
+  }, [debouncedSearch]);
 
   return (
     <>
-      {/* Header */}
-      <PageHeader page_title={pageTitle} tooltip={tooltip} description={description} />
+      <div className="flex h-full min-h-0 flex-col overflow-hidden">
+        {/* Header */}
+        <PageHeader page_title={pageTitle} tooltip={tooltip} description={description} />
 
-      {/* Search Bar + Action Button */}
-      <div className="flex flex-nowrap items-center mt-5">
-        <FilterBar
-          value={searchTerm}
-          onChange={setSearchTerm}
-          placeholder={searchPlaceholder}
-          filterButtonText={filterButtonText}
-          onFilterClick={onFilterClick}
-          showFilterButton={showFilterButton}
-        />
+        {/* Search Bar + Action Button */}
+        <div className="mt-5 flex shrink-0 flex-nowrap items-center">
+          <FilterBar
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder={searchPlaceholder}
+            filterButtonText={filterButtonText}
+            onFilterClick={onFilterClick}
+            showFilterButton={showFilterButton}
+          />
 
-        {hasButton && (
-          <div className="ml-auto mr-6 w-auto">
-            <Button
-              icon={<Plus size={16} strokeWidth={3} />}
-              onClick={onButtonClick}
-              disabled={buttonDisabled}
-              variant="normal"
-              fill={false}
-              className="px-4 py-2 shadow-md text-sm"
-            >
-              {buttonText}
-            </Button>
-          </div>
-        )}
-      </div>
+          {hasButton && (
+            <div className="ml-auto mr-6 w-auto">
+              <Button
+                icon={<Plus size={16} strokeWidth={3} />}
+                onClick={onButtonClick}
+                disabled={buttonDisabled}
+                variant="normal"
+                fill={false}
+                className="px-4 py-2 shadow-md text-sm"
+              >
+                {buttonText}
+              </Button>
+            </div>
+          )}
+        </div>
 
-      {/* Main Content Grid */}
-      <div className="mt-5 ml-5 w-97/100">
-        {isLoading ? (
-          <Loader variant="blue" />
-        ) : message ? (
-          <p className="text-sm text-gray-500">{message}</p>
-        ) : (
-          <GridLayout minColumnWidth={minColumnWidth}>{children}</GridLayout>
-        )}
+        {/* Main Content Grid */}
+        <div className="ml-5 mt-5 flex min-h-0 w-[calc(100%-2.5rem)] flex-1 flex-col">
+          {isLoading ? (
+            <Loader variant="blue" />
+          ) : message ? (
+            <p className="text-sm text-gray-500">{message}</p>
+          ) : (
+            <div className="flex min-h-0 flex-1 flex-col">
+              <div className="min-h-0 flex-1 overflow-y-auto pr-2">
+                <GridLayout minColumnWidth={minColumnWidth}>{children}</GridLayout>
+              </div>
+              {footer ? <div className="shrink-0">{footer}</div> : null}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Modal (se fornecido) */}

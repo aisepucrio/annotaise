@@ -1,4 +1,6 @@
 import { api } from '@/lib/api';
+import { fetchPaginated } from '@/modules/pagination';
+import type { PaginatedQuery, PaginatedSearchQuery } from '@/modules/pagination';
 import type { Project, ProjectPayload, ProjectDashboard, ProjectMembership, ProjectMembershipPayload } from './projectsTypes';
 
 const projectsPath = '/projects';
@@ -11,11 +13,8 @@ export async function fetchProjects(): Promise<Project[]> {
 }
 
 // Busca projetos do dashboard com opção de busca
-export async function fetchProjectDashboard(search?: string): Promise<ProjectDashboard[]> {
-  const { data } = await api.get<ProjectDashboard[]>(`${projectsPath}/dashboard/`, {
-    params: search ? { search } : undefined,
-  });
-  return data;
+export function fetchProjectDashboard(params: PaginatedSearchQuery) {
+  return fetchPaginated<ProjectDashboard>(`${projectsPath}/dashboard/`, params);
 }
 
 // Busca um projeto específico por ID
@@ -42,11 +41,11 @@ export async function deleteProject(id: number): Promise<void> {
 }
 
 // Busca todos os membros de um projeto
-export async function fetchProjectMemberships(projectId: number): Promise<ProjectMembership[]> {
-  const { data } = await api.get<ProjectMembership[]>(`${membershipsPath}/`, {
-    params: { project: projectId },
-  });
-  return data;
+export function fetchProjectMemberships(params: PaginatedQuery<{ projectId: number }>) {
+  const { projectId, ...query } = params;
+  const apiParams = { ...query, project: projectId };
+
+  return fetchPaginated<ProjectMembership>(`${membershipsPath}/`, apiParams);
 }
 
 // Adiciona um membro ao projeto

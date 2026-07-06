@@ -9,6 +9,7 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from annotaise.pagination import StandardPageNumberPagination, paginated_response
 
 from django.contrib.auth import get_user_model
 from django.db.models import Count, F, Q
@@ -89,7 +90,7 @@ class AdminUserViewSet(viewsets.ModelViewSet):
             return AdminUserReadSerializer
         return AdminUserReadSerializer
 
-    @action(detail=False, methods=["get"], url_path="dashboard")
+    @action(detail=False, methods=["get"], url_path="dashboard", pagination_class=StandardPageNumberPagination)
     def user_dashboard(self, request, pk=None):
         # Cada subquery é executada de forma independente e otimizada
         
@@ -111,8 +112,7 @@ class AdminUserViewSet(viewsets.ModelViewSet):
         )
         
         qs = self.filter_queryset(qs)
-        serializer = self.get_serializer(qs, many=True)
-        return Response(serializer.data)
+        return paginated_response(self, qs)
             
     
 
@@ -320,6 +320,7 @@ class InvitationViewSet(viewsets.ModelViewSet):
         role = serializer.validated_data.get("role")
         project_ids = serializer.validated_data.get("project_ids", [])
         labeling_ids = serializer.validated_data.get("labeling_ids", [])
+        email_language = serializer.validated_data.get("email_language", "pt-BR")
 
         with transaction.atomic():
             user, err = self._create_or_get_pending_user(email, role)
@@ -342,7 +343,7 @@ class InvitationViewSet(viewsets.ModelViewSet):
             invitation = serializer.save(invited_by=request.user, user=user)
         link = FRONTEND_URL + f"/accept-invitation/{invitation.token}"
 
-        send_invitation_email(invitation, link)
+        send_invitation_email(invitation, link, language=email_language)
 
         headers = self.get_success_headers(serializer.data)
         return Response({"link": link, "invitation": serializer.data}, status=status.HTTP_201_CREATED, headers=headers)
