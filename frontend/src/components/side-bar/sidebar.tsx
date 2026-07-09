@@ -2,7 +2,7 @@
 
 import Image from 'next/image'; // mantem para o LOGO
 import SidebarItem from './sidebar_item';
-import { User, FolderKanban, Tags, LogOut, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { User, FolderKanban, Tags, LogOut, PanelLeftClose, PanelLeftOpen, BookOpen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { AuthActions } from '@/lib/authClient';
 import { useIsAdmin } from '@/lib/AdminContext';
@@ -129,6 +129,14 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
             label={t('sidebar.labelings')}
             href="/labelings"
             alias="/labelings"
+            hover_color="blue"
+            collapsed={!isOpen}
+          />
+          <SidebarItem
+            icon={<BookOpen size={24} />}
+            label={t('sidebar.guide')}
+            href="/guia"
+            alias="/guia"
             hover_color="blue"
             collapsed={!isOpen}
           />
