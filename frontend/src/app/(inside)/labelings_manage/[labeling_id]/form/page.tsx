@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useImperativeHandle, forwardRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useImperativeHandle, forwardRef, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { toast } from 'sonner';
 import TwoOptionSelector from '../TwoOptionSelector';
@@ -17,11 +17,14 @@ type FormTabProps = {
 };
 
 type FormType = 'main' | 'background';
+type SaveReason = 'manual' | 'auto';
 
 export type FormTabHandle = {
   save: () => void;
   isSaving: boolean;
 };
+
+const AUTO_SAVE_INTERVAL_MS = 30000;
 
 const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgroundForm }, ref) => {
   const { t } = useTranslations();
@@ -33,6 +36,11 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgr
   const saveMutation = useSaveLabelingStructureMutation();
 
   const allowContext = activeFormType === 'main';
+  const unsavedChangesRef = useRef({ hasChanges: false, version: 0 });
+  const loadedSnapshotRef = useRef<string | null>(null);
+  const pendingSaveRef = useRef<Promise<boolean> | null>(null);
+  const saveCurrentStructureRef = useRef<(reason?: SaveReason) => Promise<boolean>>(async () => true);
+  const sectionsRef = useRef(sections);
 
   useEffect(() => {
     if (!hasBackgroundForm && activeFormType === 'background') {
@@ -40,36 +48,124 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgr
     }
   }, [activeFormType, hasBackgroundForm]);
 
+  useEffect(() => {
+    sectionsRef.current = sections;
+  }, [sections]);
+
   // Load structure into local state
   useEffect(() => {
-    if (structureQuery.data?.structure) {
-      setSections(normalizeAdminSections(structureQuery.data.structure, { allowContext, t }));
+    if (!structureQuery.data?.structure) {
+      return;
     }
-  }, [allowContext, structureQuery.data?.structure, setSections, t]);
+
+    const snapshotKey = `${activeFormType}:${structureQuery.dataUpdatedAt}`;
+    if (loadedSnapshotRef.current === snapshotKey || unsavedChangesRef.current.hasChanges) {
+      return;
+    }
+
+    setSections(normalizeAdminSections(structureQuery.data.structure, { allowContext, t }));
+    loadedSnapshotRef.current = snapshotKey;
+  }, [activeFormType, allowContext, structureQuery.data?.structure, structureQuery.dataUpdatedAt, t]);
 
   // Derived state
   const columns = structureQuery.data?.columns ?? [];
 
   // Save structure handler
-  const handleSaveStructure = useCallback(async () => {
+  const handleSaveStructure = useCallback(async (reason: SaveReason = 'manual'): Promise<boolean> => {
     if (Number.isNaN(labelingId)) {
       toast.error(t('labelings.create.errors.invalidId'));
-      return;
+      return false;
     }
 
-    const payload = sanitizeAdminSectionsForSave(sections);
-    saveMutation.mutate(
-      { id: labelingId, sections: payload, formType: activeFormType },
-      {
-        onSuccess: () => {
-          toast.success(t('labelings.create.success.formSaved'));
-        },
-        onError: (error) => {
-          toast.error(getApiErrorMessage(error, t('labelings.create.errors.saveStructure')));
-        },
+    if (reason === 'auto' && !unsavedChangesRef.current.hasChanges) {
+      return true;
+    }
+
+    const pendingSave = pendingSaveRef.current;
+    if (pendingSave) {
+      await pendingSave;
+      if (reason === 'auto' && !unsavedChangesRef.current.hasChanges) {
+        return true;
       }
-    );
-  }, [activeFormType, labelingId, sections, saveMutation, t]);
+    }
+
+    const savedVersion = unsavedChangesRef.current.version;
+    const payload = sanitizeAdminSectionsForSave(sectionsRef.current);
+
+    const savePromise = (async () => {
+      try {
+        await saveMutation.mutateAsync({ id: labelingId, sections: payload, formType: activeFormType });
+
+        if (unsavedChangesRef.current.version === savedVersion) {
+          unsavedChangesRef.current.hasChanges = false;
+        }
+
+        toast.success(
+          reason === 'auto' ? t('labelings.create.success.formAutoSaved') : t('labelings.create.success.formSaved')
+        );
+        return true;
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, t('labelings.create.errors.saveStructure')));
+        return false;
+      }
+    })();
+
+    pendingSaveRef.current = savePromise;
+    const didSave = await savePromise;
+    if (pendingSaveRef.current === savePromise) {
+      pendingSaveRef.current = null;
+    }
+
+    return didSave;
+  }, [activeFormType, labelingId, saveMutation, t]);
+
+  useEffect(() => {
+    saveCurrentStructureRef.current = handleSaveStructure;
+  }, [handleSaveStructure]);
+
+  const handleSectionsChange = useCallback((nextSections: LabelingStructureSection[]) => {
+    unsavedChangesRef.current = {
+      hasChanges: true,
+      version: unsavedChangesRef.current.version + 1,
+    };
+    setSections(nextSections);
+  }, []);
+
+  const handleFormTypeChange = useCallback(
+    async (nextFormType: FormType) => {
+      if (nextFormType === activeFormType) {
+        return;
+      }
+
+      if (unsavedChangesRef.current.hasChanges) {
+        const didSave = await saveCurrentStructureRef.current('auto');
+        if (!didSave) {
+          return;
+        }
+      }
+
+      setActiveFormType(nextFormType);
+    },
+    [activeFormType]
+  );
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      if (unsavedChangesRef.current.hasChanges) {
+        void saveCurrentStructureRef.current('auto');
+      }
+    }, AUTO_SAVE_INTERVAL_MS);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (unsavedChangesRef.current.hasChanges) {
+        void saveCurrentStructureRef.current('auto');
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const handleSaveEvent = (event: Event) => {
@@ -89,7 +185,9 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgr
   useImperativeHandle(
     ref,
     () => ({
-      save: handleSaveStructure,
+      save: () => {
+        void handleSaveStructure();
+      },
       isSaving: saveMutation.isPending,
     }),
     [handleSaveStructure, saveMutation.isPending]
@@ -108,7 +206,7 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgr
         <div className="w-[80%] mx-auto mt-2">
           <TwoOptionSelector
             value={activeFormType}
-            onChange={setActiveFormType}
+            onChange={(nextFormType) => void handleFormTypeChange(nextFormType)}
             ariaLabel={t('labelings.create.formType.ariaLabel')}
             options={[
               {
@@ -127,7 +225,7 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgr
       ) : null}
 
       <div className="mx-auto mt-2 w-[80%] space-y-6">
-        <AdminFormBuilder sections={sections} columns={columns} allowContext={allowContext} onChange={setSections} />
+        <AdminFormBuilder sections={sections} columns={columns} allowContext={allowContext} onChange={handleSectionsChange} />
       </div>
     </>
   );

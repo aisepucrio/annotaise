@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import axios from 'axios';
 import { Send, Info } from 'lucide-react';
@@ -26,6 +26,7 @@ export default function LabelingAnswerPage() {
   const { t } = useTranslations();
   const router = useRouter();
   const params = useParams<{ labeling_id: string }>();
+  const loadedLabelingIdRef = useRef<number | null>(null);
 
   // Route-derived values
   const labelingId = useMemo(() => {
@@ -149,8 +150,10 @@ export default function LabelingAnswerPage() {
   }, [labelingId, showError, t]);
 
   useEffect(() => {
+    if (Object.is(loadedLabelingIdRef.current, labelingId)) return;
+    loadedLabelingIdRef.current = labelingId;
     void loadItem();
-  }, [loadItem]);
+  }, [labelingId, loadItem]);
 
   // User interaction handlers
   const handleAnswerChange = useCallback((questionId: number | string, value: unknown) => {
