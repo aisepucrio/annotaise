@@ -273,9 +273,11 @@ class InvitationPendingUserFlowTest(TestCase):
             "email": "pending.specific@example.com",
             "role": "standard",
             "labeling_ids": [self.labeling_two.id],
+            "email_language": "en",
         }
         response = self.client.post("/invitations/", payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(response.data["link"].endswith("?lang=en"))
 
         User = get_user_model()
         invited_user = User.objects.get(email="pending.specific@example.com")
