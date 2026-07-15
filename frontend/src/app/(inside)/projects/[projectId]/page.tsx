@@ -235,9 +235,9 @@ export default function ProjectDetailsPage() {
       </InnerPageHeader>
 
       {/* Conteúdo */}
-      <div className="  py-6 px-8 space-y-6">
+      <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden px-8 py-6">
         {/* Seção: Informações do Projeto */}
-        <div className="mb-6 border-l-5 pl-4 border-blueberry-700">
+        <div className="shrink-0 border-l-5 pl-4 border-blueberry-700">
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-metal-900">{t('projects.detail.infoTitle')}</h2>
             <p className="text-sm text-metal-500">{t('projects.detail.infoDescription')}</p>
@@ -261,8 +261,8 @@ export default function ProjectDetailsPage() {
           ) : null}
         </div>
         {/* Seção: Membros do Projeto */}
-        <div className="mb-6 border-l-5 pl-4 border-blueberry-700">
-          <div className="mb-6 ">
+        <div className="flex min-h-0 flex-1 flex-col border-l-5 pl-4 border-blueberry-700">
+          <div className="mb-6 shrink-0">
             <h2 className="text-lg font-semibold text-metal-900">{t('projects.detail.membersTitle')}</h2>
             <p className="text-sm text-metal-500">{t('projects.detail.membersDescription')}</p>
           </div>
@@ -270,9 +270,9 @@ export default function ProjectDetailsPage() {
           {loadingMemberships || loadingUsers ? (
             <p className="text-sm text-metal-500">{t('projects.detail.loadingMembers')}</p>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-8 items-start">
+            <div className="grid min-h-0 flex-1 grid-cols-1 items-stretch gap-8 lg:grid-cols-[1fr_auto_1fr] lg:grid-rows-[minmax(0,1fr)]">
               {/* Coluna Esquerda: Formulário para adicionar novo membro */}
-              <div className="flex min-h-[520px] flex-col space-y-4">
+              <div className="flex min-h-0 flex-col space-y-4">
                 <h3 className="text-sm font-semibold text-metal-900">{t('projects.detail.addMemberTitle')}</h3>
 
                 <form onSubmit={handleAddMember} className="space-y-4">
@@ -323,7 +323,7 @@ export default function ProjectDetailsPage() {
               <div className="hidden lg:block w-px bg-metal-200 self-stretch" />
 
               {/* Coluna Direita: Lista de membros */}
-              <div className="flex min-h-[520px] flex-col space-y-4">
+              <div className="flex min-h-0 flex-col space-y-4">
                 <h3 className="text-sm font-semibold text-metal-900">
                   {t('projects.detail.currentMembersTitle')} ({memberships?.count ?? memberships?.results.length ?? 0})
                 </h3>
