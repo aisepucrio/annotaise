@@ -132,18 +132,20 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
             hover_color="blue"
             collapsed={!isOpen}
           />
-          <SidebarItem
-            icon={<BookOpen size={24} />}
-            label={t('sidebar.guide')}
-            href="/guia"
-            alias="/guia"
-            hover_color="blue"
-            collapsed={!isOpen}
-          />
         </ul>
 
         {/* Rodape */}
         <div className="text-sm text-gray-500 mt-auto w-full space-y-1 pl-0">
+          {isAdmin ? (
+            <SidebarItem
+              icon={<BookOpen size={24} />}
+              label={t('sidebar.guide')}
+              href="/guide"
+              alias="/guide"
+              hover_color="blue"
+              collapsed={!isOpen}
+            />
+          ) : null}
           <button type="button" className="text-sm text-red-400 mt-auto w-full space-y-1" onClick={handleLogout}>
             <SidebarItem
               icon={<LogOut size={24} />}

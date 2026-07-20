@@ -42,7 +42,7 @@ export default function LabelingGuidePage() {
   }, [labelingId, t]);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="h-full overflow-y-auto bg-white">
       <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-8">
         <div className="flex items-center justify-between"></div>
 
