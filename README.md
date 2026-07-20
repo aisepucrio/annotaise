@@ -13,7 +13,7 @@
 - [Project Description](#project-description)
 - [Target Users](#target-users)
 - [Repository Structure](#repository-structure)
-- [Project Requirements](#project-dependencies)
+- [Project Requirements](#project-requirements)
 - [Hardware Requirements](#hardware-requirements)
 - [Installation](#installation)
 - [Run AnnotAISE](#run-annotaise)
