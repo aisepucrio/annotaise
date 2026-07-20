@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import axios from 'axios';
 import { Send, Info } from 'lucide-react';
@@ -26,6 +26,7 @@ export default function LabelingAnswerPage() {
   const { t } = useTranslations();
   const router = useRouter();
   const params = useParams<{ labeling_id: string }>();
+  const loadedLabelingIdRef = useRef<number | null>(null);
 
   // Route-derived values
   const labelingId = useMemo(() => {
@@ -149,8 +150,10 @@ export default function LabelingAnswerPage() {
   }, [labelingId, showError, t]);
 
   useEffect(() => {
+    if (Object.is(loadedLabelingIdRef.current, labelingId)) return;
+    loadedLabelingIdRef.current = labelingId;
     void loadItem();
-  }, [loadItem]);
+  }, [labelingId, loadItem]);
 
   // User interaction handlers
   const handleAnswerChange = useCallback((questionId: number | string, value: unknown) => {
@@ -323,7 +326,8 @@ export default function LabelingAnswerPage() {
     </section>
   );
 
-  // The guide uses a resizable split layout only while visible.
+  // Keep the answer panel mounted while the guide is toggled so its scroll
+  // position is preserved.
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <InnerPageHeader onBack={() => router.push('/labelings')}>
@@ -339,22 +343,22 @@ export default function LabelingAnswerPage() {
       </InnerPageHeader>
 
       <div className="flex-1 min-h-0 mt-4">
-        {showGuide ? (
-          <ResizablePanelGroup direction="horizontal" className="h-full gap-3">
-            <ResizablePanel defaultSize={70} minSize={30}>
-              <div className="h-full">{MainPanel}</div>
-            </ResizablePanel>
-            <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={30} minSize={25}>
-              <GuidePanel
-                guideText={guideText}
-                externalHref={Number.isNaN(labelingId) ? undefined : `/labelings/${labelingId}/guide`}
-              />
-            </ResizablePanel>
-          </ResizablePanelGroup>
-        ) : (
-          MainPanel
-        )}
+        <ResizablePanelGroup direction="horizontal" className="h-full gap-3">
+          <ResizablePanel id="answer" order={1} defaultSize={showGuide ? 70 : 100} minSize={30}>
+            <div className="h-full">{MainPanel}</div>
+          </ResizablePanel>
+          {showGuide ? (
+            <>
+              <ResizableHandle withHandle />
+              <ResizablePanel id="guide" order={2} defaultSize={30} minSize={25}>
+                <GuidePanel
+                  guideText={guideText}
+                  externalHref={Number.isNaN(labelingId) ? undefined : `/labelings/${labelingId}/guide`}
+                />
+              </ResizablePanel>
+            </>
+          ) : null}
+        </ResizablePanelGroup>
       </div>
     </div>
   );

@@ -19,6 +19,13 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
+    const languageParam = new URLSearchParams(window.location.search).get('lang');
+    if (languageParam === 'pt-BR' || languageParam === 'en') {
+      setLanguageState(languageParam);
+      setHydrated(true);
+      return;
+    }
+
     const stored = window.localStorage.getItem(STORAGE_KEY);
     if (stored === 'pt-BR' || stored === 'en') {
       setLanguageState(stored);

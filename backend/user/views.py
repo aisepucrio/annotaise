@@ -341,7 +341,7 @@ class InvitationViewSet(viewsets.ModelViewSet):
             self._assign_user_to_labelings(user, resolved_labeling_ids)
 
             invitation = serializer.save(invited_by=request.user, user=user)
-        link = FRONTEND_URL + f"/accept-invitation/{invitation.token}"
+        link = FRONTEND_URL + f"/accept-invitation/{invitation.token}?lang={email_language}"
 
         send_invitation_email(invitation, link, language=email_language)
 
