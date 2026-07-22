@@ -386,6 +386,7 @@ class LabelingMembershipDashboardSerializer(serializers.Serializer):
     email = serializers.EmailField()
     role = serializers.CharField()
     background_answered = serializers.BooleanField(required=False)
+    items_done = serializers.IntegerField(required=False)
 
     joined_at = serializers.DateTimeField()
 

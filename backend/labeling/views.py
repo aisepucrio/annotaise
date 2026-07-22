@@ -116,6 +116,14 @@ class LabelingViewSet(viewsets.ModelViewSet):
         background_users = set(
             BackgroundAnswer.objects.filter(labeling=labeling).values_list("answered_by_id", flat=True)
         )
+        
+        answers_done = dict(
+            Answer.objects
+            .filter(labeling=labeling)
+            .values_list("answered_by_id")
+            .annotate(total=Count("item", distinct=True))
+            .values_list("answered_by_id", "total")
+        )
 
         output = []
         for membership in memberships:
@@ -128,6 +136,7 @@ class LabelingViewSet(viewsets.ModelViewSet):
                 "role": membership.role,
                 "joined_at": membership.joined_at,
                 "background_answered": membership.user_id in background_users,
+                "items_done": answers_done.get(membership.user_id, 0),
             })
         
         return paginated_response(self, output, LabelingMembershipDashboardSerializer)

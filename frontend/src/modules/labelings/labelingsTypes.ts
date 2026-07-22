@@ -156,6 +156,7 @@ export type LabelingMembershipDashboard = {
   role: LabelingMembershipRole;
   joined_at: string;
   background_answered?: boolean;
+  items_done?: number;
 };
 
 // Dashboard-related types

@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { Copy, Users } from 'lucide-react';
+import { ClipboardCheck, Copy, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { type LabelingMembershipDashboard, type LabelingMembershipRole } from '@/modules/labelings/labelingsTypes';
 import { type User } from '@/modules/user/userTypes';
@@ -175,6 +175,7 @@ function AssignTabView({
               {memberships.map((membership) => {
                 const fullName = `${membership.first_name || ''} ${membership.last_name || ''}`.trim();
                 const canInspectBackground = hasBackgroundForm && membership.role === 'annotator';
+                const itemsDone = membership.items_done ?? 0;
 
                 return (
                   <div
@@ -199,6 +200,15 @@ function AssignTabView({
                         }))}
                         containerClassName="w-auto min-w-[150px]"
                       />
+
+                      <span
+                        title={t('labelings.create.assign.itemsDoneTooltip', { count: itemsDone })}
+                        className="flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700"
+                      >
+                        <ClipboardCheck size={16} className="text-blue-900" />
+                        <span className="text-gray-500">{t('labelings.create.assign.itemsDone')}:</span>
+                        <span className="font-medium text-gray-900">{itemsDone}</span>
+                      </span>
 
                       {canInspectBackground ? (
                         <Button
