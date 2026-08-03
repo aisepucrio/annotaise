@@ -1,108 +1,120 @@
-import { useCallback, useMemo, useState } from 'react';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useCallback, useMemo } from 'react';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import type { QueryKey } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 
+// Tamanho do bloco pedido a cada avanço do scroll infinito.
 const DEFAULT_PAGE_SIZE = 12;
-export const DEFAULT_PAGE_SIZE_OPTIONS = [12, 24, 48];
 
-export type PaginationQuery = {
-  page: number;
-  pageSize: number;
-};
-
-export type PaginationMeta = {
-  count: number;
-  next: string | null;
-  previous: string | null;
-};
-
-type PaginatedResponse<T> = {
+export type CursorPage<T> = {
   count: number;
   next: string | null;
   previous: string | null;
   results: T[];
 };
 
-export type PaginatedQuery<TFilters extends object = object> = PaginationQuery & TFilters;
-export type PaginatedSearchQuery = PaginatedQuery<{ search?: string }>;
+/** Filtros de uma listagem. O cursor não entra aqui: quem controla é o useInfiniteQuery. */
+export type CursorQuery<TFilters extends object = object> = TFilters & { pageSize?: number };
+export type CursorSearchQuery = CursorQuery<{ search?: string }>;
 
-type PaginationState = PaginationQuery & {
-  query: PaginationQuery;
-  setPage: (page: number) => void;
-  resetPage: () => void;
-  setPageSize: (pageSize: number) => void;
-};
+/** O que chega no service: os filtros mais o cursor do bloco pedido. */
+export type CursorRequest<TFilters extends object = object> = CursorQuery<TFilters> & { cursor?: string | null };
+export type CursorSearchRequest = CursorRequest<{ search?: string }>;
 
-export function usePaginationState(defaultPageSize = DEFAULT_PAGE_SIZE): PaginationState {
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(defaultPageSize);
-
-  const resetPage = useCallback(() => setPage(1), []);
-
-  const setPageSizeAndReset = useCallback((nextPageSize: number) => {
-    setPageSize(nextPageSize);
-    setPage(1);
-  }, []);
-
-  return useMemo(
-    () => ({
-      page,
-      pageSize,
-      query: { page, pageSize },
-      setPage,
-      resetPage,
-      setPageSize: setPageSizeAndReset,
-    }),
-    [page, pageSize, resetPage, setPageSizeAndReset]
-  );
-}
-
-function toApiPaginationParams<TFilters extends object = object>({
-  page,
-  pageSize,
-  ...filters
-}: PaginatedQuery<TFilters>) {
+function toApiParams<TFilters extends object>({ pageSize, cursor, ...filters }: CursorRequest<TFilters>) {
   return {
     ...filters,
-    page,
-    page_size: pageSize,
+    page_size: pageSize ?? DEFAULT_PAGE_SIZE,
+    // undefined faz o axios omitir o param — o backend então devolve o primeiro bloco.
+    cursor: cursor ?? undefined,
   };
 }
 
-export async function fetchPaginated<T, TParams extends PaginationQuery = PaginationQuery>(
+export async function fetchCursorPage<T, TParams extends CursorRequest = CursorRequest>(
   url: string,
   params: TParams
-): Promise<PaginatedResponse<T>> {
-  const { data } = await api.get<PaginatedResponse<T>>(url, {
-    params: toApiPaginationParams(params),
+): Promise<CursorPage<T>> {
+  const { data } = await api.get<CursorPage<T>>(url, {
+    params: toApiParams(params),
   });
   return data;
 }
 
-type UsePaginatedQueryOptions<
-  TParams extends PaginationQuery,
-  TResponse extends PaginatedResponse<unknown>,
-> = {
+/**
+ * Extrai o token de cursor de um link `next`/`previous` do DRF.
+ *
+ * Reaproveitamos só o token em vez de seguir o link inteiro: assim a requisição
+ * continua passando pelo cliente axios (baseURL, credenciais e interceptors de
+ * auth), sem depender do host absoluto que o backend montou.
+ */
+export function extractCursor(link: string | null | undefined): string | null {
+  if (!link) return null;
+
+  const queryStart = link.indexOf('?');
+  if (queryStart === -1) return null;
+
+  // URLSearchParams já resolve o percent-encoding do token.
+  return new URLSearchParams(link.slice(queryStart + 1)).get('cursor');
+}
+
+type UseCursorQueryOptions<TParams extends CursorQuery, TItem> = {
   queryKey: QueryKey;
   params: TParams;
-  queryFn: (args: TParams) => Promise<TResponse>;
+  queryFn: (args: TParams & { cursor?: string | null }) => Promise<CursorPage<TItem>>;
   enabled?: boolean;
 };
 
-export function usePaginatedQuery<
-  TParams extends PaginationQuery = PaginationQuery,
-  TResponse extends PaginatedResponse<unknown> = PaginatedResponse<unknown>,
->({
+export type CursorListResult<TItem> = {
+  /** Todos os blocos já carregados, concatenados na ordem de chegada. */
+  items: TItem[];
+  /** Total no servidor, quando conhecido — usado nos contadores das telas. */
+  count?: number;
+  isLoading: boolean;
+  isFetching: boolean;
+  error: unknown;
+  hasNextPage: boolean;
+  isFetchingNextPage: boolean;
+  loadMore: () => void;
+};
+
+/**
+ * Listagem paginada por cursor, pronta para scroll infinito.
+ *
+ * Mudar qualquer filtro em `params` troca a queryKey, então os blocos
+ * acumulados são descartados e a lista recomeça do topo — não há mais estado
+ * de página para resetar na mão.
+ */
+export function useCursorQuery<TParams extends CursorQuery, TItem>({
   queryKey,
   params,
   queryFn,
   enabled = true,
-}: UsePaginatedQueryOptions<TParams, TResponse>) {
-  return useQuery({
+}: UseCursorQueryOptions<TParams, TItem>): CursorListResult<TItem> {
+  const query = useInfiniteQuery({
     queryKey: [...queryKey, params],
-    queryFn: () => queryFn(params),
-    placeholderData: keepPreviousData,
+    initialPageParam: null as string | null,
+    queryFn: ({ pageParam }) => queryFn({ ...params, cursor: pageParam }),
+    getNextPageParam: (lastPage: CursorPage<TItem>) => extractCursor(lastPage.next),
     enabled,
   });
+
+  const { data, fetchNextPage } = query;
+
+  const items = useMemo(() => data?.pages.flatMap((page) => page.results) ?? [], [data]);
+
+  // Identidade estável: o observer do scroll infinito depende desta callback.
+  const loadMore = useCallback(() => {
+    void fetchNextPage();
+  }, [fetchNextPage]);
+
+  return {
+    items,
+    count: data?.pages[0]?.count,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    error: query.error,
+    hasNextPage: query.hasNextPage,
+    isFetchingNextPage: query.isFetchingNextPage,
+    loadMore,
+  };
 }

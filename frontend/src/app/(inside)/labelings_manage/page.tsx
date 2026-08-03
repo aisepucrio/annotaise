@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import { Pen } from 'lucide-react';
@@ -17,8 +17,7 @@ import IndividualLabelingCard from '@/components/IndividualLabelingCard';
 import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 
 import { useLabelingDashboardEditQuery } from '@/modules/labelings/labelingQueries';
-import { usePaginationState } from '@/modules/pagination';
-import Pagination from '@/components/Pagination';
+import InfiniteScroll from '@/components/InfiniteScroll';
 import type { CreateLabelingWithCsvPayload } from '@/modules/labelings/labelingsTypes';
 import { useCreateLabelingWithCsvMutation } from '@/modules/labelings/labelingMutations';
 
@@ -31,25 +30,18 @@ export default function LabelingsPage() {
 
   const [openCreateLabelingModal, setopenCreateLabelingModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const pagination = usePaginationState();
 
   const {
-    data: labelings,
+    items: labelingsList,
+    count,
     error,
-    isFetching,
     isLoading,
-  } = useLabelingDashboardEditQuery({
-    search: searchQuery,
-    ...pagination.query,
-  });
+    hasNextPage,
+    isFetchingNextPage,
+    loadMore,
+  } = useLabelingDashboardEditQuery({ search: searchQuery });
 
-  const labelingsList = labelings?.results ?? [];
   const createLabelingWithCsv = useCreateLabelingWithCsvMutation();
-
-  const handleSearch = useCallback((value: string) => {
-    setSearchQuery(value);
-    pagination.resetPage();
-  }, [pagination]);
 
   useEffect(() => {
     if (error) {
@@ -62,9 +54,8 @@ export default function LabelingsPage() {
     const projectQuery = searchParams.get('project');
     if (projectQuery) {
       setSearchQuery(projectQuery);
-      pagination.resetPage();
     }
-  }, [pagination, searchParams]);
+  }, [searchParams]);
 
   async function handleConfirmCreateNewLabeling(payload: CreateLabelingWithCsvPayload) {
     try {
@@ -89,7 +80,7 @@ export default function LabelingsPage() {
       tooltip={t('labelings.manage.tooltip')}
       description={t('labelings.manage.description')}
       searchPlaceholder={t('labelings.manage.searchPlaceholder')}
-      onSearch={handleSearch}
+      onSearch={setSearchQuery}
       filterButtonText={t('filterBar.filterButton')}
       hasButton
       buttonText={t('labelings.manage.newButton')}
@@ -98,10 +89,12 @@ export default function LabelingsPage() {
       message={!isLoading && labelingsList.length === 0 ? t('labelings.manage.empty') : undefined}
       minColumnWidth="420px"
       footer={
-        <Pagination
-          pagination={labelings}
-          paginationState={pagination}
-          isLoading={isFetching}
+        <InfiniteScroll
+          hasNextPage={hasNextPage}
+          isFetchingNextPage={isFetchingNextPage}
+          onLoadMore={loadMore}
+          loadedCount={labelingsList.length}
+          totalCount={count}
         />
       }
       modal={

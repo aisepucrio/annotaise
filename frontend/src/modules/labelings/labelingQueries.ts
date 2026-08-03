@@ -1,10 +1,11 @@
 import { fetchLabelingDashboard, fetchLabelingDashboardEdit } from './labelingService';
-import { usePaginatedQuery } from '@/modules/pagination';
-import type { PaginatedSearchQuery } from '@/modules/pagination';
+import { useCursorQuery } from '@/modules/pagination';
+import type { CursorSearchQuery } from '@/modules/pagination';
+import type { LabelingDashboard } from './labelingsTypes';
 
 // Utilizada para dashboard de labelings com busca
-export function useLabelingDashboardQuery(params: PaginatedSearchQuery) {
-  return usePaginatedQuery({
+export function useLabelingDashboardQuery(params: CursorSearchQuery) {
+  return useCursorQuery<CursorSearchQuery, LabelingDashboard>({
     queryKey: ['labelings', 'dashboard'],
     params,
     queryFn: fetchLabelingDashboard,
@@ -12,8 +13,8 @@ export function useLabelingDashboardQuery(params: PaginatedSearchQuery) {
 }
 
 // Utilizada para dashboard de labelings em modo edição com busca
-export function useLabelingDashboardEditQuery(params: PaginatedSearchQuery) {
-  return usePaginatedQuery({
+export function useLabelingDashboardEditQuery(params: CursorSearchQuery) {
+  return useCursorQuery<CursorSearchQuery, LabelingDashboard>({
     queryKey: ['labelings', 'dashboard-edit'],
     params,
     queryFn: fetchLabelingDashboardEdit,

@@ -342,7 +342,10 @@ class ProjectMembershipViewSetTest(TestCase):
 
     def test_admin_owner_lists_every_membership_in_owned_projects(self):
         self.client.force_authenticate(self.owner_admin)
-        response = self.client.get(self.memberships_url)
+        # O assunto aqui é o escopo por permissão, não a paginação: pede um bloco
+        # grande o bastante para caber tudo em uma resposta, senão o teste passa
+        # a depender do page_size default do cursor.
+        response = self.client.get(self.memberships_url, {"page_size": 100})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         results = response.data["results"]
         project_ids = {item["project"] for item in results}

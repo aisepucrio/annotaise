@@ -8,7 +8,7 @@ from .serializers import (
 )
 from labeling.models import LabelingElement
 from labeling.models import Labeling, LabelingMembership, LabelingSection
-from annotaise.pagination import StandardPageNumberPagination
+from annotaise.pagination import StandardCursorPagination
 
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
@@ -24,7 +24,7 @@ from .services.llm_tiebreak import run_llm_tiebreak_decision
 import pandas as pd
 
 from rest_framework.generics import ListAPIView
-from django.db.models import Q
+from django.db.models import F, Q
 from django.db import transaction
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.contrib.auth import get_user_model
@@ -437,9 +437,15 @@ class AnonymousSubmitAnswerView(APIView):
         )
 
 
+class AnswerRowCursorPagination(StandardCursorPagination):
+    # A tela lista as respostas na ordem das linhas do CSV. O cursor não aceita
+    # lookups com "__", então row_index chega anotado do item (ver get_queryset).
+    ordering = ("row_index", "id")
+
+
 class AnswersDashboardView(ListAPIView):
     serializer_class = AnswerSerializer
-    pagination_class = StandardPageNumberPagination
+    pagination_class = AnswerRowCursorPagination
 
     def get_queryset(self):
         labeling_id = self.kwargs.get("labeling_id")
@@ -447,13 +453,14 @@ class AnswersDashboardView(ListAPIView):
             Answer.objects
             .filter(labeling_id=labeling_id)
             .select_related("item", "answered_by", "responded_as")
+            .annotate(row_index=F("item__row_index"))
         )
 
         answered_by = self.request.query_params.get("answered_by")
         if answered_by and answered_by.isdigit():
             qs = qs.filter(answered_by_id=int(answered_by))
 
-        return qs.order_by("item__row_index", "id")
+        return qs.order_by("row_index", "id")
 
 
 class LabelingBackgroundAnswerView(APIView):

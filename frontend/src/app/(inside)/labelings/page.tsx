@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import PageLayout from '@/components/inside-pages-layout/PageLayout';
 import IndividualLabelingCard from '@/components/IndividualLabelingCard';
 import GridItemCard from '@/components/grid/GridItemCard';
@@ -8,8 +8,7 @@ import Button from '@/components/button/Button';
 import { Tag } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useLabelingDashboardQuery } from '@/modules/labelings/labelingQueries';
-import { usePaginationState } from '@/modules/pagination';
-import Pagination from '@/components/Pagination';
+import InfiniteScroll from '@/components/InfiniteScroll';
 import { toast } from 'sonner';
 import { useTranslations } from '@/i18n/use-translations';
 
@@ -17,24 +16,15 @@ export default function LabelingsPage() {
   const { t } = useTranslations();
   const router = useRouter();
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const pagination = usePaginationState();
 
   const {
-    data: labelings,
+    items: labelingsList,
     error,
-    isFetching,
     isLoading,
-  } = useLabelingDashboardQuery({
-    search: debouncedSearch,
-    ...pagination.query,
-  });
-
-  const labelingsList = labelings?.results ?? [];
-
-  const handleSearch = useCallback((value: string) => {
-    setDebouncedSearch(value);
-    pagination.resetPage();
-  }, [pagination]);
+    hasNextPage,
+    isFetchingNextPage,
+    loadMore,
+  } = useLabelingDashboardQuery({ search: debouncedSearch });
 
   useEffect(() => {
     if (error) {
@@ -43,22 +33,32 @@ export default function LabelingsPage() {
     }
   }, [error, t]);
 
+  // A ordem do dashboard é por "última aberta", registrada no backend quando a
+  // tela de destino busca o detalhe da rotulação — não há nada a fazer aqui.
+  const handleOpenLabeling = (labelingId: number, mustAnswerBackgroundFirst: boolean) => {
+    router.push(mustAnswerBackgroundFirst ? `/labelings/${labelingId}/background` : `/labelings/${labelingId}/answer`);
+  };
+
   return (
     <PageLayout
       pageTitle={t('labelings.title')}
       tooltip={t('labelings.tooltip')}
       description={t('labelings.description')}
       searchPlaceholder={t('labelings.searchPlaceholder')}
-      onSearch={handleSearch}
+      onSearch={setDebouncedSearch}
       filterButtonText={t('filterBar.filterButton')}
       isLoading={isLoading}
       message={!isLoading && labelingsList.length === 0 ? t('labelings.empty') : undefined}
       minColumnWidth="420px"
       footer={
-        <Pagination
-          pagination={labelings}
-          paginationState={pagination}
-          isLoading={isFetching}
+        // Sem totalCount de propósito: este dashboard descarta rotulações com
+        // cota de grupo já preenchida depois de contar, então o total do
+        // servidor é só um teto — mostramos o que de fato está na tela.
+        <InfiniteScroll
+          hasNextPage={hasNextPage}
+          isFetchingNextPage={isFetchingNextPage}
+          onLoadMore={loadMore}
+          loadedCount={labelingsList.length}
         />
       }
     >
@@ -78,9 +78,7 @@ export default function LabelingsPage() {
               actionButton={
                 <Button
                   icon={<Tag size={20} strokeWidth={1.75} />}
-                  onClick={() =>
-                    router.push(mustAnswerBackgroundFirst ? `/labelings/${l.id}/background` : `/labelings/${l.id}/answer`)
-                  }
+                  onClick={() => handleOpenLabeling(l.id, mustAnswerBackgroundFirst)}
                   variant="normal"
                   ariaLabel={t('labelings.action.answerAria')}
                 >
