@@ -1,9 +1,10 @@
-from .models import Labeling, LabelingMembership, LabelingSection, LabelingElement, MultipleChoiceItem, QuestionRange
+from .models import Labeling, LabelingMembership, LabelingSection, LabelingElement, MultipleChoiceItem, QuestionRange, LabelingAIConfig
 from .serializers import (LabelingSerializer, LabelingMembershipSerializer,
-LabelingSectionsBulkCreateSerializer, LabelingSectionSerializer, LabelingDashboardSerializer, LabelingMembershipDashboardSerializer, LabelingAgreementSummarySerializer)
+LabelingSectionsBulkCreateSerializer, LabelingSectionSerializer, LabelingDashboardSerializer, LabelingMembershipDashboardSerializer, LabelingAgreementSummarySerializer,
+LabelingAIConfigWriteSerializer, serialize_labeling_ai_config)
 from project.models import ProjectMembership
 from user.permissions import IsAdminAccount
-from .permissions import CanEditLabelingsInProjectPermission
+from .permissions import CanEditLabelingsInProjectPermission, IsLabelingOwnerPermission
 from item.models import Item
 from user.models import UserGroup
 from .serializers import LabelingElementSerializer
@@ -12,6 +13,7 @@ from django.shortcuts import render, get_object_or_404
 from django.db import models, transaction
 from django.utils import timezone
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ImproperlyConfigured
 
 from rest_framework import viewsets, status
 
@@ -67,6 +69,8 @@ class LabelingViewSet(viewsets.ModelViewSet):
             self.permission_classes = [IsAdminAccount]
         elif self.action in ['update','partial_update', 'destroy']:
             self.permission_classes = [IsAdminAccount, CanEditLabelingsInProjectPermission]
+        elif self.action == 'ai_config':
+            self.permission_classes = [IsAdminAccount, IsLabelingOwnerPermission]
         else:
             self.permission_classes = [IsAuthenticated]
         return super().get_permissions()
@@ -167,6 +171,38 @@ class LabelingViewSet(viewsets.ModelViewSet):
             self, memberships, LabelingMembershipDashboardSerializer, build_rows=build_rows
         )
 
+    @action(methods=['get', 'post', 'delete'], detail=True, url_path='ai-config')
+    def ai_config(self, request, pk=None):
+        """Configuração BYOK de IA (desempate por LLM) desta rotulação.
+
+        GET nunca retorna a chave, nem seu ciphertext — só provedor e um
+        indicador de que já está configurada. POST substitui a configuração
+        inteira (não há "patch parcial" de chave). DELETE volta a rotulação
+        para o comportamento padrão (Ollama local).
+        """
+        labeling = self.get_object()
+
+        if request.method == 'GET':
+            config = getattr(labeling, 'ai_config', None)
+            return Response(serialize_labeling_ai_config(config))
+
+        if request.method == 'POST':
+            serializer = LabelingAIConfigWriteSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            try:
+                config = serializer.save(labeling=labeling)
+            except ImproperlyConfigured:
+                return Response(
+                    {
+                        'detail': 'BYOK indisponível: criptografia não configurada no servidor.',
+                        'code': 'BYOK_ENCRYPTION_UNAVAILABLE',
+                    },
+                    status=503,
+                )
+            return Response(serialize_labeling_ai_config(config))
+
+        LabelingAIConfig.objects.filter(labeling=labeling).delete()
+        return Response(status=204)
 
     def _user_can_answer_labeling(self, labeling, user, user_group_names):
         """

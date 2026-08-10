@@ -16,6 +16,8 @@ import type {
   AnswerPayload,
   AnswerResponse,
   BackgroundAnswerResponse,
+  LabelingAIConfig,
+  LabelingAIConfigPayload,
 } from './labelingsTypes';
 
 // Funções relacionadas a Labelings
@@ -59,6 +61,26 @@ export async function updateLabeling(id: number, payload: Partial<LabelingPayloa
 // Deleta um labeling
 export async function deleteLabeling(id: number): Promise<void> {
   await api.delete(`/labelings/${id}/`);
+}
+
+// Busca a configuração BYOK de IA da rotulação (nunca retorna a chave em si)
+export async function fetchLabelingAIConfig(id: number): Promise<LabelingAIConfig> {
+  const { data } = await api.get<LabelingAIConfig>(`/labelings/${id}/ai-config/`);
+  return data;
+}
+
+// Salva (cria ou substitui) a configuração BYOK de IA da rotulação
+export async function saveLabelingAIConfig(
+  id: number,
+  payload: LabelingAIConfigPayload
+): Promise<LabelingAIConfig> {
+  const { data } = await api.post<LabelingAIConfig>(`/labelings/${id}/ai-config/`, payload);
+  return data;
+}
+
+// Remove a configuração BYOK de IA, voltando ao desempate padrão
+export async function deleteLabelingAIConfig(id: number): Promise<void> {
+  await api.delete(`/labelings/${id}/ai-config/`);
 }
 
 // Importa itens para o labeling via arquivo CSV

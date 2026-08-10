@@ -8,8 +8,15 @@ import {
   deleteLabelingMembership,
   addItemsCsvToLabeling,
   exportImportedLabelingCsv,
+  saveLabelingAIConfig,
+  deleteLabelingAIConfig,
 } from '../labelingService';
-import type { LabelingPayload, SectionDTO, LabelingMembershipRole } from '@/modules/labelings/labelingsTypes';
+import type {
+  LabelingPayload,
+  SectionDTO,
+  LabelingMembershipRole,
+  LabelingAIConfigPayload,
+} from '@/modules/labelings/labelingsTypes';
 
 // Utilizada para deletar labeling
 export function useDeleteLabelingMutation() {
@@ -112,6 +119,30 @@ export function useDeleteMembershipMutation() {
       qc.invalidateQueries({
         queryKey: ['labelings', labelingId, 'memberships'],
       });
+    },
+  });
+}
+
+// Utilizada para salvar a configuração BYOK de IA (aba Decisão)
+export function useSaveLabelingAIConfigMutation() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: number; payload: LabelingAIConfigPayload }) => saveLabelingAIConfig(id, payload),
+    onSuccess: (_data, { id }) => {
+      qc.invalidateQueries({ queryKey: ['labelings', id, 'ai-config'] });
+    },
+  });
+}
+
+// Utilizada para remover a configuração BYOK de IA (volta ao desempate padrão)
+export function useDeleteLabelingAIConfigMutation() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => deleteLabelingAIConfig(id),
+    onSuccess: (_data, id) => {
+      qc.invalidateQueries({ queryKey: ['labelings', id, 'ai-config'] });
     },
   });
 }

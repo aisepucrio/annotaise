@@ -19,7 +19,8 @@ from user.permissions import IsAdminAccount
 from django.http import HttpResponse
 from .permissions import CanAnswerLabelingPermission
 from labeling.permissions import CanEditLabelingsInProjectPermission
-from .services.llm_tiebreak import run_llm_tiebreak_decision
+from .services.llm_tiebreak import run_llm_tiebreak_decision, run_llm_tiebreak_decision_byok
+from annotaise.crypto import decrypt_secret
 
 import pandas as pd
 
@@ -132,6 +133,44 @@ class AnswerViewset(viewsets.ModelViewSet):
             )
 
         return contexts
+
+    def _run_llm_tiebreak(self, *, labeling, question_text, options, contexts):
+        """Roda o desempate por LLM: usa o provedor BYOK da rotulação se
+        configurado, senão cai no comportamento padrão (Ollama local).
+
+        A chave descriptografada só existe como variável local, pelo tempo
+        da chamada ao provedor — nunca é logada nem persistida fora do
+        campo criptografado.
+        """
+        ai_config = getattr(labeling, "ai_config", None)
+        if ai_config is not None:
+            try:
+                api_key = decrypt_secret(ai_config.encrypted_api_key)
+                return run_llm_tiebreak_decision_byok(
+                    provider=ai_config.provider,
+                    api_key=api_key,
+                    labeling_guide=labeling.guide,
+                    question_text=question_text,
+                    options=options,
+                    contexts=contexts,
+                )
+            except Exception:
+                return {
+                    "models": [],
+                    "vote_count": {},
+                    "winner": None,
+                    "tied": False,
+                    "valid_votes": 0,
+                    "error": "BYOK_ERROR",
+                    "error_message": "Não foi possível executar a decisão por LLM (BYOK).",
+                }
+
+        return run_llm_tiebreak_decision(
+            labeling_guide=labeling.guide,
+            question_text=question_text,
+            options=options,
+            contexts=contexts,
+        )
 
     def create(self, request, *args, **kwargs):
         user = request.user
@@ -262,8 +301,8 @@ class AnswerViewset(viewsets.ModelViewSet):
                             )
                         )
                         try:
-                            llm_result = run_llm_tiebreak_decision(
-                                labeling_guide=labeling.guide,
+                            llm_result = self._run_llm_tiebreak(
+                                labeling=labeling,
                                 question_text=decisive_element.text,
                                 options=options,
                                 contexts=self._build_llm_contexts(item),

@@ -50,3 +50,20 @@ class CanEditLabelingsInProjectPermission(BasePermission):
         if isinstance(obj, LabelingMembership):
             return obj.labeling
         return None
+
+
+class IsLabelingOwnerPermission(BasePermission):
+    """Restringe a ação a donos do projeto da rotulação.
+
+    Mais estrita que CanEditLabelingsInProjectPermission (que também libera
+    'contributor'), usada especificamente para gerenciar a configuração BYOK
+    de IA, já que essa credencial gera cobrança real na conta do admin.
+    """
+
+    message = "Somente o dono do projeto pode gerenciar a configuração de IA (BYOK) desta rotulação."
+
+    def has_object_permission(self, request, view, obj):
+        labeling = obj if isinstance(obj, Labeling) else getattr(obj, "labeling", None)
+        if not labeling:
+            return False
+        return labeling.project.memberships.filter(user=request.user, role="owner").exists()

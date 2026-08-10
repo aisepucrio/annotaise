@@ -1,10 +1,11 @@
-from .models import Labeling, LabelingSection, LabelingElement, MultipleChoiceItem, QuestionRange, LabelingMembership
+from .models import Labeling, LabelingSection, LabelingElement, MultipleChoiceItem, QuestionRange, LabelingMembership, LabelingAIConfig
 
 
 import uuid
 from rest_framework import serializers
 from django.db import transaction
 from django.utils import timezone
+from annotaise.crypto import encrypt_secret
 
 LLM_TIEBREAK_USERNAME = "llm_tiebreak_bot"
 LLM_TIEBREAK_EMAIL = "llm_tiebreak_bot@annotaise.local"
@@ -407,3 +408,38 @@ class LabelingAgreementSummarySerializer(serializers.Serializer):
     min_agreement = serializers.IntegerField(min_value=2)
     max_min_agreement = serializers.IntegerField(min_value=2)
     questions = LabelingAgreementQuestionSerializer(many=True)
+
+
+class LabelingAIConfigWriteSerializer(serializers.Serializer):
+    """Recebe provedor + chave em texto puro e persiste só o ciphertext.
+
+    Intencionalmente um Serializer simples (não ModelSerializer): o campo de
+    chave nunca deve existir como campo de leitura, nem mesmo write_only,
+    para não correr o risco de um dia virar parte de uma resposta.
+    """
+
+    provider = serializers.ChoiceField(choices=LabelingAIConfig.Provider.choices)
+    api_key = serializers.CharField(write_only=True, trim_whitespace=True, min_length=8, max_length=4096)
+
+    def save(self, *, labeling):
+        api_key = self.validated_data["api_key"]
+        config, _ = LabelingAIConfig.objects.update_or_create(
+            labeling=labeling,
+            defaults={
+                "provider": self.validated_data["provider"],
+                "encrypted_api_key": encrypt_secret(api_key),
+                "key_hint": api_key[-4:] if len(api_key) >= 4 else "",
+            },
+        )
+        return config
+
+
+def serialize_labeling_ai_config(config):
+    if config is None:
+        return {"provider": None, "is_configured": False, "key_hint": None, "updated_at": None}
+    return {
+        "provider": config.provider,
+        "is_configured": True,
+        "key_hint": config.key_hint or None,
+        "updated_at": config.updated_at,
+    }

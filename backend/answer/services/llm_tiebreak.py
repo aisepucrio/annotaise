@@ -34,6 +34,16 @@ AUDIO_CONTEXT_ERROR_MESSAGE = (
 )
 
 
+# Mapeia o provider armazenado em LabelingAIConfig para o nome de modelo que
+# o LiteLLM espera (padrão "<provider>/<model>"). Modelos fixos por enquanto —
+# não expostos como configuráveis pelo admin.
+PROVIDER_MODEL_MAP = {
+    "openai": "openai/gpt-4o-mini",
+    "anthropic": "anthropic/claude-3-5-haiku-20241022",
+    "gemini": "gemini/gemini-1.5-flash",
+}
+
+
 def _normalize_key(value):
     return str(value).strip().casefold()
 
@@ -379,6 +389,153 @@ def run_llm_tiebreak_decision(*, labeling_guide, question_text, options, context
         "attempted_at": attempt_time,
         "model_pool": selected_pool,
         "models_used": selected_models,
+        "models": model_results,
+        "vote_count": dict(counter),
+        "winner": winner,
+        "tied": tied,
+        "valid_votes": sum(counter.values()),
+        "error": None,
+        "error_message": None,
+    }
+
+
+def _sanitize_llm_error(exc, secret):
+    text = str(exc)
+    if secret:
+        text = text.replace(secret, "[REDACTED]")
+    return text[:500]
+
+
+def run_llm_tiebreak_decision_byok(*, provider, api_key, labeling_guide, question_text, options, contexts):
+    """Mesmo protocolo de run_llm_tiebreak_decision, mas via provedor cloud BYOK.
+
+    Reaproveita normalização de opções, prompt e parsing de voto do caminho
+    Ollama. Contexto de imagem continua sendo descrito pelo Ollama local
+    (mesmo comportamento de hoje) mesmo quando o desempate final roda no
+    provedor cloud escolhido pelo admin.
+    """
+    normalized_options = {
+        _normalize_key(option): option
+        for option in options
+        if str(option).strip()
+    }
+    valid_options = list(normalized_options.values())
+    attempt_time = datetime.now(timezone.utc).isoformat()
+
+    if not valid_options:
+        return {
+            "attempted_at": attempt_time,
+            "model_pool": "byok",
+            "models_used": [],
+            "models": [],
+            "vote_count": {},
+            "winner": None,
+            "tied": False,
+            "valid_votes": 0,
+            "error": "NO_VALID_OPTIONS",
+            "error_message": "Não há opções válidas para a pergunta decisiva.",
+        }
+
+    model_name = PROVIDER_MODEL_MAP.get(provider)
+    if not model_name:
+        return {
+            "attempted_at": attempt_time,
+            "model_pool": "byok",
+            "models_used": [],
+            "models": [],
+            "vote_count": {},
+            "winner": None,
+            "tied": False,
+            "valid_votes": 0,
+            "error": "UNSUPPORTED_PROVIDER",
+            "error_message": f"Provedor de IA não suportado: {provider}.",
+        }
+
+    ollama_base_url = os.getenv("OLLAMA_BASE_URL", "http://host.docker.internal:11434")
+    ollama_timeout_seconds = float(os.getenv("OLLAMA_TIMEOUT_SECONDS", "60"))
+
+    contexts_text, context_error = _format_contexts_for_prompt(
+        contexts=contexts,
+        base_url=ollama_base_url,
+        timeout_seconds=ollama_timeout_seconds,
+    )
+    if context_error:
+        return {
+            "attempted_at": attempt_time,
+            "model_pool": "byok",
+            "models_used": [model_name],
+            "models": [],
+            "vote_count": {},
+            "winner": None,
+            "tied": False,
+            "valid_votes": 0,
+            "error": context_error["error"],
+            "error_message": context_error["error_message"],
+        }
+
+    prompt = _build_prompt(labeling_guide, contexts_text, question_text, valid_options)
+    byok_timeout_seconds = float(os.getenv("BYOK_LLM_TIMEOUT_SECONDS", "60"))
+
+    model_results = []
+    counter = Counter()
+
+    try:
+        import litellm
+
+        response = litellm.completion(
+            model=model_name,
+            api_key=api_key,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0,
+            timeout=byok_timeout_seconds,
+        )
+        raw_response = response.choices[0].message.content
+        vote = _parse_vote(raw_response, normalized_options)
+        if vote:
+            counter[vote] += 1
+            model_results.append(
+                {
+                    "model": model_name,
+                    "status": "ok",
+                    "vote": vote,
+                    "raw_response": str(raw_response).strip(),
+                }
+            )
+        else:
+            model_results.append(
+                {
+                    "model": model_name,
+                    "status": "invalid_vote",
+                    "vote": None,
+                    "raw_response": (
+                        str(raw_response).strip() if raw_response is not None else ""
+                    ),
+                }
+            )
+    except Exception as exc:
+        model_results.append(
+            {
+                "model": model_name,
+                "status": "error",
+                "vote": None,
+                "error": _sanitize_llm_error(exc, api_key),
+            }
+        )
+
+    winner = None
+    tied = False
+    if counter:
+        max_votes = max(counter.values())
+        top_options = [option for option, count in counter.items() if count == max_votes]
+        if len(top_options) == 1:
+            winner = top_options[0]
+        else:
+            tied = True
+
+    return {
+        "attempted_at": attempt_time,
+        "model_pool": "byok",
+        "models_used": [model_name],
         "models": model_results,
         "vote_count": dict(counter),
         "winner": winner,

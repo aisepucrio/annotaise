@@ -246,3 +246,28 @@ class LabelingMembership(models.Model):
 
     def __str__(self):
         return f"{self.user} {self.labeling} {self.role} {self.items_done}"
+
+
+class LabelingAIConfig(models.Model):
+    """Configuração BYOK de IA para desempate por LLM de uma rotulação.
+
+    Mantida fora do LabelingSerializer (relação O2O separada) para que a
+    chave criptografada nunca circule em listagens/serializações comuns.
+    """
+
+    class Provider(models.TextChoices):
+        OPENAI = "openai", "OpenAI"
+        ANTHROPIC = "anthropic", "Anthropic"
+        GEMINI = "gemini", "Gemini"
+
+    labeling = models.OneToOneField(Labeling, on_delete=models.CASCADE, related_name="ai_config")
+    provider = models.CharField(max_length=16, choices=Provider.choices)
+    # base64(nonce || AES-256-GCM ciphertext+tag) — ver annotaise/crypto.py
+    encrypted_api_key = models.TextField()
+    # Últimos caracteres da chave, em texto puro, só para exibir "sk-...ab12" no frontend.
+    key_hint = models.CharField(max_length=8, blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.labeling} [{self.get_provider_display()}]"

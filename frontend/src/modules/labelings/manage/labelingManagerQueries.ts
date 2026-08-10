@@ -9,6 +9,7 @@ import {
   fetchLabelingAnswers,
   fetchLabelingElements,
   fetchLabelingAgreementSummary,
+  fetchLabelingAIConfig,
 } from '../labelingService';
 import { fetchProject } from '@/modules/projects/projectService';
 import { fetchUsers } from '@/modules/user/userService';
@@ -158,5 +159,16 @@ export function useLabelingDecisionQuestionsQuery(labelingId: number) {
     enabled,
     queryFn: () => fetchLabelingElements(labelingId, { type: 'multiple_choice' }),
     select: (questions: LabelingElementSummary[]) => [...questions].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+  });
+}
+
+// Utilizada para buscar a configuração BYOK de IA do labeling (aba Decisão)
+export function useLabelingAIConfigQuery(labelingId: number, shouldFetch = true) {
+  const enabled = !Number.isNaN(labelingId) && shouldFetch;
+
+  return useQuery({
+    queryKey: ['labelings', labelingId, 'ai-config'],
+    enabled,
+    queryFn: () => fetchLabelingAIConfig(labelingId),
   });
 }

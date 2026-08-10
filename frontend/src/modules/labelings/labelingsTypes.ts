@@ -2,6 +2,23 @@ export type LabelingStatus = 'draft' | 'active' | 'archived' | 'finished';
 export type DistributionStrategy = 'auto' | 'specified' | 'per_person' | 'anonymous_mode';
 export type DecisionMode = 'manual' | 'llm';
 
+// Configuração BYOK (Bring Your Own Key) de IA usada no desempate por LLM
+export type AIProvider = 'openai' | 'anthropic' | 'gemini';
+
+// Resposta de GET /labelings/{id}/ai-config/ — nunca inclui a chave em si
+export type LabelingAIConfig = {
+  provider: AIProvider | null;
+  is_configured: boolean;
+  key_hint: string | null;
+  updated_at: string | null;
+};
+
+// Corpo de POST /labelings/{id}/ai-config/
+export type LabelingAIConfigPayload = {
+  provider: AIProvider;
+  api_key: string;
+};
+
 // Fields returned by the backend for a labeling
 export type Labeling = {
   id: number;
