@@ -1,6 +1,8 @@
 from django.db import models
 from django.conf import settings
 
+from .querysets import AnswerQuerySet
+
 class Answer(models.Model):
     '''a arquitetura escolhida foi 1 questao pra cada item. o payload consiste no id da questao : resposta'''
     item = models.ForeignKey("item.Item", on_delete=models.CASCADE, related_name="answers")
@@ -20,7 +22,9 @@ class Answer(models.Model):
     )
     answer_payload = models.JSONField()
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
+    objects = AnswerQuerySet.as_manager()
+
     class Meta:
         ordering = ["-created_at"]
         indexes = [
