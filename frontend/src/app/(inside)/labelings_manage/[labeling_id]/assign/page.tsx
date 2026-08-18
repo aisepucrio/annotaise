@@ -22,9 +22,7 @@ import Select from '@/components/form/Select';
 import SearchableSelect from '@/components/form/SearchableSelect';
 import Button from '@/components/button/Button';
 import DeleteIconButton from '@/components/button/DeleteIconButton';
-import Pagination, { type PaginationControls } from '@/components/Pagination';
-import type { PaginationMeta } from '@/modules/pagination';
-import { usePaginationState } from '@/modules/pagination';
+import InfiniteScroll from '@/components/InfiniteScroll';
 import BackgroundModal, { type BackgroundModalHandle } from './BackgroundModal';
 
 type AssignTabProps = {
@@ -33,10 +31,12 @@ type AssignTabProps = {
   isAnonymous: boolean;
   anonymousUrl: string | null;
   memberships: LabelingMembershipDashboard[];
-  membershipsPagination?: PaginationMeta;
+  membershipsCount?: number;
   membershipLoading: boolean;
-  membershipFetching: boolean;
   membershipSaving: boolean;
+  hasMoreMemberships: boolean;
+  loadingMoreMemberships: boolean;
+  onLoadMoreMemberships: () => void;
   availableUsers: User[];
   roleOptions: LabelingMembershipRole[];
   newMemberId: string;
@@ -44,7 +44,6 @@ type AssignTabProps = {
   onChangeNewMemberId: (value: string) => void;
   onChangeNewMemberRole: (role: LabelingMembershipRole) => void;
   onAddMember: () => void;
-  paginationState: PaginationControls;
   onChangeRole: (membership: LabelingMembershipDashboard, role: LabelingMembershipRole) => void;
   onRemoveMember: (membership: LabelingMembershipDashboard) => void;
 };
@@ -55,10 +54,12 @@ function AssignTabView({
   isAnonymous,
   anonymousUrl,
   memberships,
-  membershipsPagination,
+  membershipsCount,
   membershipLoading,
-  membershipFetching,
   membershipSaving,
+  hasMoreMemberships,
+  loadingMoreMemberships,
+  onLoadMoreMemberships,
   availableUsers,
   roleOptions,
   newMemberId,
@@ -66,7 +67,6 @@ function AssignTabView({
   onChangeNewMemberId,
   onChangeNewMemberRole,
   onAddMember,
-  paginationState,
   onChangeRole,
   onRemoveMember,
 }: AssignTabProps) {
@@ -231,12 +231,15 @@ function AssignTabView({
                   </div>
                 );
               })}
-            </div>
-            <div>
-              <Pagination
-                pagination={membershipsPagination}
-                paginationState={paginationState}
-                isLoading={membershipFetching}
+
+              {/* Dentro da área rolável: é o que faz a sentinela disparar só
+                  quando o usuário chega ao fim da lista. */}
+              <InfiniteScroll
+                hasNextPage={hasMoreMemberships}
+                isFetchingNextPage={loadingMoreMemberships}
+                onLoadMore={onLoadMoreMemberships}
+                loadedCount={memberships.length}
+                totalCount={membershipsCount}
               />
             </div>
           </div>
@@ -255,7 +258,6 @@ export default function AssignPage() {
 
   const [newMemberId, setNewMemberId] = useState('');
   const [newMemberRole, setNewMemberRole] = useState<LabelingMembershipRole>('annotator');
-  const pagination = usePaginationState();
 
   const headerQuery = useLabelingHeaderQuery(labelingId);
   const labeling = headerQuery.data?.labeling;
@@ -264,10 +266,10 @@ export default function AssignPage() {
   const isAnonymous = labeling?.distribution_strategy === 'anonymous_mode';
   const anonymousUrl = isAnonymous ? (labeling?.anonymous_url ?? null) : null;
 
-  const membershipsQuery = useLabelingMembershipsQuery({ labelingId, ...pagination.query }, !isAnonymous);
+  const membershipsQuery = useLabelingMembershipsQuery({ labelingId }, !isAnonymous);
   const usersQuery = useAvailableUsersQuery(!isAnonymous);
 
-  const memberships = useMemo(() => membershipsQuery.data?.results ?? [], [membershipsQuery.data?.results]);
+  const memberships = membershipsQuery.items;
   const availableUsers = useMemo(() => usersQuery.data ?? [], [usersQuery.data]);
   const hasBackgroundForm = Boolean(labeling?.has_background_form);
 
@@ -296,7 +298,6 @@ export default function AssignPage() {
         onSuccess: () => {
           setNewMemberId('');
           setNewMemberRole('annotator');
-          pagination.resetPage();
           toast.success(t('labelings.create.success.memberAdded'));
         },
         onError: (error: unknown) => {
@@ -345,10 +346,12 @@ export default function AssignPage() {
       isAnonymous={isAnonymous}
       anonymousUrl={anonymousUrl}
       memberships={memberships}
-      membershipsPagination={membershipsQuery.data}
+      membershipsCount={membershipsQuery.count}
       membershipLoading={membershipsQuery.isLoading}
-      membershipFetching={membershipsQuery.isFetching}
       membershipSaving={membershipSaving}
+      hasMoreMemberships={membershipsQuery.hasNextPage}
+      loadingMoreMemberships={membershipsQuery.isFetchingNextPage}
+      onLoadMoreMemberships={membershipsQuery.loadMore}
       availableUsers={filteredAvailableUsers}
       roleOptions={['annotator', 'admin']}
       newMemberId={newMemberId}
@@ -356,7 +359,6 @@ export default function AssignPage() {
       onChangeNewMemberId={setNewMemberId}
       onChangeNewMemberRole={setNewMemberRole}
       onAddMember={handleAddMember}
-      paginationState={pagination}
       onChangeRole={handleChangeRole}
       onRemoveMember={handleRemoveMember}
     />

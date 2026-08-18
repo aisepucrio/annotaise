@@ -29,6 +29,7 @@ interface PageLayoutProps {
 
   // Content
   children: ReactNode;
+  /** Renderizado ao fim da área rolável — é onde vive a sentinela do scroll infinito. */
   footer?: ReactNode;
   isLoading?: boolean;
   message?: string;
@@ -66,9 +67,8 @@ export default function PageLayout({
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
   // Keep the latest onSearch without making the firing effect depend on its
-  // identity. Pages often recreate onSearch on every pagination change (it
-  // closes over the pagination object), and re-firing it here would reset the
-  // search term and bounce the user back to page 1.
+  // identity: a page that recreates the callback on every render would
+  // otherwise re-fire the search and throw away the loaded results.
   const onSearchRef = useRef(onSearch);
   useEffect(() => {
     onSearchRef.current = onSearch;
@@ -126,8 +126,8 @@ export default function PageLayout({
             <div className="flex min-h-0 flex-1 flex-col">
               <div className="min-h-0 flex-1 overflow-y-auto pr-2">
                 <GridLayout minColumnWidth={minColumnWidth}>{children}</GridLayout>
+                {footer}
               </div>
-              {footer ? <div className="shrink-0">{footer}</div> : null}
             </div>
           )}
         </div>

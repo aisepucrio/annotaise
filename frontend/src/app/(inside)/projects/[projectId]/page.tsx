@@ -13,8 +13,7 @@ import DeleteIconButton from '@/components/button/DeleteIconButton';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
 import Input from '@/components/form/Input';
 import Select from '@/components/form/Select';
-import Pagination from '@/components/Pagination';
-import { usePaginationState } from '@/modules/pagination';
+import InfiniteScroll from '@/components/InfiniteScroll';
 import { useProjectQuery, useProjectMembershipsQuery } from '@/modules/projects/projectsQueries';
 import {
   useUpdateProjectMutation,
@@ -42,7 +41,6 @@ export default function ProjectDetailsPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [newMemberId, setNewMemberId] = useState<string>('');
   const [newMemberRole, setNewMemberRole] = useState<ProjectMembershipPayload['role']>('viewer');
-  const membersPagination = usePaginationState();
 
   // Opções de status do projeto
   const STATUS_OPTIONS = [
@@ -66,11 +64,14 @@ export default function ProjectDetailsPage() {
 
   // Buscar membros do projeto
   const {
-    data: memberships,
-    isFetching: fetchingMemberships,
+    items: membershipList,
+    count: membershipsCount,
     isLoading: loadingMemberships,
     error: membershipsError,
-  } = useProjectMembershipsQuery(projectId, membersPagination.query);
+    hasNextPage: hasMoreMemberships,
+    isFetchingNextPage: fetchingMoreMemberships,
+    loadMore: loadMoreMemberships,
+  } = useProjectMembershipsQuery(projectId);
 
   // Buscar todos os usuários
   const { data: users, isLoading: loadingUsers, error: usersError } = useUsersQuery();
@@ -94,11 +95,10 @@ export default function ProjectDetailsPage() {
 
   // Usuários disponíveis para adicionar (que não são membros ainda)
   const availableUsers = useMemo(() => {
-    const membershipList = memberships?.results ?? [];
     if (!users) return [];
     const assignedIds = new Set(membershipList.map((m) => m.user));
     return users.filter((user) => !assignedIds.has(user.id));
-  }, [users, memberships]);
+  }, [users, membershipList]);
 
   // Exibir nome do usuário
   const getUserName = (user?: Partial<User> | { email?: string; first_name?: string; last_name?: string }) => {
@@ -174,7 +174,6 @@ export default function ProjectDetailsPage() {
       });
       setNewMemberId('');
       setNewMemberRole('viewer');
-      membersPagination.resetPage();
       toast.success(t('projects.detail.addMemberSuccess'));
     } catch (error) {
       toast.error(getApiErrorMessage(error, t('projects.detail.addMemberError')));
@@ -325,46 +324,51 @@ export default function ProjectDetailsPage() {
               {/* Coluna Direita: Lista de membros */}
               <div className="flex min-h-0 flex-col space-y-4">
                 <h3 className="text-sm font-semibold text-metal-900">
-                  {t('projects.detail.currentMembersTitle')} ({memberships?.count ?? memberships?.results.length ?? 0})
+                  {t('projects.detail.currentMembersTitle')} ({membershipsCount ?? membershipList.length})
                 </h3>
 
-                <ul className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-2">
-                  {(memberships?.results ?? []).map((membership) => {
-                    const userName = membership.user_detail ? getUserName(membership.user_detail) : `Usuário #${membership.user}`;
+                {/* A sentinela do scroll infinito precisa ficar dentro da área
+                    rolável, logo depois da lista. */}
+                <div className="min-h-0 flex-1 overflow-y-auto pr-2">
+                  <ul className="space-y-2">
+                    {membershipList.map((membership) => {
+                      const userName = membership.user_detail ? getUserName(membership.user_detail) : `Usuário #${membership.user}`;
 
-                    return (
-                      <li key={membership.id} className="p-3 rounded-lg hover:bg-metal-50/50 transition-colors">
-                        <div className="space-y-2">
-                          <div>
-                            <p className="text-sm font-medium text-metal-900">{userName}</p>
-                            <p className="text-xs text-metal-500">
-                              {membership.user_detail?.email ?? t('projects.detail.emailNotAvailable')}
-                            </p>
+                      return (
+                        <li key={membership.id} className="p-3 rounded-lg hover:bg-metal-50/50 transition-colors">
+                          <div className="space-y-2">
+                            <div>
+                              <p className="text-sm font-medium text-metal-900">{userName}</p>
+                              <p className="text-xs text-metal-500">
+                                {membership.user_detail?.email ?? t('projects.detail.emailNotAvailable')}
+                              </p>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <Select
+                                value={membership.role}
+                                onChange={(e) => handleRoleChange(membership, e.target.value as ProjectMembershipPayload['role'])}
+                                options={ROLE_OPTIONS}
+                                containerClassName="flex-1"
+                              />
+
+                              <DeleteIconButton
+                                onClick={() => handleRemoveMember(membership)}
+                                ariaLabel={t('projects.detail.removeButton')}
+                              ></DeleteIconButton>
+                            </div>
                           </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
 
-                          <div className="flex items-center gap-2">
-                            <Select
-                              value={membership.role}
-                              onChange={(e) => handleRoleChange(membership, e.target.value as ProjectMembershipPayload['role'])}
-                              options={ROLE_OPTIONS}
-                              containerClassName="flex-1"
-                            />
-
-                            <DeleteIconButton
-                              onClick={() => handleRemoveMember(membership)}
-                              ariaLabel={t('projects.detail.removeButton')}
-                            ></DeleteIconButton>
-                          </div>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-                <div>
-                  <Pagination
-                    pagination={memberships}
-                    paginationState={membersPagination}
-                    isLoading={fetchingMemberships}
+                  <InfiniteScroll
+                    hasNextPage={hasMoreMemberships}
+                    isFetchingNextPage={fetchingMoreMemberships}
+                    onLoadMore={loadMoreMemberships}
+                    loadedCount={membershipList.length}
+                    totalCount={membershipsCount}
                   />
                 </div>
               </div>

@@ -9,7 +9,7 @@ from rest_framework.exceptions import PermissionDenied
 from user.permissions import IsAdminAccount, CanEditAccount
 from django.db.models import Count, Q
 from .permissions import IsProjectOwnerPermission
-from annotaise.pagination import StandardPageNumberPagination, paginated_response
+from annotaise.pagination import StandardCursorPagination, paginated_response
 
 LLM_TIEBREAK_USERNAME = "llm_tiebreak_bot"
 LLM_TIEBREAK_EMAIL = "llm_tiebreak_bot@annotaise.local"
@@ -33,7 +33,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
             return ProjectDashboardSerializer
         return ProjectSerializer
 
-    @action(detail=False, methods=["get"], url_path="dashboard", pagination_class=StandardPageNumberPagination)
+    @action(detail=False, methods=["get"], url_path="dashboard", pagination_class=StandardCursorPagination)
     def dashboard(self, request):
         search = request.query_params.get("search")
         projects = (
@@ -63,20 +63,17 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 Q(name__icontains=search) | Q(description__icontains=search)
             )
 
-        response_data = []
-        for project in projects:
-            data = {
+        def build_rows(page):
+            return [{
                 "id": project.id,
                 "name": project.name,
                 "labeling_users": project.labeling_users,
                 "finished_labelings": project.finished_labelings,
                 "pending_labelings": project.pending_labelings,
                 "late_labelings": project.late_labelings,
-            }
-            
-            response_data.append(data)
+            } for project in page]
 
-        return paginated_response(self, response_data)
+        return paginated_response(self, projects, build_rows=build_rows)
 
     def get_queryset(self):
         user = self.request.user
@@ -109,7 +106,7 @@ class ProjectMembershipViewSet(viewsets.ModelViewSet):
     )
     http_method_names = ['get', 'post','put', 'patch', 'delete']
     permission_classes = [IsAdminAccount,IsProjectOwnerPermission]
-    pagination_class = StandardPageNumberPagination
+    pagination_class = StandardCursorPagination
 
     def get_permissions(self):
         if self.action in ["update", "partial_update", "destroy", "patch","create"]:

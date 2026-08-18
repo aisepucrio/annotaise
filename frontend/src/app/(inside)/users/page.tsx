@@ -1,16 +1,15 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import PageLayout from '@/components/inside-pages-layout/PageLayout';
 import GridItemCard from '@/components/grid/GridItemCard';
 
 import { useUsersDashboardQuery } from '@/modules/user/userQueries';
-import { usePaginationState } from '@/modules/pagination';
 import { useDeleteUserMutation, useUpdateUserMutation } from '@/modules/user/userMutations';
 import type { UpdateUserPayload, User } from '@/modules/user/userTypes';
-import Pagination from '@/components/Pagination';
+import InfiniteScroll from '@/components/InfiniteScroll';
 
 import useInvitationCreator from './useInvtationCreator';
 import { useTranslations } from '@/i18n/use-translations';
@@ -25,7 +24,6 @@ export default function UsersPage() {
 
   // Estado de UI
   const [searchTerm, setSearchTerm] = useState('');
-  const pagination = usePaginationState();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
@@ -34,16 +32,14 @@ export default function UsersPage() {
 
   // Dados (React Query)
   const {
-    data: users,
+    items: usersList,
+    count,
     error,
-    isFetching,
     isLoading,
-  } = useUsersDashboardQuery({
-    search: searchTerm,
-    ...pagination.query,
-  });
-
-  const usersList = users?.results ?? [];
+    hasNextPage,
+    isFetchingNextPage,
+    loadMore,
+  } = useUsersDashboardQuery({ search: searchTerm });
 
   const updateUserMutation = useUpdateUserMutation(editingUser?.id);
   const deleteUserMutation = useDeleteUserMutation(editingUser?.id);
@@ -59,11 +55,6 @@ export default function UsersPage() {
     setEditingUser(null);
   };
 
-  const handleSearch = useCallback((value: string) => {
-    setSearchTerm(value);
-    pagination.resetPage();
-  }, [pagination]);
-
   useEffect(() => {
     if (error) {
       const errorMessage = error instanceof Error ? error.message : t('users.loadError');
@@ -77,7 +68,7 @@ export default function UsersPage() {
       tooltip={t('users.tooltip')}
       description={t('users.description')}
       searchPlaceholder={t('users.searchPlaceholder')}
-      onSearch={handleSearch}
+      onSearch={setSearchTerm}
       filterButtonText={t('filterBar.filterButton')}
       hasButton
       buttonText={t('users.createButton')}
@@ -86,10 +77,12 @@ export default function UsersPage() {
       message={!isLoading && usersList.length === 0 ? t('users.empty') : undefined}
       minColumnWidth="420px"
       footer={
-        <Pagination
-          pagination={users}
-          paginationState={pagination}
-          isLoading={isFetching}
+        <InfiniteScroll
+          hasNextPage={hasNextPage}
+          isFetchingNextPage={isFetchingNextPage}
+          onLoadMore={loadMore}
+          loadedCount={usersList.length}
+          totalCount={count}
         />
       }
       modal={

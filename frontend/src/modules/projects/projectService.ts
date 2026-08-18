@@ -1,6 +1,6 @@
 import { api } from '@/lib/api';
-import { fetchPaginated } from '@/modules/pagination';
-import type { PaginatedQuery, PaginatedSearchQuery } from '@/modules/pagination';
+import { fetchCursorPage } from '@/modules/pagination';
+import type { CursorRequest, CursorSearchRequest } from '@/modules/pagination';
 import type { Project, ProjectPayload, ProjectDashboard, ProjectMembership, ProjectMembershipPayload } from './projectsTypes';
 
 const projectsPath = '/projects';
@@ -13,8 +13,8 @@ export async function fetchProjects(): Promise<Project[]> {
 }
 
 // Busca projetos do dashboard com opção de busca
-export function fetchProjectDashboard(params: PaginatedSearchQuery) {
-  return fetchPaginated<ProjectDashboard>(`${projectsPath}/dashboard/`, params);
+export function fetchProjectDashboard(params: CursorSearchRequest) {
+  return fetchCursorPage<ProjectDashboard>(`${projectsPath}/dashboard/`, params);
 }
 
 // Busca um projeto específico por ID
@@ -41,11 +41,11 @@ export async function deleteProject(id: number): Promise<void> {
 }
 
 // Busca todos os membros de um projeto
-export function fetchProjectMemberships(params: PaginatedQuery<{ projectId: number }>) {
+export function fetchProjectMemberships(params: CursorRequest<{ projectId: number }>) {
   const { projectId, ...query } = params;
   const apiParams = { ...query, project: projectId };
 
-  return fetchPaginated<ProjectMembership>(`${membershipsPath}/`, apiParams);
+  return fetchCursorPage<ProjectMembership>(`${membershipsPath}/`, apiParams);
 }
 
 // Adiciona um membro ao projeto

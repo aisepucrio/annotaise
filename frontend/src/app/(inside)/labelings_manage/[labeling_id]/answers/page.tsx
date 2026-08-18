@@ -16,7 +16,6 @@ import {
   useLabelingStructureQuery,
 } from '@/modules/labelings/manage/labelingManagerQueries';
 import { exportLabelingAnswersCsv } from '@/modules/labelings/labelingService';
-import { usePaginationState } from '@/modules/pagination';
 import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 import type { User } from '@/modules/user/userTypes';
 import type { AnswerResponse } from '@/modules/labelings/labelingsTypes';
@@ -33,27 +32,25 @@ export function AnswerTab({ labelingId, users, usersPerItem }: AnswerTabProps) {
   const [isInspectingItem, setIsInspectingItem] = useState(false);
   const [selectedResponder, setSelectedResponder] = useState<'all' | number>('all');
   const [exporting, setExporting] = useState(false);
-  const pagination = usePaginationState();
 
   const answerItemsQuery = useLabelingAnswerItemsQuery({
     labelingId,
-    ...pagination.query,
     answeredBy: selectedResponder === 'all' ? undefined : selectedResponder,
   });
   const structureQuery = useLabelingStructureQuery(labelingId);
   const summaryQuery = useLabelingAnswersWithStructureQuery(labelingId, activeView === 'summary');
-  // Lista completa de membros para alimentar o filtro por usuário. Como as
-  // respostas agora são paginadas, derivar o filtro apenas da página atual
-  // deixava o seletor incompleto e o colapsava no usuário selecionado.
-  const membersQuery = useLabelingMembershipsQuery({ labelingId, page: 1, pageSize: 100 });
+  // Lista de membros para alimentar o filtro por usuário. Como as respostas
+  // chegam em blocos, derivar o filtro apenas do que está carregado deixava o
+  // seletor incompleto e o colapsava no usuário selecionado.
+  const membersQuery = useLabelingMembershipsQuery({ labelingId, pageSize: 100 });
 
-  const paginatedAnswers = useMemo(() => answerItemsQuery.data?.results ?? [], [answerItemsQuery.data?.results]);
+  const loadedAnswers = answerItemsQuery.items;
   const structureSections = useMemo(
     () => summaryQuery.data?.structure ?? structureQuery.data?.structure ?? [],
     [structureQuery.data?.structure, summaryQuery.data?.structure]
   );
   const summaryAnswers = useMemo(() => summaryQuery.data?.answers ?? [], [summaryQuery.data?.answers]);
-  const labelingMembers = useMemo(() => membersQuery.data?.results ?? [], [membersQuery.data?.results]);
+  const labelingMembers = membersQuery.items;
 
   const usersById = useMemo(() => {
     const map = new Map<number, User>();
@@ -63,13 +60,13 @@ export function AnswerTab({ labelingId, users, usersPerItem }: AnswerTabProps) {
 
   const answerUsersById = useMemo(() => {
     const map = new Map<number, AnswerResponse>();
-    paginatedAnswers.forEach((answer) => {
+    loadedAnswers.forEach((answer) => {
       if (answer.answered_by != null && !map.has(answer.answered_by)) {
         map.set(answer.answered_by, answer);
       }
     });
     return map;
-  }, [paginatedAnswers]);
+  }, [loadedAnswers]);
 
   const getUserLabel = useCallback(
     (userId: number): string => {
@@ -108,18 +105,19 @@ export function AnswerTab({ labelingId, users, usersPerItem }: AnswerTabProps) {
     labelingMembers.forEach((member) => {
       if (member.user != null) uniqueUsers.add(member.user);
     });
-    paginatedAnswers.forEach((answer) => {
+    loadedAnswers.forEach((answer) => {
       if (answer.answered_by != null) uniqueUsers.add(answer.answered_by);
     });
     return Array.from(uniqueUsers)
       .map((userId) => ({ id: userId, label: getUserLabel(userId) }))
       .sort((a, b) => a.label.localeCompare(b.label));
-  }, [labelingMembers, paginatedAnswers, getUserLabel]);
+  }, [labelingMembers, loadedAnswers, getUserLabel]);
 
+  // Trocar de respondente muda a queryKey, então os blocos já carregados são
+  // descartados e a lista recomeça do topo sozinha.
   const handleResponderChange = useCallback((value: 'all' | number) => {
     setSelectedResponder(value);
-    pagination.resetPage();
-  }, [pagination]);
+  }, []);
 
   useEffect(() => {
     if (activeView !== 'answers' && isInspectingItem) {
@@ -166,12 +164,13 @@ export function AnswerTab({ labelingId, users, usersPerItem }: AnswerTabProps) {
             selectedResponder={selectedResponder}
             onResponderChange={handleResponderChange}
             answersLoading={answerItemsQuery.isLoading}
-            answersFetching={answerItemsQuery.isFetching}
-            allAnswers={paginatedAnswers}
-            filteredAnswers={paginatedAnswers}
-            totalAnswers={answerItemsQuery.data?.count ?? paginatedAnswers.length}
-            pagination={answerItemsQuery.data}
-            paginationState={pagination}
+            allAnswers={loadedAnswers}
+            filteredAnswers={loadedAnswers}
+            totalAnswers={answerItemsQuery.count ?? loadedAnswers.length}
+            answersCount={answerItemsQuery.count}
+            hasMoreAnswers={answerItemsQuery.hasNextPage}
+            loadingMoreAnswers={answerItemsQuery.isFetchingNextPage}
+            onLoadMoreAnswers={answerItemsQuery.loadMore}
             getUserLabel={getUserLabel}
             structureSections={structureSections}
             onInspectingChange={setIsInspectingItem}

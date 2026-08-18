@@ -1,44 +1,44 @@
 # Design Pattern — Annotaise
 
-Requisitos de design do backend. Código novo já nasce assim; código antigo migra
-quando for tocado.
+Backend design requirements. New code is born this way; old code migrates when
+it gets touched.
 
 ```
-HTTP → View        roteia: permission, serializer, chama queryset ou service
-       Permission  autoriza
-       Serializer  formato de entrada/saída
-       QuerySet    leitura componível (devolve QuerySet)
-       Service     cálculo e escrita (devolve dado do domínio)
-       Model       invariantes de um agregado só
+HTTP → View        routes: permission, serializer, calls queryset or service
+       Permission  authorizes
+       Serializer  input/output format
+       QuerySet    composable reads (returns a QuerySet)
+       Service     computation and writes (returns domain data)
+       Model       invariants of a single aggregate
 ```
 
-## Camadas
+## Layers
 
-1. **View não decide nada de domínio. (exceto métodos simples ou já implementados de viewsets)** Desserializa, chama, serializa, devolve status. Nada de regra de negócio em `views.py` ou `serializers.py`.
-2. **Autorização mora em `permissions.py`**, em lugar nenhum mais.
-3. **`models.py`** só o que depende do próprio objeto e filhos diretos (`Item.remaining_groups`). Nada de IO externo ou orquestração entre agregados.
-4. **`serializers.py`** só validação de campo e formato. Sem `transaction.atomic`, sem constante de domínio.
+1. **The view decides nothing about the domain (except trivial or already-implemented viewset methods).** It deserializes, calls, serializes, returns a status. No business rules in `views.py` or `serializers.py`.
+2. **Authorization lives in `permissions.py`**, nowhere else.
+3. **`models.py`** only holds what depends on the object itself and its direct children (`Item.remaining_groups`). No external IO, no cross-aggregate orchestration.
+4. **`serializers.py`** only field and format validation. No `transaction.atomic`, no domain constants.
 
 ## Services
 
-Referência: [labeling/services/agreement.py](annotaise/backend/labeling/services/agreement.py). Pacote por app, `__init__.py`, um módulo por operação.
+Reference: [labeling/services/agreement.py](backend/labeling/services/agreement.py). One package per app, an `__init__.py`, one module per operation.
 
-5. **Funções soltas, não classes.** O módulo já é o namespace. Classe só com estado entre chamadas ou mais de uma implementação da mesma interface.
-6. **Recebe objeto de domínio, não `request`.** Devolve `dict` ou model, não `Response`. Privados com prefixo `_`.
-7. **Sem `request` / `Response` / `status` / permissão** dentro do serviço. Exceção aceita: `ValidationError` do DRF, para preservar o `400` com `code` sem escrever tradutor na view.
-8. **`transaction.atomic` na entrada do serviço** — nunca na view, nunca no serializer. Serviço que chama serviço herda a transação. `select_for_update` junto da transação que o justifica.
-9. **IO externo (e-mail, LLM, HTTP) fora do bloco atômico**, via `transaction.on_commit(...)`. Rollback não desfaz e-mail enviado.
-10. Vai para service: cálculo de mais de ~20 linhas, IO externo.
+5. **Plain functions, not classes.** The module is already the namespace. Use a class only when there is state across calls, or more than one implementation of the same interface.
+6. **Takes domain objects, not `request`.** Returns a `dict` or a model, not a `Response`. Private helpers get the `_` prefix.
+7. **No `request` / `Response` / `status` / permission checks** inside a service. Accepted exception: raising DRF's `ValidationError`, which preserves the `400` with its `code` without writing a translation layer in the view.
+8. **`transaction.atomic` at the service entry point** — never in the view, never in the serializer. A service calling another service inherits the caller's transaction. `select_for_update` belongs next to the transaction that justifies it.
+9. **External IO (email, LLM, HTTP) goes outside the atomic block**, via `transaction.on_commit(...)`. A rollback does not un-send an email.
+10. Goes into a service: computation longer than ~20 lines, external IO.
 
 ## Querysets
 
-11. **Leituras básicas ou que fazem sentida no contexto do domínio são feitas por `QuerySet`**, sempre encadeável a partir de `self` — nunca `list`
+11. **Basic reads, and reads that make sense in domain terms, belong to a `QuerySet`** — always chainable from `self`, never a `list`.
 
 ```python
 class AnswerQuerySet(QuerySet):
 
     def done_count_by_user(self):
-        """(answered_by_id, itens distintos respondidos), a partir do recorte atual."""
+        """(answered_by_id, distinct items answered), from the current slice."""
         return (
             self.values_list("answered_by_id")
             .annotate(total=Count("item", distinct=True))
@@ -47,17 +47,17 @@ class AnswerQuerySet(QuerySet):
 
 
 class Answer(models.Model):
-    objects = LabelingQuerySet.as_manager()
+    objects = AnswerQuerySet.as_manager()
 ```
 
-12. **`Count` sobre relação multivalorada usa `distinct=True`.** Dois JOINs multivalorados no mesmo queryset inflam a contagem por produto cartesiano.
-13. **Não filtre sobre agregado** — gera `HAVING`, que índice nenhum ajuda. Prefira `Subquery(OuterRef(...))` a `Max`. Confira: `print(str(qs.filter(anot__lt=v).query))`.
-14. Paginação por página (`StandardPageNumberPagination`, 12) via `paginated_response(view, qs, serializer_class=None)`.
+12. **`Count` over a multi-valued relation needs `distinct=True`.** Two multi-valued JOINs in the same queryset inflate the count by cartesian product.
+13. **Do not filter on an aggregate** — it produces `HAVING`, which no index helps. Prefer `Subquery(OuterRef(...))` over `Max`. Check it: `print(str(qs.filter(annot__lt=v).query))`.
+14. Pagination is cursor-based ([`StandardCursorPagination`](backend/annotaise/pagination.py), `page_size=12`, ordered by `-id`) via `paginated_response(view, qs, serializer_class=None, build_rows=None)`. Pass a `QuerySet`, not a `list` — a `list` skips the cursor entirely and returns everything unpaginated. Use `build_rows` to shape rows, so per-row aggregates only run for the current page.
 
-## Domínio (regras que já custaram bug)
+## Domain (rules that already cost us bugs)
 
-15. **Nunca criar `LabelingMembership` para registrar acesso.** Ela governa distribuição de item e o dashboard filtra por `memberships__user` **sem olhar `role`** — um admin que só abriu a tela de gerenciamento vira membro e entra na fila. Recência de acesso, se precisar, é tabela própria.
-16. **Listagem de pessoas esconde `llm_tiebreak_bot`.** É usuário real. Hoje as constantes estão duplicadas em 5 arquivos (`labeling/`, `project/`, `user/`); alvo é `common/constants.py` + `User.objects.humans()` em vez de `.exclude()` copiado.
+15. **Never create a `LabelingMembership` to record access.** It governs item distribution, and the dashboard filters by `memberships__user` **without looking at `role`** — an admin who merely opened the management screen becomes a member and enters the queue. If you need last-access recency, that is its own table.
+16. **Any listing of people hides `llm_tiebreak_bot`.** It is a real user. Today the constants are duplicated across 5 files (`labeling/`, `project/`, `user/`); the target is `common/constants.py` plus `User.objects.humans()` instead of a copy-pasted `.exclude()`.
 
 ## Frontend
 

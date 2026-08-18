@@ -228,12 +228,20 @@ class LabelingMembership(models.Model):
     items_done = models.PositiveIntegerField(default=0)
     role = models.CharField(max_length=16, choices=Role.choices, default=Role.ANNOTATOR)
     joined_at = models.DateTimeField(default=timezone.now)
+    # Última vez que o usuário abriu esta rotulação pelo dashboard. null = nunca
+    # abriu. Ordena o dashboard do rotulador (mais recente primeiro); é escrito
+    # pela action `opened`, não por save() automático, para que nenhuma outra
+    # alteração no membership mexa nessa ordem.
+    last_opened_at = models.DateTimeField(null=True, blank=True, default=None)
 
     class Meta:
         unique_together = [("user", "labeling")]
         ordering = ["-joined_at"]
         indexes = [
             models.Index(fields=['user', 'labeling'], name='user_labeling_idx'),
+            # Cobre a subquery de ordenação do dashboard: filtra por usuário e
+            # lê last_opened_at direto do índice.
+            models.Index(fields=['user', 'last_opened_at'], name='user_last_opened_idx'),
         ]
 
     def __str__(self):

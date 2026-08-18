@@ -22,16 +22,36 @@ from project.models import Project
 from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from django.db.models import Count, Q
+from django.db.models import Count, DateTimeField, OuterRef, Q, Subquery, Value
+from django.db.models.functions import Coalesce
 from drf_spectacular.utils import extend_schema
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone as dt_timezone
 import json
 from answer.models import BackgroundAnswer, Answer
 from collections import defaultdict
-from annotaise.pagination import StandardPageNumberPagination, paginated_response
+from annotaise.pagination import StandardCursorPagination, paginated_response
 
 LLM_TIEBREAK_USERNAME = "llm_tiebreak_bot"
 LLM_TIEBREAK_EMAIL = "llm_tiebreak_bot@annotaise.local"
+
+# Posição das rotulações que o usuário nunca abriu: vão para o fim da ordem.
+# Tem que ser um valor concreto em vez de NULL — o cursor pagina comparando a
+# posição com __lt/__gt, e comparação com NULL nunca é verdadeira, então essas
+# linhas desapareceriam a partir da segunda página.
+NEVER_OPENED = datetime(1970, 1, 1, tzinfo=dt_timezone.utc)
+
+
+class LabelingDashboardCursorPagination(StandardCursorPagination):
+    """Dashboard do rotulador: o que ele abriu mais recentemente vem primeiro.
+
+    A posição do cursor é `last_opened` (anotado em `dashboard`); `-id` só
+    desempata dentro do mesmo instante. Note que rotulações nunca abertas
+    compartilham a posição NEVER_OPENED, e desempate por offset no cursor vale
+    até `offset_cutoff` (1000) linhas — folgado para esta listagem, que só traz
+    rotulações do usuário com itens pendentes que ele ainda não respondeu.
+    """
+
+    ordering = ("-last_opened", "-id")
 
 class LabelingViewSet(viewsets.ModelViewSet):
     serializer_class = LabelingSerializer
@@ -65,13 +85,12 @@ class LabelingViewSet(viewsets.ModelViewSet):
         )
 
     
-    @action(methods=['get'], detail=False, url_path='dashboard/edit', pagination_class=StandardPageNumberPagination)
+    @action(methods=['get'], detail=False, url_path='dashboard/edit', pagination_class=StandardCursorPagination)
     def editdashboard(self, request):
         '''a ideia é que esse dashboard serve pra mostrar o dashboard pro admin, entao tem todos os labelings de todos os projetos
         que o usuario é admin ou owner.'''
         today = datetime.now().date()
         search = request.query_params.get("search")
-        output = []
         qs = (Labeling.objects.filter(project__memberships__user=request.user)
             .select_related('project')
             .annotate(
@@ -83,15 +102,13 @@ class LabelingViewSet(viewsets.ModelViewSet):
                 answers_collected=Count('answers', distinct=True),
             )
         )
-        if not qs.exists():
-            return paginated_response(self, output)
-
         if search:
             qs = qs.filter(
                 Q(title__icontains=search) | Q(project__name__icontains=search)
             )
-        for element in qs:
-            output.append({
+
+        def build_rows(page):
+            return [{
                 "id" : element.id,
                 "labeling_name" : element.title,
                 "project_name" : element.project.name,
@@ -101,10 +118,11 @@ class LabelingViewSet(viewsets.ModelViewSet):
                 "total_items" : element.total_labelings,
                 "form_mode": bool(element.form_mode),
                 "answers_collected": element.answers_collected,
-            })
-        return paginated_response(self, output)
-    
-    @action(methods=['get'], detail=True, url_path='memberships', pagination_class=StandardPageNumberPagination)
+            } for element in page]
+
+        return paginated_response(self, qs, build_rows=build_rows)
+
+    @action(methods=['get'], detail=True, url_path='memberships', pagination_class=StandardCursorPagination)
     def list_labeling_memberships(self,request, pk=None):
         labeling = get_object_or_404(Labeling,pk=pk)
         memberships = (
@@ -117,14 +135,13 @@ class LabelingViewSet(viewsets.ModelViewSet):
         background_users = set(
             BackgroundAnswer.objects.filter(labeling=labeling).values_list("answered_by_id", flat=True)
         )
-        
+
         answers_done = dict(
             Answer.objects.filter(labeling=labeling).done_count_by_user()
         )
 
-        output = []
-        for membership in memberships:
-            output.append({
+        def build_rows(page):
+            return [{
                 "id": membership.id,
                 "user": membership.user_id,
                 "first_name": membership.user.first_name,
@@ -134,9 +151,12 @@ class LabelingViewSet(viewsets.ModelViewSet):
                 "joined_at": membership.joined_at,
                 "background_answered": membership.user_id in background_users,
                 "items_done": answers_done.get(membership.user_id, 0),
-            })
-        
-        return paginated_response(self, output, LabelingMembershipDashboardSerializer)
+            } for membership in page]
+
+        return paginated_response(
+            self, memberships, LabelingMembershipDashboardSerializer, build_rows=build_rows
+        )
+
 
 
     def _user_can_answer_labeling(self, labeling, user, user_group_names):
@@ -161,13 +181,12 @@ class LabelingViewSet(viewsets.ModelViewSet):
             for remaining in remaining_by_item.values()
         )
 
-    @action(methods=['get'], detail=False, url_path='dashboard', pagination_class=StandardPageNumberPagination)
+    @action(methods=['get'], detail=False, url_path='dashboard', pagination_class=LabelingDashboardCursorPagination)
     def dashboard(self, request):
         '''esse é o dashboard normal, que mostra os labelings dos projetos que o usuario participa em respostas. tirei os labelings que ja terminaram
         '''
         today = datetime.now().date()
         search = request.query_params.get("search")
-        output = []
 
         items = (
             Item.objects
@@ -177,6 +196,16 @@ class LabelingViewSet(viewsets.ModelViewSet):
             .exclude(answers__answered_by=request.user)
             .values("labeling_id")
             .distinct()
+        )
+
+        # Instante em que o usuário abriu cada rotulação. Subquery escalar sobre o
+        # membership (uma linha por usuário/rotulação) em vez de Max sobre uma
+        # relação multivalorada: o filtro do cursor vira WHERE em vez de HAVING,
+        # sem multiplicar linhas nos Count abaixo.
+        last_opened_at = Subquery(
+            LabelingMembership.objects
+            .filter(labeling=OuterRef('pk'), user=request.user)
+            .values('last_opened_at')[:1]
         )
 
         qs = (
@@ -189,52 +218,84 @@ class LabelingViewSet(viewsets.ModelViewSet):
                     filter=Q(answers__answered_by=request.user),
                     distinct=True),
                 answers_collected=Count('answers', distinct=True),
+                last_opened=Coalesce(
+                    last_opened_at,
+                    Value(NEVER_OPENED, output_field=DateTimeField()),
+                    output_field=DateTimeField(),
+                ),
             )
         )
         if search:
             qs = qs.filter(
                 Q(title__icontains=search) | Q(project__name__icontains=search)
             )
-        labeling_ids = list(qs.values_list("id", flat=True))
-        background_answered_ids = set(
-            BackgroundAnswer.objects.filter(
-                answered_by=request.user,
-                labeling_id__in=labeling_ids,
-            ).values_list("labeling_id", flat=True)
-        )
-        # Grupos do usuário, pré-computados uma vez para avaliar elegibilidade
-        # por grupo sem uma consulta por item.
-        user_group_names = set(
-            UserGroup.objects
-            .filter(memberships__user=request.user)
-            .values_list("name", flat=True)
-        )
-        for element in qs:
-            # Em rotulações com cotas por grupo, só exibe se o usuário ainda
-            # consegue preencher algum grupo em aberto em algum item — mesma
-            # regra usada na distribuição (remaining_groups_for / _slot_open).
-            if element.has_group_quotas and not self._user_can_answer_labeling(
-                element, request.user, user_group_names
-            ):
-                continue
-            background_answered = (
-                not element.has_background_form
-                or element.id in background_answered_ids
+
+        def build_rows(page):
+            labeling_ids = [element.id for element in page]
+            background_answered_ids = set(
+                BackgroundAnswer.objects.filter(
+                    answered_by=request.user,
+                    labeling_id__in=labeling_ids,
+                ).values_list("labeling_id", flat=True)
             )
-            output.append({
-                "id" : element.id,
-                "labeling_name" : element.title,
-                "project_name" : element.project.name,
-                "total_days" : (element.final_date - element.start_date).days,
-                "days_passed" : (today - element.start_date).days,
-                "items_done" : element.done_labelings,
-                "background_required": bool(element.has_background_form),
-                "background_answered": background_answered,
-                "form_mode": bool(element.form_mode),
-                "answers_collected": element.answers_collected,
-            })
-        return paginated_response(self, output)
-    
+            # Grupos do usuário, pré-computados uma vez para avaliar elegibilidade
+            # por grupo sem uma consulta por item.
+            user_group_names = set(
+                UserGroup.objects
+                .filter(memberships__user=request.user)
+                .values_list("name", flat=True)
+            )
+
+            rows = []
+            for element in page:
+                # Em rotulações com cotas por grupo, só exibe se o usuário ainda
+                # consegue preencher algum grupo em aberto em algum item — mesma
+                # regra usada na distribuição (remaining_groups_for / _slot_open).
+                # O descarte é por página, então uma página pode vir com menos
+                # linhas que o page_size; o scroll infinito segue pelo `next`.
+                if element.has_group_quotas and not self._user_can_answer_labeling(
+                    element, request.user, user_group_names
+                ):
+                    continue
+                background_answered = (
+                    not element.has_background_form
+                    or element.id in background_answered_ids
+                )
+                rows.append({
+                    "id" : element.id,
+                    "labeling_name" : element.title,
+                    "project_name" : element.project.name,
+                    "total_days" : (element.final_date - element.start_date).days,
+                    "days_passed" : (today - element.start_date).days,
+                    "items_done" : element.done_labelings,
+                    "background_required": bool(element.has_background_form),
+                    "background_answered": background_answered,
+                    "form_mode": bool(element.form_mode),
+                    "answers_collected": element.answers_collected,
+                })
+            return rows
+
+        return paginated_response(self, qs, build_rows=build_rows)
+
+    def retrieve(self, request, *args, **kwargs):
+        '''Abrir uma rotulação passa sempre por aqui — tanto a tela de resposta
+        (answer/background/guide) quanto as de gerenciamento buscam este detalhe
+        antes de renderizar. Por isso é este o ponto que registra o "abriu", e
+        não um endpoint separado: pega deep link, refresh e qualquer rota nova
+        de graça.
+        '''
+        response = super().retrieve(request, *args, **kwargs)
+
+        # Só depois do super(): um 404/403 não deve contar como abertura.
+        # update() direto para não tocar em nenhum outro campo do membership, e
+        # 0 linhas é no-op esperado (ex.: admin que gerencia sem ser membro).
+        LabelingMembership.objects.filter(
+            labeling_id=kwargs.get('pk'),
+            user=request.user,
+        ).update(last_opened_at=timezone.now())
+
+        return response
+
     def perform_create(self, serializer):
         user = self.request.user
 

@@ -9,7 +9,7 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from annotaise.pagination import StandardPageNumberPagination, paginated_response
+from annotaise.pagination import StandardCursorPagination, paginated_response
 
 from django.contrib.auth import get_user_model
 from django.db.models import Count, F, Q
@@ -90,7 +90,7 @@ class AdminUserViewSet(viewsets.ModelViewSet):
             return AdminUserReadSerializer
         return AdminUserReadSerializer
 
-    @action(detail=False, methods=["get"], url_path="dashboard", pagination_class=StandardPageNumberPagination)
+    @action(detail=False, methods=["get"], url_path="dashboard", pagination_class=StandardCursorPagination)
     def user_dashboard(self, request, pk=None):
         # Cada subquery é executada de forma independente e otimizada
         

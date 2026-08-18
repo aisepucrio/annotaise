@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { usePaginatedQuery } from '@/modules/pagination';
-import type { PaginatedQuery } from '@/modules/pagination';
+import { useCursorQuery } from '@/modules/pagination';
+import type { CursorQuery } from '@/modules/pagination';
 import {
   fetchLabeling,
   fetchLabelingAnswerItems,
@@ -13,7 +13,9 @@ import {
 import { fetchProject } from '@/modules/projects/projectService';
 import { fetchUsers } from '@/modules/user/userService';
 import type {
+  AnswerResponse,
   LabelingAgreementSummary,
+  LabelingMembershipDashboard,
   LabelingStructureSection,
   LabelingElementSummary,
 } from '@/modules/labelings/labelingsTypes';
@@ -72,10 +74,10 @@ function deriveColumnsFromStructure(sections: LabelingStructureSection[]): strin
 }
 
 // Utilizada para buscar os membros do labeling
-export function useLabelingMembershipsQuery(params: PaginatedQuery<{ labelingId: number }>, shouldFetch = true) {
+export function useLabelingMembershipsQuery(params: CursorQuery<{ labelingId: number }>, shouldFetch = true) {
   const enabled = !Number.isNaN(params.labelingId) && shouldFetch;
 
-  return usePaginatedQuery({
+  return useCursorQuery<CursorQuery<{ labelingId: number }>, LabelingMembershipDashboard>({
     queryKey: ['labelings', params.labelingId, 'memberships'],
     params,
     enabled,
@@ -103,11 +105,13 @@ export function useLabelingAnswersQuery(labelingId: number) {
   });
 }
 
-// Utilizada para listar os itens respondidos com paginação por item
-export function useLabelingAnswerItemsQuery(params: PaginatedQuery<{ labelingId: number; answeredBy?: number }>) {
+// Utilizada para listar os itens respondidos em scroll infinito
+type AnswerItemsQuery = CursorQuery<{ labelingId: number; answeredBy?: number }>;
+
+export function useLabelingAnswerItemsQuery(params: AnswerItemsQuery) {
   const enabled = !Number.isNaN(params.labelingId);
 
-  return usePaginatedQuery({
+  return useCursorQuery<AnswerItemsQuery, AnswerResponse>({
     queryKey: ['labelings', params.labelingId, 'answer-items'],
     params,
     enabled,

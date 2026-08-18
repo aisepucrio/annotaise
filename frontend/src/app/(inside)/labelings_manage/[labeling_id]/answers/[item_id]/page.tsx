@@ -4,9 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import GridItemCard from '@/components/grid/GridItemCard';
 import GridLayout from '@/components/grid/GridLayout';
 import Button from '@/components/button/Button';
-import Pagination, { type PaginationControls } from '@/components/Pagination';
+import InfiniteScroll from '@/components/InfiniteScroll';
 import type { AnswerResponse, LabelingStructureSection } from '@/modules/labelings/labelingsTypes';
-import type { PaginationMeta } from '@/modules/pagination';
 import { useTranslations } from '@/i18n/use-translations';
 import ItemTab from './ItemTab';
 import { resolveItemLabel } from '../answer-utils';
@@ -18,12 +17,14 @@ type AnswersTabProps = {
   selectedResponder: 'all' | number;
   onResponderChange: (value: 'all' | number) => void;
   answersLoading: boolean;
-  answersFetching: boolean;
   allAnswers: AnswerResponse[];
   filteredAnswers: AnswerResponse[];
   totalAnswers: number;
-  pagination?: PaginationMeta;
-  paginationState: PaginationControls;
+  /** Total de respostas no servidor, para o contador do rodapé. */
+  answersCount?: number;
+  hasMoreAnswers: boolean;
+  loadingMoreAnswers: boolean;
+  onLoadMoreAnswers: () => void;
   getUserLabel: (userId: number) => string;
   structureSections: LabelingStructureSection[];
   onInspectingChange?: (isInspecting: boolean) => void;
@@ -34,12 +35,13 @@ export default function AnswersTab({
   selectedResponder,
   onResponderChange,
   answersLoading,
-  answersFetching,
   allAnswers,
   filteredAnswers,
   totalAnswers,
-  pagination,
-  paginationState,
+  answersCount,
+  hasMoreAnswers,
+  loadingMoreAnswers,
+  onLoadMoreAnswers,
   getUserLabel,
   structureSections,
   onInspectingChange,
@@ -105,8 +107,8 @@ export default function AnswersTab({
 
         <div className="ml-auto flex items-center gap-2">
           <span className="text-sm text-gray-600">
-            {pagination?.count ?? groupedFilteredItems.length}{' '}
-            {(pagination?.count ?? groupedFilteredItems.length) === 1
+            {answersCount ?? groupedFilteredItems.length}{' '}
+            {(answersCount ?? groupedFilteredItems.length) === 1
               ? t('labelings.create.answers.itemCountSingle')
               : t('labelings.create.answers.itemCountPlural')}
           </span>
@@ -155,17 +157,19 @@ export default function AnswersTab({
             })}
           </GridLayout>
         )}
-      </div>
 
-      {!answersLoading && groupedFilteredItems.length > 0 ? (
-        <div>
-          <Pagination
-            pagination={pagination}
-            paginationState={paginationState}
-            isLoading={answersFetching}
+        {/* Dentro da área rolável, logo abaixo da grade: a sentinela só entra em
+            vista quando o usuário chega ao fim das respostas carregadas. */}
+        {!answersLoading && groupedFilteredItems.length > 0 ? (
+          <InfiniteScroll
+            hasNextPage={hasMoreAnswers}
+            isFetchingNextPage={loadingMoreAnswers}
+            onLoadMore={onLoadMoreAnswers}
+            loadedCount={allAnswers.length}
+            totalCount={answersCount}
           />
-        </div>
-      ) : null}
+        ) : null}
+      </div>
     </div>
   );
 }
