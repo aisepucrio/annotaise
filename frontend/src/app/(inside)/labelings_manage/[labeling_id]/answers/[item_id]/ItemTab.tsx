@@ -10,7 +10,7 @@ import { resolveItemLabel } from '../answer-utils';
 import ItemSummary from './ItemSummary';
 import ItemAnswers from './ItemAnswers';
 import { ArrowLeft } from 'lucide-react';
-import ArrowButton from '@/components/button/ArrowButton';
+import ArrowButton from '@/components/button/ArrowLeftButton';
 
 
 type ItemAnswersGroup = {
@@ -37,32 +37,6 @@ export default function ItemTab({ itemGroup, itemGroups, onBack, onSelectItem, g
   const userAnswers = useMemo(() => selectLatestAnswersByUser(itemGroup.answers), [itemGroup.answers]);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<DetailTab>('item-summary');
-
-  //navegação entre itens
-  const currentIndex = useMemo(
-  () => itemGroups.findIndex((group) => group.key === itemGroup.key),
-  [itemGroups, itemGroup.key]
-  );
-
-  const goToPrevious = () => {
-    if (currentIndex <= 0) return;
-
-    const previousItem = itemGroups[currentIndex - 1];
-
-    if (previousItem) {
-      onSelectItem(previousItem.key);
-    }
-  };
-
-  const goToNext = () => {
-    if (currentIndex >= itemGroups.length - 1) return;
-
-    const nextItem = itemGroups[currentIndex + 1];
-
-    if (nextItem) {
-      onSelectItem(nextItem.key);
-    }
-  };
 
 
   useEffect(() => {
@@ -181,35 +155,7 @@ export default function ItemTab({ itemGroup, itemGroups, onBack, onSelectItem, g
             </div>
           </div>
         </div>
-
-        {/*Adição do container para Previou s   |Id do item|    Next */}
-        <div className="flex min-h-0 flex-1 flex-col">
-          <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-5 pt-4 md:px-6 md:pb-6">
-              {activeTab === 'item-summary' ? (
-                <ItemSummary answers={itemGroup.answers} sections={sections} t={t}
-                  locale={locale}
-                />
-              ) : (
-                <ItemAnswers
-                  answerEntries={answerEntries}
-                  orderedSections={orderedSections}
-                  answersByQuestion={answersByQuestion}
-                  itemPayload={itemPayload}
-                  t={t} 
-                />
-              )}
-          </div>
-
-          {/*Setas */}
-          <ArrowButton
-            currentId={itemGroup.itemId}
-            onPrevious={goToPrevious}
-            onNext={goToNext}
-            disablePrevious={currentIndex <= 0}
-            disableNext={currentIndex >= itemGroups.length - 1}/>
-        </div>
-
-        
+ 
       </div>
     </DetailViewLayout>
   );
