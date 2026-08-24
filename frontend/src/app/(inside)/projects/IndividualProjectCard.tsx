@@ -14,6 +14,9 @@ type IndividualProjectCardProps = {
   labelings_pending: number;
   labelings_late: number;
   onManage: () => void;
+  project: {
+    id: number; //necessary to indicate the project id to the manage button, so we can open the project in a new tab
+  };
 };
 
 export default function IndividualProjectCard({
@@ -23,6 +26,7 @@ export default function IndividualProjectCard({
   labelings_pending,
   labelings_late,
   onManage,
+  project,
 }: IndividualProjectCardProps) {
   const router = useRouter();
   const { t } = useTranslations();
@@ -76,7 +80,10 @@ export default function IndividualProjectCard({
             variant="normal"
             ariaLabel={t('projects.manageAria')}
           >
-            {t('projects.manage')}
+            {/*One issue: it only behaves like a link when we click on the text, not the whole button.*/}
+            <a href={`/projects/${project.id}`} className="flex items-center gap-2"> {/*Link structure. Just like that we can open in a new tab  */ }
+              {t('projects.manage')}
+            </a>
           </Button>
         </div>
       </div>
