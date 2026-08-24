@@ -16,6 +16,7 @@ import { useLabelingHeaderQuery } from '@/modules/labelings/manage/labelingManag
 import {
   useAddItemsCsvMutation,
   useDeleteLabelingMutation,
+  useDuplicateLabelingMutation, // ← novo
   useExportImportedLabelingCsvMutation,
   useUpdateLabelingMutation,
 } from '@/modules/labelings/manage/labelingManagerMutations';
@@ -64,6 +65,7 @@ export default function LabelingsManageLayout({ children }: LayoutProps) {
   const updateMutation = useUpdateLabelingMutation();
   const addItemsCsvMutation = useAddItemsCsvMutation();
   const exportImportedCsvMutation = useExportImportedLabelingCsvMutation();
+  const duplicateMutation = useDuplicateLabelingMutation();
 
   const handleUpdateLabeling = (payload: Partial<LabelingPayload>) => {
     if (!labeling) return;
@@ -96,6 +98,20 @@ export default function LabelingsManageLayout({ children }: LayoutProps) {
       },
     });
   };
+
+  const handleDuplicateLabeling = useCallback(() => {
+  if (Number.isNaN(labelingId)) return;
+
+  duplicateMutation.mutate(labelingId, {
+    onSuccess: (newLabeling) => {
+      toast.success(t('labelings.create.success.duplicated'));
+      router.push(`/labelings_manage/${newLabeling.id}/form`);
+    },
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, t('labelings.create.errors.duplicateLabeling')));
+    },
+  });
+}, [duplicateMutation, labelingId, router, t]);
 
   const handleImportCsv = useCallback(
     async (file: File) => {
@@ -192,7 +208,9 @@ export default function LabelingsManageLayout({ children }: LayoutProps) {
         onDownloadCsv={labeling?.form_mode ? undefined : () => void handleDownloadCsv()}
         isDownloadingCsv={exportImportedCsvMutation.isPending}
         onImportCsv={labeling?.form_mode ? undefined : () => setIsImportCsvOpen(true)}
-      />
+        onDuplicate={handleDuplicateLabeling}      
+        isDuplicating={duplicateMutation.isPending} 
+/>
 
       <div className="flex-1 min-h-0 overflow-y-auto">{children}</div>
 

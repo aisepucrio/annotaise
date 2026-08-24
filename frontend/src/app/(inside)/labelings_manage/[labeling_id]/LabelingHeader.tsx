@@ -1,5 +1,5 @@
 import type { RefObject } from 'react';
-import { ArrowLeft, Download, Edit, Calendar, Save, Upload } from 'lucide-react';
+import { ArrowLeft, Download, Edit, Calendar, Save, Upload, Copy } from 'lucide-react';
 import Button from '@/components/button/Button';
 import DeleteIconButton from '@/components/button/DeleteIconButton';
 import { useTranslations } from '@/i18n/use-translations';
@@ -22,6 +22,9 @@ interface LabelingHeaderProps {
   onEditInfo: () => void;
   onDelete: () => void;
   headerRef?: RefObject<HTMLDivElement | null>;
+  
+  onDuplicate?: () => void;
+  isDuplicating?: boolean;
 
   // Save is only available on tabs that expose editable content.
   showSaveButton?: boolean;
@@ -55,6 +58,8 @@ export default function LabelingHeader({
   onDownloadCsv,
   isDownloadingCsv = false,
   onImportCsv,
+  onDuplicate,
+  isDuplicating = false,
 }: LabelingHeaderProps) {
   const { t, locale } = useTranslations();
 
@@ -164,6 +169,19 @@ export default function LabelingHeader({
               className="bg-white/20 hover:bg-white/30"
             >
               {isSaving ? t('common.saving') : t('common.saveChanges')}
+            </Button>
+          )}
+          {onDuplicate && (
+            <Button
+              variant="white"
+              fill={false}
+              onClick={onDuplicate}
+              disabled={isDuplicating || isLoading}
+              icon={<Copy size={20} />}
+              className="bg-white/20 hover:bg-white/30"
+              ariaLabel={t('labelings.create.header.duplicateAria')}
+            >
+              {isDuplicating ? t('labelings.create.header.duplicating') : t('labelings.create.header.duplicate')}
             </Button>
           )}
           <DeleteIconButton
