@@ -5,7 +5,9 @@ from rest_framework.exceptions import ValidationError
 from answer.models import Answer
 from ..models import LabelingElement, LabelingMembership, LabelingSection
 
-
+#TODO One consequence to be aware of: labeling/services/agreement.py:87 filters role=ANNOTATOR, 
+# so any promoted user drops out of inter-annotator 
+# agreement summaries for labelings they had already annotated.
 def parse_min_agreement(raw_value: str | None) -> int:
     if raw_value in (None, ""):
         return 2

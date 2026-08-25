@@ -18,7 +18,7 @@ from rest_framework.views import APIView
 from user.permissions import IsAdminAccount
 from django.http import HttpResponse
 from .permissions import CanAnswerLabelingPermission
-from labeling.permissions import CanEditLabelingsInProjectPermission
+from labeling.permissions import CanEditLabelingPermission, can_annotate_labeling
 from .services.llm_tiebreak import run_llm_tiebreak_decision
 
 import pandas as pd
@@ -472,7 +472,7 @@ class LabelingBackgroundAnswerView(APIView):
     def _can_view_labeling(self, user, labeling):
         if LabelingMembership.objects.filter(labeling=labeling, user=user).exists():
             return True
-        perm = CanEditLabelingsInProjectPermission()
+        perm = CanEditLabelingPermission()
         return perm.can_edit_labeling(user, labeling.id)
 
     def get(self, request, labeling_id, **kwargs):
@@ -494,10 +494,7 @@ class LabelingBackgroundAnswerView(APIView):
 
     def put(self, request, labeling_id, **kwargs):
         labeling = self._get_labeling(labeling_id)
-        if not LabelingMembership.objects.filter(
-            labeling=labeling,
-            user=request.user,
-        ).exists():
+        if not can_annotate_labeling(request.user, labeling.id):
             raise PermissionDenied("Você não tem acesso a essa rotulação.")
 
         if not labeling.has_background_form:
@@ -545,7 +542,7 @@ class LabelingBackgroundAnswersView(APIView):
 
     def get(self, request, labeling_id, **kwargs):
         labeling = get_object_or_404(Labeling, id=labeling_id)
-        perm = CanEditLabelingsInProjectPermission()
+        perm = CanEditLabelingPermission()
         if not perm.can_edit_labeling(request.user, labeling.id):
             raise PermissionDenied("Você não tem permissão para visualizar essas respostas.")
 

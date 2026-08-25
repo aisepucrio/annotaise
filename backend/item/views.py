@@ -4,7 +4,7 @@ from labeling.models import Labeling, LabelingMembership, LabelingSection
 from answer.models import Answer, BackgroundAnswer
 from user.models import UserGroup
 from user.permissions import IsAdminAccount
-from .permissions import CanEditProjectPermission
+from labeling.permissions import CanEditLabelingPermission, can_annotate_labeling
 
 from datetime import timedelta
 import csv
@@ -50,7 +50,7 @@ class ListItemsView(ListAPIView):
 
 
 class ImportItemsCsvView(APIView):
-    permission_classes = [IsAdminAccount, CanEditProjectPermission]
+    permission_classes = [IsAdminAccount, CanEditLabelingPermission]
     parser_classes = (MultiPartParser,)
     @extend_schema(
         request=UploadItemCSVSerializer,
@@ -115,7 +115,7 @@ class ImportItemsCsvView(APIView):
         return Response({"detail": "Arquivo recebido"}, status=200)
 
 class AddItemsToExistingLabelingView(APIView):
-    permission_classes = [IsAdminAccount, CanEditProjectPermission]
+    permission_classes = [IsAdminAccount, CanEditLabelingPermission]
     parser_classes = (MultiPartParser,)
     @extend_schema(
         request=UploadItemCSVSerializer,
@@ -186,7 +186,7 @@ class AddItemsToExistingLabelingView(APIView):
         return Response({"detail": "Itens adicionados a rotulação com sucesso"}, status=200)
 
 class ExportImportedItemsCsvView(APIView):
-    permission_classes = [IsAdminAccount, CanEditProjectPermission]
+    permission_classes = [IsAdminAccount, CanEditLabelingPermission]
 
     @extend_schema(
         responses={
@@ -484,7 +484,7 @@ class NextItemView(RetrieveAPIView):
         ).exists():
             return Response({'detail':'o formulário dessa rotulação está vazio','code':'EMPTY_FORM'},status=403)
 
-        if not LabelingMembership.objects.filter(labeling=labeling,user=user).exists():
+        if not can_annotate_labeling(user, labeling.id):
             return Response('Você não faz parte dessa rotulação',status=403)
 
         if labeling.has_background_form and not BackgroundAnswer.objects.filter(

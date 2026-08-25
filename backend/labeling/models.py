@@ -22,7 +22,7 @@ class Labeling(models.Model):
     
     status = models.CharField(choices=Status.choices,default="draft")
     created_at = models.DateTimeField(default=timezone.now)
-    project = models.ForeignKey("project.Project", on_delete=models.CASCADE, related_name="labelings", db_index=True)
+    project = models.ForeignKey("project.Project", on_delete=models.SET_NULL, null=True, related_name="labelings", db_index=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, related_name="labelings_created", null=True
     )
@@ -37,7 +37,6 @@ class Labeling(models.Model):
         default=DecisionMode.MANUAL,
     )
     distribution_strategy = models.CharField(max_length=32, default=DistributionStrategy.AUTO, choices=DistributionStrategy.choices)
-    # Token used to build a public/shareable URL when the labeling runs in anonymous mode.
     anonymous_token = models.UUIDField(null=True, blank=True, unique=True, editable=False)
 
     guide = models.TextField(default="",blank=True)
@@ -220,18 +219,14 @@ class LabelingMembership(models.Model):
     class Role(models.TextChoices):
         OWNER = "owner", "Dono"
         ADMIN = "admin", "Administrador"
-        ANNOTATOR = "annotator", "Rotulador"
         VIEWER = "viewer", "Leitor"
+        ANNOTATOR = "annotator", "Rotulador"
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="labeling_memberships")
     labeling = models.ForeignKey(Labeling, on_delete=models.CASCADE, related_name="memberships")
     items_done = models.PositiveIntegerField(default=0)
     role = models.CharField(max_length=16, choices=Role.choices, default=Role.ANNOTATOR)
     joined_at = models.DateTimeField(default=timezone.now)
-    # Última vez que o usuário abriu esta rotulação pelo dashboard. null = nunca
-    # abriu. Ordena o dashboard do rotulador (mais recente primeiro); é escrito
-    # pela action `opened`, não por save() automático, para que nenhuma outra
-    # alteração no membership mexa nessa ordem.
     last_opened_at = models.DateTimeField(null=True, blank=True, default=None)
 
     class Meta:
@@ -239,10 +234,26 @@ class LabelingMembership(models.Model):
         ordering = ["-joined_at"]
         indexes = [
             models.Index(fields=['user', 'labeling'], name='user_labeling_idx'),
-            # Cobre a subquery de ordenação do dashboard: filtra por usuário e
-            # lê last_opened_at direto do índice.
             models.Index(fields=['user', 'last_opened_at'], name='user_last_opened_idx'),
         ]
+
+    def is_last_owner(self):
+        """
+        Uma rotulação sem dono fica travada: só o dono exclui (IsLabelingOwnerPermission)
+        e ninguém mais pode se promover. Rebaixar ou remover o último dono é bloqueado.
+
+        ponytail: leitura sem lock — dois admins rebaixando dois donos distintos no
+        mesmo instante passam os dois. Se isso aparecer, mover a checagem para um
+        service com transaction.atomic + select_for_update nos memberships da rotulação.
+        """
+        if self.role != self.Role.OWNER:
+            return False
+        return not (
+            LabelingMembership.objects
+            .filter(labeling_id=self.labeling_id, role=self.Role.OWNER)
+            .exclude(pk=self.pk)
+            .exists()
+        )
 
     def __str__(self):
         return f"{self.user} {self.labeling} {self.role} {self.items_done}"

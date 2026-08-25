@@ -8,10 +8,23 @@ from unittest.mock import patch
 from item.models import Item 
 from item.models import ItemMembership
 from project.models import Project
-from labeling.models import Labeling, LabelingSection, LabelingElement, MultipleChoiceItem
+from labeling.models import Labeling, LabelingSection, LabelingElement, MultipleChoiceItem, LabelingMembership
 from user.models import UserGroup, UserGroupMembership
 from .models import Answer
 from .serializers import AnswerSerializer
+
+class AnswerTestsHelper():
+    @staticmethod
+    def enroll(labeling, *users, role="annotator"):
+        """
+        Quem responde é membro da rotulação: no fluxo real o next-item só entrega
+        item (e só cria ItemMembership) para quem já passou por essa checagem.
+        """
+        for user in users:
+            LabelingMembership.objects.get_or_create(
+                labeling=labeling, user=user, defaults={"role": role}
+            )
+
 
 class AnswerSerializerTest(TestCase):
     def setUp(self):
@@ -137,6 +150,7 @@ class AnswerViewsetCreateTest(TestCase):
             item=self.item,
             user=self.user,
         )
+        AnswerTestsHelper.enroll(self.labeling, self.user)
 
         self.client = APIClient()
         self.client.force_authenticate(self.user)
@@ -164,6 +178,49 @@ class AnswerViewsetCreateTest(TestCase):
         )
         self.item.refresh_from_db()
         self.assertIsNone(self.item.decision_payload)
+
+    def test_viewer_cannot_post_answer(self):
+        """'viewer' é leitura: nem com item reservado ele registra resposta."""
+        viewer = get_user_model().objects.create_user(
+            username="answer_viewer", email="answer_viewer@example.com", password="123"
+        )
+        AnswerTestsHelper.enroll(self.labeling, viewer, role="viewer")
+        ItemMembership.objects.create(item=self.item, user=viewer)
+
+        client = APIClient()
+        client.force_authenticate(viewer)
+        response = client.post(
+            self.url,
+            {
+                "labeling": self.labeling.id,
+                "item": self.item.id,
+                "answer_payload": {str(self.decisive_question.id): "aceitar"},
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(Answer.objects.filter(answered_by=viewer).exists())
+
+    def test_non_member_cannot_post_answer(self):
+        """Antes a permission só definia has_object_permission, que o create nunca chama."""
+        outsider = get_user_model().objects.create_user(
+            username="answer_outsider", email="answer_outsider@example.com", password="123"
+        )
+        client = APIClient()
+        client.force_authenticate(outsider)
+        response = client.post(
+            self.url,
+            {
+                "labeling": self.labeling.id,
+                "item": self.item.id,
+                "answer_payload": {str(self.decisive_question.id): "aceitar"},
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(Answer.objects.filter(answered_by=outsider).exists())
 
     def test_decision_valid_answer_creates_and_consumes_membership(self):
         payload = {
@@ -233,6 +290,7 @@ class AutomaticDecisionTest(TestCase):
         )
         ItemMembership.objects.create(item=self.item, user=self.user1)
         ItemMembership.objects.create(item=self.item, user=self.user2)
+        AnswerTestsHelper.enroll(self.labeling, self.user1, self.user2)
 
         self.client = APIClient()
         self.url = reverse("answers-list")
@@ -357,6 +415,7 @@ class LLMDecisionTieBreakTest(TestCase):
 
         ItemMembership.objects.create(item=self.item, user=self.user1)
         ItemMembership.objects.create(item=self.item, user=self.user2)
+        AnswerTestsHelper.enroll(self.labeling, self.user1, self.user2)
 
         self.client = APIClient()
         self.url = reverse("answers-list")
@@ -438,6 +497,7 @@ class LLMDecisionTieBreakTest(TestCase):
         self.assertEqual(self.item.final_decision_source, None)
 
         ItemMembership.objects.create(item=self.item, user=self.user3)
+        AnswerTestsHelper.enroll(self.labeling, self.user3)
         r3 = self._answer(self.user3, "yes")
         self.assertEqual(r3.status_code, status.HTTP_201_CREATED)
         self.assertEqual(mocked_llm.call_count, 1)
@@ -566,6 +626,7 @@ class LabelingCompletionTest(TestCase):
         )
         ItemMembership.objects.create(item=self.item1, user=self.user)
         ItemMembership.objects.create(item=self.item2, user=self.user)
+        AnswerTestsHelper.enroll(self.labeling, self.user)
 
         self.client = APIClient()
         self.client.force_authenticate(self.user)
@@ -652,6 +713,7 @@ class GroupQuotaAnswerEnforcementTest(TestCase):
         ItemMembership.objects.create(item=self.item, user=self.user_b1)
         ItemMembership.objects.create(item=self.item, user=self.user_b2)
         ItemMembership.objects.create(item=self.item, user=self.user_a)
+        AnswerTestsHelper.enroll(self.labeling, self.user_b1, self.user_b2, self.user_a)
 
         self.url = reverse("answers-list")
 

@@ -64,7 +64,7 @@ class CursorPaginationTests(TestCase):
                 LabelingMembership.objects.create(
                     labeling=labeling,
                     user=cls.admin,
-                    role=LabelingMembership.Role.ANNOTATOR,
+                    role=LabelingMembership.Role.OWNER,
                 )
                 cls.labelings.append(labeling)
 

@@ -1,9 +1,8 @@
 from .models import Labeling, LabelingMembership, LabelingSection, LabelingElement, MultipleChoiceItem, QuestionRange
 from .serializers import (LabelingSerializer, LabelingMembershipSerializer,
 LabelingSectionsBulkCreateSerializer, LabelingSectionSerializer, LabelingDashboardSerializer, LabelingMembershipDashboardSerializer, LabelingAgreementSummarySerializer)
-from project.models import ProjectMembership
 from user.permissions import IsAdminAccount
-from .permissions import CanEditLabelingsInProjectPermission
+from .permissions import CanEditLabelingPermission, IsLabelingOwnerPermission, EDIT_ROLES, ANNOTATE_ROLES
 from item.models import Item
 from user.models import UserGroup
 from .serializers import LabelingElementSerializer
@@ -12,7 +11,6 @@ from .services.agreement import build_agreement_summary, parse_min_agreement
 from django.shortcuts import render, get_object_or_404
 from django.db import models, transaction
 from django.utils import timezone
-from django.contrib.auth import get_user_model
 
 from rest_framework import viewsets, status
 
@@ -33,6 +31,8 @@ from annotaise.pagination import StandardCursorPagination, paginated_response
 
 LLM_TIEBREAK_USERNAME = "llm_tiebreak_bot"
 LLM_TIEBREAK_EMAIL = "llm_tiebreak_bot@annotaise.local"
+
+LAST_OWNER_ERROR = "A rotulação precisa de pelo menos um dono."
 
 # Posição das rotulações que o usuário nunca abriu: vão para o fim da ordem.
 # Tem que ser um valor concreto em vez de NULL — o cursor pagina comparando a
@@ -66,8 +66,10 @@ class LabelingViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['create' ,'list_labeling_memberships']:
             self.permission_classes = [IsAdminAccount]
-        elif self.action in ['update','partial_update', 'destroy']:
-            self.permission_classes = [IsAdminAccount, CanEditLabelingsInProjectPermission]
+        elif self.action == 'destroy':
+            self.permission_classes = [IsAdminAccount, IsLabelingOwnerPermission]
+        elif self.action in ['update','partial_update']:
+            self.permission_classes = [IsAdminAccount, CanEditLabelingPermission]
         else:
             self.permission_classes = [IsAuthenticated]
         return super().get_permissions()
@@ -91,7 +93,7 @@ class LabelingViewSet(viewsets.ModelViewSet):
         que o usuario é admin ou owner.'''
         today = datetime.now().date()
         search = request.query_params.get("search")
-        qs = (Labeling.objects.filter(project__memberships__user=request.user)
+        qs = (Labeling.objects.filter(memberships__user=request.user, memberships__role__in=EDIT_ROLES)
             .select_related('project')
             .annotate(
                 total_labelings=Count('items', distinct=True),
@@ -210,7 +212,7 @@ class LabelingViewSet(viewsets.ModelViewSet):
 
         qs = (
             Labeling.objects
-            .filter(memberships__user=request.user, id__in=items)
+            .filter(memberships__user=request.user, memberships__role__in=ANNOTATE_ROLES, id__in=items)
             .select_related('project')
             .annotate(
                 done_labelings=Count(
@@ -299,11 +301,17 @@ class LabelingViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         user = self.request.user
 
-        perm = CanEditLabelingsInProjectPermission()
+        perm = CanEditLabelingPermission()
 
         if perm.can_edit_labeling_by_project(user,self.request.data.get('project')) == False:
             raise PermissionDenied(detail=perm.message)
-        serializer.save(created_by=user)
+        labeling = serializer.save(created_by=user)
+
+        LabelingMembership.objects.create(
+            labeling=labeling,
+            user=user,
+            role=LabelingMembership.Role.OWNER,
+        )
 
     @action(methods=["get"], detail=True, url_path="elements")
     def elements(self, request, pk=None):
@@ -340,7 +348,7 @@ class LabelingViewSet(viewsets.ModelViewSet):
 class LabelingMembershipViewSet(viewsets.ModelViewSet):
     '''Só o owner/colaborator pode mexer nisso'''
     serializer_class = LabelingMembershipSerializer
-    permission_classes = [IsAdminAccount, CanEditLabelingsInProjectPermission]
+    permission_classes = [IsAdminAccount, CanEditLabelingPermission]
     queryset = (
         LabelingMembership.objects
         .select_related('labeling', 'user')
@@ -350,6 +358,18 @@ class LabelingMembershipViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     
+    def perform_update(self, serializer):
+        membership = serializer.instance
+        new_role = serializer.validated_data.get("role", membership.role)
+        if new_role != LabelingMembership.Role.OWNER and membership.is_last_owner():
+            raise ValidationError({"role": LAST_OWNER_ERROR})
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        if instance.is_last_owner():
+            raise ValidationError({"detail": LAST_OWNER_ERROR})
+        instance.delete()
+
     def get_queryset(self):
         user = getattr(self.request, "user", None)
         username = getattr(user, "username", "anonymous")
@@ -357,11 +377,11 @@ class LabelingMembershipViewSet(viewsets.ModelViewSet):
         if not user or not getattr(user, "is_authenticated", False):
             return self.queryset.none()
 
-        # Filtra memberships de labelings onde o usuário é owner/contributor do projeto
+        # Filtra memberships de labelings onde o usuário é owner/admin da rotulação
         return (
             self.queryset.filter(
-                Q(labeling__project__memberships__user=user,
-                  labeling__project__memberships__role__in=[ProjectMembership.RoleChoices.OWNER, ProjectMembership.RoleChoices.CONTRIBUTOR]) |
+                Q(labeling__memberships__user=user,
+                  labeling__memberships__role__in=EDIT_ROLES) |
                 Q(labeling__created_by=user)
             )
             .distinct()
@@ -423,7 +443,7 @@ class CreateReadLabelingStructureView(APIView):
                 status=400,
             )
 
-        perm = CanEditLabelingsInProjectPermission()
+        perm = CanEditLabelingPermission()
         if not perm.can_edit_labeling(request.user, labeling_id):
             raise PermissionDenied(detail=perm.message)
 
