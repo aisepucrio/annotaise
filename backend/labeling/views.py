@@ -87,13 +87,12 @@ class LabelingViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def duplicate(self, request, pk=None):
         original = self.get_object()
-
         with transaction.atomic():
             copy = Labeling.objects.get(pk=original.pk)
             copy.pk = None
             copy.id = None
             copy._state.adding = True
-            
+            copy.title = "Cópia de " + original.title
             copy.start_date = timezone.now().date()
             copy.save()
             for section in original.sections.all():

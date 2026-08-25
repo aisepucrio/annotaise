@@ -477,6 +477,9 @@ export const translations: Record<Language, TranslationMap> = {
     'labelings.create.success.updated': 'Rotulação atualizada com sucesso.',
     'labelings.create.success.deleted': 'Rotulação excluída com sucesso.',
     'labelings.create.success.duplicated': 'Rotulação duplicada com sucesso.',
+    'labelings.create.duplicate.title': 'Duplicar rotulação',
+    'labelings.create.duplicate.description': 'Uma cópia desta rotulação será criada, sem usuários atribuídos, respostas ou data final.',
+    'labelings.create.duplicate.confirm': 'Duplicar',
     'labelings.create.header.downloadCsvSuccess': 'CSV importado baixado com sucesso.',
     'labelings.addItemsCsv.title': 'Importar itens via CSV',
     'labelings.addItemsCsv.description':
@@ -1070,8 +1073,12 @@ export const translations: Record<Language, TranslationMap> = {
     'labelings.create.header.downloadingCsv': 'Downloading...',
     'labelings.create.header.deleting': 'Deleting...',
     'labelings.create.header.deleteButton': 'Delete annotation task',
+    
     'labelings.create.header.duplicate': 'Duplicate',
     'labelings.create.header.duplicating': 'Duplicating...',
+    'labelings.create.duplicate.title': 'Duplicate annotation task',
+    'labelings.create.duplicate.description': 'A copy of this annotation task will be created, without assigned annotators, annotations, or end date.',
+    'labelings.create.duplicate.confirm': 'Duplicate',
     'labelings.create.header.duplicateAria': 'Duplicate annotation task',
     'labelings.create.actions.addQuestion': 'Add question field',
     'labelings.create.actions.addContext': 'Add data field',
@@ -1232,6 +1239,7 @@ export const translations: Record<Language, TranslationMap> = {
     'labelings.create.success.memberRemoved': 'Member removed successfully.',
     'labelings.create.success.updated': 'Annotation task updated successfully.',
     'labelings.create.success.deleted': 'Annotation task deleted successfully.',
+    
     'labelings.create.success.duplicated': 'Annotation task duplicated successfully.',
     'labelings.create.header.downloadCsvSuccess': 'Imported CSV downloaded successfully.',
     'labelings.addItemsCsv.title': 'Import data records via CSV',
