@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useImperativeHandle, forwardRef, useRef, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { toast } from 'sonner';
 import TwoOptionSelector from '../TwoOptionSelector';
 import { useTranslations } from '@/i18n/use-translations';
@@ -72,40 +72,6 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgr
 
   // Derived state
   const columns = structureQuery.data?.columns ?? [];
-
-  //Navigation between itens
-  const router = useRouter() 
-
-  const currentId = labelingId;
-  //Used in NewUserModal (we need it to get the projectLabelingIds)
-  const { data: assignmentProjects, isLoading: assignmentOptionsLoading } = useInvitationAssignmentOptionsQuery();
-  //Project ids
-  const projectLabelingIds: number[] = assignmentProjects?.flatMap((project:any) => project?.labelings?.map((labeling:any) => labeling.id)) || [];
-
-  // Just so that we don't make a mistake using it  
-  const allIds = projectLabelingIds;
-
-  //Current Id's index
-  const currentIndex = allIds.indexOf(currentId);
-
-  const handlePrevious = () => {
-    if (currentIndex <= 0) return;
-
-    const previousId = allIds[currentIndex - 1];
-
-    router.push(`/labelings_manage/${previousId}/form`); //previous
-  };
-
-  const handleNext = () => {
-    if (currentIndex >= allIds.length - 1) return;
-
-    const nextId = allIds[currentIndex + 1];
-
-    router.push(`/labelings_manage/${nextId}/form`); //next
-  };
-
-  const isFirstItem = currentIndex <= 0;
-  const isLastItem = currentIndex >= allIds.length - 1;
 
   // Save structure handler
   const handleSaveStructure = useCallback(async (reason: SaveReason = 'manual'): Promise<boolean> => {
@@ -240,14 +206,6 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgr
 
   return (
   <div className="relative min-h-full w-full">
-
-    <div className="absolute left-4 top-1/2 z-50 -translate-y-1/2">
-      <ArrowLeftButton
-        onPrevious={handlePrevious}
-        disablePrevious={isFirstItem}
-      />
-    </div>
-
     <div className="mx-auto w-[80%]">
       {hasBackgroundForm ? (
         <div className="mx-auto mt-2">
@@ -279,13 +237,6 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgr
           onChange={handleSectionsChange}
         />
       </div>
-    </div>
-
-    <div className="absolute right-4 top-1/2 z-50 -translate-y-1/2">
-      <ArrowRightButton
-        onNext={handleNext}
-        disableNext={isLastItem}
-      />
     </div>
 
   </div>
