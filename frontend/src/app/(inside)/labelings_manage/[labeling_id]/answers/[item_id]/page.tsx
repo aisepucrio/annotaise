@@ -78,7 +78,7 @@ export default function AnswersTab({
           itemGroup={inspectItemGroup}
           itemGroups={groupedFilteredItems}
           onBack={() => setInspectItemKey(null)}
-          onSelectItem={(key) => setInspectItemKey}
+          onSelectItem={(key) => setInspectItemKey(key)}
           getUserLabel={getUserLabel}
           sections={structureSections}
         />
@@ -131,7 +131,7 @@ export default function AnswersTab({
               const latestAnswer = group.answers[0];
               const answeredAt = latestAnswer ? new Date(latestAnswer.created_at).toLocaleString(locale) : '-';
               const answeredCount = getDisplayedResponseCount(group.answers);
-              const itemLabel = resolveItemLabel(group.rowIndex, group.itemId, t);
+              const itemLabel = resolveItemLabel(group.rowIndex, group.itemId, t); //lista necessária  
 
               return (
                 <GridItemCard key={group.key} index={index}>
