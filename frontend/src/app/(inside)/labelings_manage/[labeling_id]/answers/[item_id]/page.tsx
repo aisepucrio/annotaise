@@ -49,6 +49,7 @@ export default function AnswersTab({
   const { t, locale } = useTranslations();
 
   const groupedFilteredItems = useMemo(() => groupAnswersByItem(filteredAnswers), [filteredAnswers]);
+  const groupedFilteredItemsByKey = useMemo( () => new Map(groupedFilteredItems.map((group) => [group.key, group])), [groupedFilteredItems]);
 
   const groupedAllItems = useMemo(() => groupAnswersByItem(allAnswers), [allAnswers]);
   const groupedAllItemsByKey = useMemo(() => new Map(groupedAllItems.map((group) => [group.key, group])), [groupedAllItems]);
@@ -57,7 +58,7 @@ export default function AnswersTab({
   const inspectItemGroup = useMemo(() => {
     if (!inspectItemKey) return null;
     return groupedAllItemsByKey.get(inspectItemKey) ?? null;
-  }, [groupedAllItemsByKey, inspectItemKey]);
+  }, [groupedFilteredItemsByKey, inspectItemKey]);
 
   useEffect(() => {
     if (!inspectItemKey) return;
@@ -75,7 +76,9 @@ export default function AnswersTab({
       <div className="mx-auto h-full min-h-0 max-w-6xl">
         <ItemTab
           itemGroup={inspectItemGroup}
+          itemGroups={groupedFilteredItems}
           onBack={() => setInspectItemKey(null)}
+          onSelectItem={(key) => setInspectItemKey}
           getUserLabel={getUserLabel}
           sections={structureSections}
         />
