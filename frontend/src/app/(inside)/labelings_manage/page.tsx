@@ -122,6 +122,7 @@ export default function LabelingsPage() {
             answersCollected={l.answers_collected}
             variant="manage"
             actionButton={
+              
               <Button
                 icon={<Pen size={18} strokeWidth={1.75} />}
                 onClick={() => router.push(`/labelings_manage/${l.id}/form`)}
@@ -130,7 +131,10 @@ export default function LabelingsPage() {
                 className="px-4"
                 ariaLabel={t('labelings.manage.action.manageAria')}
               >
-                {t('labelings.manage.action.manage')}
+                {/*One issue: it only behaves like a link when we click on the text, not the whole button.*/}
+                <a href={`/labelings_manage/${l.id}/form`}> {/*Link structure. Just like that we can open in a new tab  */ }
+                  {t('labelings.manage.action.manage')}
+                </a>
               </Button>
             }
           />

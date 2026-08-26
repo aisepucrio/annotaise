@@ -1,1 +1,10 @@
-{}
+{
+  "dependencies": {
+    "lucide-react": "^1.33.0",
+    "react": "^19.2.8"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.18",
+    "@types/react-router-dom": "^5.3.3"
+  }
+}

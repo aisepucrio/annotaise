@@ -9,7 +9,10 @@ import { useLabelingHeaderQuery, useLabelingStructureQueryByType } from '@/modul
 import { useSaveLabelingStructureMutation } from '@/modules/labelings/manage/labelingManagerMutations';
 import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 import { AdminFormBuilder, normalizeAdminSections, sanitizeAdminSectionsForSave } from '@/components/context-question';
+import ArrowLeftButton from  '@/components/button/ArrowLeftButton';
+import ArrowRightButton from  '@/components/button/ArrowRightButton';
 import type { LabelingStructureSection } from '@/modules/labelings/labelingsTypes';
+import { useInvitationAssignmentOptionsQuery } from '@/modules/user/userQueries';
 
 type FormTabProps = {
   labelingId: number;
@@ -200,10 +203,12 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgr
     }
   }, [structureQuery.error, t]);
 
+
   return (
-    <>
+  <div className="relative min-h-full w-full">
+    <div className="mx-auto w-[80%]">
       {hasBackgroundForm ? (
-        <div className="w-[80%] mx-auto mt-2">
+        <div className="mx-auto mt-2">
           <TwoOptionSelector
             value={activeFormType}
             onChange={(nextFormType) => void handleFormTypeChange(nextFormType)}
@@ -224,15 +229,20 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgr
         </div>
       ) : null}
 
-      <div className="mx-auto mt-2 w-[80%] space-y-6">
-        <AdminFormBuilder sections={sections} columns={columns} allowContext={allowContext} onChange={handleSectionsChange} />
+      <div className="mt-2 space-y-6">
+        <AdminFormBuilder
+          sections={sections}
+          columns={columns}
+          allowContext={allowContext}
+          onChange={handleSectionsChange}
+        />
       </div>
-    </>
-  );
-});
+    </div>
+
+  </div>
+  )});
 
 FormTab.displayName = 'FormTab';
-
 export { FormTab };
 
 export default function FormPage() {

@@ -76,6 +76,7 @@ export default function Projects() {
             labelings_pending={project.pending_labelings}
             labelings_late={project.late_labelings}
             onManage={() => router.push(`/projects/${project.id}`)}
+            project={project} //using all the props indicated in the IndividualProjectCardProps interface, including the project id for the manage button
           />
         </GridItemCard>
       ))}

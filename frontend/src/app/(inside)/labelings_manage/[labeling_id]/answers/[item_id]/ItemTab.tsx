@@ -10,6 +10,9 @@ import { resolveItemLabel } from '../answer-utils';
 import ItemSummary from './ItemSummary';
 import ItemAnswers from './ItemAnswers';
 import { ArrowLeft } from 'lucide-react';
+import ArrowLeftButton from '@/components/button/ArrowLeftButton';
+import ArrowRightButton from '@/components/button/ArrowRightButton';
+
 
 type ItemAnswersGroup = {
   key: string;
@@ -19,20 +22,23 @@ type ItemAnswersGroup = {
 };
 
 type ItemTabProps = {
-  itemGroup: ItemAnswersGroup;
+  itemGroup: ItemAnswersGroup; //item que está sendo carregado agora
+  itemGroups: ItemAnswersGroup[]; //itens que estão na lista para carregar (ir ou voltar)
   onBack: () => void;
+  onSelectItem: (key:string) => void;
   getUserLabel: (userId: number) => string;
   sections: LabelingStructureSection[];
 };
 
 type DetailTab = 'item-summary' | 'user-answer';
 
-export default function ItemTab({ itemGroup, onBack, getUserLabel, sections }: ItemTabProps) {
+export default function ItemTab({ itemGroup, itemGroups, onBack, onSelectItem, getUserLabel, sections }: ItemTabProps) {
   const { t, locale } = useTranslations();
 
   const userAnswers = useMemo(() => selectLatestAnswersByUser(itemGroup.answers), [itemGroup.answers]);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<DetailTab>('item-summary');
+
 
   useEffect(() => {
     if (userAnswers.length === 0) {
@@ -56,9 +62,10 @@ export default function ItemTab({ itemGroup, onBack, getUserLabel, sections }: I
     return userAnswers.find((answer) => answer.answered_by === selectedUserId) ?? userAnswers[0];
   }, [selectedUserId, userAnswers]);
 
+
   if (!selectedAnswer) {
     return (
-      <DetailViewLayout onBack={onBack} t={t}>
+      <DetailViewLayout itemGroup={itemGroup} itemGroups={itemGroups} onSelectItem={onSelectItem} onBack={onBack} t={t}>
         <div className="pt-4">
           <div className="rounded-2xl bg-white p-6">
             <p className="text-sm text-gray-600">{t('labelings.create.answers.modal.answersEmpty')}</p>
@@ -93,7 +100,7 @@ export default function ItemTab({ itemGroup, onBack, getUserLabel, sections }: I
   const itemPayload = (selectedAnswer.item_detail?.payload ?? {}) as Record<string, unknown>;
 
   return (
-    <DetailViewLayout onBack={onBack} t={t}>
+    <DetailViewLayout itemGroup={itemGroup} itemGroups={itemGroups} onSelectItem={onSelectItem} onBack={onBack} t={t}>
       <div className="flex h-full max-h-full min-h-0 flex-col overflow-hidden border-l border-r pt-4">
         <div className="sticky top-0 z-10 border-b border-gray-100 bg-white/95 px-4 py-4 backdrop-blur supports-backdrop-filter:bg-white/85 md:px-6">
           <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(260px,380px)_minmax(220px,260px)] md:items-center">
@@ -124,7 +131,6 @@ export default function ItemTab({ itemGroup, onBack, getUserLabel, sections }: I
                 }
               />
             </div>
-
             <div className="flex flex-col md:justify-self-end md:text-right">
               <label className="text-xs font-semibold uppercase tracking-wide text-gray-700">
                 {t('labelings.create.answers.modal.selectUserLabel')}
@@ -149,38 +155,60 @@ export default function ItemTab({ itemGroup, onBack, getUserLabel, sections }: I
                 </p>
               )}
             </div>
+            
           </div>
         </div>
-
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-5 pt-4 md:px-6 md:pb-6">
-          {activeTab === 'item-summary' ? (
-            <ItemSummary answers={itemGroup.answers} sections={sections} t={t} locale={locale} />
-          ) : (
-            <ItemAnswers
-              answerEntries={answerEntries}
-              orderedSections={orderedSections}
-              answersByQuestion={answersByQuestion}
-              itemPayload={itemPayload}
-              t={t}
-            />
-          )}
-        </div>
+ 
       </div>
     </DetailViewLayout>
   );
 }
 
-function DetailViewLayout({ children, onBack, t }: { children: ReactNode; onBack: () => void; t: TranslateFn }) {
+function DetailViewLayout({ children, onBack, itemGroup, itemGroups, onSelectItem, t }: { children: ReactNode; onBack: () => void; itemGroup: ItemAnswersGroup; itemGroups: ItemAnswersGroup[]; onSelectItem: (key: string) => void; t: TranslateFn }) {
+   
+    const currentIndex = itemGroups.findIndex((group) => group.key === itemGroup.key);
+  
+    const handlePrevious = () => {
+      if (currentIndex <= 0) return;
+    
+      onSelectItem(itemGroups[currentIndex - 1].key);
+
+    };
+  
+    const handleNext = () => {
+      if (currentIndex >= itemGroups.length - 1) return;
+  
+      onSelectItem(itemGroups[currentIndex + 1].key);
+
+    };
+
+    const isFirstItem = currentIndex <= 0;
+    const isLastItem = currentIndex >= itemGroups.length - 1;
+  
   return (
-    <div className="grid h-full min-h-0 items-stretch gap-3 md:grid-cols-[max-content_minmax(0,1fr)_max-content]">
+    <div className="relative grid h-full min-h-0 items-stretch gap-3 md:grid-cols-[max-content_minmax(0,1fr)_max-content]">
       <div className="pt-4 md:justify-self-start">
         <BackButton onBack={onBack} t={t} />
+      </div>
+
+      <div className="absolute left-4 top-1/2 z-50 -translate-y-1/2">
+          <ArrowLeftButton
+            onPrevious={handlePrevious}
+            disablePrevious={isFirstItem}
+          />
       </div>
 
       <div className="h-full min-h-0 min-w-0">{children}</div>
 
       <div aria-hidden className="hidden pt-4 md:block invisible">
         <BackButton onBack={() => {}} t={t} />
+      </div>
+
+      <div className="absolute right-4 top-1/2 z-50 -translate-y-1/2">
+          <ArrowRightButton
+            onNext={handleNext}
+            disableNext={isLastItem}
+          />
       </div>
     </div>
   );
