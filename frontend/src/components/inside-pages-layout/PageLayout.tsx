@@ -124,12 +124,11 @@ export default function PageLayout({
         <div className="ml-5 mt-5 flex min-h-0 w-[calc(100%-2.5rem)] flex-1 flex-col">
           {isLoading ? (
             <Loader variant="blue" />
-          ) : message ? (
-            <p className="text-sm text-gray-500">{message}</p>
           ) : (
             <div className="flex min-h-0 flex-1 flex-col">
               <div className="min-h-0 flex-1 overflow-y-auto pr-2">
                 <GridLayout minColumnWidth={minColumnWidth}>{children}</GridLayout>
+                {message && <p className="col-span-full text-sm text-gray-500">{message}</p>}
                 {footer}
               </div>
             </div>

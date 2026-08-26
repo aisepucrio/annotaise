@@ -218,6 +218,7 @@ export default function LabelingsPage() {
             open={openCreateLabelingModal}
             onClose={() => setopenCreateLabelingModal(false)}
             onConfirm={handleConfirmCreateNewLabeling}
+            defaultProjectId={openProjectId}
           />
           <NewProjectModal
             open={openCreateProjectModal}

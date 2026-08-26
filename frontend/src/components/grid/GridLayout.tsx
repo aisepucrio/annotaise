@@ -16,8 +16,13 @@ export default function GridLayout({ children, minColumnWidth = '400px', classNa
 
   const childCount = React.Children.count(children);
 
+  // A single card still needs to grow past minColumnWidth (e.g. the wider project
+  // card mixed into a labelings grid) — cap it at 2x instead of pinning it exactly,
+  // so it isn't stretched edge-to-edge either.
   const gridTemplate =
-    childCount === 1 ? `minmax(0, ${minColumnWidth})` : `repeat(auto-fit, minmax(min(${minColumnWidth}, 100%), 1fr))`;
+    childCount === 1
+      ? `minmax(0, min(calc(${minColumnWidth} * 2), 100%))`
+      : `repeat(auto-fit, minmax(min(${minColumnWidth}, 100%), 1fr))`;
 
   React.useEffect(() => {
     const updateColumns = () => {

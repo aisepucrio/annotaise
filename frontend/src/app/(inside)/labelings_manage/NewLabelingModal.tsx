@@ -28,6 +28,8 @@ type NewLabelingModalProps = {
   open: boolean;
   onClose: () => void;
   onConfirm: (payload: CreateLabelingWithCsvPayload) => Promise<void>;
+  /** Project folder open when the modal was triggered, preselected in the project field. */
+  defaultProjectId?: number | null;
 };
 
 // One row of the per-group quota editor (group name + how many answers it must provide).
@@ -45,12 +47,12 @@ type CreateLabelingWithCsvDraft = {
   };
 };
 
-function createInitialState(): CreateLabelingWithCsvDraft {
+function createInitialState(defaultProjectId: number | null = null): CreateLabelingWithCsvDraft {
   return {
     file: null,
     payload: {
       title: '',
-      project: null,
+      project: defaultProjectId,
       users_per_item: 1,
       start_date: new Date().toISOString().split('T')[0],
       final_date: '',
@@ -64,12 +66,12 @@ function createInitialState(): CreateLabelingWithCsvDraft {
   };
 }
 
-export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabelingModalProps) {
+export default function NewLabelingModal({ open, onClose, onConfirm, defaultProjectId = null }: NewLabelingModalProps) {
   const { t } = useTranslations();
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const [draft, setDraft] = useState<CreateLabelingWithCsvDraft>(() => createInitialState());
+  const [draft, setDraft] = useState<CreateLabelingWithCsvDraft>(() => createInitialState(defaultProjectId));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState<Step>('upload');
   const [hasEmptyFields, setHasEmptyFields] = useState(false);
@@ -82,7 +84,7 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
 
   useEffect(() => {
     if (!open) {
-      setDraft(createInitialState());
+      setDraft(createInitialState(defaultProjectId));
       setIsSubmitting(false);
       setHasEmptyFields(false);
       setIsAnalyzingFile(false);
@@ -91,7 +93,7 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
       setStep('upload');
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
-  }, [open]);
+  }, [open, defaultProjectId]);
 
   // Both "per_person" and "anonymous_mode" force a single answer per item:
   // decision = false, decision_mode = manual, users_per_item = 1.
