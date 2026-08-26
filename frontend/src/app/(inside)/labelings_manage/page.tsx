@@ -3,7 +3,7 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-import { ArrowLeft, Pen } from 'lucide-react';
+import { ArrowLeft, FolderPlus, Pen } from 'lucide-react';
 
 import { toast } from 'sonner';
 
@@ -14,6 +14,7 @@ import GridItemCard from '@/components/grid/GridItemCard';
 import Button from '@/components/button/Button';
 import IndividualLabelingCard from '@/components/IndividualLabelingCard';
 import IndividualProjectCard from '@/components/IndividualProjectCard';
+import NewProjectModal from '@/components/NewProjectModal';
 import InfiniteScroll from '@/components/InfiniteScroll';
 
 import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
@@ -22,6 +23,8 @@ import { useLabelingDashboardEditQuery } from '@/modules/labelings/labelingQueri
 import { useProjectDashboardQuery, useProjectQuery } from '@/modules/projects/projectsQueries';
 import type { CreateLabelingWithCsvPayload } from '@/modules/labelings/labelingsTypes';
 import { useCreateLabelingWithCsvMutation } from '@/modules/labelings/labelingMutations';
+import { useCreateProjectMutation } from '@/modules/projects/projectsMutations';
+import type { ProjectPayload } from '@/modules/projects/projectsTypes';
 
 import { useTranslations } from '@/i18n/use-translations';
 
@@ -31,6 +34,7 @@ export default function LabelingsPage() {
   const searchParams = useSearchParams();
 
   const [openCreateLabelingModal, setopenCreateLabelingModal] = useState(false);
+  const [openCreateProjectModal, setOpenCreateProjectModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   // Without `?project` the screen is the root: projects (folders) followed by the
@@ -61,6 +65,7 @@ export default function LabelingsPage() {
   const error = labelings.error ?? (isRoot ? projects.error : null);
 
   const createLabelingWithCsv = useCreateLabelingWithCsvMutation();
+  const createProject = useCreateProjectMutation();
 
   useEffect(() => {
     if (error) {
@@ -75,6 +80,10 @@ export default function LabelingsPage() {
     } catch (err) {
       toast.error(getApiErrorMessage(err, t('labelings.manage.createError')));
     }
+  }
+
+  async function handleCreateProject(payload: ProjectPayload) {
+    await createProject.mutateAsync(payload);
   }
 
   const getLabelingCardBorderColor = (daysPassed: number, daysTotal: number, itemsDone: number, totalItems?: number) => {
@@ -177,6 +186,20 @@ export default function LabelingsPage() {
       hasButton
       buttonText={t('labelings.manage.newButton')}
       onButtonClick={() => setopenCreateLabelingModal(true)}
+      secondaryButton={
+        // Folders only exist at the root, so that is the only place creating one makes sense.
+        isRoot ? (
+          <Button
+            icon={<FolderPlus size={16} strokeWidth={2.5} />}
+            onClick={() => setOpenCreateProjectModal(true)}
+            variant="light"
+            fill={false}
+            className="px-4 py-2 shadow-md text-sm"
+          >
+            {t('projects.createButton')}
+          </Button>
+        ) : null
+      }
       isLoading={isLoading}
       message={!isLoading && loadedCount === 0 ? t('labelings.manage.empty') : undefined}
       minColumnWidth="420px"
@@ -190,11 +213,18 @@ export default function LabelingsPage() {
         />
       }
       modal={
-        <NewLabelingModal
-          open={openCreateLabelingModal}
-          onClose={() => setopenCreateLabelingModal(false)}
-          onConfirm={handleConfirmCreateNewLabeling}
-        />
+        <>
+          <NewLabelingModal
+            open={openCreateLabelingModal}
+            onClose={() => setopenCreateLabelingModal(false)}
+            onConfirm={handleConfirmCreateNewLabeling}
+          />
+          <NewProjectModal
+            open={openCreateProjectModal}
+            onClose={() => setOpenCreateProjectModal(false)}
+            onSubmit={handleCreateProject}
+          />
+        </>
       }
     >
       {gridChildren}

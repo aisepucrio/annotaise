@@ -10,7 +10,7 @@ REMEMBER TO BREAK LINES NOW AND THEM TO ENSURE THE TABLE RENDERS IN SCREEN.
 Rules:
 - Be direct, concise, and professional.
 - Include one row for each changed file.
-- `CHANGE`: paste the file Diff
+- `CHANGE`: summarize the changes made in file
 - `REASON`: briefly explain why the change was necessary.
 - Do not include unnecessary explanations, introductions, conclusions, or commentary outside the table.
 - Do not include code snippets unless they are strictly necessary to communicate a critical decision.

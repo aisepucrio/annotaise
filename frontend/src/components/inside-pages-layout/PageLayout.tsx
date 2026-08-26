@@ -26,6 +26,8 @@ interface PageLayoutProps {
   buttonText?: string;
   onButtonClick?: () => void;
   buttonDisabled?: boolean;
+  /** Extra action rendered to the left of the main button. */
+  secondaryButton?: ReactNode;
 
   // Content
   children: ReactNode;
@@ -54,6 +56,7 @@ export default function PageLayout({
   buttonText,
   onButtonClick,
   buttonDisabled = false,
+  secondaryButton,
   children,
   footer,
   isLoading = false,
@@ -98,18 +101,22 @@ export default function PageLayout({
             showFilterButton={showFilterButton}
           />
 
-          {hasButton && (
-            <div className="ml-auto mr-6 w-auto">
-              <Button
-                icon={<Plus size={16} strokeWidth={3} />}
-                onClick={onButtonClick}
-                disabled={buttonDisabled}
-                variant="normal"
-                fill={false}
-                className="px-4 py-2 shadow-md text-sm"
-              >
-                {buttonText}
-              </Button>
+          {(hasButton || secondaryButton) && (
+            <div className="ml-auto mr-6 flex w-auto items-center gap-3">
+              {secondaryButton}
+
+              {hasButton && (
+                <Button
+                  icon={<Plus size={16} strokeWidth={3} />}
+                  onClick={onButtonClick}
+                  disabled={buttonDisabled}
+                  variant="normal"
+                  fill={false}
+                  className="px-4 py-2 shadow-md text-sm"
+                >
+                  {buttonText}
+                </Button>
+              )}
             </div>
           )}
         </div>

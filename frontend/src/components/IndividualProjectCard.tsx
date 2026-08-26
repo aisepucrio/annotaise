@@ -34,9 +34,19 @@ export default function IndividualProjectCard({
 
   return (
     <>
+      {/* Covers the whole card: absolute children paint above the static content,
+          so a click anywhere opens the folder. The one control that must stay
+          clickable is raised above it. */}
+      <button
+        type="button"
+        onClick={openFolder}
+        aria-label={t('projects.openFolder', { name: title })}
+        className="absolute inset-0 cursor-pointer rounded-br-xl rounded-ss-3xl"
+      />
+
       <h3 className={`${labelings_late > 0 ? 'text-red-700' : 'text-black'} font-semibold leading-tight pr-10`}>
         {title}
-        <ArrowUpRight size={22} color="black" className="inline ml-1 mb-1 text-gray-400 cursor-pointer" onClick={openFolder} />
+        <ArrowUpRight size={22} color="black" className="inline ml-1 mb-1 text-gray-400" />
       </h3>
 
       <div className="mt-2 h-0.75 rounded-full bg-metal-50" />
@@ -66,14 +76,16 @@ export default function IndividualProjectCard({
             <StatusBadge type="ok" text={t('projects.status.onTrack')} />
           )}
 
-          <Button
-            icon={<NotebookPen size={20} strokeWidth={1.75} />}
-            onClick={onManage}
-            variant="normal"
-            ariaLabel={t('projects.manageAria')}
-          >
-            {t('projects.manage')}
-          </Button>
+          <div className="relative w-full">
+            <Button
+              icon={<NotebookPen size={20} strokeWidth={1.75} />}
+              onClick={onManage}
+              variant="normal"
+              ariaLabel={t('projects.manageAria')}
+            >
+              {t('projects.manage')}
+            </Button>
+          </div>
         </div>
       </div>
     </>

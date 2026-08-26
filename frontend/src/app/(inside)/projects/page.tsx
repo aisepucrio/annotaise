@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import PageLayout from '@/components/inside-pages-layout/PageLayout';
 import IndividualProjectCard from '@/components/IndividualProjectCard';
-import NewProjectModal from './NewProjectModal';
+import NewProjectModal from '@/components/NewProjectModal';
 import GridItemCard from '@/components/grid/GridItemCard';
 import { useProjectDashboardQuery } from '@/modules/projects/projectsQueries';
 import { useCreateProjectMutation } from '@/modules/projects/projectsMutations';

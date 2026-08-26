@@ -174,6 +174,7 @@ export const translations: Record<Language, TranslationMap> = {
     'projects.status.lateCountPlural': 'Há {{count}} rotulações atrasadas',
     'projects.status.onTrack': 'Todas as rotulações estão em dia',
     'projects.manage': 'Gerenciar',
+    'projects.openFolder': 'Abrir o projeto {{name}}',
     'projects.manageAria': 'Gerenciar projeto',
     'users.title': 'Usuários',
     'users.description':
@@ -938,6 +939,7 @@ export const translations: Record<Language, TranslationMap> = {
     'projects.status.lateCountPlural': 'There are {{count}} late annotation tasks',
     'projects.status.onTrack': 'All annotation tasks are on track',
     'projects.manage': 'Manage',
+    'projects.openFolder': 'Open project {{name}}',
     'projects.manageAria': 'Manage annotation project',
     'users.title': 'Users',
     'users.description':
