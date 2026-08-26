@@ -31,7 +31,6 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgr
   const [activeFormType, setActiveFormType] = useState<FormType>('main');
   const [sections, setSections] = useState<LabelingStructureSection[]>([]);
 
-  // Queries and mutations
   const structureQuery = useLabelingStructureQueryByType(labelingId, activeFormType);
   const saveMutation = useSaveLabelingStructureMutation();
 
@@ -52,7 +51,6 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgr
     sectionsRef.current = sections;
   }, [sections]);
 
-  // Load structure into local state
   useEffect(() => {
     if (!structureQuery.data?.structure) {
       return;
@@ -67,10 +65,8 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgr
     loadedSnapshotRef.current = snapshotKey;
   }, [activeFormType, allowContext, structureQuery.data?.structure, structureQuery.dataUpdatedAt, t]);
 
-  // Derived state
   const columns = structureQuery.data?.columns ?? [];
 
-  // Save structure handler
   const handleSaveStructure = useCallback(async (reason: SaveReason = 'manual'): Promise<boolean> => {
     if (Number.isNaN(labelingId)) {
       toast.error(t('labelings.create.errors.invalidId'));
@@ -181,7 +177,6 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgr
     };
   }, [handleSaveStructure]);
 
-  // Expose methods to parent via ref
   useImperativeHandle(
     ref,
     () => ({
@@ -193,7 +188,6 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgr
     [handleSaveStructure, saveMutation.isPending]
   );
 
-  // Error handling for query errors
   useEffect(() => {
     if (structureQuery.error) {
       toast.error(getApiErrorMessage(structureQuery.error, t('labelings.create.errors.loadData')));

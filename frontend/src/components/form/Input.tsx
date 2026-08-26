@@ -4,34 +4,21 @@ import FormFieldBase from './base/FormFieldBase';
 import { formFieldClasses } from './base/formFieldClasses';
 
 export type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> & {
-  /** Label do input */
   label?: string;
-  /** Mensagem de erro */
   error?: string;
-  /** Ícone à direita do input */
   icon?: ReactNode;
-  /** Ação de clique no ícone à direita (quando definido, o ícone vira botão) */
+  /** When set, the right icon becomes a clickable button. */
   onIconClick?: () => void;
-  /** Ícone à esquerda do input */
   leftIcon?: ReactNode;
-  /** Se o campo é obrigatório */
   required?: boolean;
-  /** Classes CSS adicionais para o container */
   containerClassName?: string;
-  /** Se true, renderiza um textarea ao invés de input */
   multiline?: boolean;
-  /** Número de linhas do textarea (quando multiline=true) */
   rows?: number;
-  /** Se o textarea pode ser redimensionado (quando multiline=true). Padrão: false */
+  /** Only applies when multiline is true. Default: false. */
   resizable?: boolean;
-  /** Tooltip informativo ao lado do label */
   tooltip?: string;
 };
 
-/**
- * Componente de Input padronizado com label flutuante e suporte para ícones
- * Suporta modo textarea com opções de redimensionamento
- */
 const Input = forwardRef<HTMLInputElement | HTMLTextAreaElement, InputProps>(
   (
     {

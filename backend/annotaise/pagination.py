@@ -6,15 +6,15 @@ from rest_framework.response import Response
 
 
 class StandardCursorPagination(CursorPagination):
-    """Paginação por cursor de todas as listagens da API.
+    """Cursor pagination shared by every listing in the API.
 
-    O front consome essas listagens em scroll infinito, então só precisa do
-    cursor de `next` para pedir o bloco seguinte. `count` continua no payload
-    porque várias telas mostram o total de itens.
+    The frontend consumes these listings via infinite scroll, so it only
+    needs the `next` cursor to request the next block. `count` stays in the
+    payload because several screens display the total item count.
 
-    A ordenação default é `-id`: única e monotônica, o que evita o offset de
-    desempate do cursor e preserva o "mais recente primeiro" que as listagens
-    já usavam.
+    Default ordering is `-id`: unique and monotonic, which avoids the
+    cursor's tie-break offset and preserves the "most recent first" order
+    the listings already relied on.
     """
 
     page_size = 12
@@ -23,8 +23,8 @@ class StandardCursorPagination(CursorPagination):
     ordering = ("-id",)
 
     def paginate_queryset(self, queryset, request, view=None):
-        # Resolvido antes do fatiamento por cursor, senão o total já veio cortado.
-        # `list.count` exige argumento, então só QuerySet usa count().
+        # Must be resolved before cursor slicing, or the total would already be cut down.
+        # `list.count` requires an argument, so only a QuerySet uses count().
         self.total_count = queryset.count() if isinstance(queryset, QuerySet) else len(queryset)
         return super().paginate_queryset(queryset, request, view)
 
@@ -48,11 +48,11 @@ class StandardCursorPagination(CursorPagination):
 
 
 def paginated_response(view, queryset, serializer_class=None, build_rows=None):
-    """Responde uma página por cursor de `queryset`.
+    """Respond with one cursor page of `queryset`.
 
-    `build_rows` recebe a lista de objetos da página e devolve os dicts que o
-    serializer espera. Como só a página corrente passa por ele, agregações
-    auxiliares podem ser resolvidas apenas para as linhas exibidas.
+    `build_rows` receives the page's list of objects and returns the dicts
+    the serializer expects. Since only the current page passes through it,
+    auxiliary aggregates only need to be resolved for the rows being shown.
     """
     page = view.paginate_queryset(queryset)
     rows = list(queryset) if page is None else page

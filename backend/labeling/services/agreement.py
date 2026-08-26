@@ -202,5 +202,5 @@ def _normalize_choice_values(value):
             normalized.append(lowered)
         else:
             normalized.append(text)
-    # deduplica escolhas duplicadas na mesma resposta
+    # dedupe repeated choices within the same answer, preserving order
     return list(dict.fromkeys(normalized))

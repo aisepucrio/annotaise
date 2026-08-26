@@ -2,7 +2,7 @@ from rest_framework.permissions import BasePermission
 from .models import Labeling, LabelingMembership
 from project.models import ProjectMembership
 
-# Papéis do labeling_membership que dão direito de editar a rotulação.
+# labeling_membership roles that grant edit rights on the labeling.
 EDIT_ROLES = [LabelingMembership.Role.OWNER, LabelingMembership.Role.ADMIN]
 
 
@@ -15,7 +15,7 @@ ANNOTATE_ROLES = [
 
 
 def can_edit_labeling(user, labeling_id, roles=EDIT_ROLES):
-    """Direito de edição vem do membership da rotulação, não do projeto."""
+    """Edit rights come from the labeling membership, not the project one."""
     if not labeling_id or not getattr(user, "is_authenticated", False):
         return False
     return LabelingMembership.objects.filter(
@@ -24,14 +24,14 @@ def can_edit_labeling(user, labeling_id, roles=EDIT_ROLES):
 
 
 def can_annotate_labeling(user, labeling_id):
-    """Quem pode responder: membro da rotulação em qualquer papel menos viewer."""
+    """Who can annotate: any labeling member except viewers."""
     return can_edit_labeling(user, labeling_id, ANNOTATE_ROLES)
 
 
 def can_create_labeling_in_project(user, project_id):
     """
-    Criação ainda depende do projeto: a rotulação (e o membership dela) ainda
-    não existe no momento do POST.
+    Creation still depends on the project: the labeling (and its membership)
+    doesn't exist yet at POST time.
     """
     if not project_id or not getattr(user, "is_authenticated", False):
         return False
@@ -42,8 +42,8 @@ def can_create_labeling_in_project(user, project_id):
 
 class CanEditLabelingPermission(BasePermission):
     """
-    Serve tanto views com `labeling_id` na URL (checagem em has_permission)
-    quanto viewsets que resolvem o objeto (checagem em has_object_permission).
+    Handles both views with `labeling_id` in the URL (checked in has_permission)
+    and viewsets that resolve the object (checked in has_object_permission).
     """
     message = "Você não tem permissão para editar essa rotulação."
     roles = EDIT_ROLES
@@ -51,7 +51,7 @@ class CanEditLabelingPermission(BasePermission):
     def has_permission(self, request, view):
         labeling_id = view.kwargs.get('labeling_id')
         if labeling_id is None:
-            # Sem labeling na URL: quem decide é has_object_permission.
+            # No labeling in the URL: has_object_permission decides instead.
             return True
         return can_edit_labeling(request.user, labeling_id, self.roles)
 
@@ -77,6 +77,6 @@ class CanEditLabelingPermission(BasePermission):
 
 
 class IsLabelingOwnerPermission(CanEditLabelingPermission):
-    """Exclusão da rotulação é exclusiva do dono."""
+    """Deleting the labeling is owner-only."""
     message = "Apenas o dono da rotulação pode excluí-la."
     roles = [LabelingMembership.Role.OWNER]

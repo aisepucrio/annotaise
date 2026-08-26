@@ -2,7 +2,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createInvitation, deleteUser, updateUser } from './userService';
 import type { CreateInvitationPayload, UpdateUserPayload } from './userTypes';
 
-// Utilizada para criar convite
 export function useCreateInvitationMutation() {
   const queryClient = useQueryClient();
 
@@ -15,7 +14,6 @@ export function useCreateInvitationMutation() {
   });
 }
 
-// Utilizada para atualizar usuário
 export function useUpdateUserMutation(userId?: number | null) {
   const queryClient = useQueryClient();
 
@@ -33,7 +31,6 @@ export function useUpdateUserMutation(userId?: number | null) {
   });
 }
 
-// Utilizada para deletar usuário
 export function useDeleteUserMutation(userId?: number | null) {
   const queryClient = useQueryClient();
 

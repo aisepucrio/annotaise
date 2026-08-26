@@ -4,7 +4,6 @@ import type { CursorQuery, CursorSearchQuery } from '@/modules/pagination';
 import { fetchProjects, fetchProject, fetchProjectDashboard, fetchProjectMemberships } from './projectService';
 import type { ProjectDashboard, ProjectMembership } from './projectsTypes';
 
-// Utilizada para listar todos os projetos
 export function useProjectsQuery() {
   return useQuery({
     queryKey: ['projects'],
@@ -12,7 +11,6 @@ export function useProjectsQuery() {
   });
 }
 
-// Utilizada para obter detalhes de um projeto específico
 export function useProjectQuery(id: number) {
   return useQuery({
     queryKey: ['projects', id],
@@ -21,16 +19,15 @@ export function useProjectQuery(id: number) {
   });
 }
 
-// Utilizada para dashboard de projetos com busca e paginação
-export function useProjectDashboardQuery(params: CursorSearchQuery) {
+export function useProjectDashboardQuery(params: CursorSearchQuery, enabled = true) {
   return useCursorQuery<CursorSearchQuery, ProjectDashboard>({
     queryKey: ['projects', 'dashboard'],
     params,
     queryFn: fetchProjectDashboard,
+    enabled,
   });
 }
 
-// Utilizada para obter membros do projeto
 export function useProjectMembershipsQuery(projectId: number) {
   return useCursorQuery<CursorQuery<{ projectId: number }>, ProjectMembership>({
     queryKey: ['projects', projectId, 'memberships'],

@@ -9,7 +9,6 @@ import {
 } from './projectService';
 import type { ProjectPayload, ProjectMembershipPayload } from './projectsTypes';
 
-// Utilizada para criar projeto
 export function useCreateProjectMutation() {
   const queryClient = useQueryClient();
 
@@ -24,7 +23,6 @@ export function useCreateProjectMutation() {
   });
 }
 
-// Utilizada para atualizar projeto
 export function useUpdateProjectMutation(projectId: number) {
   const queryClient = useQueryClient();
 
@@ -40,7 +38,6 @@ export function useUpdateProjectMutation(projectId: number) {
   });
 }
 
-// Utilizada para deletar projeto
 export function useDeleteProjectMutation(projectId: number) {
   const queryClient = useQueryClient();
 
@@ -55,7 +52,6 @@ export function useDeleteProjectMutation(projectId: number) {
   });
 }
 
-// Utilizada para criar membership no projeto
 export function useCreateProjectMembershipMutation(projectId: number) {
   const queryClient = useQueryClient();
 
@@ -69,7 +65,6 @@ export function useCreateProjectMembershipMutation(projectId: number) {
   });
 }
 
-// Utilizada para atualizar membership no projeto
 export function useUpdateProjectMembershipMutation(projectId: number) {
   const queryClient = useQueryClient();
 
@@ -83,7 +78,6 @@ export function useUpdateProjectMembershipMutation(projectId: number) {
   });
 }
 
-// Utilizada para deletar membership no projeto
 export function useDeleteProjectMembershipMutation(projectId: number) {
   const queryClient = useQueryClient();
 

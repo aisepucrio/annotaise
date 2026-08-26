@@ -5,6 +5,8 @@ When reporting changes made to the codebase, output **ONLY a Markdown table** wi
 | FILE CHANGED | CHANGE | REASON |
 |---|---|---|
 
+REMEMBER TO BREAK LINES NOW AND THEM TO ENSURE THE TABLE RENDERS IN SCREEN.
+
 Rules:
 - Be direct, concise, and professional.
 - Include one row for each changed file.

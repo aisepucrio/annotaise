@@ -5,21 +5,13 @@ import FormFieldBase from './base/FormFieldBase';
 import { formFieldClasses } from './base/formFieldClasses';
 
 export type DatePickerProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'size'> & {
-  /** Label do datepicker */
   label?: string;
-  /** Mensagem de erro */
   error?: string;
-  /** Se o campo é obrigatório */
   required?: boolean;
-  /** Classes CSS adicionais para o container */
   containerClassName?: string;
-  /** Tooltip informativo ao lado do label */
   tooltip?: string;
 };
 
-/**
- * Componente de DatePicker padronizado com label flutuante
- */
 const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
   (
     {

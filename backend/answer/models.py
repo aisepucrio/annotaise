@@ -4,15 +4,15 @@ from django.conf import settings
 from .querysets import AnswerQuerySet
 
 class Answer(models.Model):
-    '''a arquitetura escolhida foi 1 questao pra cada item. o payload consiste no id da questao : resposta'''
+    '''Architecture: one answer per item; the payload maps question id to response.'''
     item = models.ForeignKey("item.Item", on_delete=models.CASCADE, related_name="answers")
     labeling = models.ForeignKey("labeling.Labeling", on_delete=models.CASCADE, related_name="answers")
     answered_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, related_name="answers_given", null=True
     )
-    # Grupo que essa resposta preenche na cota da rotulação. null = preenche o slot
-    # residual "any". Define-se na criação para evitar dupla contagem quando o
-    # respondente pertence a múltiplos grupos relevantes para a mesma rotulação.
+    # Group this answer fills in the labeling's quota. null = fills the residual
+    # "any" slot. Set at creation time to avoid double counting when the
+    # respondent belongs to multiple groups relevant to the same labeling.
     responded_as = models.ForeignKey(
         "user.UserGroup",
         on_delete=models.SET_NULL,
@@ -28,7 +28,7 @@ class Answer(models.Model):
     class Meta:
         ordering = ["-created_at"]
         indexes = [
-            # Índice composto para verificar se usuário já respondeu um item
+            # Composite index for checking whether a user has already answered an item.
             models.Index(fields=['answered_by', 'item'], name='answer_user_item_idx'),
         ]
 

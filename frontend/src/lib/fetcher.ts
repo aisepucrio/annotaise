@@ -3,10 +3,8 @@ import createAuthRefreshInterceptor from 'axios-auth-refresh';
 import { api } from '@/lib/api';
 import { AuthActions } from '@/lib/authClient';
 
-// Extrai utilitários
 const { storeToken, getToken, forceLogoutAndRedirect } = AuthActions();
 
-// Request interceptor: injeta Authorization se houver access
 api.interceptors.request.use((config) => {
   const access = getToken('access');
   if (access) {
@@ -17,7 +15,6 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Lógica de refresh para axios-auth-refresh
 const refreshAuthLogic = async () => {
   const refreshToken = getToken('refresh');
 
@@ -43,9 +40,9 @@ const refreshAuthLogic = async () => {
   }
 };
 
-// Configura axios-auth-refresh (gerencia fila e retry automaticamente)
+// axios-auth-refresh queues concurrent requests and retries them automatically after refresh.
 createAuthRefreshInterceptor(api, refreshAuthLogic, {
-  statusCodes: [401], // Tenta refresh em 401
+  statusCodes: [401],
 });
 
 export const fetcher = async <T = unknown>(url: string): Promise<T> => {

@@ -29,7 +29,6 @@ type LayoutProps = {
 
 type HeaderTabKey = 'form' | 'assign' | 'groups' | 'answers' | 'guide' | 'decision';
 
-// Maps the current nested route to the header tab that should be highlighted.
 function getActiveTabFromPath(pathname: string): HeaderTabKey {
   if (pathname.includes('/groups')) return 'groups';
   if (pathname.includes('/assign')) return 'assign';

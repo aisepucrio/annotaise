@@ -1,10 +1,10 @@
-"""Cobre a travessia por cursor das listagens paginadas.
+"""Covers the cursor traversal of paginated listings.
 
-O front consome todas elas em scroll infinito: pede uma página, segue o cursor
-de `next` e concatena. Estes testes garantem que essa travessia devolve cada
-registro exatamente uma vez, sem pular nem repetir, incluindo os casos
-sensíveis: página montada como dict (dashboards), ordenação por campo anotado
-(respostas) e descarte de linhas dentro da página (cotas por grupo).
+The frontend consumes all of them via infinite scroll: request a page,
+follow the `next` cursor, concatenate. These tests guarantee that traversal
+returns each record exactly once, without skipping or repeating, including
+the sensitive cases: a page built as a dict (dashboards), ordering by an
+annotated field (answers), and rows dropped within a page (group quotas).
 """
 
 from urllib.parse import parse_qs, urlsplit
@@ -24,7 +24,7 @@ User = get_user_model()
 
 
 class CursorPaginationTests(TestCase):
-    """Percorre cada listagem paginada do começo ao fim seguindo `next`."""
+    """Walks each paginated listing from start to finish, following `next`."""
 
     @classmethod
     def setUpTestData(cls):
@@ -68,7 +68,7 @@ class CursorPaginationTests(TestCase):
                 )
                 cls.labelings.append(labeling)
 
-        # Membros extras para paginar a listagem de memberships.
+        # Extra members so the membership listing actually paginates.
         cls.members = []
         for member_index in range(6):
             member = User.objects.create_user(
@@ -88,8 +88,8 @@ class CursorPaginationTests(TestCase):
                 role=ProjectMembership.RoleChoices.VIEWER,
             )
 
-        # Itens e respostas: vários itens compartilham row_index para exercitar
-        # o desempate por offset do cursor sobre o campo anotado.
+        # Items and answers: several items share row_index to exercise the
+        # cursor's tie-break offset on the annotated field.
         cls.answers_labeling = cls.labelings[0]
         for row_index in range(4):
             item = Item.objects.create(
@@ -110,7 +110,7 @@ class CursorPaginationTests(TestCase):
         self.client.force_authenticate(self.admin)
 
     def walk_cursor(self, url, page_size=2, params=None):
-        """Segue `next` até o fim e devolve (páginas, itens concatenados)."""
+        """Follows `next` to the end and returns (pages, concatenated items)."""
         query = {"page_size": page_size, **(params or {})}
         pages = []
         items = []
@@ -126,17 +126,17 @@ class CursorPaginationTests(TestCase):
             if not next_link:
                 break
 
-            # O token vai percent-encoded no link; mandar cru de volta invalida o cursor.
+            # The token is percent-encoded in the link; sending it back raw invalidates the cursor.
             cursor = parse_qs(urlsplit(next_link).query)["cursor"][0]
             query = {"page_size": page_size, "cursor": cursor, **(params or {})}
 
-            # Trava de segurança: sem isso um cursor que não avança gira pra sempre.
+            # Safety guard: without this, a cursor that never advances would loop forever.
             self.assertLess(len(pages), 50, "cursor não terminou de paginar")
 
         return pages, items
 
     def assert_matches_full_listing(self, url, params=None):
-        """A travessia paginada deve devolver o mesmo conjunto de ids da lista inteira."""
+        """The paginated traversal must return the same set of ids as the full listing."""
         full = self.client.get(url, {"page_size": 100, **(params or {})})
         self.assertEqual(full.status_code, 200, full.data)
         expected_ids = [row["id"] for row in full.data["results"]]
@@ -154,7 +154,7 @@ class CursorPaginationTests(TestCase):
         self.assert_matches_full_listing(reverse("labelings-editdashboard"))
 
     def test_labeling_dashboard_walks_every_row(self):
-        # Precisa de itens pendentes não respondidos pelo admin para aparecer.
+        # Needs pending items unanswered by the admin to show up.
         for labeling in self.labelings[1:]:
             Item.objects.create(labeling=labeling, payload={}, row_index=0, status="pending")
 
@@ -182,7 +182,7 @@ class CursorPaginationTests(TestCase):
         self.assertEqual(row_indexes, sorted(row_indexes), "cursor quebrou a ordem do CSV")
 
     def test_labeling_dashboard_orders_by_last_opened(self):
-        """A rotulação aberta mais recentemente vem primeiro, e as nunca abertas depois."""
+        """The most recently opened labeling comes first; never-opened ones come after."""
         for labeling in self.labelings[1:]:
             Item.objects.create(labeling=labeling, payload={}, row_index=0, status="pending")
 
@@ -190,12 +190,13 @@ class CursorPaginationTests(TestCase):
         never_opened = [row["id"] for row in self.client.get(url, {"page_size": 100}).data["results"]]
         self.assertGreater(len(never_opened), 2)
 
-        # Sem nenhum `opened`, o desempate é por -id (mais nova primeiro).
+        # With nothing opened, the tie-break is -id (newest first).
         self.assertEqual(never_opened, sorted(never_opened, reverse=True))
 
-        # Abre duas na ordem crescente de id. Assim o resultado esperado por
-        # recência ([opened_last, opened_first]) contradiz o que o desempate por
-        # -id daria — senão o teste passaria mesmo se last_opened fosse ignorado.
+        # Opens two in ascending id order, so the recency-expected result
+        # ([opened_last, opened_first]) contradicts what the -id tie-break
+        # would give — otherwise the test would pass even if last_opened
+        # were ignored.
         opened_first, opened_last = never_opened[-2], never_opened[-1]
         self.assertGreater(opened_first, opened_last, "ids precisam contrariar a ordem de abertura")
 
@@ -208,20 +209,20 @@ class CursorPaginationTests(TestCase):
         self.assertEqual(set(ordered[2:]), set(never_opened) - {opened_first, opened_last})
 
     def test_last_opened_ordering_survives_cursor_traversal(self):
-        """As nunca abertas dividem uma posição só; nenhuma pode sumir da paginação."""
+        """Never-opened labelings share a single position; none may be dropped by pagination."""
         for labeling in self.labelings[1:]:
             Item.objects.create(labeling=labeling, payload={}, row_index=0, status="pending")
 
         url = reverse("labelings-dashboard")
         everything = [row["id"] for row in self.client.get(url, {"page_size": 100}).data["results"]]
-        # Abre só uma: o resto fica empatado em NEVER_OPENED, que é justamente o
-        # caso em que um cursor sobre coluna anulável perderia linhas.
+        # Opens only one: the rest stay tied on NEVER_OPENED, which is exactly
+        # the case where a cursor over a nullable column could lose rows.
         self.client.get(reverse("labelings-detail", args=[everything[-1]]))
 
         self.assert_matches_full_listing(url)
 
     def test_retrieve_without_membership_records_nothing(self):
-        """Quem gerencia sem ser membro do labeling pode abrir sem criar membership."""
+        """A manager who isn't a member of the labeling can open it without creating a membership."""
         manager = User.objects.create_user(
             username="cursor_manager",
             password="pass123",
@@ -242,7 +243,7 @@ class CursorPaginationTests(TestCase):
         )
 
     def test_retrieve_only_touches_last_opened_at(self):
-        """O UPDATE não pode arrastar nenhum outro campo do membership."""
+        """The UPDATE must not touch any other membership field."""
         membership = LabelingMembership.objects.get(labeling=self.labelings[0], user=self.admin)
         membership.items_done = 7
         membership.save(update_fields=["items_done"])

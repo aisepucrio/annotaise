@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import PageLayout from '@/components/inside-pages-layout/PageLayout';
-import IndividualProjectCard from './IndividualProjectCard';
+import IndividualProjectCard from '@/components/IndividualProjectCard';
 import NewProjectModal from './NewProjectModal';
 import GridItemCard from '@/components/grid/GridItemCard';
 import { useProjectDashboardQuery } from '@/modules/projects/projectsQueries';
@@ -70,6 +70,7 @@ export default function Projects() {
       {projectList.map((project, index) => (
         <GridItemCard key={project.id} index={index}>
           <IndividualProjectCard
+            projectId={project.id}
             title={project.name}
             user_count={project.labeling_users}
             labelings_done={project.finished_labelings}

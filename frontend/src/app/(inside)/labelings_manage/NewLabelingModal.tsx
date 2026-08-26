@@ -24,7 +24,6 @@ import { csvFileHasEmptyFields, isCsvFileName } from '@/lib/csvUtils';
 import type { CreateLabelingWithCsvPayload, LabelingPayload } from '@/modules/labelings/labelingsTypes';
 import type { DecisionMode, DistributionStrategy } from '@/modules/labelings/labelingsTypes';
 
-// Props expected by the new labeling creation modal
 type NewLabelingModalProps = {
   open: boolean;
   onClose: () => void;
@@ -35,7 +34,6 @@ type NewLabelingModalProps = {
 // The residual "any" slot is computed by the backend, so it never appears as a row here.
 type GroupQuotaRow = { group: string; count: number | '' };
 
-// Internal flow steps (upload -> details)
 type Step = 'upload' | 'details';
 type DetailFormField = 'title' | 'projectId' | 'startDate' | 'finalDate' | 'usersPerItem';
 type DetailFormErrors = Partial<Record<DetailFormField, string>>;
@@ -69,10 +67,8 @@ function createInitialState(): CreateLabelingWithCsvDraft {
 export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabelingModalProps) {
   const { t } = useTranslations();
 
-  // Reference used to trigger the file input from the button
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Main form state
   const [draft, setDraft] = useState<CreateLabelingWithCsvDraft>(() => createInitialState());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState<Step>('upload');
@@ -84,7 +80,6 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
   // changed once items have been distributed.
   const [groupRows, setGroupRows] = useState<GroupQuotaRow[]>([]);
 
-  // Effect: reset the entire local state when the modal closes
   useEffect(() => {
     if (!open) {
       setDraft(createInitialState());
@@ -161,7 +156,6 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
       .map((name) => ({ value: name, label: name }));
   };
 
-  // Analyze the CSV to flag rows with empty fields
   async function parseHasEmptyFields(file: File) {
     setIsAnalyzingFile(true);
     try {
@@ -182,17 +176,12 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
     });
   }
 
-  // Final confirmation: validate fields and trigger the external callback
   async function handleConfirm() {
     const nextFormErrors: DetailFormErrors = {};
     const { payload, file } = draft;
 
     if (!payload.title.trim()) {
       nextFormErrors.title = t('labelings.upload.error.missingTitle');
-    }
-
-    if (!payload.project) {
-      nextFormErrors.projectId = t('labelings.upload.error.missingProject');
     }
 
     if (!payload.final_date.trim()) {
@@ -222,9 +211,6 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
       toast.error(t('labelings.upload.error.missingFile'));
       return;
     }
-
-    const confirmedProjectId = payload.project;
-    if (confirmedProjectId === null) return;
 
     const confirmedUsersPerItem = payload.form_mode ? (parsedUsersPerItem ?? 1) : parsedUsersPerItem;
     if (confirmedUsersPerItem === null) return;
@@ -260,7 +246,7 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
         payload: {
           ...payload,
           title: payload.title.trim(),
-          project: confirmedProjectId,
+          project: payload.project,
           users_per_item: confirmedUsersPerItem,
           items_per_group: itemsPerGroup,
           start_date: payload.start_date,
@@ -277,13 +263,11 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
 
   const isFormMode = draft.payload.form_mode ?? false;
 
-  // Navigation guard to advance from the upload step
   const canContinueUploadStep = useMemo(
     () => (isFormMode || Boolean(draft.file)) && !isAnalyzingFile,
     [draft.file, isAnalyzingFile, isFormMode],
   );
 
-  // Step navigation
   function handleContinueFromUpload() {
     if (!isFormMode && !draft.file) {
       toast.error(t('labelings.upload.error.continueMissingFile'));
@@ -298,14 +282,12 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
     setStep('upload');
   }
 
-  // Basic file validation before moving forward
   function validateFile(file: File) {
     if (!isCsvFileName(file.name)) {
       throw new Error(t('labelings.upload.error.invalidFileExtension'));
     }
   }
 
-  // File input handler for picker-based selection
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) {
@@ -326,7 +308,6 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
     }
   }
 
-  // File drag-and-drop handler for the upload area
   function handleDrop(event: React.DragEvent<HTMLDivElement>) {
     event.preventDefault();
     event.stopPropagation();
@@ -349,7 +330,6 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
 
   if (!open) return null;
 
-  // The description changes according to the active modal step
   const modalDescription =
     step === 'upload' ? (
       <p>
@@ -361,7 +341,6 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
 
   return (
     <Modal open={open} onClose={onClose} title={t('labelings.upload.title')} description={modalDescription} maxWidth="lg">
-      {/* Render: upload step */}
       {step === 'upload' ? (
         <div>
           {/* Form mode toggle: skips CSV import and creates the labeling without items */}
@@ -402,7 +381,6 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
             </div>
           </div>
 
-          {/* Main upload area (button + drag and drop + status) */}
           {!isFormMode && (
             <div
               className="flex flex-col items-center gap-3 border-2 border-dashed border-blueberry-700 rounded-xl p-6 text-center"
@@ -438,7 +416,6 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
             </div>
           )}
 
-          {/* CSV quality warning when empty cells are detected */}
           {!isFormMode && hasEmptyFields && (
             <div className="mt-4 rounded-lg border border-red-blueberry bg-red-50 px-3 py-2 text-sm text-red-blueberry">
               <TriangleAlert className="inline-block mr-1 mb-0.5 w-4 h-4" />
@@ -449,7 +426,6 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
             </div>
           )}
 
-          {/* Upload step actions */}
           <div className="mt-6 flex justify-between gap-3 w-[70%] mx-auto">
             <Button onClick={handleContinueFromUpload} disabled={!canContinueUploadStep}>
               {t('labelings.upload.continue')}
@@ -457,10 +433,8 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
           </div>
         </div>
       ) : (
-        // Render: details step
         <div>
           <div className="space-y-5">
-            {/* Labeling identification */}
             <Input
               id="csv-title"
               label={t('labelings.upload.titleLabel')}
@@ -483,13 +457,11 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
             <Select
               id="csv-project"
               label={t('labelings.upload.projectLabel')}
-              required
               error={formErrors.projectId}
-              placeholder={t('common.selectPlaceholder')}
-              options={(projects ?? []).map((p) => ({
-                value: String(p.id),
-                label: p.name,
-              }))}
+              options={[
+                { value: '', label: t('labelings.upload.noProjectOption') },
+                ...(projects ?? []).map((p) => ({ value: String(p.id), label: p.name })),
+              ]}
               value={draft.payload.project === null ? '' : String(draft.payload.project)}
               onChange={(e) => {
                 const value = (e.target as HTMLSelectElement).value;
@@ -504,12 +476,10 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
               }}
             />
 
-            {/* Warning shown when no projects are available for selection */}
             {!isLoadingProjects && !(projects?.length ?? 0) && (
               <p className="mt-1 text-xs text-orange-600">{t('labelings.upload.noProjects')}</p>
             )}
 
-            {/* Labeling date window */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <DatePicker
                 id="csv-start"
@@ -548,7 +518,6 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
               />
             </div>
 
-            {/* Item distribution strategy across users — shown for both regular and form modes */}
             <Select
               id="csv-distribution-strategy"
               label={t('labelings.upload.distributionStrategyLabel')}
@@ -578,7 +547,6 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
             />
 
             {!isFormMode && (<>
-            {/* Extra boolean settings (checkboxes) */}
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <div className="rounded-lg border border-metal-200 bg-metal-50 px-3 py-2">
                 <div className="w-full">
@@ -671,7 +639,6 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
               </div>
             </div>
 
-            {/* Number of users per item (disabled for per_person) */}
             <Input
               id="csv-users-per-item"
               label={t('labelings.upload.usersPerItemLabel')}
@@ -776,7 +743,6 @@ export default function NewLabelingModal({ open, onClose, onConfirm }: NewLabeli
             )}
           </div>
 
-          {/* Details step footer (back + create) */}
           <div className="mt-6 flex justify-between gap-3">
             <Button type="button" variant="white" fill={true} onClick={handleBackToUpload} disabled={isSubmitting}>
               {t('common.back')}

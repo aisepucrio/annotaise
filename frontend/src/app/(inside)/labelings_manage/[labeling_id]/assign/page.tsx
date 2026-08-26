@@ -177,9 +177,9 @@ function AssignTabView({
               {memberships.map((membership) => {
                 const fullName = `${membership.first_name || ''} ${membership.last_name || ''}`.trim();
                 const canInspectBackground = hasBackgroundForm && membership.role === 'annotator';
-                // Papéis fora de roleOptions (owner, viewer) não são atribuíveis aqui. Num
-                // <Select> sem a option correspondente o browser mostra a primeira — o dono
-                // aparecia como "Rotulador" e qualquer clique o rebaixava de verdade.
+                // Roles outside roleOptions (owner, viewer) are not assignable here. A <Select>
+                // without a matching option falls back to showing the browser's first one — the
+                // owner appeared as "Annotator", and any click would actually demote them.
                 const isAssignableRole = roleOptions.includes(membership.role);
                 const itemsDone = membership.items_done ?? 0;
 
@@ -244,8 +244,8 @@ function AssignTabView({
                 );
               })}
 
-              {/* Dentro da área rolável: é o que faz a sentinela disparar só
-                  quando o usuário chega ao fim da lista. */}
+              {/* Inside the scrollable area: this is what makes the sentinel only fire
+                  when the user reaches the end of the list. */}
               <InfiniteScroll
                 hasNextPage={hasMoreMemberships}
                 isFetchingNextPage={loadingMoreMemberships}

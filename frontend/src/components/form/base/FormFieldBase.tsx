@@ -3,25 +3,18 @@ import { cn } from '@/lib/utils';
 import Tooltip from '@/components/Tooltip';
 
 export type FormFieldBaseProps = {
-  /** Label do campo */
   label?: string;
-  /** ID do campo (para conectar label ao input) */
+  /** Connects the label to the input via htmlFor. */
   id?: string;
-  /** Mensagem de erro */
   error?: string;
-  /** Se o campo é obrigatório */
   required?: boolean;
-  /** Conteúdo do campo (input, select, etc) */
   children: ReactNode;
-  /** Classes CSS adicionais para o container */
   className?: string;
-  /** Tooltip informativo ao lado do label */
   tooltip?: string;
 };
 
 /**
- * Componente base para todos os campos de formulário
- * Fornece label flutuante, indicador de obrigatório, tooltip opcional e mensagem de erro
+ * Base wrapper for form fields: floating label, required indicator, optional tooltip, and error message.
  */
 export default function FormFieldBase({ label, id, error, required = false, children, className = '', tooltip }: FormFieldBaseProps) {
   return (

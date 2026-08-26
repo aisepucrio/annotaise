@@ -89,7 +89,7 @@ class MultipleChoiceItemSerializerTest(BaseSerializerTest):
 class QuestionRangeSerializerTest(BaseSerializerTest):
     def setUp(self):
         super().setUp()
-        # segundo elemento para confirmar que a faixa pertence ao elemento esperado
+        # second element, to confirm the range belongs to the expected element
         self.element2 = LabelingElement.objects.create(
             labeling_section=self.section,
             text="Another Question",
@@ -129,7 +129,7 @@ class LabelingMembershipSerializerTest(BaseSerializerTest):
         other_user = User.objects.create_user(username="otheruser",email="testest@g.com", password="pwd123")
         payload = {
             "id": 999,
-            "user": other_user.id,  # usa outro usuário criado para o teste pra nao violar a unicidade da relacao
+            "user": other_user.id,  # a distinct user, so we don't violate the relation's uniqueness
             "labeling": self.labeling.id,
             "role": "owner",
             "items_done": 5
@@ -312,7 +312,7 @@ class LabelingViewSetTest(TestCase):
         self.assertEqual(self.labeling.title, "Contributor Updated")
 
     def test_project_contributor_without_labeling_role_cannot_update_labeling(self):
-        """Permissão de edição vem do labeling_membership, não do projeto."""
+        """Edit permission comes from the labeling_membership, not the project."""
         LabelingMembership.objects.filter(
             labeling=self.labeling, user=self.contributor_admin
         ).update(role=LabelingMembership.Role.ANNOTATOR)
@@ -345,7 +345,7 @@ class LabelingViewSetTest(TestCase):
         self.assertFalse(Labeling.objects.filter(id=self.labeling.id).exists())
 
     def test_labeling_admin_cannot_delete_labeling(self):
-        """Exclusão é exclusiva do dono da rotulação; admin só edita."""
+        """Deletion is owner-only; an admin can only edit."""
         self.client.force_authenticate(self.contributor_admin)
         response = self.client.delete(self.detail_url)
 
@@ -355,7 +355,7 @@ class LabelingViewSetTest(TestCase):
     def test_admin_without_membership_cannot_delete_labeling(self):
         self.client.force_authenticate(self.outsider_admin)
         response = self.client.delete(self.detail_url)
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)# nao da pra ver porque não ta no queryset
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)# 404, not 403: it's excluded from the queryset entirely
         self.assertTrue(Labeling.objects.filter(id=self.labeling.id).exists())
 
 
@@ -498,7 +498,7 @@ class LabelingMembershipViewSetTest(TestCase):
             ).exists()
         )
 
-    # --- proteção do último dono ---
+    # --- last-owner protection ---
 
     def _detail_url(self, membership):
         return reverse("labeling-memberships-detail", args=[membership.id])
@@ -542,13 +542,13 @@ class LabelingMembershipViewSetTest(TestCase):
         self.assertFalse(LabelingMembership.objects.filter(pk=membership.pk).exists())
 
     def test_owner_of_one_labeling_does_not_block_another(self):
-        """is_last_owner conta donos da mesma rotulação, não do sistema todo."""
+        """is_last_owner counts owners of the same labeling, not system-wide."""
         membership = LabelingMembership.objects.get(labeling=self.labeling_two, user=self.project_member)
         self.assertFalse(membership.is_last_owner())
 
 
 class AnnotateRoleGateTest(TestCase):
-    """'viewer' entra na rotulação como leitor: não responde, não recebe item."""
+    """A 'viewer' joins the labeling as a reader: doesn't answer, doesn't get items."""
 
     def setUp(self):
         self.owner = User.objects.create_user(
@@ -604,8 +604,8 @@ class AnnotateRoleGateTest(TestCase):
         return [row["labeling_name"] for row in response.data["results"]]
 
     def test_viewer_labeling_absent_from_annotator_dashboard(self):
-        # Item pendente: sem ele a rotulação não entra no dashboard de ninguém,
-        # e o teste passaria sem provar nada sobre o papel.
+        # Pending item: without it the labeling wouldn't appear on anyone's
+        # dashboard, and the test would pass without proving anything about the role.
         Item.objects.create(labeling=self.labeling, payload={"text": "x"}, row_index=0)
 
         self.assertIn("AR Labeling", self._dashboard_titles(self.annotator))
@@ -1023,7 +1023,7 @@ class LabelingAgreementSummaryViewTest(TestCase):
 
         qid = str(self.question.id)
 
-        # resposta antiga do A (deve ser ignorada pela deduplicação item+usuário)
+        # A's older answer (should be ignored by the item+user deduplication)
         Answer.objects.create(
             item=self.item,
             labeling=self.labeling,
@@ -1031,7 +1031,7 @@ class LabelingAgreementSummaryViewTest(TestCase):
             answer_payload={qid: ["Data Class"]},
         )
 
-        # respostas consideradas (mais recentes por usuário no item)
+        # answers that count (most recent per user on the item)
         Answer.objects.create(
             item=self.item,
             labeling=self.labeling,
@@ -1119,7 +1119,7 @@ class LabelingAgreementSummaryViewTest(TestCase):
 
 
 class TransferProjectPermsMigrationTest(TestCase):
-    """Backfill da 0038: papel de edição do projeto vira membership da rotulação."""
+    """0038 backfill: project edit roles turn into labeling memberships."""
 
     def _run(self):
         import importlib
@@ -1170,12 +1170,12 @@ class TransferProjectPermsMigrationTest(TestCase):
         roles = dict(
             LabelingMembership.objects.filter(labeling=labeling).values_list("user_id", "role")
         )
-        self.assertEqual(roles[owner.id], "owner")          # criado
-        self.assertEqual(roles[contributor.id], "admin")    # criado
-        self.assertEqual(roles[viewer_member.id], "admin")  # viewer promovido
-        self.assertEqual(roles[annotator.id], "admin")      # rotulador promovido
-        self.assertEqual(roles[already_owner.id], "owner")  # owner nunca é rebaixado
-        self.assertNotIn(project_viewer.id, roles)          # viewer do projeto não entra
+        self.assertEqual(roles[owner.id], "owner")          # created
+        self.assertEqual(roles[contributor.id], "admin")    # created
+        self.assertEqual(roles[viewer_member.id], "admin")  # viewer promoted
+        self.assertEqual(roles[annotator.id], "admin")      # annotator promoted
+        self.assertEqual(roles[already_owner.id], "owner")  # owner is never demoted
+        self.assertNotIn(project_viewer.id, roles)          # project viewer doesn't get in
 
     def test_is_idempotent(self):
         User = get_user_model()
@@ -1194,3 +1194,58 @@ class TransferProjectPermsMigrationTest(TestCase):
         self._run()
 
         self.assertEqual(LabelingMembership.objects.filter(labeling=labeling).count(), 1)
+
+
+class EditDashboardFolderFilterTest(TestCase):
+    """Folders in /labelings_manage: `project` opens one, `ungrouped` returns the rest."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="folder_admin", password="pass123", email="folder@example.com", is_staff=True
+        )
+        self.my_project = Project.objects.create(name="Mine", created_by=self.user)
+        ProjectMembership.objects.create(project=self.my_project, user=self.user, role="owner")
+        # A project the user isn't a member of: it doesn't become a folder on
+        # screen, even if they administer a labeling inside it (permission
+        # lives on the labeling).
+        self.other_project = Project.objects.create(name="Theirs", created_by=self.user)
+
+        self.in_folder = self._labeling("In folder", self.my_project)
+        self.no_project = self._labeling("No project", None)
+        self.foreign_project = self._labeling("Foreign project", self.other_project)
+
+    def _labeling(self, title, project):
+        labeling = Labeling.objects.create(
+            project=project,
+            title=title,
+            created_by=self.user,
+            start_date=timezone.now().date(),
+            final_date=timezone.now().date(),
+        )
+        LabelingMembership.objects.create(labeling=labeling, user=self.user, role="owner")
+        return labeling
+
+    def _titles(self, **params):
+        client = APIClient()
+        client.force_authenticate(self.user)
+        response = client.get(reverse("labelings-editdashboard"), params)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        return {row["labeling_name"] for row in response.data["results"]}
+
+    def test_without_filters_returns_everything_editable(self):
+        self.assertEqual(
+            self._titles(), {"In folder", "No project", "Foreign project"}
+        )
+
+    def test_ungrouped_returns_only_labelings_without_a_visible_folder(self):
+        self.assertEqual(self._titles(ungrouped="true"), {"No project", "Foreign project"})
+
+    def test_project_filter_returns_only_that_folder(self):
+        self.assertEqual(self._titles(project=self.my_project.id), {"In folder"})
+
+    def test_ungrouped_row_reports_null_project_name(self):
+        client = APIClient()
+        client.force_authenticate(self.user)
+        response = client.get(reverse("labelings-editdashboard"), {"project": ""})
+        rows = {row["labeling_name"]: row["project_name"] for row in response.data["results"]}
+        self.assertIsNone(rows["No project"])

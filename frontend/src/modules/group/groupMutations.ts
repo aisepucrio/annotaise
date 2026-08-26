@@ -2,7 +2,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { applyUserGroupChanges } from './groupService';
 import type { UserGroupChangesPayload } from './groupTypes';
 
-// Aplica as alterações de grupos do usuário (adições, criações e remoções).
 export function useApplyUserGroupChangesMutation(userId?: number | null) {
   const queryClient = useQueryClient();
 

@@ -68,8 +68,8 @@ export default function ItemTab({ itemGroup, onBack, getUserLabel, sections }: I
     );
   }
 
-  // Só mostra a atribuição de grupo quando a rotulação usa cotas por grupo
-  // (alguma resposta do item tem responded_as); fora disso seria ruído.
+  // Only show group attribution when the labeling uses per-group quotas
+  // (some answer on the item has responded_as); otherwise it would just be noise.
   const hasGroupAttribution = userAnswers.some((answer) => answer.responded_as_name);
 
   const answerEntries = Object.entries(selectedAnswer.answer_payload ?? {});

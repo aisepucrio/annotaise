@@ -21,7 +21,7 @@ interface PageLayoutProps {
   onFilterClick?: () => void;
   showFilterButton?: boolean;
 
-  // Action Button (opcional)
+  // Action button
   hasButton?: boolean;
   buttonText?: string;
   onButtonClick?: () => void;
@@ -29,7 +29,7 @@ interface PageLayoutProps {
 
   // Content
   children: ReactNode;
-  /** Renderizado ao fim da área rolável — é onde vive a sentinela do scroll infinito. */
+  /** Rendered at the end of the scrollable area — this is where the infinite-scroll sentinel lives. */
   footer?: ReactNode;
   isLoading?: boolean;
   message?: string;
@@ -37,7 +37,7 @@ interface PageLayoutProps {
   // Grid configuration
   minColumnWidth?: string;
 
-  // Modal (renderizado fora do layout principal)
+  // Modal (rendered outside the main layout)
   modal?: ReactNode;
 }
 
@@ -86,10 +86,8 @@ export default function PageLayout({
   return (
     <>
       <div className="flex h-full min-h-0 flex-col overflow-hidden">
-        {/* Header */}
         <PageHeader page_title={pageTitle} tooltip={tooltip} description={description} />
 
-        {/* Search Bar + Action Button */}
         <div className="mt-5 flex shrink-0 flex-nowrap items-center">
           <FilterBar
             value={searchTerm}
@@ -116,7 +114,6 @@ export default function PageLayout({
           )}
         </div>
 
-        {/* Main Content Grid */}
         <div className="ml-5 mt-5 flex min-h-0 w-[calc(100%-2.5rem)] flex-1 flex-col">
           {isLoading ? (
             <Loader variant="blue" />
@@ -133,7 +130,6 @@ export default function PageLayout({
         </div>
       </div>
 
-      {/* Modal (se fornecido) */}
       {modal}
     </>
   );

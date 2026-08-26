@@ -53,7 +53,9 @@ class LabelingSerializer(serializers.ModelSerializer):
         # strategy = validated_data.get("distribution_strategy", instance.distribution_strategy)
         # if strategy == Labeling.DistributionStrategy.ANONYMOUS_MODE and not instance.anonymous_token:
         #     validated_data["anonymous_token"] = uuid.uuid4()
-        # acho que não precisa disso, porque a estratégia só pode ser definida na criação, e se for anonymous mode já gera o token lá. Deixar como está por enquanto, e se precisar a gente reavalia.
+        # Don't think this is needed: the strategy can only be set at creation, and if
+        # it's anonymous mode the token is already generated there. Leaving as-is for
+        # now; revisit if it turns out to be necessary.
 
         users_per_item = validated_data.get("users_per_item", instance.users_per_item)
         items_per_group = validated_data.get("items_per_group", instance.items_per_group)
@@ -62,13 +64,13 @@ class LabelingSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def normalize_items_per_group(users_per_item, items_per_group):
-        '''valida se a soma dos items por grupo é igual ao número de usuários por item.
-        caso seja menor, preenche o resto com qualquer grupo. caso seja maior, retorna 400'''
+        '''Validate that group item quotas don't exceed users_per_item;
+        fill the remainder into the residual "any" group when short.'''
         items_per_group = dict(items_per_group or {})
 
-        # "any" é o slot residual e é sempre recalculado a partir das cotas nomeadas.
-        # Removê-lo antes de somar evita contá-lo em dobro num round-trip (GET -> PATCH),
-        # o que faria o total ficar abaixo de users_per_item.
+        # "any" is the residual slot and is always recomputed from the named quotas.
+        # Removing it before summing avoids double-counting it on a round-trip
+        # (GET -> PATCH), which would push the total below users_per_item.
         items_per_group.pop("any", None)
 
         if not items_per_group:
@@ -156,13 +158,11 @@ class LabelingMembershipSerializer(serializers.ModelSerializer):
         return user
 
     def update(self, instance, validated_data):
-        # bloqueia a troca de rotulação
         if "labeling" in validated_data and validated_data["labeling"].id != instance.labeling_id:
             raise serializers.ValidationError({
                 "project": "Você não pode alterar a rotulação de uma relação existente, crie outra."
             })
 
-        # bloqueia mudança de dono
         if "created_by" in validated_data and validated_data["created_by"].id != instance.created_by_id:
             raise serializers.ValidationError({
                 "created_by": "Você não pode trocar o dono da relacao."
@@ -172,11 +172,11 @@ class LabelingMembershipSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
-# ---------- SERIALIZERS DE ESCRITA ----------
+# ---------- WRITE SERIALIZERS ----------
 
 class QuestionRangeWriteSerializer(serializers.ModelSerializer):
     """
-    Usado dentro do elemento. Não expõe labeling_element, pois vem do pai.
+    Used inside the element. Doesn't expose labeling_element, since it comes from the parent.
     """
     id = serializers.IntegerField(required=False)
     class Meta:
@@ -191,8 +191,8 @@ class QuestionRangeWriteSerializer(serializers.ModelSerializer):
 
 class MultipleChoiceItemWriteSerializer(serializers.ModelSerializer):
     """
-    Usado dentro do elemento. Não expõe labeling_element, pois vem do pai.
-    follow_up_question é definido no __init__ para evitar referência circular.
+    Used inside the element. Doesn't expose labeling_element, since it comes from the parent.
+    follow_up_question is set in __init__ to avoid a circular reference.
     """
     id = serializers.IntegerField(required=False)
 
@@ -213,11 +213,11 @@ class MultipleChoiceItemWriteSerializer(serializers.ModelSerializer):
 
 class FollowUpElementWriteSerializer(serializers.ModelSerializer):
     """
-    Versão do LabelingElementWriteSerializer para follow-up questions.
-    Limita a um nível de profundidade (sem follow-ups aninhados).
+    LabelingElementWriteSerializer variant for follow-up questions.
+    Limited to one level of depth (no nested follow-ups).
     """
     id = serializers.IntegerField(required=False)
-    multiple_choice_items = None  # será sobrescrito no __init__
+    multiple_choice_items = None  # overridden in __init__
     question_range = QuestionRangeWriteSerializer(required=False, allow_null=True)
 
     class Meta:
@@ -237,11 +237,11 @@ class FollowUpElementWriteSerializer(serializers.ModelSerializer):
         )
 
 
-# ---------- ELEMENTO (pergunta / texto / etc) ----------
+# ---------- ELEMENT (question / text / etc) ----------
 
 class LabelingElementWriteSerializer(serializers.ModelSerializer):
     """
-    Elemento com os filhos (multiple_choice_items e question_range).
+    Element together with its children (multiple_choice_items and question_range).
     """
     id = serializers.IntegerField(required=False)
     multiple_choice_items = MultipleChoiceItemWriteSerializer(
@@ -269,11 +269,11 @@ class LabelingElementWriteSerializer(serializers.ModelSerializer):
         read_only_fields = []
 
 
-# ---------- SEÇÃO ----------
+# ---------- SECTION ----------
 
 class LabelingSectionWriteSerializer(serializers.ModelSerializer):
     """
-    Seção como lista de elementos.
+    Section as a list of elements.
     """
     id = serializers.IntegerField(required=False)
     elements = LabelingElementWriteSerializer(many=True)
@@ -285,18 +285,18 @@ class LabelingSectionWriteSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         return super().validate(attrs)
 
-# ---------- LABELING FORM COMPLETO ----------
+# ---------- FULL LABELING FORM ----------
 
 class LabelingSectionsBulkCreateSerializer(serializers.Serializer):
     """
-    Recebe somente as sections e cria tudo em um Labeling EXISTENTE.
-    O labeling vem de self.context['labeling'], passado pela View.
+    Takes only the sections and creates everything under an EXISTING Labeling.
+    The labeling comes from self.context['labeling'], set by the view.
     """
     sections = LabelingSectionWriteSerializer(many=True)
 
     @transaction.atomic
     def create(self, validated_data):
-        labeling = self.context['labeling']   # deve estar setado na view
+        labeling = self.context['labeling']   # must be set by the view
         sections_data = validated_data.get('sections', [])
 
         created_sections = []
@@ -365,7 +365,7 @@ class LabelingDashboardSerializer(serializers.Serializer):
     id = serializers.IntegerField()
 
     labeling_name = serializers.CharField()
-    project_name = serializers.CharField()
+    project_name = serializers.CharField(allow_null=True)
     total_days = serializers.IntegerField()
     days_passed = serializers.IntegerField()
 
@@ -375,7 +375,7 @@ class LabelingDashboardSerializer(serializers.Serializer):
     background_answered = serializers.BooleanField(required=False)
     form_mode = serializers.BooleanField(required=False)
     answers_collected = serializers.IntegerField(required=False, allow_null=True)
-#TODO validações individuais de cada serializer, pra não cair em internal server error
+#TODO add per-field validation on each serializer, so bad input doesn't surface as an internal server error
 
 class LabelingMembershipDashboardSerializer(serializers.Serializer):
     id = serializers.IntegerField()

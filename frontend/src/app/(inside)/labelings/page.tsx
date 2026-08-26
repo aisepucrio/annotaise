@@ -33,8 +33,8 @@ export default function LabelingsPage() {
     }
   }, [error, t]);
 
-  // A ordem do dashboard é por "última aberta", registrada no backend quando a
-  // tela de destino busca o detalhe da rotulação — não há nada a fazer aqui.
+  // Dashboard ordering follows "last opened", recorded on the backend when the
+  // destination screen fetches the labeling detail — nothing to do here.
   const handleOpenLabeling = (labelingId: number, mustAnswerBackgroundFirst: boolean) => {
     router.push(mustAnswerBackgroundFirst ? `/labelings/${labelingId}/background` : `/labelings/${labelingId}/answer`);
   };
@@ -51,9 +51,9 @@ export default function LabelingsPage() {
       message={!isLoading && labelingsList.length === 0 ? t('labelings.empty') : undefined}
       minColumnWidth="420px"
       footer={
-        // Sem totalCount de propósito: este dashboard descarta rotulações com
-        // cota de grupo já preenchida depois de contar, então o total do
-        // servidor é só um teto — mostramos o que de fato está na tela.
+        // totalCount intentionally omitted: this dashboard discards labelings whose
+        // group quota is already filled after counting, so the server total is only
+        // an upper bound — we show what's actually on screen.
         <InfiniteScroll
           hasNextPage={hasNextPage}
           isFetchingNextPage={isFetchingNextPage}
@@ -68,7 +68,7 @@ export default function LabelingsPage() {
           <GridItemCard key={l.id} index={index}>
             <IndividualLabelingCard
               title={l.labeling_name}
-              project={l.project_name}
+              project={l.project_name ?? t('labelings.manage.noProject')}
               daysPassed={l.days_passed}
               daysTotal={l.total_days}
               labelingsDone={l.items_done}

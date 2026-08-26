@@ -22,7 +22,6 @@ export default function FilterBar({
 }: FilterBarProps) {
   return (
     <div className="flex items-center justify-start gap-3 ml-5">
-      {/* Campo de busca */}
       <div className="relative w-[420px]">
         <input
           type="text"
@@ -40,13 +39,11 @@ export default function FilterBar({
           "
           disabled={disabled}
         />
-        {/* Ícone de lupa */}
         <div className="absolute right-4 top-2.5 text-gray-500">
           <Search size={18} className="opacity-90" />
         </div>
       </div>
 
-      {/* Botão Filtrar */}
       {showFilterButton && (
         <Button
           variant="normal"

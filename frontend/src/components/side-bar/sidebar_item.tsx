@@ -12,11 +12,11 @@ const COLORS = {
 type ColorKey = keyof typeof COLORS;
 
 interface SidebarItemProps {
-  icon: React.ReactNode; // <— era string (src). Agora é um nó React (ex.: <Home />)
+  icon: React.ReactNode; // React node (e.g. <Home />) — used to be an icon src string
   label: string;
   href: string;
   alias: string;
-  hover_color?: string; // mantém validação em runtime
+  hover_color?: string; // kept as string; validated at runtime against COLORS
   collapsed?: boolean;
 }
 
@@ -24,16 +24,14 @@ export default function SidebarItem({ icon, label, href, alias, hover_color, col
   const pathname = usePathname();
   const isActive = pathname === alias;
 
-  // controla a aparição atrasada do rótulo ao expandir a barra lateral
+  // Delays the label's appearance when the sidebar expands.
   const [showLabel, setShowLabel] = useState(!collapsed);
 
   useEffect(() => {
     let t: ReturnType<typeof setTimeout> | null = null;
     if (collapsed) {
-      // Esconde o rótulo imediatamente ao recolher
       setShowLabel(false);
     } else {
-      // Quando expandir, aguarde 300ms antes de mostrar o rótulo
       t = setTimeout(() => setShowLabel(true), 300);
     }
     return () => {

@@ -59,9 +59,9 @@ class Labeling(models.Model):
         if self.decisive_question and LabelingElement.objects.get(pk=self.decisive_question).question_type != LabelingElement.QuestionType.MULTIPLE_CHOICE:
             raise ValidationError(
                 " Só questões de múltipla escolha podem ser decisivas.")
-        # As cotas por grupo podem somar menos que users_per_item: o restante vira
-        # o slot residual "any" (preenchível por qualquer respondente). Só recusamos
-        # quando a soma ultrapassa o limite — alinhado com LabelingSerializer.
+        # Group quotas may sum to less than users_per_item: the remainder becomes
+        # the residual "any" slot (fillable by any respondent). We only reject
+        # when the sum exceeds the limit — consistent with LabelingSerializer.
         total = sum((self.items_per_group or {}).values())
         if total > self.users_per_item:
             raise ValidationError(
@@ -74,11 +74,11 @@ class Labeling(models.Model):
     @property
     def has_group_quotas(self):
         """
-        True quando há cotas por grupo *nomeado*, além do slot residual 'any'.
+        True when there are quotas for *named* groups, beyond the residual 'any' slot.
 
-        items_per_group sempre carrega 'any' (preenchido pelo serializer), então
-        a presença de 'any' sozinho não caracteriza distribuição por grupo. Só
-        quando há outras chaves a distribuição precisa respeitar grupos.
+        items_per_group always carries 'any' (filled in by the serializer), so
+        its presence alone doesn't mean group-based distribution. Only other
+        keys mean the distribution must respect groups.
         """
         return any(name != "any" for name in (self.items_per_group or {}))
 
@@ -239,12 +239,13 @@ class LabelingMembership(models.Model):
 
     def is_last_owner(self):
         """
-        Uma rotulação sem dono fica travada: só o dono exclui (IsLabelingOwnerPermission)
-        e ninguém mais pode se promover. Rebaixar ou remover o último dono é bloqueado.
+        A labeling with no owner gets locked: only the owner can delete it
+        (IsLabelingOwnerPermission), and no one else can self-promote. Demoting
+        or removing the last owner is blocked.
 
-        ponytail: leitura sem lock — dois admins rebaixando dois donos distintos no
-        mesmo instante passam os dois. Se isso aparecer, mover a checagem para um
-        service com transaction.atomic + select_for_update nos memberships da rotulação.
+        ponytail: unlocked read — two admins demoting two distinct owners at the
+        same instant both pass. If that shows up, move the check into a service
+        with transaction.atomic + select_for_update on the labeling's memberships.
         """
         if self.role != self.Role.OWNER:
             return False

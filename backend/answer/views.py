@@ -28,7 +28,7 @@ from django.db.models import F, Q
 from django.db import transaction
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.contrib.auth import get_user_model
-#TODO aqui é melhor usar permission pra ver se o item membership existe!
+#TODO better to use a permission class to check ItemMembership existence.
 class AnswerViewset(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
     serializer_class = AnswerSerializer
@@ -140,7 +140,7 @@ class AnswerViewset(viewsets.ModelViewSet):
         item_id = data.get('item')
         item = get_object_or_404(Item,pk=item_id)
 
-        # Garante que o usuário tenha membership nesse item TODO isso era pra trr na permission... T-T
+        # Ensures the user holds a membership for this item. TODO: this really belongs in the permission class... T-T
         membership = ItemMembership.objects.filter(
             user=user,
             item_id=item_id,
@@ -150,7 +150,7 @@ class AnswerViewset(viewsets.ModelViewSet):
                 {'detail': 'Você não pode responder a esse item da rotulação.'},
                 status=403
         )
-        # TODO eu acho que esse finished era pra tar no enum... 
+        # TODO: I think 'finished' should really be part of the enum...
         if item.status == 'finished':
             return Response(
                 {'detail': 'Esse item já foi finalizado e não pode mais receber respostas.'},
@@ -185,7 +185,8 @@ class AnswerViewset(viewsets.ModelViewSet):
             decisive_element = labeling.decisive_question
             decisive_id = decisive_element.id
 
-            #caso a validação seja por decisão, verifica se ja atingiu o numero necessario de respostas para finalizar a rotulação
+            # When validation is decision-based, check whether the required number
+            # of answers to finish the labeling has been reached.
             answer_value = None
             if isinstance(payload, dict):
                 answer_value = payload.get(str(decisive_id))
@@ -207,12 +208,12 @@ class AnswerViewset(viewsets.ModelViewSet):
             )
             labeling = item.labeling
 
-            # Cotas por grupo são checadas na distribuição, mas reservas não
-            # consomem slots: entre a reserva e o envio, outras respostas podem
-            # ter preenchido os slots que este usuário poderia ocupar. Recheca
-            # sob o lock do item (que serializa respostas concorrentes) e, se
-            # não sobrou slot compatível, libera a reserva e devolve um código
-            # para o frontend buscar outro item.
+            # Group quotas are checked at distribution time, but reservations don't
+            # consume slots: between reservation and submission, other answers may
+            # have filled the slots this user could have occupied. Recheck under
+            # the item lock (which serializes concurrent answers) and, if no
+            # compatible slot remains, release the reservation and return a code
+            # for the frontend to fetch another item.
             if labeling.has_group_quotas:
                 user_group_names = set(
                     UserGroup.objects
@@ -232,7 +233,6 @@ class AnswerViewset(viewsets.ModelViewSet):
             decision_warning = None
             self.perform_create(serializer)
 
-            # Remove a reserva do item
             membership.delete()
 
             if labeling.decision == True:
@@ -364,14 +364,14 @@ class AnswerViewset(viewsets.ModelViewSet):
 
 class AnonymousSubmitAnswerView(APIView):
     """
-    Submissão pública/anônima de respostas para rotulações em modo anônimo.
+    Public/anonymous answer submission for labelings in anonymous mode.
 
-    Identifica a rotulação pelo token da URL e dispensa autenticação e
-    verificações de usuário/membership. A resposta é gravada sem autor
-    (answered_by=None). Como no modo anônimo assume-se users_per_item=1
-    (cada visitante responde um item uma única vez), o item é marcado como
-    finalizado assim que recebe uma resposta — exceto em form_mode, em que os
-    itens permanecem abertos.
+    Identifies the labeling by the URL token and skips authentication and
+    user/membership checks. The answer is stored without an author
+    (answered_by=None). Since anonymous mode assumes users_per_item=1 (each
+    visitor answers an item exactly once), the item is marked finished as
+    soon as it receives an answer — except in form_mode, where items stay
+    open.
     """
     permission_classes = [AllowAny]
     authentication_classes = []
@@ -416,7 +416,7 @@ class AnonymousSubmitAnswerView(APIView):
             answer_payload=answer_payload,
         )
 
-        # users_per_item == 1 no modo anônimo: uma resposta já finaliza o item.
+        # users_per_item == 1 in anonymous mode: a single answer already finishes the item.
         if not labeling.form_mode:
             item.status = "finished"
             item.save(update_fields=["status"])
@@ -438,8 +438,8 @@ class AnonymousSubmitAnswerView(APIView):
 
 
 class AnswerRowCursorPagination(StandardCursorPagination):
-    # A tela lista as respostas na ordem das linhas do CSV. O cursor não aceita
-    # lookups com "__", então row_index chega anotado do item (ver get_queryset).
+    # The screen lists answers in CSV row order. The cursor doesn't accept
+    # "__" lookups, so row_index arrives annotated from the item (see get_queryset).
     ordering = ("row_index", "id")
 
 
@@ -638,7 +638,7 @@ class ExportAnswersView(APIView):
         if not has_llm and "LLM" in df.columns:
             df = df.drop(columns=["LLM"])
 
-        # Gera o conteúdo do CSV como *string*, sem salvar em arquivo
+        # Builds the CSV content as a string, without writing to a file
         csv_data = df.to_csv(index=False)
 
         response = HttpResponse(csv_data, content_type="text/csv")
