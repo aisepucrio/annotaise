@@ -1,9 +1,9 @@
 'use client';
 
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-import { ArrowLeft, FolderPlus, Pen } from 'lucide-react';
+import { ArrowLeft, Check, FolderPlus, Pen } from 'lucide-react';
 
 import { toast } from 'sonner';
 
@@ -28,6 +28,13 @@ import type { ProjectPayload } from '@/modules/projects/projectsTypes';
 
 import { useTranslations } from '@/i18n/use-translations';
 
+// 'labelings' flattens every folder away (no `project`/`ungrouped` filter reaches the
+// API, so the backend returns every labeling the user can edit); 'projects' hides that
+// list entirely. Persisted so the choice survives a reload.
+type ManageFilter = 'all' | 'labelings' | 'projects';
+const MANAGE_FILTER_STORAGE_KEY = 'labelings_manage.filter';
+const MANAGE_FILTERS: ManageFilter[] = ['all', 'labelings', 'projects'];
+
 export default function LabelingsPage() {
   const { t } = useTranslations();
   const router = useRouter();
@@ -36,33 +43,66 @@ export default function LabelingsPage() {
   const [openCreateLabelingModal, setopenCreateLabelingModal] = useState(false);
   const [openCreateProjectModal, setOpenCreateProjectModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [filter, setFilter] = useState<ManageFilter>('all');
+  const [filterMenuOpen, setFilterMenuOpen] = useState(false);
+  const filterMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem(MANAGE_FILTER_STORAGE_KEY);
+    if (stored && (MANAGE_FILTERS as string[]).includes(stored)) setFilter(stored as ManageFilter);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(MANAGE_FILTER_STORAGE_KEY, filter);
+  }, [filter]);
+
+  useEffect(() => {
+    if (!filterMenuOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (filterMenuRef.current && !filterMenuRef.current.contains(e.target as Node)) {
+        setFilterMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [filterMenuOpen]);
 
   // Without `?project` the screen is the root: projects (folders) followed by the
   // labelings that no folder contains. With `?project=<id>` it shows that folder's contents.
   const openProjectId = Number(searchParams.get('project')) || null;
   const isRoot = openProjectId === null;
 
+  // The filter only changes the root screen's composition — a folder always just shows
+  // that project's own labelings, regardless of the selected filter.
+  const showProjects = isRoot && filter !== 'labelings';
+  const showLabelings = !isRoot || filter !== 'projects';
+
   const { data: openProject } = useProjectQuery(openProjectId ?? 0);
 
-  const projects = useProjectDashboardQuery({ search: searchQuery }, isRoot);
+  const projects = useProjectDashboardQuery({ search: searchQuery }, showProjects);
   const labelings = useLabelingDashboardEditQuery(
-    isRoot ? { search: searchQuery, ungrouped: true } : { search: searchQuery, project: openProjectId }
+    isRoot
+      ? filter === 'labelings'
+        ? { search: searchQuery }
+        : { search: searchQuery, ungrouped: true }
+      : { search: searchQuery, project: openProjectId },
+    showLabelings
   );
 
   // Folders before loose items, like in any file manager: the two cursors are
   // consumed in sequence, so "load more" advances the projects cursor until it's
   // exhausted before moving on to labelings. No composite cursor, no two scrolls
   // fighting over the same grid.
-  const hasNextPage = (isRoot && projects.hasNextPage) || labelings.hasNextPage;
-  const loadMore = isRoot && projects.hasNextPage ? projects.loadMore : labelings.loadMore;
-  const loadedCount = (isRoot ? projects.items.length : 0) + labelings.items.length;
+  const hasNextPage = (showProjects && projects.hasNextPage) || (showLabelings && labelings.hasNextPage);
+  const loadMore = showProjects && projects.hasNextPage ? projects.loadMore : labelings.loadMore;
+  const loadedCount = (showProjects ? projects.items.length : 0) + (showLabelings ? labelings.items.length : 0);
   const totalCount =
-    labelings.count === undefined || (isRoot && projects.count === undefined)
+    (showLabelings && labelings.count === undefined) || (showProjects && projects.count === undefined)
       ? undefined
-      : labelings.count + (isRoot ? (projects.count ?? 0) : 0);
+      : (showLabelings ? (labelings.count ?? 0) : 0) + (showProjects ? (projects.count ?? 0) : 0);
 
-  const isLoading = labelings.isLoading || (isRoot && projects.isLoading);
-  const error = labelings.error ?? (isRoot ? projects.error : null);
+  const isLoading = (showLabelings && labelings.isLoading) || (showProjects && projects.isLoading);
+  const error = (showLabelings ? labelings.error : null) ?? (showProjects ? projects.error : null);
 
   const createLabelingWithCsv = useCreateLabelingWithCsvMutation();
   const createProject = useCreateProjectMutation();
@@ -113,13 +153,13 @@ export default function LabelingsPage() {
   }
 
   // Section titles only make sense when both sections actually appear.
-  const hasBothSections = isRoot && projects.items.length > 0 && labelings.items.length > 0;
+  const hasBothSections = showProjects && showLabelings && projects.items.length > 0 && labelings.items.length > 0;
 
   if (hasBothSections) {
     gridChildren.push(<SectionTitle key="section-projects">{t('labelings.manage.section.projects')}</SectionTitle>);
   }
 
-  if (isRoot) {
+  if (showProjects) {
     projects.items.forEach((project, index) => {
       gridChildren.push(
         <GridItemCard key={`project-${project.id}`} index={index}>
@@ -141,7 +181,9 @@ export default function LabelingsPage() {
     gridChildren.push(<SectionTitle key="section-ungrouped">{t('labelings.manage.section.ungrouped')}</SectionTitle>);
   }
 
-  labelings.items.forEach((l, index) => {
+  const visibleLabelings = showLabelings ? labelings.items : [];
+
+  visibleLabelings.forEach((l, index) => {
     gridChildren.push(
       <GridItemCard
         key={`labeling-${l.id}`}
@@ -183,6 +225,30 @@ export default function LabelingsPage() {
       searchPlaceholder={t('labelings.manage.searchPlaceholder')}
       onSearch={setSearchQuery}
       filterButtonText={t('filterBar.filterButton')}
+      onFilterClick={() => setFilterMenuOpen((open) => !open)}
+      filterMenu={
+        filterMenuOpen ? (
+          <div
+            ref={filterMenuRef}
+            className="absolute right-0 top-full z-10 mt-2 w-56 rounded-lg border border-metal-200 bg-white py-1 shadow-lg"
+          >
+            {MANAGE_FILTERS.map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => {
+                  setFilter(option);
+                  setFilterMenuOpen(false);
+                }}
+                className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-metal-50"
+              >
+                {t(`labelings.manage.filter.${option}`)}
+                {filter === option && <Check size={16} className="text-blueberry-700" />}
+              </button>
+            ))}
+          </div>
+        ) : undefined
+      }
       hasButton
       buttonText={t('labelings.manage.newButton')}
       onButtonClick={() => setopenCreateLabelingModal(true)}

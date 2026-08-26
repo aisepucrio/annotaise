@@ -20,6 +20,7 @@ interface PageLayoutProps {
   filterButtonText?: string;
   onFilterClick?: () => void;
   showFilterButton?: boolean;
+  filterMenu?: ReactNode;
 
   // Action button
   hasButton?: boolean;
@@ -52,6 +53,7 @@ export default function PageLayout({
   filterButtonText,
   onFilterClick,
   showFilterButton = true,
+  filterMenu,
   hasButton = false,
   buttonText,
   onButtonClick,
@@ -99,6 +101,7 @@ export default function PageLayout({
             filterButtonText={filterButtonText}
             onFilterClick={onFilterClick}
             showFilterButton={showFilterButton}
+            filterMenu={filterMenu}
           />
 
           {(hasButton || secondaryButton) && (

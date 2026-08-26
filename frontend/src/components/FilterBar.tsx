@@ -1,3 +1,4 @@
+import { ReactNode } from 'react';
 import { Search, Filter } from 'lucide-react';
 import Button from '@/components/button/Button';
 
@@ -9,6 +10,8 @@ type FilterBarProps = {
   filterButtonText?: string;
   onFilterClick?: () => void;
   showFilterButton?: boolean;
+  /** Dropdown panel anchored to the filter button; rendered only while the caller opens it. */
+  filterMenu?: ReactNode;
 };
 
 export default function FilterBar({
@@ -19,6 +22,7 @@ export default function FilterBar({
   filterButtonText,
   onFilterClick,
   showFilterButton = true,
+  filterMenu,
 }: FilterBarProps) {
   return (
     <div className="flex items-center justify-start gap-3 ml-5">
@@ -45,15 +49,18 @@ export default function FilterBar({
       </div>
 
       {showFilterButton && (
-        <Button
-          variant="normal"
-          icon={<Filter size={16} className="opacity-90" />}
-          fill={false}
-          className="px-4 py-2 shadow-md text-sm"
-          onClick={onFilterClick}
-        >
-          {filterButtonText}
-        </Button>
+        <div className="relative">
+          <Button
+            variant="normal"
+            icon={<Filter size={16} className="opacity-90" />}
+            fill={false}
+            className="px-4 py-2 shadow-md text-sm"
+            onClick={onFilterClick}
+          >
+            {filterButtonText}
+          </Button>
+          {filterMenu}
+        </div>
       )}
     </div>
   );

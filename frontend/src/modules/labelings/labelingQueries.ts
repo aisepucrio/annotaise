@@ -12,10 +12,11 @@ export function useLabelingDashboardQuery(params: CursorSearchQuery) {
   });
 }
 
-export function useLabelingDashboardEditQuery(params: CursorQuery<LabelingDashboardEditFilters>) {
+export function useLabelingDashboardEditQuery(params: CursorQuery<LabelingDashboardEditFilters>, enabled = true) {
   return useCursorQuery<CursorQuery<LabelingDashboardEditFilters>, LabelingDashboard>({
     queryKey: ['labelings', 'dashboard-edit'],
     params,
     queryFn: fetchLabelingDashboardEdit,
+    enabled,
   });
 }
