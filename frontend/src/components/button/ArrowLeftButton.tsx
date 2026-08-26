@@ -16,7 +16,8 @@ const ArrowLeftButton: React.FC<ArrowButtonProps> = (
                 <button
                     onClick={onPrevious}
                     disabled={disablePrevious}
-                    className="px-4 py-2 bg-blue-600 text-white rounded disabled:bg-gray-300 disabled:cursor-not-allowed transition"
+                    className="px-4 py-2 bg-blueberry-700 text-white rounded disabled:bg-gray-300 disabled:cursor-not-allowed transition"
+                    
                 >
                    <ArrowLeft /> 
                 </button>
