@@ -6,10 +6,10 @@ from project.models import ProjectMembership
 EDIT_ROLES = [LabelingMembership.Role.OWNER, LabelingMembership.Role.ADMIN]
 
 
+# 'viewer' is read-only: it stays out, here and on the annotator dashboard.
 ANNOTATE_ROLES = [
     LabelingMembership.Role.OWNER,
     LabelingMembership.Role.ADMIN,
-    LabelingMembership.Role.VIEWER,
     LabelingMembership.Role.ANNOTATOR,
 ]
 
