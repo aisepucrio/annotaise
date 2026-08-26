@@ -138,7 +138,7 @@ export default function ProjectDetailsPage() {
       setDeleteLoading(true);
       await deleteProjectMutation.mutateAsync();
       setIsDeleteModalOpen(false);
-      router.push('/projects');
+      router.push('/labelings_manage');
     } catch (error) {
       toast.error(getApiErrorMessage(error, t('projects.detail.deleteError')));
     } finally {
@@ -191,7 +191,7 @@ export default function ProjectDetailsPage() {
 
   return (
     <div className="flex flex-col h-screen">
-      <InnerPageHeader onBack={() => router.push('/projects')}>
+      <InnerPageHeader onBack={() => router.push('/labelings_manage')}>
         <>
           <h1 className="text-xl font-semibold">{project ? project.name : t('projects.detail.loading')}</h1>
           <div className="flex items-center gap-3">

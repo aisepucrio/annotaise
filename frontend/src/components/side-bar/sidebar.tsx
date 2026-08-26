@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import SidebarItem from './sidebar_item';
-import { User, FolderKanban, Tags, LogOut, PanelLeftClose, PanelLeftOpen, BookOpen } from 'lucide-react';
+import { User, Tags, LogOut, PanelLeftClose, PanelLeftOpen, BookOpen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { AuthActions } from '@/lib/authClient';
 import { useIsAdmin } from '@/lib/AdminContext';
@@ -20,7 +20,6 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
   const { removeTokens } = AuthActions();
   const { isAdmin } = useIsAdmin();
   const { t } = useTranslations();
-  const canSeeProjects = isAdmin;
 
   const handleLogout = () => {
     removeTokens();
@@ -103,16 +102,6 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
             />
           ) : null}
 
-          {canSeeProjects ? (
-            <SidebarItem
-              icon={<FolderKanban size={24} />}
-              label={t('sidebar.projects')}
-              href="/projects"
-              alias="/projects"
-              hover_color="blue"
-              collapsed={!isOpen}
-            />
-          ) : null}
           {isAdmin ? (
             <SidebarItem
               icon={<BookmarkPlus size={24} />}

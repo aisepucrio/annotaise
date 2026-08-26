@@ -104,7 +104,7 @@ export default function LabelingsPage() {
         key="back"
         type="button"
         onClick={() => router.push('/labelings_manage')}
-        className="col-span-full flex w-fit items-center gap-1 text-sm text-gray-500 transition-colors hover:text-gray-800"
+        className="col-span-full flex w-fit items-center gap-1 text-sm text-gray-500 transition-colors cursor-pointer hover:text-gray-800"
       >
         <ArrowLeft size={16} />
         {t('labelings.manage.backToRoot')}
@@ -192,7 +192,7 @@ export default function LabelingsPage() {
           <Button
             icon={<FolderPlus size={16} strokeWidth={2.5} />}
             onClick={() => setOpenCreateProjectModal(true)}
-            variant="light"
+            variant="normal"
             fill={false}
             className="px-4 py-2 shadow-md text-sm"
           >
