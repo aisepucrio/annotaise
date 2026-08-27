@@ -1,12 +1,13 @@
 from .models import Labeling, LabelingMembership, LabelingSection, LabelingElement, MultipleChoiceItem, QuestionRange
 from .serializers import (LabelingSerializer, LabelingMembershipSerializer,
-LabelingSectionsBulkCreateSerializer, LabelingSectionSerializer, LabelingDashboardSerializer, LabelingMembershipDashboardSerializer, LabelingAgreementSummarySerializer)
+LabelingSectionsBulkCreateSerializer, LabelingSectionSerializer, LabelingDashboardSerializer, LabelingMembershipDashboardSerializer, LabelingAgreementSummarySerializer,
+LabelingReliabilitySerializer)
 from user.permissions import IsAdminAccount
 from .permissions import CanEditLabelingPermission, IsLabelingOwnerPermission, EDIT_ROLES, ANNOTATE_ROLES
 from item.models import Item
 from user.models import UserGroup
 from .serializers import LabelingElementSerializer
-from .services.agreement import build_agreement_summary, parse_min_agreement
+from .services.agreement import build_agreement_summary, build_reliability_report, parse_min_agreement
 
 from django.shortcuts import render, get_object_or_404
 from django.db import models, transaction
@@ -350,6 +351,16 @@ class LabelingViewSet(viewsets.ModelViewSet):
         summary = build_agreement_summary(labeling, min_agreement)
 
         serializer = LabelingAgreementSummarySerializer(data=summary)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=200)
+
+    @action(methods=["get"], detail=True, url_path="reliability")
+    def reliability(self, request, pk=None):
+        '''Chance-corrected agreement. Separate from agreement-summary, which
+        counts operational consensus per option and answers another question.'''
+        report = build_reliability_report(self.get_object())
+
+        serializer = LabelingReliabilitySerializer(data=report)
         serializer.is_valid(raise_exception=True)
         return Response(serializer.data, status=200)
 

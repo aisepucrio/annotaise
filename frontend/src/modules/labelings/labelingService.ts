@@ -12,6 +12,7 @@ import type {
   LabelingDashboard,
   LabelingElementSummary,
   LabelingAgreementSummary,
+  LabelingReliabilityReport,
   AnswerStructure,
   AnswerPayload,
   AnswerResponse,
@@ -195,6 +196,11 @@ export async function fetchLabelingAgreementSummary(labelingId: number, minAgree
   const { data } = await api.get<LabelingAgreementSummary>(`/labelings/${labelingId}/agreement-summary/`, {
     params: { min_agreement: minAgreement },
   });
+  return data;
+}
+
+export async function fetchLabelingReliability(labelingId: number): Promise<LabelingReliabilityReport> {
+  const { data } = await api.get<LabelingReliabilityReport>(`/labelings/${labelingId}/reliability/`);
   return data;
 }
 

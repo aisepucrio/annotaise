@@ -1,9 +1,18 @@
-from collections import defaultdict
+from collections import Counter, defaultdict
 
 from rest_framework.exceptions import ValidationError
 
 from answer.models import Answer
 from ..models import LabelingElement, LabelingMembership, LabelingSection
+from ..serializers import LLM_TIEBREAK_EMAIL, LLM_TIEBREAK_USERNAME
+from . import metrics
+
+# Only these produce a judgement on a scale; text/email/context have no metric.
+SCALE_BY_QUESTION_TYPE = {
+    LabelingElement.QuestionType.MULTIPLE_CHOICE: metrics.NOMINAL,
+    LabelingElement.QuestionType.RANGE: metrics.ORDINAL,
+    LabelingElement.QuestionType.NUMBER: metrics.INTERVAL,
+}
 
 #TODO One consequence to be aware of: labeling/services/agreement.py:87 filters role=ANNOTATOR, 
 # so any promoted user drops out of inter-annotator 
@@ -62,22 +71,7 @@ def build_agreement_summary(labeling, min_agreement: int) -> dict:
             "questions": [],
         }
 
-    answers = (
-        Answer.objects
-        .filter(labeling=labeling)
-        .order_by("-created_at", "-id")
-        .values("item_id", "answered_by_id", "answer_payload")
-    )
-
-    latest_by_item_user = {}
-    for answer in answers:
-        answered_by_id = answer.get("answered_by_id")
-        item_id = answer.get("item_id")
-        if answered_by_id is None or item_id is None:
-            continue
-        key = (item_id, answered_by_id)
-        if key not in latest_by_item_user:
-            latest_by_item_user[key] = answer
+    latest_by_item_user = collect_responses(labeling)
 
     responders = {
         answer["answered_by_id"]
@@ -204,3 +198,152 @@ def _normalize_choice_values(value):
             normalized.append(text)
     # dedupe repeated choices within the same answer, preserving order
     return list(dict.fromkeys(normalized))
+
+
+def collect_responses(labeling, exclude_llm_bot: bool = False) -> dict:
+    """Latest answer per (item, user).
+
+    `Answer` has no unique constraint on (item, answered_by), so a re-answer is a
+    second row: newest wins. Rows with no item or no annotator are skipped —
+    which also covers `anonymous_mode`, where `users_per_item` is 1 anyway.
+    """
+    answers = Answer.objects.filter(labeling=labeling)
+    if exclude_llm_bot:
+        answers = (
+            answers
+            .exclude(answered_by__username=LLM_TIEBREAK_USERNAME)
+            .exclude(answered_by__email__iexact=LLM_TIEBREAK_EMAIL)
+        )
+
+    answers = (
+        answers
+        .order_by("-created_at", "-id")
+        .values("item_id", "answered_by_id", "answer_payload")
+    )
+
+    latest_by_item_user = {}
+    for answer in answers:
+        answered_by_id = answer.get("answered_by_id")
+        item_id = answer.get("item_id")
+        if answered_by_id is None or item_id is None:
+            continue
+        key = (item_id, answered_by_id)
+        if key not in latest_by_item_user:
+            latest_by_item_user[key] = answer
+
+    return latest_by_item_user
+
+
+def build_reliability_report(labeling) -> dict:
+    """Krippendorff's alpha, percentage agreement and Fleiss' kappa per question.
+
+    Unlike `build_agreement_summary`, the LLM tiebreak bot is excluded: it is a
+    real user producing real answers, but its judgement is not a human one.
+    """
+    elements = (
+        LabelingElement.objects
+        .filter(
+            labeling_section__labeling=labeling,
+            labeling_section__form_type=LabelingSection.FormType.MAIN,
+            question_type__in=SCALE_BY_QUESTION_TYPE.keys(),
+        )
+        .prefetch_related("multiple_choice_items")
+        .order_by("id")
+    )
+    # TODO Not sure if llm bot response counts to agreement
+    responses = collect_responses(labeling, exclude_llm_bot=True)
+    return {
+        "questions": [_question_reliability(element, responses) for element in elements],
+    }
+
+
+def _question_reliability(element, responses) -> dict:
+    option_set = {
+        item.text.strip()
+        for item in element.multiple_choice_items.all()
+        if item.text and item.text.strip()
+    }
+
+    units = defaultdict(list)
+    annotators = set()
+    has_unknown_options = False
+
+    for (item_id, user_id), answer in responses.items():
+        raw_value = _resolve_payload_value(answer.get("answer_payload") or {}, element.id)
+        value, unknown = _reliability_value(element, raw_value, option_set)
+        if value is None:
+            continue
+        has_unknown_options = has_unknown_options or unknown
+        units[item_id].append(value)
+        annotators.add(user_id)
+
+    comparable = {item_id: values for item_id, values in units.items() if len(values) >= 2}
+    scale = SCALE_BY_QUESTION_TYPE[element.question_type]
+    if element.question_type == LabelingElement.QuestionType.MULTIPLE_CHOICE and element.allow_multiple:
+        scale = metrics.MASI
+
+    return {
+        "question_id": element.id,
+        "question_type": element.question_type,
+        "scale": scale,
+        "annotators": len(annotators),
+        "items_considered": len(comparable),
+        "excluded_items": len(units) - len(comparable),
+        "has_unknown_options": has_unknown_options,
+        "krippendorff_alpha": _estimate(lambda u: metrics.krippendorff_alpha(u, scale), comparable),
+        "percent_agreement": _estimate(metrics.percent_agreement, comparable),
+        "fleiss_kappa": _fleiss(element, comparable),
+    }
+
+
+def _fleiss(element, comparable) -> dict | None:
+    """Fleiss needs one rating count for every item, so run it on the modal slice."""
+    if element.question_type != LabelingElement.QuestionType.MULTIPLE_CHOICE:
+        return None
+
+    sizes = Counter(len(values) for values in comparable.values())
+    if not sizes:
+        return None
+
+    # most items win; on a tie prefer the larger panel, it carries more information
+    ratings_per_item = max(sizes.items(), key=lambda entry: (entry[1], entry[0]))[0]
+    balanced = {
+        item_id: values
+        for item_id, values in comparable.items()
+        if len(values) == ratings_per_item
+    }
+    return _estimate(metrics.fleiss_kappa, balanced) | {
+        "items_used": len(balanced),
+        "ratings_per_item": ratings_per_item,
+    }
+
+
+def _estimate(metric, units) -> dict:
+    value = metric(units)
+    interval = metrics.bootstrap_ci(metric, units) if value is not None else None
+    return {
+        "value": value,
+        "ci_low": interval[0] if interval else None,
+        "ci_high": interval[1] if interval else None,
+    }
+
+
+def _reliability_value(element, raw_value, option_set):
+    """(value, whether it fell outside the declared options). None means no answer."""
+    if element.question_type == LabelingElement.QuestionType.MULTIPLE_CHOICE:
+        choices = _normalize_choice_values(raw_value)
+        if not choices:
+            return None, False
+        # options are matched by text, so renaming one dumps its history into __other__
+        mapped = [choice if choice in option_set else "__other__" for choice in choices]
+        unknown = "__other__" in mapped
+        if element.allow_multiple:
+            return frozenset(mapped), unknown
+        return mapped[0], unknown
+
+    if isinstance(raw_value, bool):
+        return None, False
+    try:
+        return float(raw_value), False
+    except (TypeError, ValueError):
+        return None, False

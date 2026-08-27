@@ -7,6 +7,7 @@ from .models import Labeling, LabelingSection, LabelingElement, MultipleChoiceIt
 from project.models import Project, ProjectMembership
 from item.models import Item
 from answer.models import Answer
+from .services import metrics
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 
@@ -1249,3 +1250,207 @@ class EditDashboardFolderFilterTest(TestCase):
         response = client.get(reverse("labelings-editdashboard"), {"project": ""})
         rows = {row["labeling_name"]: row["project_name"] for row in response.data["results"]}
         self.assertIsNone(rows["No project"])
+
+
+class ReliabilityMetricsTest(TestCase):
+    """Reference values from published worked examples, not from our own output."""
+
+    # Krippendorff's canonical 3-coder / 15-unit example: alpha = .691 / .811 / .807
+    GRID = (
+        "*  *  *  *  *  3  4  1  2  1  1  3  3  *  3",
+        "1  *  2  1  3  3  4  3  *  *  *  *  *  *  *",
+        "*  *  2  1  3  4  4  *  2  1  1  3  3  *  4",
+    )
+
+    # Fleiss (1971): 10 subjects rated by 14 raters into 5 categories, kappa = .210
+    FLEISS_COUNTS = (
+        (0, 0, 0, 0, 14), (0, 2, 6, 4, 2), (0, 0, 3, 5, 6), (0, 3, 9, 2, 0),
+        (2, 2, 8, 1, 1), (7, 7, 0, 0, 0), (3, 2, 6, 3, 0), (2, 5, 3, 2, 2),
+        (6, 5, 2, 1, 0), (0, 2, 2, 3, 7),
+    )
+
+    def krippendorff_units(self, numeric=False):
+        rows = [row.split() for row in self.GRID]
+        units = {}
+        for unit in range(len(rows[0])):
+            values = [row[unit] for row in rows if row[unit] != "*"]
+            if values:
+                units[unit] = [float(v) for v in values] if numeric else values
+        return units
+
+    def test_krippendorff_alpha_matches_published_values(self):
+        self.assertAlmostEqual(
+            metrics.krippendorff_alpha(self.krippendorff_units(), metrics.NOMINAL), 0.691, places=3
+        )
+        self.assertAlmostEqual(
+            metrics.krippendorff_alpha(self.krippendorff_units(True), metrics.INTERVAL), 0.811, places=3
+        )
+        self.assertAlmostEqual(
+            metrics.krippendorff_alpha(self.krippendorff_units(True), metrics.ORDINAL), 0.807, places=3
+        )
+
+    def test_fleiss_kappa_matches_published_value(self):
+        units = {
+            subject: [category for category, count in enumerate(row) for _ in range(count)]
+            for subject, row in enumerate(self.FLEISS_COUNTS)
+        }
+        self.assertAlmostEqual(metrics.fleiss_kappa(units), 0.210, places=3)
+
+    def test_fleiss_kappa_rejects_ragged_data(self):
+        with self.assertRaises(ValueError):
+            metrics.fleiss_kappa({1: ["a", "a"], 2: ["a", "b", "b"]})
+
+    def test_perfect_agreement_is_one(self):
+        units = {item: ["a", "a", "a"] for item in range(20)}
+        self.assertEqual(metrics.krippendorff_alpha(units), 1.0)
+        self.assertEqual(metrics.percent_agreement(units), 1.0)
+        self.assertEqual(metrics.fleiss_kappa(units), 1.0)
+
+    def test_kappa_paradox_high_observed_agreement_low_alpha(self):
+        units = {item: ["yes", "yes"] for item in range(95)}
+        units.update({95 + item: ["yes", "no"] for item in range(5)})
+        self.assertAlmostEqual(metrics.percent_agreement(units), 0.95, places=3)
+        self.assertLess(metrics.krippendorff_alpha(units), 0.1)
+
+    def test_items_with_a_single_response_are_ignored(self):
+        self.assertIsNone(metrics.krippendorff_alpha({1: ["a"], 2: ["b"]}))
+        self.assertIsNone(metrics.percent_agreement({1: ["a"]}))
+
+    def test_bootstrap_ci_brackets_the_estimate(self):
+        units = self.krippendorff_units()
+        low, high = metrics.bootstrap_ci(
+            lambda u: metrics.krippendorff_alpha(u, metrics.NOMINAL), units, samples=200
+        )
+        self.assertLessEqual(low, metrics.krippendorff_alpha(units, metrics.NOMINAL))
+        self.assertGreaterEqual(high, metrics.krippendorff_alpha(units, metrics.NOMINAL))
+
+
+class LabelingReliabilityViewTest(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(
+            username="reliability_owner", email="reliability-owner@example.com", password="pass123"
+        )
+        self.annotator_a = User.objects.create_user(
+            username="reliability_a", email="reliability-a@example.com", password="pass123"
+        )
+        self.annotator_b = User.objects.create_user(
+            username="reliability_b", email="reliability-b@example.com", password="pass123"
+        )
+        self.bot = User.objects.create_user(
+            username="llm_tiebreak_bot", email="llm_tiebreak_bot@annotaise.local", password="pass123"
+        )
+
+        self.project = Project.objects.create(
+            name="Reliability Project", description="", created_by=self.owner
+        )
+        ProjectMembership.objects.create(
+            project=self.project, user=self.owner, role=ProjectMembership.RoleChoices.OWNER
+        )
+        self.labeling = Labeling.objects.create(
+            project=self.project,
+            title="Reliability Labeling",
+            created_by=self.owner,
+            start_date=timezone.now().date(),
+            final_date=timezone.now().date(),
+            users_per_item=2,
+        )
+        LabelingMembership.objects.create(
+            labeling=self.labeling, user=self.owner, role=LabelingMembership.Role.OWNER
+        )
+
+        section = LabelingSection.objects.create(
+            labeling=self.labeling, form_type=LabelingSection.FormType.MAIN, title="Main", order=1
+        )
+        self.question = LabelingElement.objects.create(
+            labeling_section=section,
+            order=1,
+            text="Is it toxic?",
+            question_type=LabelingElement.QuestionType.MULTIPLE_CHOICE,
+        )
+        for order, text in enumerate(["yes", "no"], start=1):
+            MultipleChoiceItem.objects.create(
+                labeling_element=self.question, text=text, value=False, order=order
+            )
+        # free text has no scale: it must not show up in the report at all
+        LabelingElement.objects.create(
+            labeling_section=section,
+            order=2,
+            text="Why?",
+            question_type=LabelingElement.QuestionType.TEXT,
+        )
+
+        qid = str(self.question.id)
+        # three items both annotators saw, agreeing on two of them
+        for index, (first, second) in enumerate([("yes", "yes"), ("no", "no"), ("yes", "no")]):
+            item = Item.objects.create(
+                labeling=self.labeling, payload={}, row_index=index, status="pending"
+            )
+            Answer.objects.create(
+                item=item, labeling=self.labeling, answered_by=self.annotator_a,
+                answer_payload={qid: first},
+            )
+            Answer.objects.create(
+                item=item, labeling=self.labeling, answered_by=self.annotator_b,
+                answer_payload={qid: second},
+            )
+
+        # one item only A reached: no agreement information, must be excluded
+        self.lonely_item = Item.objects.create(
+            labeling=self.labeling, payload={}, row_index=3, status="pending"
+        )
+        Answer.objects.create(
+            item=self.lonely_item, labeling=self.labeling, answered_by=self.annotator_a,
+            answer_payload={qid: "yes"},
+        )
+        # the tiebreak bot answers like a user but is not a human annotator
+        Answer.objects.create(
+            item=self.lonely_item, labeling=self.labeling, answered_by=self.bot,
+            answer_payload={qid: "yes"},
+        )
+
+        self.client = APIClient()
+        self.url = f"/labelings/{self.labeling.id}/reliability/"
+
+    def test_reports_the_three_coefficients_for_gradable_questions_only(self):
+        self.client.force_authenticate(self.owner)
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data["questions"]), 1)
+
+        question = response.data["questions"][0]
+        self.assertEqual(question["question_id"], self.question.id)
+        self.assertEqual(question["scale"], metrics.NOMINAL)
+        self.assertEqual(question["annotators"], 2)
+        self.assertEqual(question["items_considered"], 3)
+        self.assertEqual(question["excluded_items"], 1)
+        self.assertFalse(question["has_unknown_options"])
+
+        self.assertAlmostEqual(question["percent_agreement"]["value"], 2 / 3, places=6)
+        self.assertIsNotNone(question["krippendorff_alpha"]["value"])
+        self.assertEqual(question["fleiss_kappa"]["items_used"], 3)
+        self.assertEqual(question["fleiss_kappa"]["ratings_per_item"], 2)
+        for key in ("krippendorff_alpha", "percent_agreement", "fleiss_kappa"):
+            self.assertIsNotNone(question[key]["ci_low"])
+            self.assertIsNotNone(question[key]["ci_high"])
+
+    def test_llm_tiebreak_bot_does_not_count_as_an_annotator(self):
+        self.client.force_authenticate(self.owner)
+        question = self.client.get(self.url).data["questions"][0]
+
+        # without the exclusion the bot would make the lonely item comparable
+        self.assertEqual(question["items_considered"], 3)
+        self.assertEqual(question["annotators"], 2)
+
+    def test_labeling_without_overlap_reports_empty_estimates(self):
+        Answer.objects.filter(labeling=self.labeling).exclude(
+            answered_by=self.annotator_a
+        ).delete()
+
+        self.client.force_authenticate(self.owner)
+        question = self.client.get(self.url).data["questions"][0]
+
+        self.assertEqual(question["items_considered"], 0)
+        self.assertIsNone(question["krippendorff_alpha"]["value"])
+        self.assertIsNone(question["percent_agreement"]["value"])
+        self.assertIsNone(question["fleiss_kappa"])
