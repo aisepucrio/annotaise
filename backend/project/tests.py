@@ -46,7 +46,7 @@ class ProjectSerializerTest(BaseSerializerTest):
 
     def test_deserialization_success(self):
         payload = {
-            "id": 999,  # tentativa de sobrescrever id (read-only)
+            "id": 999,  # attempt to override the read-only id
             "name": "New Project",
             "description": "New Description",
         }
@@ -94,7 +94,7 @@ class ProjectMembershipSerializerTest(TestCase):
             "project": self.project.id,
             "user": self.member.id,
             "role": ProjectMembership.RoleChoices.CONTRIBUTOR,
-            "joined_at": "2000-01-01T00:00:00Z",  # ignorado (read-only)
+            "joined_at": "2000-01-01T00:00:00Z",  # ignored, read-only
         }
         serializer = ProjectMembershipSerializer(data=payload)
         self.assertTrue(serializer.is_valid(), serializer.errors)
@@ -342,9 +342,9 @@ class ProjectMembershipViewSetTest(TestCase):
 
     def test_admin_owner_lists_every_membership_in_owned_projects(self):
         self.client.force_authenticate(self.owner_admin)
-        # O assunto aqui é o escopo por permissão, não a paginação: pede um bloco
-        # grande o bastante para caber tudo em uma resposta, senão o teste passa
-        # a depender do page_size default do cursor.
+        # This test is about permission scoping, not pagination: request a page
+        # large enough to fit everything in one response, otherwise the test
+        # ends up depending on the cursor's default page_size.
         response = self.client.get(self.memberships_url, {"page_size": 100})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         results = response.data["results"]

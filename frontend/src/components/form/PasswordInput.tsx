@@ -5,9 +5,8 @@ import Input, { InputProps } from './Input';
 type PasswordInputProps = Omit<InputProps, 'type' | 'icon' | 'onIconClick'>;
 
 /**
- * Campo de senha com toggle de visibilidade
+ * Password field with a visibility toggle.
  */
-
 const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>((props, ref) => {
   const [showPassword, setShowPassword] = useState(false);
 

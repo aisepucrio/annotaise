@@ -18,54 +18,56 @@ import type {
   BackgroundAnswerResponse,
 } from './labelingsTypes';
 
-// Funções relacionadas a Labelings
+// Labeling functions
 
-// Busca labelings disponíveis para o usuário com opção de busca
 export function fetchLabelingDashboard(params: CursorSearchRequest) {
   return fetchCursorPage<LabelingDashboard>('/labelings/dashboard/', params);
 }
 
-// Busca labelings com permissões de edição para administradores
-export function fetchLabelingDashboardEdit(params: CursorSearchRequest) {
+// Folder filters for the edit dashboard: `project` opens a folder,
+// `ungrouped` returns labelings that no visible folder contains.
+export type LabelingDashboardEditFilters = {
+  search?: string;
+  project?: number;
+  ungrouped?: boolean;
+};
+
+export function fetchLabelingDashboardEdit(params: CursorRequest<LabelingDashboardEditFilters>) {
   return fetchCursorPage<LabelingDashboard>('/labelings/dashboard/edit/', params);
 }
 
-// Busca um labeling específico por ID.
-// Efeito colateral no backend: marca a rotulação como aberta agora pelo usuário,
-// o que define a ordem do dashboard do rotulador (mais recente primeiro).
+// Backend side effect: marks the labeling as opened now by the user,
+// which determines the annotator dashboard order (most recent first).
 export async function fetchLabeling(id: number): Promise<Labeling> {
   const { data } = await api.get<Labeling>(`/labelings/${id}/`);
   return data;
 }
 
-// Busca um labeling específico por ID (alias de fetchLabeling)
+// Alias of fetchLabeling.
 export async function fetchLabelingById(id: number): Promise<Labeling> {
   const { data } = await api.get<Labeling>(`/labelings/${id}/`);
   return data;
 }
 
-// Cria um novo labeling
 export async function createLabeling(payload: LabelingPayload): Promise<Labeling> {
   const { data } = await api.post<Labeling>('/labelings/', payload);
   return data;
 }
 
-// Atualiza um labeling existente
 export async function updateLabeling(id: number, payload: Partial<LabelingPayload>): Promise<Labeling> {
   const { data } = await api.patch<Labeling>(`/labelings/${id}/`, payload);
   return data;
 }
 
-// Deleta um labeling
 export async function deleteLabeling(id: number): Promise<void> {
   await api.delete(`/labelings/${id}/`);
 }
-// Duplica um labeling existente, incluindo seções e elementos (sem membros/respostas)
+
 export async function duplicateLabeling(id: number): Promise<Labeling> {
   const { data } = await api.post<Labeling>(`/labelings/${id}/duplicate/`);
   return data;
 }
-// Importa itens para o labeling via arquivo CSV
+
 export async function importLabelingItemsCsv(labelingId: number, file: File): Promise<void> {
   const formData = new FormData();
   formData.append('file', file);
@@ -75,7 +77,6 @@ export async function importLabelingItemsCsv(labelingId: number, file: File): Pr
   });
 }
 
-// Adiciona itens a um labeling existente via arquivo CSV
 export async function addItemsCsvToLabeling(labelingId: number, file: File): Promise<void> {
   const formData = new FormData();
   formData.append('file', file);
@@ -85,7 +86,6 @@ export async function addItemsCsvToLabeling(labelingId: number, file: File): Pro
   });
 }
 
-// Exporta respostas do labeling em formato CSV
 export async function exportLabelingAnswersCsv(labelingId: number): Promise<{ blob: Blob; filename?: string }> {
   const response = await api.get<Blob>(`/labelings/${labelingId}/answers/export/`, {
     responseType: 'blob',
@@ -122,9 +122,8 @@ export async function exportImportedLabelingCsv(labelingId: number): Promise<{ b
   return { blob: response.data, filename };
 }
 
-// Funções relacionadas a estrutura do labeling
+// Labeling structure functions
 
-// Busca a estrutura de seções e questões de um labeling
 export async function fetchLabelingStructure(
   id: number,
   formType: 'main' | 'background' = 'main'
@@ -135,13 +134,11 @@ export async function fetchLabelingStructure(
   return data;
 }
 
-// Busca elementos (questões/contextos) de um labeling com filtro por tipo
 export async function fetchLabelingElements(labelingId: number, params?: { type?: string }): Promise<LabelingElementSummary[]> {
   const { data } = await api.get<LabelingElementSummary[]>(`/labelings/${labelingId}/elements/`, { params });
   return data;
 }
 
-// Salva ou atualiza a estrutura de um labeling
 export async function saveLabelingStructure(
   id: number,
   payload: LabelingStructurePayload,
@@ -152,15 +149,13 @@ export async function saveLabelingStructure(
   });
 }
 
-// Funções relacionadas a memberships
+// Membership functions
 
-// Busca todos os membros de um labeling
 export function fetchLabelingMemberships(params: CursorRequest<{ labelingId: number }>) {
   const { labelingId, ...query } = params;
   return fetchCursorPage<LabelingMembershipDashboard>(`/labelings/${labelingId}/memberships/`, query);
 }
 
-// Adiciona um membro ao labeling
 export async function createLabelingMembership(payload: {
   labeling: number;
   user: number;
@@ -170,7 +165,6 @@ export async function createLabelingMembership(payload: {
   return data;
 }
 
-// Atualiza o papel de um membro no labeling
 export async function updateLabelingMembership(
   id: number,
   payload: Partial<Pick<LabelingMembership, 'role'>>
@@ -179,14 +173,12 @@ export async function updateLabelingMembership(
   return data;
 }
 
-// Remove um membro do labeling
 export async function deleteLabelingMembership(id: number): Promise<void> {
   await api.delete(`/labeling-memberships/${id}/`);
 }
 
-// Funções relacionadas a answers
+// Answer functions
 
-// Busca todas as respostas de um labeling
 export async function fetchLabelingAnswers(labelingId: number): Promise<AnswerResponse[]> {
   const { data } = await api.get<AnswerResponse[]>('/answers/', {
     params: { labeling: labelingId },
@@ -194,7 +186,6 @@ export async function fetchLabelingAnswers(labelingId: number): Promise<AnswerRe
   return data;
 }
 
-// Busca respostas paginadas da rotulação.
 export function fetchLabelingAnswerItems(params: CursorRequest<{ labelingId: number; answeredBy?: number }>) {
   const { labelingId, answeredBy, ...query } = params;
   const apiParams = {
@@ -212,25 +203,23 @@ export async function fetchLabelingAgreementSummary(labelingId: number, minAgree
   return data;
 }
 
-// Busca o próximo item a ser respondido no labeling
 export async function fetchNextAnswer(labelingId: number): Promise<AnswerStructure> {
   const { data } = await api.get<AnswerStructure>(`/items/${labelingId}/`);
   return data;
 }
 
-// Submete uma nova resposta para um item
 export async function submitAnswer(payload: AnswerPayload): Promise<AnswerResponse> {
   const { data } = await api.post<AnswerResponse>(`/answers/`, payload);
   return data;
 }
 
-// Busca o próximo item de uma rotulação em modo anônimo (sem autenticação), pelo token público
+// Anonymous mode: no auth, identified by the labeling's public token.
 export async function fetchNextAnonymousAnswer(token: string): Promise<AnswerStructure> {
   const { data } = await api.get<AnswerStructure>(`/items/anonymous/${token}/`);
   return data;
 }
 
-// Submete uma resposta anônima (sem autenticação) usando o token público da rotulação
+// Anonymous mode: no auth, identified by the labeling's public token.
 export async function submitAnonymousAnswer(
   token: string,
   payload: { item: number; answer_payload: Record<string, unknown> },
@@ -239,7 +228,6 @@ export async function submitAnonymousAnswer(
   return data;
 }
 
-// Busca as respostas do usuário atual em um labeling
 export async function fetchMyAnswers(labelingId: number): Promise<AnswerResponse[]> {
   const { data } = await api.get<AnswerResponse[]>(`/answers/`, {
     params: { labeling: labelingId },
@@ -247,7 +235,6 @@ export async function fetchMyAnswers(labelingId: number): Promise<AnswerResponse
   return data;
 }
 
-// Atualiza uma resposta existente
 export async function updateAnswer(id: number, payload: Pick<AnswerPayload, 'answer_payload'>): Promise<AnswerResponse> {
   const { data } = await api.patch<AnswerResponse>(`/answers/${id}/`, payload);
   return data;

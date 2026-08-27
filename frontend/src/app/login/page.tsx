@@ -14,15 +14,12 @@ import { useTranslations } from '@/i18n/use-translations';
 import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 import Link from 'next/link';
 
-// === Tipos ===
 type FormData = {
   email: string;
   password: string;
 };
 
-// === Componente: LoginPage ===
 export default function LoginPage() {
-  // --- Estado e hooks ---
   const [isLoading, setIsLoading] = useState(false);
   const {
     register,
@@ -34,7 +31,6 @@ export default function LoginPage() {
   const { login, storeToken } = AuthActions();
   const { t } = useTranslations();
 
-  // --- Handlers / Ações ---
   const onSubmit = async (data: FormData) => {
     setIsLoading(true);
     try {
@@ -56,11 +52,9 @@ export default function LoginPage() {
     }
   };
 
-  // --- Render (JSX) ---
   return (
     <AuthLayout title={t('login.title')} subtitle={t('login.subtitle')}>
       <form onSubmit={handleSubmit(onSubmit)}>
-        {/* Campo: Email */}
         <div className="mt-8">
           <Input
             label={t('login.emailLabel')}
@@ -77,7 +71,6 @@ export default function LoginPage() {
             })}
           />
         </div>
-        {/* Campo: Senha */}
         <div className="mt-6">
           <PasswordInput
             label={t('login.passwordLabel')}
@@ -89,7 +82,6 @@ export default function LoginPage() {
           />
         </div>
 
-        {/* Ação: Esqueceu senha */}
         <div className="flex w-full justify-end mt-3">
           <Link
             href="/forgot-password"
@@ -99,7 +91,6 @@ export default function LoginPage() {
           </Link>
         </div>
 
-        {/* Ação: Enviar formulário */}
         <AuthFormButton icon={<LogIn className="w-6 h-6 mr-2" />} text={isLoading ? t('login.loading') : t('login.button')} />
       </form>
     </AuthLayout>

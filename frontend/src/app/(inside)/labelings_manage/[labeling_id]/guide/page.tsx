@@ -28,7 +28,6 @@ const GuideTab = forwardRef<GuideTabHandle, GuideTabProps>(({ guideText, onGuide
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Expose methods to parent via ref
   useImperativeHandle(
     ref,
     () => ({
@@ -38,7 +37,6 @@ const GuideTab = forwardRef<GuideTabHandle, GuideTabProps>(({ guideText, onGuide
     [onSaveGuide, isSaving]
   );
 
-  // Manipula o movimento do mouse durante o arrasto
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
       if (!isDragging || !containerRef.current) return;
@@ -46,7 +44,7 @@ const GuideTab = forwardRef<GuideTabHandle, GuideTabProps>(({ guideText, onGuide
       const containerRect = containerRef.current.getBoundingClientRect();
       const newLeftWidth = ((e.clientX - containerRect.left) / containerRect.width) * 100;
 
-      // Limita entre 20% e 80%
+      // Clamp between 20% and 80% so neither panel collapses.
       if (newLeftWidth >= 20 && newLeftWidth <= 80) {
         setLeftWidth(newLeftWidth);
       }
@@ -54,12 +52,10 @@ const GuideTab = forwardRef<GuideTabHandle, GuideTabProps>(({ guideText, onGuide
     [isDragging]
   );
 
-  // Finaliza o arrasto
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
   }, []);
 
-  // Adiciona listeners quando est arrastando
   useEffect(() => {
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove);
@@ -78,9 +74,7 @@ const GuideTab = forwardRef<GuideTabHandle, GuideTabProps>(({ guideText, onGuide
 
   return (
     <div className="h-full w-full flex flex-col ">
-      {/* Container com divisor redimensionavel */}
       <div ref={containerRef} className="flex-1 flex overflow-hidden ">
-        {/* Painel do editor */}
         <div className="flex flex-col border-r border-gray-200" style={{ width: `${leftWidth}%` }}>
           <div className="px-4 py-3 border-b border-gray-200 bg-white">
             <h3 className="text-sm font-semibold text-gray-800">{t('labelings.create.guide.editorTitle')}</h3>
@@ -95,13 +89,11 @@ const GuideTab = forwardRef<GuideTabHandle, GuideTabProps>(({ guideText, onGuide
           </div>
         </div>
 
-        {/* Divisor arrastavel */}
         <div
           className="w-1 bg-gray-300 hover:bg-blueberry-500 cursor-col-resize transition-colors shrink-0"
           onMouseDown={() => setIsDragging(true)}
         />
 
-        {/* Painel de pre-visualizacao */}
         <div className="flex flex-col bg-white h-full" style={{ width: `${100 - leftWidth}%` }}>
           <div className="px-4 py-3 border-b border-gray-200 bg-white">
             <h3 className="text-sm font-semibold text-gray-800">{t('labelings.create.guide.previewTitle')}</h3>

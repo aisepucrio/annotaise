@@ -22,13 +22,11 @@ export type BackgroundModalHandle = {
 const BackgroundModal = forwardRef<BackgroundModalHandle, BackgroundModalProps>(({ labelingId }, ref) => {
   const { t } = useTranslations();
 
-  // Estado do modal e dados carregados
   const [inspectMembership, setInspectMembership] = useState<LabelingMembershipDashboard | null>(null);
   const [backgroundAnswer, setBackgroundAnswer] = useState<BackgroundAnswerResponse | null>(null);
   const [backgroundSections, setBackgroundSections] = useState<LabelingStructureSection[]>([]);
   const [backgroundLoading, setBackgroundLoading] = useState(false);
 
-  // Dados derivados para renderização
   const orderedSections = useMemo(() => [...backgroundSections].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)), [backgroundSections]);
 
   const answersByQuestion = useMemo(() => {
@@ -43,7 +41,6 @@ const BackgroundModal = forwardRef<BackgroundModalHandle, BackgroundModalProps>(
     setBackgroundSections([]);
   };
 
-  // Ação exposta para o AssignTab
   const open = async (membership: LabelingMembershipDashboard) => {
     setInspectMembership(membership);
     setBackgroundLoading(true);
@@ -78,7 +75,6 @@ const BackgroundModal = forwardRef<BackgroundModalHandle, BackgroundModalProps>(
       maxWidth="2xl"
       className="max-w-4xl"
     >
-      {/* Estados de exibição */}
       {backgroundLoading ? (
         <p className="text-sm text-gray-500">{t('common.loading')}</p>
       ) : !backgroundAnswer ? (

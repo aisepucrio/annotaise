@@ -8,10 +8,24 @@ from unittest.mock import patch
 from item.models import Item 
 from item.models import ItemMembership
 from project.models import Project
-from labeling.models import Labeling, LabelingSection, LabelingElement, MultipleChoiceItem
+from labeling.models import Labeling, LabelingSection, LabelingElement, MultipleChoiceItem, LabelingMembership
 from user.models import UserGroup, UserGroupMembership
 from .models import Answer
 from .serializers import AnswerSerializer
+
+class AnswerTestsHelper():
+    @staticmethod
+    def enroll(labeling, *users, role="annotator"):
+        """
+        Whoever answers is a member of the labeling: in the real flow, next-item
+        only hands out an item (and only creates an ItemMembership) for someone
+        who already passed this check.
+        """
+        for user in users:
+            LabelingMembership.objects.get_or_create(
+                labeling=labeling, user=user, defaults={"role": role}
+            )
+
 
 class AnswerSerializerTest(TestCase):
     def setUp(self):
@@ -78,15 +92,15 @@ class AnswerSerializerTest(TestCase):
     def test_deserialization_failure(self):
         bad_payload = {
             "labeling": self.labeling.id,
-            # item faltando
+            # item missing
             "labeling_question": self.question.id,
             "answered_by": self.user.id,
-            "answer_payload": "not a dict",  # inválido
+            "answer_payload": "not a dict",  # invalid
         }
         ser = AnswerSerializer(data=bad_payload)
         self.assertFalse(ser.is_valid())
         self.assertIn("item", ser.errors)
-        #TODO funcao que valida o payload como dict
+        #TODO function that validates the payload as a dict
 
 
 class AnswerViewsetCreateTest(TestCase):
@@ -137,6 +151,7 @@ class AnswerViewsetCreateTest(TestCase):
             item=self.item,
             user=self.user,
         )
+        AnswerTestsHelper.enroll(self.labeling, self.user)
 
         self.client = APIClient()
         self.client.force_authenticate(self.user)
@@ -164,6 +179,49 @@ class AnswerViewsetCreateTest(TestCase):
         )
         self.item.refresh_from_db()
         self.assertIsNone(self.item.decision_payload)
+
+    def test_viewer_cannot_post_answer(self):
+        """'viewer' is read-only: even with a reserved item, it cannot register an answer."""
+        viewer = get_user_model().objects.create_user(
+            username="answer_viewer", email="answer_viewer@example.com", password="123"
+        )
+        AnswerTestsHelper.enroll(self.labeling, viewer, role="viewer")
+        ItemMembership.objects.create(item=self.item, user=viewer)
+
+        client = APIClient()
+        client.force_authenticate(viewer)
+        response = client.post(
+            self.url,
+            {
+                "labeling": self.labeling.id,
+                "item": self.item.id,
+                "answer_payload": {str(self.decisive_question.id): "aceitar"},
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(Answer.objects.filter(answered_by=viewer).exists())
+
+    def test_non_member_cannot_post_answer(self):
+        """The permission used to only define has_object_permission, which create never calls."""
+        outsider = get_user_model().objects.create_user(
+            username="answer_outsider", email="answer_outsider@example.com", password="123"
+        )
+        client = APIClient()
+        client.force_authenticate(outsider)
+        response = client.post(
+            self.url,
+            {
+                "labeling": self.labeling.id,
+                "item": self.item.id,
+                "answer_payload": {str(self.decisive_question.id): "aceitar"},
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(Answer.objects.filter(answered_by=outsider).exists())
 
     def test_decision_valid_answer_creates_and_consumes_membership(self):
         payload = {
@@ -233,6 +291,7 @@ class AutomaticDecisionTest(TestCase):
         )
         ItemMembership.objects.create(item=self.item, user=self.user1)
         ItemMembership.objects.create(item=self.item, user=self.user2)
+        AnswerTestsHelper.enroll(self.labeling, self.user1, self.user2)
 
         self.client = APIClient()
         self.url = reverse("answers-list")
@@ -357,6 +416,7 @@ class LLMDecisionTieBreakTest(TestCase):
 
         ItemMembership.objects.create(item=self.item, user=self.user1)
         ItemMembership.objects.create(item=self.item, user=self.user2)
+        AnswerTestsHelper.enroll(self.labeling, self.user1, self.user2)
 
         self.client = APIClient()
         self.url = reverse("answers-list")
@@ -438,6 +498,7 @@ class LLMDecisionTieBreakTest(TestCase):
         self.assertEqual(self.item.final_decision_source, None)
 
         ItemMembership.objects.create(item=self.item, user=self.user3)
+        AnswerTestsHelper.enroll(self.labeling, self.user3)
         r3 = self._answer(self.user3, "yes")
         self.assertEqual(r3.status_code, status.HTTP_201_CREATED)
         self.assertEqual(mocked_llm.call_count, 1)
@@ -566,6 +627,7 @@ class LabelingCompletionTest(TestCase):
         )
         ItemMembership.objects.create(item=self.item1, user=self.user)
         ItemMembership.objects.create(item=self.item2, user=self.user)
+        AnswerTestsHelper.enroll(self.labeling, self.user)
 
         self.client = APIClient()
         self.client.force_authenticate(self.user)
@@ -604,10 +666,10 @@ class LabelingCompletionTest(TestCase):
 
 class GroupQuotaAnswerEnforcementTest(TestCase):
     """
-    Cotas por grupo são checadas na distribuição, mas reservas não consomem
-    slots: dois usuários podem reservar o mesmo item enquanto o slot 'any'
-    ainda está aberto. A criação da resposta precisa rechecar a cota sob o
-    lock do item e rejeitar (NO_GROUP_SLOT) quem ficou sem slot compatível.
+    Group quotas are checked at distribution time, but reservations don't
+    consume slots: two users can reserve the same item while the 'any' slot
+    is still open. Answer creation must recheck the quota under the item
+    lock and reject (NO_GROUP_SLOT) whoever ends up without a compatible slot.
     """
 
     def setUp(self):
@@ -647,11 +709,12 @@ class GroupQuotaAnswerEnforcementTest(TestCase):
             row_index=1,
         )
 
-        # Simula reservas concorrentes: os dois usuários sem grupo reservaram o
-        # item enquanto o slot 'any' ainda estava aberto.
+        # Simulates concurrent reservations: the two groupless users reserved the
+        # item while the 'any' slot was still open.
         ItemMembership.objects.create(item=self.item, user=self.user_b1)
         ItemMembership.objects.create(item=self.item, user=self.user_b2)
         ItemMembership.objects.create(item=self.item, user=self.user_a)
+        AnswerTestsHelper.enroll(self.labeling, self.user_b1, self.user_b2, self.user_a)
 
         self.url = reverse("answers-list")
 
@@ -674,18 +737,18 @@ class GroupQuotaAnswerEnforcementTest(TestCase):
         answer_b1 = Answer.objects.get(answered_by=self.user_b1)
         self.assertIsNone(answer_b1.responded_as)
 
-        # O slot 'any' já foi preenchido; só resta o slot do grupo A.
+        # The 'any' slot is already filled; only group A's slot remains.
         r2 = self._answer_as(self.user_b2)
         self.assertEqual(r2.status_code, status.HTTP_409_CONFLICT)
         self.assertEqual(r2.data["code"], "NO_GROUP_SLOT")
         self.assertFalse(Answer.objects.filter(answered_by=self.user_b2).exists())
-        # A reserva é liberada para o usuário poder buscar outro item.
+        # The reservation is released so the user can fetch another item.
         self.assertFalse(
             ItemMembership.objects.filter(item=self.item, user=self.user_b2).exists()
         )
 
-        # O usuário do grupo A ainda consegue preencher o slot do grupo,
-        # e o item finaliza com a cota respeitada.
+        # The group A user can still fill the group's slot,
+        # and the item finishes with the quota respected.
         r3 = self._answer_as(self.user_a)
         self.assertEqual(r3.status_code, status.HTTP_201_CREATED)
         answer_a = Answer.objects.get(answered_by=self.user_a)

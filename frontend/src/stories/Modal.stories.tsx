@@ -55,9 +55,9 @@ export default meta;
 type Story = StoryObj<typeof Modal>;
 
 /**
- * Modal básico com título, subtítulo e conteúdo simples.
+ * Basic modal with title, subtitle and simple content.
  *
- * Para visualizar, abra esta story em tela cheia clicando no ícone de expand na barra superior.
+ * To view, open this story in full screen by clicking the expand icon in the top bar.
  */
 export const Default: Story = {
   args: {
@@ -74,9 +74,9 @@ export const Default: Story = {
 };
 
 /**
- * Modal com título, subtítulo e descrição - todos presentes.
+ * Modal with title, subtitle and description - all present.
  *
- * Para visualizar, abra esta story em tela cheia clicando no ícone de expand na barra superior.
+ * To view, open this story in full screen by clicking the expand icon in the top bar.
  */
 export const WithAllTexts: Story = {
   args: {
@@ -94,9 +94,9 @@ export const WithAllTexts: Story = {
 };
 
 /**
- * Modal apenas com título - subtítulo e descrição ausentes.
+ * Modal with title only - subtitle and description absent.
  *
- * Para visualizar, abra esta story em tela cheia clicando no ícone de expand na barra superior.
+ * To view, open this story in full screen by clicking the expand icon in the top bar.
  */
 export const OnlyTitle: Story = {
   args: {
@@ -112,9 +112,9 @@ export const OnlyTitle: Story = {
 };
 
 /**
- * Modal com textos formatados usando ReactNode (bold, itálico).
+ * Modal with formatted text using ReactNode (bold, italic).
  *
- * Para visualizar, abra esta story em tela cheia clicando no ícone de expand na barra superior.
+ * To view, open this story in full screen by clicking the expand icon in the top bar.
  */
 export const WithFormattedText: Story = {
   args: {
@@ -149,9 +149,9 @@ export const WithFormattedText: Story = {
 };
 
 /**
- * Modal com formulário de exemplo mostrando uso prático.
+ * Modal with a sample form showing practical usage.
  *
- * Para visualizar, abra esta story em tela cheia clicando no ícone de expand na barra superior.
+ * To view, open this story in full screen by clicking the expand icon in the top bar.
  */
 export const WithForm: Story = {
   args: {
@@ -209,9 +209,9 @@ export const WithForm: Story = {
 };
 
 /**
- * Modal sem botão de fechar (X), útil para fluxos obrigatórios.
+ * Modal without a close (X) button, useful for mandatory flows.
  *
- * Para visualizar, abra esta story em tela cheia clicando no ícone de expand na barra superior.
+ * To view, open this story in full screen by clicking the expand icon in the top bar.
  */
 export const WithoutCloseButton: Story = {
   args: {
@@ -252,9 +252,9 @@ export const WithoutCloseButton: Story = {
 };
 
 /**
- * Modal pequeno para confirmações rápidas.
+ * Small modal for quick confirmations.
  *
- * Para visualizar, abra esta story em tela cheia clicando no ícone de expand na barra superior.
+ * To view, open this story in full screen by clicking the expand icon in the top bar.
  */
 export const SmallModal: Story = {
   args: {
@@ -293,9 +293,9 @@ export const SmallModal: Story = {
 };
 
 /**
- * Modal grande com conteúdo extenso e scroll automático.
+ * Large modal with extensive content and automatic scroll.
  *
- * Para visualizar, abra esta story em tela cheia clicando no ícone de expand na barra superior.
+ * To view, open this story in full screen by clicking the expand icon in the top bar.
  */
 export const LargeModalWithScroll: Story = {
   args: {

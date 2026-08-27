@@ -22,7 +22,7 @@ class Labeling(models.Model):
     
     status = models.CharField(choices=Status.choices,default="draft")
     created_at = models.DateTimeField(default=timezone.now)
-    project = models.ForeignKey("project.Project", on_delete=models.CASCADE, related_name="labelings", db_index=True)
+    project = models.ForeignKey("project.Project", on_delete=models.SET_NULL, null=True, related_name="labelings", db_index=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, related_name="labelings_created", null=True
     )
@@ -37,7 +37,6 @@ class Labeling(models.Model):
         default=DecisionMode.MANUAL,
     )
     distribution_strategy = models.CharField(max_length=32, default=DistributionStrategy.AUTO, choices=DistributionStrategy.choices)
-    # Token used to build a public/shareable URL when the labeling runs in anonymous mode.
     anonymous_token = models.UUIDField(null=True, blank=True, unique=True, editable=False)
 
     guide = models.TextField(default="",blank=True)
@@ -60,9 +59,9 @@ class Labeling(models.Model):
         if self.decisive_question and LabelingElement.objects.get(pk=self.decisive_question).question_type != LabelingElement.QuestionType.MULTIPLE_CHOICE:
             raise ValidationError(
                 " Só questões de múltipla escolha podem ser decisivas.")
-        # As cotas por grupo podem somar menos que users_per_item: o restante vira
-        # o slot residual "any" (preenchível por qualquer respondente). Só recusamos
-        # quando a soma ultrapassa o limite — alinhado com LabelingSerializer.
+        # Group quotas may sum to less than users_per_item: the remainder becomes
+        # the residual "any" slot (fillable by any respondent). We only reject
+        # when the sum exceeds the limit — consistent with LabelingSerializer.
         total = sum((self.items_per_group or {}).values())
         if total > self.users_per_item:
             raise ValidationError(
@@ -75,11 +74,11 @@ class Labeling(models.Model):
     @property
     def has_group_quotas(self):
         """
-        True quando há cotas por grupo *nomeado*, além do slot residual 'any'.
+        True when there are quotas for *named* groups, beyond the residual 'any' slot.
 
-        items_per_group sempre carrega 'any' (preenchido pelo serializer), então
-        a presença de 'any' sozinho não caracteriza distribuição por grupo. Só
-        quando há outras chaves a distribuição precisa respeitar grupos.
+        items_per_group always carries 'any' (filled in by the serializer), so
+        its presence alone doesn't mean group-based distribution. Only other
+        keys mean the distribution must respect groups.
         """
         return any(name != "any" for name in (self.items_per_group or {}))
 
@@ -220,18 +219,14 @@ class LabelingMembership(models.Model):
     class Role(models.TextChoices):
         OWNER = "owner", "Dono"
         ADMIN = "admin", "Administrador"
-        ANNOTATOR = "annotator", "Rotulador"
         VIEWER = "viewer", "Leitor"
+        ANNOTATOR = "annotator", "Rotulador"
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="labeling_memberships")
     labeling = models.ForeignKey(Labeling, on_delete=models.CASCADE, related_name="memberships")
     items_done = models.PositiveIntegerField(default=0)
     role = models.CharField(max_length=16, choices=Role.choices, default=Role.ANNOTATOR)
     joined_at = models.DateTimeField(default=timezone.now)
-    # Última vez que o usuário abriu esta rotulação pelo dashboard. null = nunca
-    # abriu. Ordena o dashboard do rotulador (mais recente primeiro); é escrito
-    # pela action `opened`, não por save() automático, para que nenhuma outra
-    # alteração no membership mexa nessa ordem.
     last_opened_at = models.DateTimeField(null=True, blank=True, default=None)
 
     class Meta:
@@ -239,10 +234,27 @@ class LabelingMembership(models.Model):
         ordering = ["-joined_at"]
         indexes = [
             models.Index(fields=['user', 'labeling'], name='user_labeling_idx'),
-            # Cobre a subquery de ordenação do dashboard: filtra por usuário e
-            # lê last_opened_at direto do índice.
             models.Index(fields=['user', 'last_opened_at'], name='user_last_opened_idx'),
         ]
+
+    def is_last_owner(self):
+        """
+        A labeling with no owner gets locked: only the owner can delete it
+        (IsLabelingOwnerPermission), and no one else can self-promote. Demoting
+        or removing the last owner is blocked.
+
+        ponytail: unlocked read — two admins demoting two distinct owners at the
+        same instant both pass. If that shows up, move the check into a service
+        with transaction.atomic + select_for_update on the labeling's memberships.
+        """
+        if self.role != self.Role.OWNER:
+            return False
+        return not (
+            LabelingMembership.objects
+            .filter(labeling_id=self.labeling_id, role=self.Role.OWNER)
+            .exclude(pk=self.pk)
+            .exists()
+        )
 
     def __str__(self):
         return f"{self.user} {self.labeling} {self.role} {self.items_done}"

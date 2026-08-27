@@ -13,7 +13,7 @@ const meta = {
 export default meta;
 
 /* =======================
-   EXEMPLO: LOGIN
+   EXAMPLE: LOGIN
 ======================= */
 
 export const Login: StoryObj<typeof AuthLayout> = {
@@ -68,7 +68,7 @@ Layout base para páginas de autenticação.
 };
 
 /* =======================
-   EXEMPLO: CADASTRO
+   EXAMPLE: SIGN UP
 ======================= */
 
 export const Cadastro: StoryObj<typeof AuthLayout> = {
@@ -130,7 +130,7 @@ Ideal para manter consistência visual entre login, registro e recuperação de 
 };
 
 /* =======================
-   SEM SUBTÍTULO
+   NO SUBTITLE
 ======================= */
 
 export const SemSubtitulo: StoryObj<typeof AuthLayout> = {
@@ -172,7 +172,7 @@ Neste caso, o espaço do subtítulo ainda existe no layout, mas o texto não é 
 };
 
 /* =======================
-   SUBTÍTULO LONGO
+   LONG SUBTITLE
 ======================= */
 
 export const SubtituloLongo: StoryObj<typeof AuthLayout> = {
@@ -222,7 +222,7 @@ Exemplo para validar comportamento com subtítulos maiores.
 };
 
 /* =======================
-   COM AVISO NO CONTEÚDO
+   WITH WARNING IN CONTENT
 ======================= */
 
 export const ComAviso: StoryObj<typeof AuthLayout> = {

@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 from project.models import Project
 from project.models import ProjectMembership
-from labeling.models import Labeling
+from labeling.models import Labeling, LabelingMembership
 from .models import Item
 from .serializers import ItemSerializer
 from django.utils import timezone
@@ -98,6 +98,12 @@ class ExportImportedItemsCsvViewTest(TestCase):
             start_date=timezone.now().date(),
             final_date=timezone.now().date(),
             column_names=["id_externo", "texto", "observacao"],
+        )
+
+        LabelingMembership.objects.create(
+            labeling=self.labeling,
+            user=self.owner,
+            role=LabelingMembership.Role.OWNER,
         )
 
         Item.objects.create(

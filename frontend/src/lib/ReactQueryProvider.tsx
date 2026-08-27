@@ -1,5 +1,5 @@
-// Provider importado no layout.tsx para envolver toda a aplicação,
-// garantindo que o React Query Client esteja disponível globalmente.
+// Imported in layout.tsx to wrap the whole app, making the React Query
+// client available globally.
 
 'use client';
 

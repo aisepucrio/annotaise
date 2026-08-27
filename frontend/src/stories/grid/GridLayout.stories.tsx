@@ -43,7 +43,7 @@ export const Playground: StoryObj<typeof GridLayout> = {
 };
 
 /* =======================
-   EXEMPLOS PRÁTICOS
+   PRACTICAL EXAMPLES
 ======================= */
 
 export const Examples: StoryObj<typeof GridLayout> = {
@@ -77,7 +77,7 @@ export const Examples: StoryObj<typeof GridLayout> = {
 };
 
 /* =======================
-   DIFERENTES QUANTIDADES
+   DIFFERENT QUANTITIES
 ======================= */
 
 export const DifferentCounts: StoryObj<typeof GridLayout> = {
@@ -132,7 +132,7 @@ export const DifferentCounts: StoryObj<typeof GridLayout> = {
 };
 
 /* =======================
-   TAMANHOS DE COLUNA
+   COLUMN SIZES
 ======================= */
 
 export const ColumnSizes: StoryObj<typeof GridLayout> = {
@@ -191,7 +191,7 @@ export const ColumnSizes: StoryObj<typeof GridLayout> = {
 };
 
 /* =======================
-   COM CONTEÚDO VARIADO
+   WITH VARIED CONTENT
 ======================= */
 
 export const VariedContent: StoryObj<typeof GridLayout> = {
@@ -296,7 +296,7 @@ export const VariedContent: StoryObj<typeof GridLayout> = {
 };
 
 /* =======================
-   PADRÃO DE CORES ALTERNADAS
+   ALTERNATING COLOR PATTERN
 ======================= */
 
 export const ColorPattern: StoryObj<typeof GridLayout> = {

@@ -3,16 +3,10 @@
 import Cookies from 'js-cookie';
 import { api } from '@/lib/api';
 
-/**
- * Stores a token in cookies.
- */
 const storeToken = (token: string, type: 'access' | 'refresh') => {
   Cookies.set(type + 'Token', token);
 };
 
-/**
- * Retrieves a token from cookies.
- */
 const getToken = (type: 'access' | 'refresh') => {
   return Cookies.get(type + 'Token');
 };
@@ -23,8 +17,8 @@ const removeTokens = () => {
 };
 
 /**
- * Centraliza o comportamento de logout forçado: remove tokens e redireciona para /login.
- * Protege contra execução server-side.
+ * Centralizes forced logout: clears tokens and redirects to /login.
+ * Guards against running on the server (no `window`).
  */
 const forceLogoutAndRedirect = () => {
   removeTokens();
@@ -61,8 +55,6 @@ export const AuthActions = () => {
     resetPassword,
   };
 };
-
-/* esqueceu a senha e reset */
 
 const forgotPassword = (email: string) => {
   return api.post('/api/auth/forgot-password/', { email });

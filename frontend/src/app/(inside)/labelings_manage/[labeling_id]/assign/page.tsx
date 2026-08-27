@@ -72,11 +72,13 @@ function AssignTabView({
 }: AssignTabProps) {
   const { t } = useTranslations();
   const backgroundModalRef = useRef<BackgroundModalHandle>(null);
-  const roleLabels: Record<string, string> = {
-    annotator: t('roles.annotator'),
+  // Record (not Partial) on purpose: a new LabelingMembershipRole fails the build
+  // here instead of silently rendering the raw backend value.
+  const roleLabels: Record<LabelingMembershipRole, string> = {
+    owner: t('roles.owner'),
     admin: t('roles.admin'),
-    editor: t('roles.editor'),
-    standard: t('roles.standard'),
+    viewer: t('roles.viewer'),
+    annotator: t('roles.annotator'),
   };
 
   const handleInspectBackground = async (membership: LabelingMembershipDashboard) => {
@@ -175,6 +177,10 @@ function AssignTabView({
               {memberships.map((membership) => {
                 const fullName = `${membership.first_name || ''} ${membership.last_name || ''}`.trim();
                 const canInspectBackground = hasBackgroundForm && membership.role === 'annotator';
+                // Roles outside roleOptions (owner, viewer) are not assignable here. A <Select>
+                // without a matching option falls back to showing the browser's first one — the
+                // owner appeared as "Annotator", and any click would actually demote them.
+                const isAssignableRole = roleOptions.includes(membership.role);
                 const itemsDone = membership.items_done ?? 0;
 
                 return (
@@ -190,16 +196,22 @@ function AssignTabView({
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap md:flex-nowrap md:justify-end">
-                      <Select
-                        value={membership.role}
-                        onChange={(e) => onChangeRole(membership, e.target.value as LabelingMembershipRole)}
-                        disabled={membershipSaving}
-                        options={roleOptions.map((opt) => ({
-                          value: opt,
-                          label: roleLabels[opt] ?? opt,
-                        }))}
-                        containerClassName="w-auto min-w-[150px]"
-                      />
+                      {isAssignableRole ? (
+                        <Select
+                          value={membership.role}
+                          onChange={(e) => onChangeRole(membership, e.target.value as LabelingMembershipRole)}
+                          disabled={membershipSaving}
+                          options={roleOptions.map((opt) => ({
+                            value: opt,
+                            label: roleLabels[opt] ?? opt,
+                          }))}
+                          containerClassName="w-auto min-w-[150px]"
+                        />
+                      ) : (
+                        <span className="min-w-[150px] whitespace-nowrap rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-center text-sm font-medium text-gray-900">
+                          {roleLabels[membership.role] ?? membership.role}
+                        </span>
+                      )}
 
                       <span
                         title={t('labelings.create.assign.itemsDoneTooltip', { count: itemsDone })}
@@ -232,8 +244,8 @@ function AssignTabView({
                 );
               })}
 
-              {/* Dentro da área rolável: é o que faz a sentinela disparar só
-                  quando o usuário chega ao fim da lista. */}
+              {/* Inside the scrollable area: this is what makes the sentinel only fire
+                  when the user reaches the end of the list. */}
               <InfiniteScroll
                 hasNextPage={hasMoreMemberships}
                 isFetchingNextPage={loadingMoreMemberships}
@@ -353,7 +365,7 @@ export default function AssignPage() {
       loadingMoreMemberships={membershipsQuery.isFetchingNextPage}
       onLoadMoreMemberships={membershipsQuery.loadMore}
       availableUsers={filteredAvailableUsers}
-      roleOptions={['annotator', 'admin']}
+      roleOptions={['annotator', 'admin', 'viewer']}
       newMemberId={newMemberId}
       newMemberRole={newMemberRole}
       onChangeNewMemberId={setNewMemberId}

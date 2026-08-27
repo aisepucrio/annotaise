@@ -5,23 +5,14 @@ import { Tooltip as TooltipPrimitive } from './ui/tooltip';
 type TooltipSize = 'sm' | 'md' | 'lg';
 
 type TooltipProps = {
-  /** Conteúdo do tooltip (texto) */
   content: string;
-  /** Cor do ícone (padrão: "white") */
   color?: string;
-  /** Tamanho do ícone (padrão: "md") */
   size?: TooltipSize;
-  /** Ícone customizado (padrão: Info do lucide-react) */
   icon?: React.ReactNode;
-  /** Classes CSS adicionais */
   className?: string;
 };
 
-/**
- * Componente de ícone informativo com tooltip
- */
 export default function Tooltip({ content, color = 'white', size = 'md', icon, className = '' }: TooltipProps) {
-  // Define o tamanho do ícone e do container
   const getSizeClasses = () => {
     switch (size) {
       case 'sm':

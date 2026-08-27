@@ -30,7 +30,7 @@ export const Playground: StoryObj<typeof DatePicker> = {
 };
 
 /* =======================
-   EXEMPLOS PRÁTICOS
+   PRACTICAL EXAMPLES
 ======================= */
 
 export const Examples: StoryObj<typeof DatePicker> = {
@@ -55,7 +55,7 @@ export const Examples: StoryObj<typeof DatePicker> = {
 };
 
 /* =======================
-   COM ERRO
+   WITH ERROR
 ======================= */
 
 export const WithError: StoryObj<typeof DatePicker> = {
@@ -76,7 +76,7 @@ export const WithError: StoryObj<typeof DatePicker> = {
 };
 
 /* =======================
-   OBRIGATÓRIO
+   REQUIRED
 ======================= */
 
 export const Required: StoryObj<typeof DatePicker> = {
@@ -97,7 +97,7 @@ export const Required: StoryObj<typeof DatePicker> = {
 };
 
 /* =======================
-   COM TOOLTIP
+   WITH TOOLTIP
 ======================= */
 
 export const WithTooltip: StoryObj<typeof DatePicker> = {
@@ -125,7 +125,7 @@ export const WithTooltip: StoryObj<typeof DatePicker> = {
 };
 
 /* =======================
-   DESABILITADO
+   DISABLED
 ======================= */
 
 export const Disabled: StoryObj<typeof DatePicker> = {
@@ -146,7 +146,7 @@ export const Disabled: StoryObj<typeof DatePicker> = {
 };
 
 /* =======================
-   SEM LABEL
+   WITHOUT LABEL
 ======================= */
 
 export const WithoutLabel: StoryObj<typeof DatePicker> = {
@@ -167,7 +167,7 @@ export const WithoutLabel: StoryObj<typeof DatePicker> = {
 };
 
 /* =======================
-   COM VALORES PRÉ-DEFINIDOS
+   WITH PREDEFINED VALUES
 ======================= */
 
 export const WithValues: StoryObj<typeof DatePicker> = {
@@ -190,7 +190,7 @@ export const WithValues: StoryObj<typeof DatePicker> = {
 };
 
 /* =======================
-   COM RESTRIÇÕES
+   WITH RESTRICTIONS
 ======================= */
 
 export const WithConstraints: StoryObj<typeof DatePicker> = {

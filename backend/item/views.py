@@ -4,7 +4,7 @@ from labeling.models import Labeling, LabelingMembership, LabelingSection
 from answer.models import Answer, BackgroundAnswer
 from user.models import UserGroup
 from user.permissions import IsAdminAccount
-from .permissions import CanEditProjectPermission
+from labeling.permissions import CanEditLabelingPermission, can_annotate_labeling
 
 from datetime import timedelta
 import csv
@@ -50,7 +50,7 @@ class ListItemsView(ListAPIView):
 
 
 class ImportItemsCsvView(APIView):
-    permission_classes = [IsAdminAccount, CanEditProjectPermission]
+    permission_classes = [IsAdminAccount, CanEditLabelingPermission]
     parser_classes = (MultiPartParser,)
     @extend_schema(
         request=UploadItemCSVSerializer,
@@ -60,7 +60,7 @@ class ImportItemsCsvView(APIView):
         },
     )
     def put(self, request, labeling_id):
-        #TODO acho que a ideia do put ja ficou meio pra tras.. talvez seja melhor um POST mesmo pra isso
+        #TODO the idea of using PUT here feels outdated now; this might be better as a POST
 
         items = Item.objects.filter(labeling_id=labeling_id)
 
@@ -115,7 +115,7 @@ class ImportItemsCsvView(APIView):
         return Response({"detail": "Arquivo recebido"}, status=200)
 
 class AddItemsToExistingLabelingView(APIView):
-    permission_classes = [IsAdminAccount, CanEditProjectPermission]
+    permission_classes = [IsAdminAccount, CanEditLabelingPermission]
     parser_classes = (MultiPartParser,)
     @extend_schema(
         request=UploadItemCSVSerializer,
@@ -143,7 +143,7 @@ class AddItemsToExistingLabelingView(APIView):
             return Response({"detail": "O arquivo deve ser .csv"}, status=400)
         
         df = pd.read_csv(uploaded_file, dtype=str)
-        #TODO tem que averiguar se a pessoa colocar 2 colunas iguais vai dar problema...
+        #TODO need to check whether duplicate column names in the upload would cause problems...
         cols = list(df.columns)
         non_existent_cols = columns_in_labeling.copy()
         for col in cols:
@@ -186,7 +186,7 @@ class AddItemsToExistingLabelingView(APIView):
         return Response({"detail": "Itens adicionados a rotulação com sucesso"}, status=200)
 
 class ExportImportedItemsCsvView(APIView):
-    permission_classes = [IsAdminAccount, CanEditProjectPermission]
+    permission_classes = [IsAdminAccount, CanEditLabelingPermission]
 
     @extend_schema(
         responses={
@@ -246,12 +246,12 @@ class NextItemView(RetrieveAPIView):
     def ensure_membership(self, item, user):
         membership, created = ItemMembership.objects.get_or_create(item=item, user=user)
         if not created:
-            # Renova a reserva: last_seen_at é auto_now, um save vazio basta.
+            # Renews the reservation; last_seen_at is auto_now, so an empty save is enough.
             membership.save(update_fields=['last_seen_at'])
         return membership
 
     def _user_group_names(self, user):
-        """Conjunto dos grupos do usuário, computado uma vez por requisição."""
+        """Set of the user's groups, computed once per request."""
         return set(
             UserGroup.objects
             .filter(memberships__user=user)
@@ -260,16 +260,17 @@ class NextItemView(RetrieveAPIView):
 
     def _pick_auto_candidate(self, labeling, user, *, require_capacity, user_group_names):
         """
-        Escolhe o melhor item pendente para o usuário na estratégia automática.
+        Picks the best pending item for the user under the automatic strategy.
 
-        Ordena por mais respondido (para empurrar itens à conclusão), com
-        randomização como desempate. `require_capacity=True` exige item ainda
-        não cheio (total_count < users_per_item) — usado fora do decision mode.
+        Orders by most-answered (to push items toward completion), with
+        randomization as a tie-break. `require_capacity=True` requires an
+        item that isn't full yet (total_count < users_per_item) — used
+        outside decision mode.
 
-        Sem cotas por grupo, usa o caminho rápido (.first()). Com cotas por
-        grupo nomeado, calcula o remaining de todos os candidatos numa única
-        query agregada (Item.remaining_groups_for) e devolve, na ordem, o
-        primeiro item onde o usuário ainda consegue preencher um grupo aberto.
+        Without group quotas, uses the fast path (.first()). With named group
+        quotas, computes the remaining count for all candidates in a single
+        aggregated query (Item.remaining_groups_for) and returns, in order,
+        the first item where the user can still fill an open group.
         """
         qs = (
             Item.objects
@@ -297,8 +298,8 @@ class NextItemView(RetrieveAPIView):
 
     def _steal_stale_membership(self, labeling, user, user_group_names):
         """
-        Rouba a membership expirada mais antiga de outro usuário (reserva que
-        passou do tempo), respeitando cotas por grupo quando configuradas.
+        Steals the oldest expired membership from another user (a reservation
+        that timed out), respecting group quotas when configured.
         """
         STALE_MINUTES = 10
         stale_limit = timezone.now() - timedelta(minutes=STALE_MINUTES)
@@ -314,7 +315,7 @@ class NextItemView(RetrieveAPIView):
             )
             .exclude(user=user)
             .exclude(item__answers__answered_by=user)
-            .order_by('last_seen_at')  # rouba primeiro a reserva mais abandonada
+            .order_by('last_seen_at')  # steals the most abandoned reservation first
         )
 
         remaining_by_item = {}
@@ -344,17 +345,16 @@ class NextItemView(RetrieveAPIView):
 
     def _get_item_auto_strategy(self, labeling, user):
         """
-        Retorna o próximo item para o usuário, seguindo a ordem:
-        1) Item já em membership do usuário (incompleto)
-        2) Novo item livre e elegível
-        3) Item de outra pessoa com membership expirado (rouba)
+        Returns the next item for the user, following this order:
+        1) Item already in a membership of the user's (incomplete)
+        2) New free and eligible item
+        3) Another person's item with an expired membership (steal)
 
-        Quando a rotulação tem cotas por grupo (items_per_group com grupos
-        nomeados além de 'any'), só são oferecidos itens onde o usuário ainda
-        consegue preencher um grupo em aberto — ver Item.remaining_groups_for /
-        Item._slot_open.
+        When the labeling has group quotas (items_per_group with named groups
+        besides 'any'), only items where the user can still fill an open
+        group are offered — see Item.remaining_groups_for / Item._slot_open.
         """
-        # 1) Já tem membership ativo?
+        # 1) Does the user already have an active membership?
         membership = (
             ItemMembership.objects
             .select_for_update()
@@ -367,12 +367,12 @@ class NextItemView(RetrieveAPIView):
             .first()
         )
         if membership:
-            # Renova a reserva para que ela não seja roubada enquanto o usuário
-            # estiver ativo (last_seen_at é auto_now, um save vazio basta).
+            # Renews the reservation so it isn't stolen while the user stays
+            # active (last_seen_at is auto_now, so an empty save is enough).
             membership.save(update_fields=['last_seen_at'])
             return membership.item
 
-        # Grupos do usuário: só precisam ser computados quando há cotas por grupo.
+        # User's groups: only need to be computed when group quotas apply.
         user_group_names = (
             self._user_group_names(user) if labeling.has_group_quotas else set()
         )
@@ -394,9 +394,9 @@ class NextItemView(RetrieveAPIView):
             if item is None:
                 return None
 
-            # Item já "lotado" (respostas + reservas além de users_per_item):
-            # libera uma reserva pendente para que este usuário possa votar
-            # (importante para desempates em decision mode).
+            # Item already "full" (answers + reservations beyond users_per_item):
+            # release a pending reservation so this user can vote
+            # (important for tiebreaks in decision mode).
             if total_count > labeling.users_per_item:
                 stale_membership = item.memberships.first()
                 if stale_membership:
@@ -404,7 +404,7 @@ class NextItemView(RetrieveAPIView):
             self.ensure_membership(item, user)
             return item
 
-        # 2) Pega um novo item elegível (com capacidade)
+        # 2) Get a new eligible item (with capacity)
         item = self._pick_auto_candidate(
             labeling, user, require_capacity=True, user_group_names=user_group_names
         )
@@ -419,7 +419,7 @@ class NextItemView(RetrieveAPIView):
                 self.ensure_membership(item, user)
                 return item
 
-        # 3) Rouba membership expirada de outra pessoa
+        # 3) Steal another person's expired membership
         return self._steal_stale_membership(labeling, user, user_group_names)
 
     def _get_item_form_mode(self, labeling, user):
@@ -484,7 +484,7 @@ class NextItemView(RetrieveAPIView):
         ).exists():
             return Response({'detail':'o formulário dessa rotulação está vazio','code':'EMPTY_FORM'},status=403)
 
-        if not LabelingMembership.objects.filter(labeling=labeling,user=user).exists():
+        if not can_annotate_labeling(user, labeling.id):
             return Response('Você não faz parte dessa rotulação',status=403)
 
         if labeling.has_background_form and not BackgroundAnswer.objects.filter(
@@ -510,12 +510,12 @@ class NextItemView(RetrieveAPIView):
 
 class AnonymousNextItemView(RetrieveAPIView):
     """
-    Variante pública/anônima da NextItemView.
+    Public/anonymous variant of NextItemView.
 
-    Identifica a rotulação pelo token de modo anônimo presente na URL (em vez
-    do labeling_id) e dispensa autenticação e qualquer verificação de
-    usuário/membership, já que rotuladores anônimos não possuem conta.
-    Retorna a mesma estrutura: as seções do formulário e um item pendente.
+    Identifies the labeling by the anonymous-mode token in the URL (instead
+    of labeling_id) and skips authentication and any user/membership check,
+    since anonymous annotators don't have an account. Returns the same
+    structure: the form's sections and a pending item.
     """
     serializer_class = NextItemResponseSerializer
     permission_classes = [AllowAny]
@@ -545,7 +545,7 @@ class AnonymousNextItemView(RetrieveAPIView):
         ).exists():
             return Response({'detail': 'o formulário dessa rotulação está vazio', 'code': 'EMPTY_FORM'}, status=403)
 
-        # Sem usuário para diferenciar, devolvemos simplesmente o próximo item pendente.
+        # With no user to distinguish requesters, we simply return the next pending item.
         item = (
             Item.objects
             .filter(labeling=labeling, status='pending')
