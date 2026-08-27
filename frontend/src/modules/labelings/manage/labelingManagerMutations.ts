@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   deleteLabeling,
   updateLabeling,
+  duplicateLabeling,
   saveLabelingStructure,
   createLabelingMembership,
   updateLabelingMembership,
@@ -23,7 +24,17 @@ export function useDeleteLabelingMutation() {
     },
   });
 }
+// Utilizada para duplicar um labeling
+export function useDuplicateLabelingMutation() {
+  const qc = useQueryClient();
 
+  return useMutation({
+    mutationFn: (id: number) => duplicateLabeling(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['labelings'] });
+    },
+  });
+}
 // Utilizada para atualizar os dados básicos do labeling
 export function useUpdateLabelingMutation() {
   const qc = useQueryClient();

@@ -82,8 +82,44 @@ class LabelingViewSet(viewsets.ModelViewSet):
             )
             .distinct()
         )
+  
 
-    
+    @action(detail=True, methods=['post'])
+    def duplicate(self, request, pk=None):
+        original = self.get_object()
+        with transaction.atomic():
+            #redefine pks id para indicar a criação de uma nova anotação
+            copy = Labeling.objects.get(pk=original.pk)
+            copy.pk = None
+            copy.id = None
+            copy._state.adding = True
+            copy.title = "Cópia de " + original.title
+            copy.start_date = timezone.now().date()
+            copy.save()
+            
+            sections = original.sections.prefetch_related('elements').all()#duplicação das seções de uma anotação
+            for section in sections:
+                new_section = LabelingSection.objects.create(
+                    labeling=copy,
+                    form_type=section.form_type,
+                    title=section.title,
+                    order=section.order,
+                )
+                for element in section.elements.all():#duplicação dos elementos que podem compor uma seção
+                    LabelingElement.objects.create(
+                        labeling_section=new_section,
+                        order=element.order,
+                        text=element.text,
+                        required=element.required,
+                        question_type=element.question_type,
+                        context_type=element.context_type,
+                        column_name=element.column_name,
+                        allow_multiple=element.allow_multiple,
+                    )
+
+        serializer = self.get_serializer(copy)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
     @action(methods=['get'], detail=False, url_path='dashboard/edit', pagination_class=StandardCursorPagination)
     def editdashboard(self, request):
         '''a ideia é que esse dashboard serve pra mostrar o dashboard pro admin, entao tem todos os labelings de todos os projetos

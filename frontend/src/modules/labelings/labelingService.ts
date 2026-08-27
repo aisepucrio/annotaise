@@ -60,7 +60,11 @@ export async function updateLabeling(id: number, payload: Partial<LabelingPayloa
 export async function deleteLabeling(id: number): Promise<void> {
   await api.delete(`/labelings/${id}/`);
 }
-
+// Duplica um labeling existente, incluindo seções e elementos (sem membros/respostas)
+export async function duplicateLabeling(id: number): Promise<Labeling> {
+  const { data } = await api.post<Labeling>(`/labelings/${id}/duplicate/`);
+  return data;
+}
 // Importa itens para o labeling via arquivo CSV
 export async function importLabelingItemsCsv(labelingId: number, file: File): Promise<void> {
   const formData = new FormData();
