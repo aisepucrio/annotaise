@@ -63,6 +63,11 @@ export async function deleteLabeling(id: number): Promise<void> {
   await api.delete(`/labelings/${id}/`);
 }
 
+export async function duplicateLabeling(id: number): Promise<Labeling> {
+  const { data } = await api.post<Labeling>(`/labelings/${id}/duplicate/`);
+  return data;
+}
+
 export async function importLabelingItemsCsv(labelingId: number, file: File): Promise<void> {
   const formData = new FormData();
   formData.append('file', file);
