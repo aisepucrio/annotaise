@@ -373,7 +373,7 @@ class LLMDecisionTieBreakTest(TestCase):
             format="json",
         )
 
-    @patch("answer.views.run_llm_tiebreak_decision")
+    @patch("answer.services.tiebreak.run_llm_tiebreak_decision")
     def test_llm_tiebreak_finishes_item_when_has_winner(self, mocked_llm):
         mocked_llm.return_value = {
             "winner": "yes",
@@ -415,7 +415,7 @@ class LLMDecisionTieBreakTest(TestCase):
             3,
         )
 
-    @patch("answer.views.run_llm_tiebreak_decision")
+    @patch("answer.services.tiebreak.run_llm_tiebreak_decision")
     def test_llm_tiebreak_runs_once_when_result_is_tie(self, mocked_llm):
         mocked_llm.return_value = {
             "winner": None,
@@ -447,7 +447,7 @@ class LLMDecisionTieBreakTest(TestCase):
         self.assertEqual(self.item.final_decision_source, "human")
         self.assertEqual(self.item.final_decision_value, "yes")
 
-    @patch("answer.views.run_llm_tiebreak_decision")
+    @patch("answer.services.tiebreak.run_llm_tiebreak_decision")
     def test_manual_mode_does_not_call_llm_tiebreak(self, mocked_llm):
         self.labeling.decision_mode = Labeling.DecisionMode.MANUAL
         self.labeling.save(update_fields=["decision_mode"])
@@ -463,7 +463,7 @@ class LLMDecisionTieBreakTest(TestCase):
         self.assertNotEqual(self.item.status, "finished")
         self.assertFalse(self.item.llm_tiebreak_attempted)
 
-    @patch("answer.views.run_llm_tiebreak_decision")
+    @patch("answer.services.tiebreak.run_llm_tiebreak_decision")
     def test_returns_warning_when_video_context_is_not_supported(self, mocked_llm):
         self.context_element.context_type = LabelingElement.ContextType.VIDEO
         self.context_element.save(update_fields=["context_type"])
@@ -490,7 +490,7 @@ class LLMDecisionTieBreakTest(TestCase):
         self.assertIn("decision_warning", response.data)
         self.assertIn("tipo 'video'", response.data["decision_warning"])
 
-    @patch("answer.views.run_llm_tiebreak_decision")
+    @patch("answer.services.tiebreak.run_llm_tiebreak_decision")
     def test_returns_warning_when_audio_context_is_not_supported(self, mocked_llm):
         self.context_element.context_type = LabelingElement.ContextType.AUDIO
         self.context_element.save(update_fields=["context_type"])

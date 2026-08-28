@@ -9,8 +9,7 @@ router = DefaultRouter()
 
 router.register(r"labelings", LabelingViewSet, basename="labelings")
 router.register(r"labeling-memberships", LabelingMembershipViewSet, basename="labeling-memberships")
-# Biblioteca de chaves de IA do usuário logado (o queryset é filtrado por dono
-# no viewset, então não há rota por usuário).
+# Biblioteca de chaves de IA do usuário logado (o viewset filtra por dono).
 router.register(r"ai-credentials", AICredentialViewSet, basename="ai-credentials")
 
 

@@ -3,6 +3,8 @@ from django.utils import timezone
 from django.conf import settings
 from django.core.exceptions import ValidationError
 
+from .querysets import AICredentialQuerySet
+
 class Labeling(models.Model):
     class Status(models.TextChoices):
         DRAFT = "draft", "Rascunho"
@@ -53,13 +55,9 @@ class Labeling(models.Model):
 
     decisive_question = models.ForeignKey("LabelingElement", on_delete=models.SET_NULL, null=True, blank=True)
 
-    # Credencial de IA usada no desempate por LLM. Nula = comportamento padrão
-    # (Ollama local). SET_NULL em vez de PROTECT: se uma chave vazar, o admin
-    # precisa conseguir apagá-la na hora, e as rotulações caem de volta para o
-    # Ollama sozinhas em vez de bloquearem a exclusão.
-    # Fica fora de LabelingSerializer de propósito: só a action 'ai_config'
-    # (restrita a dono do projeto) pode vincular, senão um 'contributor'
-    # conseguiria apontar a rotulação para uma chave que gera cobrança.
+    # Credencial de IA do desempate por LLM. Nula = Ollama local. SET_NULL para
+    # que apagar uma chave vazada não seja bloqueado pelas rotulações que a usam.
+    # Fora de LabelingSerializer de propósito: só a action 'ai_config' vincula.
     ai_credential = models.ForeignKey(
         "AICredential",
         on_delete=models.SET_NULL,
@@ -266,10 +264,9 @@ class LabelingMembership(models.Model):
 class AICredential(models.Model):
     """Chave de API de IA cadastrada uma vez e reutilizada por N rotulações.
 
-    O escopo é o usuário: cada admin monta sua própria biblioteca de chaves e
-    só enxerga as dele na hora de vincular a uma rotulação. Guardar o segredo
-    uma vez só é o ponto do modelo — revogou/trocou a chave, edita aqui e todas
-    as rotulações que apontam para esta credencial passam a usar a nova.
+    O escopo é o usuário: cada admin tem sua própria biblioteca de chaves.
+    Trocar uma chave revogada é uma edição só, e vale para todas as rotulações
+    que apontam para a credencial.
     """
 
     class Provider(models.TextChoices):
@@ -280,16 +277,17 @@ class AICredential(models.Model):
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="ai_credentials"
     )
-    # Nome dado pelo dono ("Minha conta OpenAI") para distinguir credenciais na
-    # hora de escolher, já que a chave em si nunca é exibida.
+    # Nome dado pelo dono ("Minha conta OpenAI"): a chave nunca é exibida.
     name = models.CharField(max_length=80)
     provider = models.CharField(max_length=16, choices=Provider.choices)
-    # base64(nonce || AES-256-GCM ciphertext+tag) —  annotaise/crypto.py
+    # base64(nonce || AES-256-GCM ciphertext+tag) — ver annotaise/crypto.py.
     encrypted_api_key = models.TextField()
-    # Últimos caracteres da chave só para exibir no frontend.
+    # Últimos caracteres da chave, só para exibir no frontend.
     key_hint = models.CharField(max_length=8, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    objects = AICredentialQuerySet.as_manager()
 
     class Meta:
         unique_together = ("owner", "name")

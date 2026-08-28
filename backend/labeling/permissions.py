@@ -53,6 +53,7 @@ class CanEditLabelingsInProjectPermission(BasePermission):
 
 
 class IsLabelingOwnerPermission(BasePermission):
+    """Só o dono do projeto mexe na configuração de IA da rotulação."""
 
     message = "Somente o dono do projeto pode gerenciar a configuração de IA desta rotulação."
 
@@ -64,12 +65,7 @@ class IsLabelingOwnerPermission(BasePermission):
 
 
 class IsAICredentialOwnerPermission(BasePermission):
-    """A biblioteca de chaves é privada: cada um só mexe nas próprias.
-
-    Vale para ler, editar e remover. Uma rotulação pode até estar apontando
-    para a credencial de outro admin (o lab compartilha contas), mas quem não
-    é dono não consegue trocar a chave nem descobrir mais do que o key_hint.
-    """
+    """A biblioteca de chaves é privada: ler, editar e remover só as próprias."""
 
     message = "Você só pode gerenciar as credenciais de IA que você mesmo cadastrou."
 

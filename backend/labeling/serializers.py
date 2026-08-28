@@ -5,7 +5,6 @@ import uuid
 from rest_framework import serializers
 from django.db import transaction
 from django.utils import timezone
-from annotaise.crypto import encrypt_secret
 
 LLM_TIEBREAK_USERNAME = "llm_tiebreak_bot"
 LLM_TIEBREAK_EMAIL = "llm_tiebreak_bot@annotaise.local"
@@ -411,54 +410,35 @@ class LabelingAgreementSummarySerializer(serializers.Serializer):
 
 
 class AICredentialSerializer(serializers.ModelSerializer):
-    """Biblioteca de chaves do usuário.
+    """Formato da biblioteca de chaves. A escrita mora em services/ai_credentials.
 
-    api_key é write_only e não tem contrapartida de leitura: o que sai é só o
-    key_hint (4 últimos caracteres) e o provedor. No update a chave é opcional,
-    para permitir renomear a credencial sem precisar recolar o segredo.
+    `api_key` é write_only e não tem contrapartida de leitura: sai só o
+    `key_hint`. No update a chave é opcional, para permitir renomear a
+    credencial sem recolar o segredo.
     """
 
     api_key = serializers.CharField(
         write_only=True, trim_whitespace=True, min_length=8, max_length=4096, required=False
     )
-    labelings_count = serializers.SerializerMethodField()
+    # Anotado por AICredentialQuerySet.with_labelings_count().
+    labelings_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = AICredential
         fields = ['id', 'name', 'provider', 'api_key', 'key_hint', 'labelings_count', 'created_at', 'updated_at']
         read_only_fields = ['id', 'key_hint', 'created_at', 'updated_at']
 
-    def get_labelings_count(self, obj):
-        # Quantas rotulações quebram se esta credencial sumir — a tela usa isso
-        # para avisar antes de remover. A biblioteca de um usuário é pequena,
-        # então a contagem por linha não justifica anotar o queryset.
-        return obj.labelings.count()
-
     def validate(self, attrs):
         if self.instance is None and not attrs.get('api_key'):
             raise serializers.ValidationError({'api_key': 'Informe a chave de API.'})
         return attrs
 
-    def _apply_api_key(self, validated_data):
-        api_key = validated_data.pop('api_key', None)
-        if api_key:
-            validated_data['encrypted_api_key'] = encrypt_secret(api_key)
-            validated_data['key_hint'] = api_key[-4:]
-        return validated_data
-
-    def create(self, validated_data):
-        return super().create(self._apply_api_key(validated_data))
-
-    def update(self, instance, validated_data):
-        return super().update(instance, self._apply_api_key(validated_data))
-
 
 class LabelingAICredentialLinkSerializer(serializers.Serializer):
-    """Vincula uma credencial à rotulação (ou desvincula, com null).
+    """Entrada de POST /labelings/<id>/ai-config: qual credencial vincular.
 
-    O queryset do campo é restrito às credenciais de quem está pedindo, então
-    apontar a rotulação para a chave de outro admin é rejeitado pelo próprio
-    DRF — ninguém consegue gastar da conta alheia mesmo conhecendo o id.
+    O queryset do campo é restrito às credenciais de quem está pedindo, então o
+    próprio DRF rejeita apontar a rotulação para a chave de outro admin.
     """
 
     credential = serializers.PrimaryKeyRelatedField(
@@ -468,29 +448,39 @@ class LabelingAICredentialLinkSerializer(serializers.Serializer):
     def __init__(self, *args, requesting_user=None, **kwargs):
         super().__init__(*args, **kwargs)
         if requesting_user is not None:
-            self.fields['credential'].queryset = AICredential.objects.filter(owner=requesting_user)
+            self.fields['credential'].queryset = AICredential.objects.owned_by(requesting_user)
 
 
-def serialize_labeling_ai_config(labeling, requesting_user=None):
-    credential = labeling.ai_credential
-    if credential is None:
+class LabelingAIConfigSerializer(serializers.Serializer):
+    """Saída de /labelings/<id>/ai-config: qual credencial a rotulação usa.
+
+    Recebe a `Labeling` e lê `context['requesting_user']` para dizer se a
+    credencial é de quem está olhando — num lab a rotulação pode estar usando a
+    chave de outro admin, e a tela mostra qual é sem oferecê-la no seletor.
+    """
+
+    def to_representation(self, labeling):
+        credential = labeling.ai_credential
+        if credential is None:
+            return {
+                'is_configured': False,
+                'credential_id': None,
+                'name': None,
+                'provider': None,
+                'key_hint': None,
+                'owned_by_me': False,
+                'updated_at': None,
+            }
+
+        requesting_user = self.context.get('requesting_user')
         return {
-            'is_configured': False,
-            'credential_id': None,
-            'name': None,
-            'provider': None,
-            'key_hint': None,
-            'owned_by_me': False,
-            'updated_at': None,
+            'is_configured': True,
+            'credential_id': credential.id,
+            'name': credential.name,
+            'provider': credential.provider,
+            'key_hint': credential.key_hint or None,
+            'owned_by_me': (
+                requesting_user is not None and credential.owner_id == requesting_user.id
+            ),
+            'updated_at': credential.updated_at,
         }
-    return {
-        'is_configured': True,
-        'credential_id': credential.id,
-        'name': credential.name,
-        'provider': credential.provider,
-        'key_hint': credential.key_hint or None,
-        # Num lab a rotulação pode estar usando a chave de outro admin: a tela
-        # mostra qual é, mas o seletor só oferece as do próprio usuário.
-        'owned_by_me': requesting_user is not None and credential.owner_id == requesting_user.id,
-        'updated_at': credential.updated_at,
-    }

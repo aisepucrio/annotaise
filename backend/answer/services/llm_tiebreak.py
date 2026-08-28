@@ -34,9 +34,8 @@ AUDIO_CONTEXT_ERROR_MESSAGE = (
 )
 
 
-# Mapeia o provider armazenado em LabelingAIConfig para o nome de modelo que
-# o LiteLLM espera (padrão "<provider>/<model>"). Modelos fixos por enquanto —
-# não expostos como configuráveis pelo admin.
+# Provider de AICredential -> nome de modelo no formato do LiteLLM.
+# Modelos fixos por enquanto: não são configuráveis pelo admin.
 PROVIDER_MODEL_MAP = {
     "openai": "openai/gpt-4o-mini",
     "anthropic": "anthropic/claude-3-5-haiku-20241022",
@@ -407,12 +406,10 @@ def _sanitize_llm_error(exc, secret):
 
 
 def run_llm_tiebreak_decision_byok(*, provider, api_key, labeling_guide, question_text, options, contexts):
-    """Mesmo protocolo de run_llm_tiebreak_decision, mas via provedor cloud BYOK.
+    """Mesmo protocolo de run_llm_tiebreak_decision, mas via provedor cloud.
 
     Reaproveita normalização de opções, prompt e parsing de voto do caminho
-    Ollama. Contexto de imagem continua sendo descrito pelo Ollama local
-    (mesmo comportamento de hoje) mesmo quando o desempate final roda no
-    provedor cloud escolhido pelo admin.
+    Ollama. Contexto de imagem continua sendo descrito pelo Ollama local.
     """
     normalized_options = {
         _normalize_key(option): option

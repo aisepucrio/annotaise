@@ -1,10 +1,11 @@
 from .models import Labeling, LabelingMembership, LabelingSection, LabelingElement, MultipleChoiceItem, QuestionRange, AICredential
 from .serializers import (LabelingSerializer, LabelingMembershipSerializer,
 LabelingSectionsBulkCreateSerializer, LabelingSectionSerializer, LabelingDashboardSerializer, LabelingMembershipDashboardSerializer, LabelingAgreementSummarySerializer,
-AICredentialSerializer, LabelingAICredentialLinkSerializer, serialize_labeling_ai_config)
+AICredentialSerializer, LabelingAICredentialLinkSerializer, LabelingAIConfigSerializer)
 from project.models import ProjectMembership
 from user.permissions import IsAdminAccount
 from .permissions import CanEditLabelingsInProjectPermission, IsLabelingOwnerPermission, IsAICredentialOwnerPermission
+from .services.ai_credentials import create_ai_credential, link_ai_credential, update_ai_credential
 from item.models import Item
 from user.models import UserGroup
 from .serializers import LabelingElementSerializer
@@ -173,30 +174,26 @@ class LabelingViewSet(viewsets.ModelViewSet):
 
     @action(methods=['get', 'post', 'delete'], detail=True, url_path='ai-config')
     def ai_config(self, request, pk=None):
-        """Qual credencial de IA esta rotulação usa no desempate por LLM.
+        """Credencial de IA que esta rotulação usa no desempate por LLM.
 
-        POST recebe só o id de uma credencial já cadastrada (o segredo nunca
-        passa por aqui — ele vive em /ai-credentials/). DELETE desvincula e a
-        rotulação volta ao Ollama local, sem apagar a credencial em si, que
-        pode estar em uso por outras rotulações.
+        POST recebe só o id de uma credencial já cadastrada — o segredo nunca
+        passa por aqui, ele vive em /ai-credentials/.
         """
         labeling = self.get_object()
-
-        if request.method == 'GET':
-            return Response(serialize_labeling_ai_config(labeling, requesting_user=request.user))
 
         if request.method == 'POST':
             serializer = LabelingAICredentialLinkSerializer(
                 data=request.data, requesting_user=request.user
             )
             serializer.is_valid(raise_exception=True)
-            labeling.ai_credential = serializer.validated_data['credential']
-            labeling.save(update_fields=['ai_credential'])
-            return Response(serialize_labeling_ai_config(labeling, requesting_user=request.user))
+            link_ai_credential(labeling=labeling, credential=serializer.validated_data['credential'])
+        elif request.method == 'DELETE':
+            link_ai_credential(labeling=labeling, credential=None)
+            return Response(status=204)
 
-        labeling.ai_credential = None
-        labeling.save(update_fields=['ai_credential'])
-        return Response(status=204)
+        return Response(
+            LabelingAIConfigSerializer(labeling, context={'requesting_user': request.user}).data
+        )
 
     def _user_can_answer_labeling(self, labeling, user, user_group_names):
         """
@@ -820,11 +817,7 @@ class CreateReadLabelingStructureView(APIView):
 
 
 class AICredentialViewSet(viewsets.ModelViewSet):
-    """Biblioteca de chaves de IA do usuário logado.
-
-    O queryset já nasce filtrado por owner, então listar/editar/remover só
-    alcança as próprias credenciais. IsAICredentialOwnerPermission é a segunda
-    trava, para o caso de alguém afrouxar o queryset um dia.
+    """Biblioteca de chaves de IA do usuário logado (CRUD).
 
     Remover uma credencial não quebra nada de imediato: Labeling.ai_credential
     é SET_NULL, então as rotulações que a usavam voltam ao Ollama local.
@@ -835,10 +828,17 @@ class AICredentialViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_queryset(self):
-        return AICredential.objects.filter(owner=self.request.user)
+        # O filtro por dono é a primeira trava; IsAICredentialOwnerPermission é
+        # a segunda, para o caso de alguém afrouxar o queryset um dia.
+        return AICredential.objects.owned_by(self.request.user).with_labelings_count()
 
     def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
+        credential = create_ai_credential(owner=self.request.user, **serializer.validated_data)
+        # Reconsulta pelo queryset anotado para a resposta trazer labelings_count.
+        serializer.instance = self.get_queryset().get(pk=credential.pk)
+
+    def perform_update(self, serializer):
+        update_ai_credential(credential=serializer.instance, **serializer.validated_data)
 
     def handle_exception(self, exc):
         # Sem AI_BYOK_ENCRYPTION_KEY no servidor não dá para cifrar a chave.

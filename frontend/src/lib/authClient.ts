@@ -2,6 +2,7 @@
 
 import Cookies from 'js-cookie';
 import { api } from '@/lib/api';
+import { clearAllUserLlmKeys } from '@/lib/userLlmKey';
 
 /**
  * Stores a token in cookies.
@@ -20,6 +21,9 @@ const getToken = (type: 'access' | 'refresh') => {
 const removeTokens = () => {
   Cookies.remove('accessToken');
   Cookies.remove('refreshToken');
+  // Nenhuma chave de IA local pode sobreviver à troca de usuário no navegador.
+  // Fica aqui porque o logout forçado (refresh token expirado) passa por aqui.
+  clearAllUserLlmKeys();
 };
 
 /**

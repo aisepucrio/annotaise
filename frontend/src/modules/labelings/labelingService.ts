@@ -1,4 +1,5 @@
 import { api } from '@/lib/api';
+import { userLlmKeyHeaders } from '@/lib/userLlmKey';
 import { fetchCursorPage } from '@/modules/pagination';
 import type { CursorRequest, CursorSearchRequest } from '@/modules/pagination';
 import type {
@@ -260,9 +261,13 @@ export async function fetchNextAnswer(labelingId: number): Promise<AnswerStructu
   return data;
 }
 
-// Submete uma nova resposta para um item
+// Submete uma nova resposta para um item. É a requisição que pode disparar o
+// desempate por LLM, então leva a chave local quando o usuário guardou uma
+// para esta rotulação; sem ela não vai header e o backend usa a chave salva.
 export async function submitAnswer(payload: AnswerPayload): Promise<AnswerResponse> {
-  const { data } = await api.post<AnswerResponse>(`/answers/`, payload);
+  const { data } = await api.post<AnswerResponse>(`/answers/`, payload, {
+    headers: userLlmKeyHeaders(payload.labeling),
+  });
   return data;
 }
 

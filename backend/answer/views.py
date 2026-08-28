@@ -9,6 +9,7 @@ from .serializers import (
 from labeling.models import LabelingElement
 from labeling.models import Labeling, LabelingMembership, LabelingSection
 from annotaise.pagination import StandardCursorPagination
+from annotaise.user_llm_key import pop_user_llm_key
 
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
@@ -19,8 +20,7 @@ from user.permissions import IsAdminAccount
 from django.http import HttpResponse
 from .permissions import CanAnswerLabelingPermission
 from labeling.permissions import CanEditLabelingsInProjectPermission
-from .services.llm_tiebreak import run_llm_tiebreak_decision, run_llm_tiebreak_decision_byok
-from annotaise.crypto import decrypt_secret
+from .services.tiebreak import run_tiebreak_decision
 
 import pandas as pd
 
@@ -29,6 +29,7 @@ from django.db.models import F, Q
 from django.db import transaction
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.contrib.auth import get_user_model
+from django.views.decorators.debug import sensitive_variables
 #TODO aqui é melhor usar permission pra ver se o item membership existe!
 class AnswerViewset(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
@@ -134,45 +135,12 @@ class AnswerViewset(viewsets.ModelViewSet):
 
         return contexts
 
-    def _run_llm_tiebreak(self, *, labeling, question_text, options, contexts):
-        """Usa o provedor escolhido da rotulação se
-        configurado, senão cai no comportamento padrão (Ollama local).
-
-        A chave descriptografada só existe como variável local, pelo tempo
-        da chamada ao provedor — nunca é logada nem persistida fora do
-        campo criptografado.
-        """
-        credential = labeling.ai_credential
-        if credential is not None:
-            try:
-                api_key = decrypt_secret(credential.encrypted_api_key)
-                return run_llm_tiebreak_decision_byok(
-                    provider=credential.provider,
-                    api_key=api_key,
-                    labeling_guide=labeling.guide,
-                    question_text=question_text,
-                    options=options,
-                    contexts=contexts,
-                )
-            except Exception:
-                return {
-                    "models": [],
-                    "vote_count": {},
-                    "winner": None,
-                    "tied": False,
-                    "valid_votes": 0,
-                    "error": "BYOK_ERROR",
-                    "error_message": "Não foi possível executar a decisão por LLM (BYOK).",
-                }
-
-        return run_llm_tiebreak_decision(
-            labeling_guide=labeling.guide,
-            question_text=question_text,
-            options=options,
-            contexts=contexts,
-        )
-
+    @sensitive_variables("session_llm_key")
     def create(self, request, *args, **kwargs):
+        # Chave de IA do modo "só nesta sessão": sai da requisição já aqui,
+        # antes de qualquer outro processamento. Ver annotaise/user_llm_key.py.
+        session_llm_key = pop_user_llm_key(request)
+
         user = request.user
         data = request.data
 
@@ -301,8 +269,9 @@ class AnswerViewset(viewsets.ModelViewSet):
                             )
                         )
                         try:
-                            llm_result = self._run_llm_tiebreak(
+                            llm_result = run_tiebreak_decision(
                                 labeling=labeling,
+                                session_llm_key=session_llm_key,
                                 question_text=decisive_element.text,
                                 options=options,
                                 contexts=self._build_llm_contexts(item),

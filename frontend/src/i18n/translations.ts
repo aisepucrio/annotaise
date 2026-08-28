@@ -438,7 +438,7 @@ export const translations: Record<Language, TranslationMap> = {
     'labelings.create.decision.selectLabel': 'Pergunta decisiva',
     'labelings.create.decision.selectPlaceholder': 'Selecione uma pergunta',
     'labelings.create.decision.confirm': 'Confirmar',
-    'labelings.create.decision.aiConfig.title': 'IA para desempate (BYOK)',
+    'labelings.create.decision.aiConfig.title': 'Bring Your Own Key',
     'labelings.create.decision.aiConfig.description':
       'Use sua própria chave de API para resolver desacordos entre anotadores por LLM. Sem uma chave configurada, o desempate continua usando os modelos locais padrão.',
     'labelings.create.decision.aiConfig.manualModeNotice':
@@ -474,6 +474,23 @@ export const translations: Record<Language, TranslationMap> = {
     'labelings.create.decision.aiConfig.unlink': 'Desvincular',
     'labelings.create.decision.aiConfig.unlinkSuccess': 'Chave desvinculada. Voltando ao desempate padrão.',
     'labelings.create.decision.aiConfig.unlinkError': 'Não foi possível desvincular a chave.',
+    'labelings.create.decision.aiConfig.storageTitle': 'Onde guardar a chave',
+    'labelings.create.decision.aiConfig.storageServer': 'Salvar no servidor',
+    
+    'labelings.create.decision.aiConfig.storageLocal': 'Usar só nesta sessão',
+    
+    'labelings.create.decision.aiConfig.localOverridesServerNotice':
+      'Esta rotulação também tem uma chave salva no servidor: nas suas respostas, a deste navegador tem prioridade.',
+    'labelings.create.decision.aiConfig.localStoredHint': 'Guardada neste navegador: {{provider}} (…{{hint}})',
+    'labelings.create.decision.aiConfig.localSave': 'Guardar neste navegador',
+    'labelings.create.decision.aiConfig.localSaveSuccess': 'Chave guardada neste navegador.',
+    'labelings.create.decision.aiConfig.localSaveError': 'Não foi possível guardar a chave neste navegador.',
+    'labelings.create.decision.aiConfig.localRemove': 'Remover deste navegador',
+    'labelings.create.decision.aiConfig.localRemoveSuccess': 'Chave removida deste navegador.',
+    'labelings.create.decision.aiConfig.localUnavailable':
+      'Este navegador não permite guardar dados localmente. Use a opção de salvar no servidor.',
+    'labelings.create.decision.aiConfig.localInvalidKey':
+      'A chave tem caracteres que não podem ser enviados no cabeçalho da requisição. Confira se ela foi colada inteira, sem quebra de linha.',
     'labelings.create.edit.title': 'Edição de informações',
     'labelings.create.edit.description': 'Edite os campos abaixo para mudar as informações relativas à sua rotulação.',
     'labelings.create.edit.loading': 'Carregando rotulação...',
@@ -1229,7 +1246,7 @@ export const translations: Record<Language, TranslationMap> = {
     'labelings.create.decision.selectLabel': 'Decisive question',
     'labelings.create.decision.selectPlaceholder': 'Select a question field',
     'labelings.create.decision.confirm': 'Confirm',
-    'labelings.create.decision.aiConfig.title': 'AI tie-break (BYOK)',
+    'labelings.create.decision.aiConfig.title': 'Bring Your Own Key',
     'labelings.create.decision.aiConfig.description':
       'Use your own API key to resolve annotator disagreements via LLM. Without a key configured, tie-breaking keeps using the default local models.',
     'labelings.create.decision.aiConfig.manualModeNotice':
@@ -1265,6 +1282,25 @@ export const translations: Record<Language, TranslationMap> = {
       'BYOK is currently unavailable: encryption is not configured on the server.',
     'labelings.create.decision.aiConfig.change': 'Change key',
     'labelings.create.decision.aiConfig.cancel': 'Cancel',
+    'labelings.create.decision.aiConfig.storageTitle': 'Where to keep the key',
+    'labelings.create.decision.aiConfig.storageServer': 'Save on the server',
+   
+    'labelings.create.decision.aiConfig.storageLocal': 'Use in this session only',
+   
+    'labelings.create.decision.aiConfig.localScopeNotice':
+      'The tie-break only uses this key on answers submitted from this browser. For other annotators\' answers, the task falls back to the key saved on the server (or to the default local models).',
+    'labelings.create.decision.aiConfig.localOverridesServerNotice':
+      'This annotation task also has a key saved on the server: on your answers, the one in this browser takes precedence.',
+    'labelings.create.decision.aiConfig.localStoredHint': 'Stored in this browser: {{provider}} (…{{hint}})',
+    'labelings.create.decision.aiConfig.localSave': 'Keep in this browser',
+    'labelings.create.decision.aiConfig.localSaveSuccess': 'Key kept in this browser.',
+    'labelings.create.decision.aiConfig.localSaveError': 'Unable to keep the key in this browser.',
+    'labelings.create.decision.aiConfig.localRemove': 'Remove from this browser',
+    'labelings.create.decision.aiConfig.localRemoveSuccess': 'Key removed from this browser.',
+    'labelings.create.decision.aiConfig.localUnavailable':
+      'This browser does not allow storing data locally. Use the save-on-the-server option instead.',
+    'labelings.create.decision.aiConfig.localInvalidKey':
+      'The key contains characters that cannot be sent in a request header. Check that it was pasted in full, with no line break.',
     'labelings.create.edit.title': 'Edit information',
     'labelings.create.edit.description': 'Edit the fields below to change information about your annotation task.',
     'labelings.create.edit.loading': 'Loading annotation task...',

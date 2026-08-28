@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 import os
 
+from corsheaders.defaults import default_headers
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -225,8 +227,11 @@ DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER)
 
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
 
-# Chave AES-256 (base64 de 32 bytes) usada para criptografar
+# Chave AES-256 (base64 de 32 bytes) que cifra as chaves de API em AICredential.
 AI_BYOK_ENCRYPTION_KEY = os.getenv("AI_BYOK_ENCRYPTION_KEY")
+
+# Esconde X-User-LLM-Key no dump de request.META dos relatórios de exceção.
+DEFAULT_EXCEPTION_REPORTER_FILTER = "annotaise.user_llm_key.UserLlmKeyReporterFilter"
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
@@ -268,6 +273,14 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 CORS_ALLOW_CREDENTIALS = True
+
+# Headers customizados do modo "usar a chave só nesta sessão": sem estarem
+# listados aqui o navegador barra o POST já no preflight.
+CORS_ALLOW_HEADERS = (
+    *default_headers,
+    "x-user-llm-key",
+    "x-user-llm-provider",
+)
 
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",

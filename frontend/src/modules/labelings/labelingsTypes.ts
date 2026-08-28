@@ -26,9 +26,8 @@ export type AICredentialPayload = {
   api_key?: string;
 };
 
-// Resposta de GET /labelings/{id}/ai-config/ — qual credencial esta rotulação
-// usa. owned_by_me é false quando a chave é de outro admin do laboratório:
-// dá para ver qual é, mas não para editá-la.
+// Resposta de GET /labelings/{id}/ai-config/. owned_by_me é false quando a
+// chave é de outro admin: dá para ver qual é, mas não para editá-la.
 export type LabelingAIConfig = {
   is_configured: boolean;
   credential_id: number | null;

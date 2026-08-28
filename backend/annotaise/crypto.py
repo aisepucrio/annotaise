@@ -1,6 +1,4 @@
-"""Criptografia (AES-256-GCM) usada pela labeling.LabelingAIConfig para guardar
-chaves de API.
-"""
+"""Criptografia (AES-256-GCM) das chaves de API guardadas em labeling.AICredential."""
 
 import base64
 import os
