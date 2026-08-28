@@ -135,19 +135,19 @@ class AnswerViewset(viewsets.ModelViewSet):
         return contexts
 
     def _run_llm_tiebreak(self, *, labeling, question_text, options, contexts):
-        """Roda o desempate por LLM: usa o provedor BYOK da rotulação se
+        """Usa o provedor escolhido da rotulação se
         configurado, senão cai no comportamento padrão (Ollama local).
 
         A chave descriptografada só existe como variável local, pelo tempo
         da chamada ao provedor — nunca é logada nem persistida fora do
         campo criptografado.
         """
-        ai_config = getattr(labeling, "ai_config", None)
-        if ai_config is not None:
+        credential = labeling.ai_credential
+        if credential is not None:
             try:
-                api_key = decrypt_secret(ai_config.encrypted_api_key)
+                api_key = decrypt_secret(credential.encrypted_api_key)
                 return run_llm_tiebreak_decision_byok(
-                    provider=ai_config.provider,
+                    provider=credential.provider,
                     api_key=api_key,
                     labeling_guide=labeling.guide,
                     question_text=question_text,

@@ -2,12 +2,11 @@
 
 import Image from 'next/image'; // mantem para o LOGO
 import SidebarItem from './sidebar_item';
-import { User, FolderKanban, Tags, LogOut, PanelLeftClose, PanelLeftOpen, BookOpen } from 'lucide-react';
+import { User, FolderKanban, Tags, LogOut, PanelLeftClose, PanelLeftOpen, BookOpen, Settings } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { AuthActions } from '@/lib/authClient';
 import { useIsAdmin } from '@/lib/AdminContext';
 import { BookmarkPlus } from 'lucide-react';
-import LanguageToggle from '@/components/LanguageToggle';
 import { useTranslations } from '@/i18n/use-translations';
 
 interface SidebarProps {
@@ -146,6 +145,14 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
               collapsed={!isOpen}
             />
           ) : null}
+          <SidebarItem
+            icon={<Settings size={24} />}
+            label={t('sidebar.settings')}
+            href="/settings"
+            alias="/settings"
+            hover_color="blue"
+            collapsed={!isOpen}
+          />
           <button type="button" className="text-sm text-red-400 mt-auto w-full space-y-1" onClick={handleLogout}>
             <SidebarItem
               icon={<LogOut size={24} />}
@@ -156,14 +163,6 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
               collapsed={!isOpen}
             />
           </button>
-
-          <div className={`${isOpen ? 'pl-6 pt-6' : 'pt-6'}`}>
-            <div className=" w-full bg-gray-300 h-0.5 rounded-2xl" />
-          </div>
-
-          <div className={` ${isOpen ? 'pl-6' : 'flex justify-center'}`}>
-            <LanguageToggle collapsed={!isOpen} />
-          </div>
         </div>
       </aside>
     </div>

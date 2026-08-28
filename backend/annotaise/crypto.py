@@ -1,9 +1,5 @@
-"""Criptografia simétrica (AES-256-GCM) para segredos armazenados no banco.
-
-Usada pela configuração BYOK de IA (labeling.LabelingAIConfig) para guardar
-chaves de API de terceiros. AI_BYOK_ENCRYPTION_KEY não tem fallback: se
-ausente/inválida, encrypt_secret/decrypt_secret falham alto em vez de usar
-uma chave conhecida, já que o segredo protegido aqui é de billing do admin.
+"""Criptografia (AES-256-GCM) usada pela labeling.LabelingAIConfig para guardar
+chaves de API.
 """
 
 import base64

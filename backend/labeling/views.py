@@ -1,10 +1,10 @@
-from .models import Labeling, LabelingMembership, LabelingSection, LabelingElement, MultipleChoiceItem, QuestionRange, LabelingAIConfig
+from .models import Labeling, LabelingMembership, LabelingSection, LabelingElement, MultipleChoiceItem, QuestionRange, AICredential
 from .serializers import (LabelingSerializer, LabelingMembershipSerializer,
 LabelingSectionsBulkCreateSerializer, LabelingSectionSerializer, LabelingDashboardSerializer, LabelingMembershipDashboardSerializer, LabelingAgreementSummarySerializer,
-LabelingAIConfigWriteSerializer, serialize_labeling_ai_config)
+AICredentialSerializer, LabelingAICredentialLinkSerializer, serialize_labeling_ai_config)
 from project.models import ProjectMembership
 from user.permissions import IsAdminAccount
-from .permissions import CanEditLabelingsInProjectPermission, IsLabelingOwnerPermission
+from .permissions import CanEditLabelingsInProjectPermission, IsLabelingOwnerPermission, IsAICredentialOwnerPermission
 from item.models import Item
 from user.models import UserGroup
 from .serializers import LabelingElementSerializer
@@ -173,35 +173,29 @@ class LabelingViewSet(viewsets.ModelViewSet):
 
     @action(methods=['get', 'post', 'delete'], detail=True, url_path='ai-config')
     def ai_config(self, request, pk=None):
-        """Configuração BYOK de IA (desempate por LLM) desta rotulação.
+        """Qual credencial de IA esta rotulação usa no desempate por LLM.
 
-        GET nunca retorna a chave, nem seu ciphertext — só provedor e um
-        indicador de que já está configurada. POST substitui a configuração
-        inteira (não há "patch parcial" de chave). DELETE volta a rotulação
-        para o comportamento padrão (Ollama local).
+        POST recebe só o id de uma credencial já cadastrada (o segredo nunca
+        passa por aqui — ele vive em /ai-credentials/). DELETE desvincula e a
+        rotulação volta ao Ollama local, sem apagar a credencial em si, que
+        pode estar em uso por outras rotulações.
         """
         labeling = self.get_object()
 
         if request.method == 'GET':
-            config = getattr(labeling, 'ai_config', None)
-            return Response(serialize_labeling_ai_config(config))
+            return Response(serialize_labeling_ai_config(labeling, requesting_user=request.user))
 
         if request.method == 'POST':
-            serializer = LabelingAIConfigWriteSerializer(data=request.data)
+            serializer = LabelingAICredentialLinkSerializer(
+                data=request.data, requesting_user=request.user
+            )
             serializer.is_valid(raise_exception=True)
-            try:
-                config = serializer.save(labeling=labeling)
-            except ImproperlyConfigured:
-                return Response(
-                    {
-                        'detail': 'BYOK indisponível: criptografia não configurada no servidor.',
-                        'code': 'BYOK_ENCRYPTION_UNAVAILABLE',
-                    },
-                    status=503,
-                )
-            return Response(serialize_labeling_ai_config(config))
+            labeling.ai_credential = serializer.validated_data['credential']
+            labeling.save(update_fields=['ai_credential'])
+            return Response(serialize_labeling_ai_config(labeling, requesting_user=request.user))
 
-        LabelingAIConfig.objects.filter(labeling=labeling).delete()
+        labeling.ai_credential = None
+        labeling.save(update_fields=['ai_credential'])
         return Response(status=204)
 
     def _user_can_answer_labeling(self, labeling, user, user_group_names):
@@ -823,3 +817,39 @@ class CreateReadLabelingStructureView(APIView):
 
         return Response(out, status=status.HTTP_200_OK)
         
+
+
+class AICredentialViewSet(viewsets.ModelViewSet):
+    """Biblioteca de chaves de IA do usuário logado.
+
+    O queryset já nasce filtrado por owner, então listar/editar/remover só
+    alcança as próprias credenciais. IsAICredentialOwnerPermission é a segunda
+    trava, para o caso de alguém afrouxar o queryset um dia.
+
+    Remover uma credencial não quebra nada de imediato: Labeling.ai_credential
+    é SET_NULL, então as rotulações que a usavam voltam ao Ollama local.
+    """
+
+    serializer_class = AICredentialSerializer
+    permission_classes = [IsAdminAccount, IsAICredentialOwnerPermission]
+    http_method_names = ['get', 'post', 'patch', 'delete']
+
+    def get_queryset(self):
+        return AICredential.objects.filter(owner=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+
+    def handle_exception(self, exc):
+        # Sem AI_BYOK_ENCRYPTION_KEY no servidor não dá para cifrar a chave.
+        # Vira 503 com código próprio em vez de 500 genérico, para a tela poder
+        # dizer que o problema é de configuração do servidor, não da chave.
+        if isinstance(exc, ImproperlyConfigured):
+            return Response(
+                {
+                    'detail': 'Indisponível: criptografia não configurada no servidor.',
+                    'code': 'BYOK_ENCRYPTION_UNAVAILABLE',
+                },
+                status=503,
+            )
+        return super().handle_exception(exc)

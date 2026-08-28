@@ -53,17 +53,25 @@ class CanEditLabelingsInProjectPermission(BasePermission):
 
 
 class IsLabelingOwnerPermission(BasePermission):
-    """Restringe a ação a donos do projeto da rotulação.
 
-    Mais estrita que CanEditLabelingsInProjectPermission (que também libera
-    'contributor'), usada especificamente para gerenciar a configuração BYOK
-    de IA, já que essa credencial gera cobrança real na conta do admin.
-    """
-
-    message = "Somente o dono do projeto pode gerenciar a configuração de IA (BYOK) desta rotulação."
+    message = "Somente o dono do projeto pode gerenciar a configuração de IA desta rotulação."
 
     def has_object_permission(self, request, view, obj):
         labeling = obj if isinstance(obj, Labeling) else getattr(obj, "labeling", None)
         if not labeling:
             return False
         return labeling.project.memberships.filter(user=request.user, role="owner").exists()
+
+
+class IsAICredentialOwnerPermission(BasePermission):
+    """A biblioteca de chaves é privada: cada um só mexe nas próprias.
+
+    Vale para ler, editar e remover. Uma rotulação pode até estar apontando
+    para a credencial de outro admin (o lab compartilha contas), mas quem não
+    é dono não consegue trocar a chave nem descobrir mais do que o key_hint.
+    """
+
+    message = "Você só pode gerenciar as credenciais de IA que você mesmo cadastrou."
+
+    def has_object_permission(self, request, view, obj):
+        return obj.owner_id == request.user.id

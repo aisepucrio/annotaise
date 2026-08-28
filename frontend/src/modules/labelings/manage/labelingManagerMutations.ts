@@ -8,14 +8,17 @@ import {
   deleteLabelingMembership,
   addItemsCsvToLabeling,
   exportImportedLabelingCsv,
-  saveLabelingAIConfig,
-  deleteLabelingAIConfig,
+  createAICredential,
+  updateAICredential,
+  deleteAICredential,
+  linkLabelingAICredential,
+  unlinkLabelingAICredential,
 } from '../labelingService';
 import type {
   LabelingPayload,
   SectionDTO,
   LabelingMembershipRole,
-  LabelingAIConfigPayload,
+  AICredentialPayload,
 } from '@/modules/labelings/labelingsTypes';
 
 // Utilizada para deletar labeling
@@ -123,26 +126,68 @@ export function useDeleteMembershipMutation() {
   });
 }
 
-// Utilizada para salvar a configuração BYOK de IA (aba Decisão)
-export function useSaveLabelingAIConfigMutation() {
+// Utilizada para cadastrar uma chave nova na biblioteca do usuário
+export function useCreateAICredentialMutation() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, payload }: { id: number; payload: LabelingAIConfigPayload }) => saveLabelingAIConfig(id, payload),
-    onSuccess: (_data, { id }) => {
-      qc.invalidateQueries({ queryKey: ['labelings', id, 'ai-config'] });
+    mutationFn: (payload: AICredentialPayload) => createAICredential(payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['ai-credentials'] });
     },
   });
 }
 
-// Utilizada para remover a configuração BYOK de IA (volta ao desempate padrão)
-export function useDeleteLabelingAIConfigMutation() {
+// Utilizada para editar uma chave da biblioteca. Invalida também os ai-config
+// dos labelings, porque o nome/provedor exibidos vêm da credencial.
+export function useUpdateAICredentialMutation() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: number) => deleteLabelingAIConfig(id),
+    mutationFn: ({ id, payload }: { id: number; payload: AICredentialPayload }) => updateAICredential(id, payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['ai-credentials'] });
+      qc.invalidateQueries({ queryKey: ['labelings'] });
+    },
+  });
+}
+
+// Utilizada para remover uma chave da biblioteca (labelings voltam ao Ollama)
+export function useDeleteAICredentialMutation() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => deleteAICredential(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['ai-credentials'] });
+      qc.invalidateQueries({ queryKey: ['labelings'] });
+    },
+  });
+}
+
+// Utilizada para vincular uma credencial já cadastrada à rotulação
+export function useLinkLabelingAICredentialMutation() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, credentialId }: { id: number; credentialId: number }) =>
+      linkLabelingAICredential(id, credentialId),
+    onSuccess: (_data, { id }) => {
+      qc.invalidateQueries({ queryKey: ['labelings', id, 'ai-config'] });
+      qc.invalidateQueries({ queryKey: ['ai-credentials'] });
+    },
+  });
+}
+
+// Utilizada para desvincular a credencial (volta ao desempate padrão)
+export function useUnlinkLabelingAICredentialMutation() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => unlinkLabelingAICredential(id),
     onSuccess: (_data, id) => {
       qc.invalidateQueries({ queryKey: ['labelings', id, 'ai-config'] });
+      qc.invalidateQueries({ queryKey: ['ai-credentials'] });
     },
   });
 }

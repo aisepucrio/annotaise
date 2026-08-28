@@ -1,4 +1,4 @@
-from .models import Labeling, LabelingSection, LabelingElement, MultipleChoiceItem, QuestionRange, LabelingMembership, LabelingAIConfig
+from .models import Labeling, LabelingSection, LabelingElement, MultipleChoiceItem, QuestionRange, LabelingMembership, AICredential
 
 
 import uuid
@@ -410,36 +410,87 @@ class LabelingAgreementSummarySerializer(serializers.Serializer):
     questions = LabelingAgreementQuestionSerializer(many=True)
 
 
-class LabelingAIConfigWriteSerializer(serializers.Serializer):
-    """Recebe provedor + chave em texto puro e persiste só o ciphertext.
+class AICredentialSerializer(serializers.ModelSerializer):
+    """Biblioteca de chaves do usuário.
 
-    Intencionalmente um Serializer simples (não ModelSerializer): o campo de
-    chave nunca deve existir como campo de leitura, nem mesmo write_only,
-    para não correr o risco de um dia virar parte de uma resposta.
+    api_key é write_only e não tem contrapartida de leitura: o que sai é só o
+    key_hint (4 últimos caracteres) e o provedor. No update a chave é opcional,
+    para permitir renomear a credencial sem precisar recolar o segredo.
     """
 
-    provider = serializers.ChoiceField(choices=LabelingAIConfig.Provider.choices)
-    api_key = serializers.CharField(write_only=True, trim_whitespace=True, min_length=8, max_length=4096)
+    api_key = serializers.CharField(
+        write_only=True, trim_whitespace=True, min_length=8, max_length=4096, required=False
+    )
+    labelings_count = serializers.SerializerMethodField()
 
-    def save(self, *, labeling):
-        api_key = self.validated_data["api_key"]
-        config, _ = LabelingAIConfig.objects.update_or_create(
-            labeling=labeling,
-            defaults={
-                "provider": self.validated_data["provider"],
-                "encrypted_api_key": encrypt_secret(api_key),
-                "key_hint": api_key[-4:] if len(api_key) >= 4 else "",
-            },
-        )
-        return config
+    class Meta:
+        model = AICredential
+        fields = ['id', 'name', 'provider', 'api_key', 'key_hint', 'labelings_count', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'key_hint', 'created_at', 'updated_at']
+
+    def get_labelings_count(self, obj):
+        # Quantas rotulações quebram se esta credencial sumir — a tela usa isso
+        # para avisar antes de remover. A biblioteca de um usuário é pequena,
+        # então a contagem por linha não justifica anotar o queryset.
+        return obj.labelings.count()
+
+    def validate(self, attrs):
+        if self.instance is None and not attrs.get('api_key'):
+            raise serializers.ValidationError({'api_key': 'Informe a chave de API.'})
+        return attrs
+
+    def _apply_api_key(self, validated_data):
+        api_key = validated_data.pop('api_key', None)
+        if api_key:
+            validated_data['encrypted_api_key'] = encrypt_secret(api_key)
+            validated_data['key_hint'] = api_key[-4:]
+        return validated_data
+
+    def create(self, validated_data):
+        return super().create(self._apply_api_key(validated_data))
+
+    def update(self, instance, validated_data):
+        return super().update(instance, self._apply_api_key(validated_data))
 
 
-def serialize_labeling_ai_config(config):
-    if config is None:
-        return {"provider": None, "is_configured": False, "key_hint": None, "updated_at": None}
+class LabelingAICredentialLinkSerializer(serializers.Serializer):
+    """Vincula uma credencial à rotulação (ou desvincula, com null).
+
+    O queryset do campo é restrito às credenciais de quem está pedindo, então
+    apontar a rotulação para a chave de outro admin é rejeitado pelo próprio
+    DRF — ninguém consegue gastar da conta alheia mesmo conhecendo o id.
+    """
+
+    credential = serializers.PrimaryKeyRelatedField(
+        queryset=AICredential.objects.none(), allow_null=True
+    )
+
+    def __init__(self, *args, requesting_user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if requesting_user is not None:
+            self.fields['credential'].queryset = AICredential.objects.filter(owner=requesting_user)
+
+
+def serialize_labeling_ai_config(labeling, requesting_user=None):
+    credential = labeling.ai_credential
+    if credential is None:
+        return {
+            'is_configured': False,
+            'credential_id': None,
+            'name': None,
+            'provider': None,
+            'key_hint': None,
+            'owned_by_me': False,
+            'updated_at': None,
+        }
     return {
-        "provider": config.provider,
-        "is_configured": True,
-        "key_hint": config.key_hint or None,
-        "updated_at": config.updated_at,
+        'is_configured': True,
+        'credential_id': credential.id,
+        'name': credential.name,
+        'provider': credential.provider,
+        'key_hint': credential.key_hint or None,
+        # Num lab a rotulação pode estar usando a chave de outro admin: a tela
+        # mostra qual é, mas o seletor só oferece as do próprio usuário.
+        'owned_by_me': requesting_user is not None and credential.owner_id == requesting_user.id,
+        'updated_at': credential.updated_at,
     }

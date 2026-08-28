@@ -17,7 +17,8 @@ import type {
   AnswerResponse,
   BackgroundAnswerResponse,
   LabelingAIConfig,
-  LabelingAIConfigPayload,
+  AICredential,
+  AICredentialPayload,
 } from './labelingsTypes';
 
 // Funções relacionadas a Labelings
@@ -63,23 +64,46 @@ export async function deleteLabeling(id: number): Promise<void> {
   await api.delete(`/labelings/${id}/`);
 }
 
-// Busca a configuração BYOK de IA da rotulação (nunca retorna a chave em si)
+// Biblioteca de chaves de IA do usuário logado (o backend filtra por dono)
+export async function fetchAICredentials(): Promise<AICredential[]> {
+  const { data } = await api.get<AICredential[]>('/ai-credentials/');
+  return data;
+}
+
+// Cadastra uma chave nova na biblioteca do usuário
+export async function createAICredential(payload: AICredentialPayload): Promise<AICredential> {
+  const { data } = await api.post<AICredential>('/ai-credentials/', payload);
+  return data;
+}
+
+// Atualiza uma chave existente. Sem api_key no payload, só renomeia/troca o
+// provedor — e todas as rotulações vinculadas passam a usar o novo valor.
+export async function updateAICredential(id: number, payload: AICredentialPayload): Promise<AICredential> {
+  const { data } = await api.patch<AICredential>(`/ai-credentials/${id}/`, payload);
+  return data;
+}
+
+// Remove a chave da biblioteca. As rotulações vinculadas voltam ao Ollama.
+export async function deleteAICredential(id: number): Promise<void> {
+  await api.delete(`/ai-credentials/${id}/`);
+}
+
+// Qual credencial esta rotulação usa no desempate (nunca retorna a chave)
 export async function fetchLabelingAIConfig(id: number): Promise<LabelingAIConfig> {
   const { data } = await api.get<LabelingAIConfig>(`/labelings/${id}/ai-config/`);
   return data;
 }
 
-// Salva (cria ou substitui) a configuração BYOK de IA da rotulação
-export async function saveLabelingAIConfig(
-  id: number,
-  payload: LabelingAIConfigPayload
-): Promise<LabelingAIConfig> {
-  const { data } = await api.post<LabelingAIConfig>(`/labelings/${id}/ai-config/`, payload);
+// Vincula uma credencial já cadastrada à rotulação
+export async function linkLabelingAICredential(id: number, credentialId: number): Promise<LabelingAIConfig> {
+  const { data } = await api.post<LabelingAIConfig>(`/labelings/${id}/ai-config/`, {
+    credential: credentialId,
+  });
   return data;
 }
 
-// Remove a configuração BYOK de IA, voltando ao desempate padrão
-export async function deleteLabelingAIConfig(id: number): Promise<void> {
+// Desvincula, voltando a rotulação ao desempate padrão (Ollama local)
+export async function unlinkLabelingAICredential(id: number): Promise<void> {
   await api.delete(`/labelings/${id}/ai-config/`);
 }
 

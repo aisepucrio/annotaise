@@ -225,9 +225,7 @@ DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER)
 
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
 
-# Chave AES-256 (base64 de 32 bytes) usada para criptografar segredos BYOK
-# (chaves de API de IA trazidas pelo admin). Sem fallback: ausente/inválida
-# derruba apenas as operações de BYOK (ver annotaise/crypto.py), não o boot.
+# Chave AES-256 (base64 de 32 bytes) usada para criptografar
 AI_BYOK_ENCRYPTION_KEY = os.getenv("AI_BYOK_ENCRYPTION_KEY")
 
 # Static files (CSS, JavaScript, Images)

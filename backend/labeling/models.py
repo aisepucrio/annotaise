@@ -53,6 +53,21 @@ class Labeling(models.Model):
 
     decisive_question = models.ForeignKey("LabelingElement", on_delete=models.SET_NULL, null=True, blank=True)
 
+    # Credencial de IA usada no desempate por LLM. Nula = comportamento padrão
+    # (Ollama local). SET_NULL em vez de PROTECT: se uma chave vazar, o admin
+    # precisa conseguir apagá-la na hora, e as rotulações caem de volta para o
+    # Ollama sozinhas em vez de bloquearem a exclusão.
+    # Fica fora de LabelingSerializer de propósito: só a action 'ai_config'
+    # (restrita a dono do projeto) pode vincular, senão um 'contributor'
+    # conseguiria apontar a rotulação para uma chave que gera cobrança.
+    ai_credential = models.ForeignKey(
+        "AICredential",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="labelings",
+    )
+
     class Meta:
         ordering = ["-created_at", "title"]
 
@@ -248,11 +263,13 @@ class LabelingMembership(models.Model):
         return f"{self.user} {self.labeling} {self.role} {self.items_done}"
 
 
-class LabelingAIConfig(models.Model):
-    """Configuração BYOK de IA para desempate por LLM de uma rotulação.
+class AICredential(models.Model):
+    """Chave de API de IA cadastrada uma vez e reutilizada por N rotulações.
 
-    Mantida fora do LabelingSerializer (relação O2O separada) para que a
-    chave criptografada nunca circule em listagens/serializações comuns.
+    O escopo é o usuário: cada admin monta sua própria biblioteca de chaves e
+    só enxerga as dele na hora de vincular a uma rotulação. Guardar o segredo
+    uma vez só é o ponto do modelo — revogou/trocou a chave, edita aqui e todas
+    as rotulações que apontam para esta credencial passam a usar a nova.
     """
 
     class Provider(models.TextChoices):
@@ -260,14 +277,23 @@ class LabelingAIConfig(models.Model):
         ANTHROPIC = "anthropic", "Anthropic"
         GEMINI = "gemini", "Gemini"
 
-    labeling = models.OneToOneField(Labeling, on_delete=models.CASCADE, related_name="ai_config")
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="ai_credentials"
+    )
+    # Nome dado pelo dono ("Minha conta OpenAI") para distinguir credenciais na
+    # hora de escolher, já que a chave em si nunca é exibida.
+    name = models.CharField(max_length=80)
     provider = models.CharField(max_length=16, choices=Provider.choices)
-    # base64(nonce || AES-256-GCM ciphertext+tag) — ver annotaise/crypto.py
+    # base64(nonce || AES-256-GCM ciphertext+tag) —  annotaise/crypto.py
     encrypted_api_key = models.TextField()
-    # Últimos caracteres da chave, em texto puro, só para exibir "sk-...ab12" no frontend.
+    # Últimos caracteres da chave só para exibir no frontend.
     key_hint = models.CharField(max_length=8, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        unique_together = ("owner", "name")
+        ordering = ["name"]
+
     def __str__(self):
-        return f"{self.labeling} [{self.get_provider_display()}]"
+        return f"{self.name} [{self.get_provider_display()}]"

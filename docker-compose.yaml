@@ -30,6 +30,10 @@ services:
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
       OLLAMA_TIMEOUT_SECONDS: ${OLLAMA_TIMEOUT_SECONDS:-60}
       OLLAMA_IMAGE_CONTEXT_MODEL: ${OLLAMA_IMAGE_CONTEXT_MODEL:-llava:7b}
+      # Sem esta variável o cadastro de chaves de IA responde 503 (o resto do
+      # sistema funciona normal). Trocá-la torna as chaves já salvas ilegíveis.
+      AI_BYOK_ENCRYPTION_KEY: ${AI_BYOK_ENCRYPTION_KEY}
+      BYOK_LLM_TIMEOUT_SECONDS: ${BYOK_LLM_TIMEOUT_SECONDS:-60}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
@@ -49,6 +53,16 @@ services:
     environment:
       DEBUG: ${DEBUG}
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_BASE_URL}
+      # O projeto fica no sistema de arquivos do Windows e o container é Linux:
+      # eventos de inotify não atravessam essa fronteira, então o hot reload não
+      # dispara ao salvar. Polling faz o watcher conferir os arquivos por conta
+      # própria. Custa um pouco de CPU; é o preço de editar do lado do Windows.
+      WATCHPACK_POLLING: "true"
+      CHOKIDAR_USEPOLLING: "true"
+    # O watcher do Turbopack quebra neste bind mount ("watch error ... NotFound")
+    # e o hot reload nunca dispara. O webpack respeita WATCHPACK_POLLING acima,
+    # então em dev usamos ele. Compila mais devagar, mas recarrega ao salvar.
+    command: sh -c "npm install --no-audit --no-fund && npx next dev"
     restart: unless-stopped
       
   db:

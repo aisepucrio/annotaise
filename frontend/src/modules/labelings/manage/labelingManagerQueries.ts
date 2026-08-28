@@ -10,6 +10,7 @@ import {
   fetchLabelingElements,
   fetchLabelingAgreementSummary,
   fetchLabelingAIConfig,
+  fetchAICredentials,
 } from '../labelingService';
 import { fetchProject } from '@/modules/projects/projectService';
 import { fetchUsers } from '@/modules/user/userService';
@@ -162,7 +163,7 @@ export function useLabelingDecisionQuestionsQuery(labelingId: number) {
   });
 }
 
-// Utilizada para buscar a configuração BYOK de IA do labeling (aba Decisão)
+// Utilizada para saber qual credencial de IA o labeling usa (aba Decisão)
 export function useLabelingAIConfigQuery(labelingId: number, shouldFetch = true) {
   const enabled = !Number.isNaN(labelingId) && shouldFetch;
 
@@ -170,5 +171,15 @@ export function useLabelingAIConfigQuery(labelingId: number, shouldFetch = true)
     queryKey: ['labelings', labelingId, 'ai-config'],
     enabled,
     queryFn: () => fetchLabelingAIConfig(labelingId),
+  });
+}
+
+// Utilizada para listar a biblioteca de chaves de IA do usuário logado.
+// Não depende do labeling: a mesma chave serve para várias rotulações.
+export function useAICredentialsQuery(shouldFetch = true) {
+  return useQuery({
+    queryKey: ['ai-credentials'],
+    enabled: shouldFetch,
+    queryFn: fetchAICredentials,
   });
 }
