@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useRef, useEffect, useState, type ReactNode } from 'react';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-
+import hasGroups from '@/app/(inside)/labelings_manage/[labeling_id]/groups/page';
 import LabelingHeader from './LabelingHeader';
 import EditLabelingModal from './EditLabelingModal';
 import AddItemsCsvModal from './AddItemsCsvModal';
@@ -62,6 +62,11 @@ export default function LabelingsManageLayout({ children }: LayoutProps) {
   const headerQuery = useLabelingHeaderQuery(labelingId);
   const labeling = headerQuery.data?.labeling;
   const project = headerQuery.data?.project;
+  
+  const ANY_GROUP_KEY = 'any';
+  const quota = labeling?.items_per_group ?? {}; 
+  const hasGroups = Object.keys(quota).some((name) => name !== ANY_GROUP_KEY); 
+
 
   const deleteMutation = useDeleteLabelingMutation();
   const updateMutation = useUpdateLabelingMutation();
@@ -161,7 +166,7 @@ export default function LabelingsManageLayout({ children }: LayoutProps) {
     const base = [
       { key: 'form', label: t('labelings.create.tabs.form') },
       { key: 'assign', label: t('labelings.create.tabs.assign') },
-      { key: 'groups', label: t('labelings.create.tabs.assignGroups') },
+      ...(hasGroups ? [{ key: 'groups', label: t('labelings.create.tabs.groups') }] : []),
       { key: 'answers', label: t('labelings.create.tabs.answers') },
       { key: 'guide', label: t('labelings.create.tabs.guide') },
     ];

@@ -3,7 +3,6 @@
 import { useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { Lock, Users } from 'lucide-react';
-
 import { useTranslations } from '@/i18n/use-translations';
 import { useLabelingHeaderQuery } from '@/modules/labelings/manage/labelingManagerQueries';
 
@@ -22,9 +21,14 @@ export default function AssignGroupsPage() {
   const labeling = headerQuery.data?.labeling;
   const usersPerItem = labeling?.users_per_item ?? 0;
 
-  const quota = labeling?.items_per_group ?? {};
+  const quota = labeling?.items_per_group ?? {}; 
   const namedRows = Object.entries(quota).filter(([name]) => name !== ANY_GROUP_KEY);
-  const anyRemaining = Number(quota[ANY_GROUP_KEY] ?? 0);
+  const hasGroups = Object.keys(quota).some((name) => name !== ANY_GROUP_KEY); 
+  //function created for checking if annotation task has groups or not. 
+  const anyRemaining = Number(quota[ANY_GROUP_KEY] ?? 0); 
+
+  
+  
 
   return (
     <div className="w-[80%] mx-auto mt-6 space-y-6">
