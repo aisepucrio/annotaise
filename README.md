@@ -4,7 +4,7 @@
 
 **Repository:** [https://github.com/aisepucrio/annotaise](https://github.com/aisepucrio/annotaise)
 
-**Accepted article:** _AnnotAISE: Web-Based Data Annotation Platform For Software Engineering Research_ — SBES-Tools 2026. DOI: [https://doi.org/10.5281/zenodo.20388574](https://doi.org/10.5281/zenodo.20388574)
+**Accepted article:** _AnnotAISE: Web-Based Data Annotation Platform For Software Engineering Research_ — SBES-Tools 2026. DOI: [https://zenodo.org/records/21462965](https://doi.org/10.5281/zenodo.20388574)
 
 ---
 
@@ -20,6 +20,7 @@
 - [Verify the Installation](#verify-the-installation)
 - [Basic Usage Example](#basic-usage-example)
 - [Seed](#seed)
+- [Uninstalling](#uninstalling)
 - [Ethical and Legal Statements](#ethical-and-legal-statements)
 
 ---
@@ -80,7 +81,7 @@ annotaise/
 
 Before using **AnnotAISE**, ensure you have the following prerequisites installed:
 
-- **Python 3.12+** — required for running the Django backend.
+- **Python 3.13+** — required for running the Django backend.
 - **Node.js 20+** — required for the Next.js frontend.
 - **PostgreSQL 14+** — database used by the backend.
 - **Docker and Docker Compose v2** _(recommended)_ — to run all services easily in containers.
@@ -101,7 +102,7 @@ AnnotAISE runs on commodity hardware. The minimum recommended configuration is:
 ---
 
 ## Installation
-
+> **Reproducibility note:** the steps below use the GitHub repository for convenience. To reproduce the exact artifact evaluated for this paper, download and extract the archived source from the Zenodo record instead of cloning GitHub, then follow the same steps starting from Step 2 inside the extracted folder.
 ### 1. Docker Desktop
 
 - **Windows**:
@@ -177,40 +178,21 @@ git clone https://github.com/aisepucrio/annotaise.git
 cd annotaise
 ```
 
-- **Step 2 - Create the .env file**
-  Create a file named .env in the project root with:
+- **Step 2 — Configure environment variables**
 
 ```bash
-DJANGO_DB_NAME=postgres
-DJANGO_DB_USER=postgres
-DJANGO_DB_PASS=postgres
-DJANGO_SUPERUSER_USER=admin
-DJANGO_SUPERUSER_PASSWORD=123
-DJANGO_SUPERUSER_EMAIL=a@g.com
-EMAIL_HOST=localhost
-EMAIL_PORT=587
-EMAIL_HOST_USER=user@example.com
-EMAIL_HOST_PASSWORD=password
-DEFAULT_FROM_EMAIL=Example App <noreply@example.com>
-FRONTEND_URL=http://localhost:3000
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
-DEBUG=true
-DEBUG_NEXT=true
-
+cp .env.example .env
 ```
 
-- **Step 3 - Start containers(recomended)**
+Open `.env` and adjust the values if needed. This file defines the database credentials and the **superuser account** (`DJANGO_SUPERUSER_EMAIL` / `DJANGO_SUPERUSER_PASSWORD`) that will be created automatically the first time the containers start. Keep note of the superuser email — you will use it to log in and in the [Basic Usage Example](#basic-usage-example).
+
+- **Step 3 — Build and start containers**
 
 ```bash
 docker compose up --build
 ```
 
-- **Step 4 - Apply migrations and create a superuser**
-
-```bash
-docker compose exec api python manage.py migrate
-docker compose exec api python manage.py createsuperuser
-```
+On first startup, the `api` service automatically applies database migrations and creates the superuser defined in `.env` (you'll see both actions in the startup logs). No manual `migrate` or `createsuperuser` step is needed.
 
 ### Run AnnotAISE
 
@@ -225,6 +207,7 @@ docker compose start
 
   ```bash
   python -m venv .venv && source .venv/bin/activate
+  pip install uv (if uv is not already installed)
   uv sync
   python manage.py migrate
   python manage.py runserver 0.0.0.0:8000
@@ -317,7 +300,15 @@ Use this seed to create an extensive test case for frontend modules.
 ```bash
 docker compose exec api uv run manage.py seed_context_question_test
 ```
+## Uninstalling
 
+To stop AnnotAISE and remove the Docker resources created during installation:
+
+```bash
+docker compose down            # stop and remove containers and the default network
+docker compose down -v         # also remove the PostgreSQL data volume (destroys all data)
+docker image rm annotaise-api annotaise-frontend   # optional: remove the built images
+```
 ## Ethical and Legal Statements
 
 - **Questionnaire data is anonymized.** The responses from the questionnaire applied during the evaluation of the article were anonymized. No personally identifiable information of the participants are stored or distributed with this artifact.
