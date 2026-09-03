@@ -1,4 +1,4 @@
-from item.models import ItemMembership
+from .querysets import  UserQuerySet
 from annotaise.settings import FRONTEND_URL
 from.utils import send_invitation_email
 
@@ -86,22 +86,22 @@ class AdminUserViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action in ("create", "update", "partial_update"):
             return AdminUserWriteSerializer
-        elif self.action == "dashboard":
+        elif self.action == "user_dashboard":
             return AdminUserReadSerializer
         return AdminUserReadSerializer
 
     @action(detail=False, methods=["get"], url_path="dashboard", pagination_class=StandardCursorPagination)
     def user_dashboard(self, request, pk=None):
         # Cada subquery é executada de forma independente e otimizada
-        
-        pending_items_sq = ItemMembership.objects.filter(
+        #Parte comentada vai embora, pois sua lógica está em querysets.py
+        '''pending_items_sq = ItemMembership.objects.filter(
             item__labeling__memberships__user_id=OuterRef('id'),
             user_id=OuterRef('id')  # memberships do próprio usuário
         ).values('user_id').annotate(
             count=Count('id', distinct=True)
-        ).values('count')
+        ).values('count')'''
         
-        qs = self.get_queryset().annotate(
+        '''qs = self.get_queryset().annotate(
             projects_count=Count("project_memberships", distinct=True),
             labelings_total=Count("labeling_memberships", distinct=True),
             answers_count=Count("answers_given", distinct=True),
@@ -109,8 +109,8 @@ class AdminUserViewSet(viewsets.ModelViewSet):
                 pending_items_sq,
                 output_field=IntegerField()
             )
-        )
-        
+        )'''
+        qs = self.get_queryset().annotate()
         qs = self.filter_queryset(qs)
         return paginated_response(self, qs)
             
@@ -133,8 +133,9 @@ class InvitationViewSet(viewsets.ModelViewSet):
         return [permission() for permission in permission_classes]
 
     def _create_or_get_pending_user(self, email: str, role: str):
-        normalized_email = (email or "").strip().lower()
-        existing_user = User.objects.filter(email__iexact=normalized_email).first()
+        #normalized_email = (email or "").strip().lower() 
+        user_email = UserQuerySet.user_email
+        existing_user = User.objects.user_email(email).first()
 
         if existing_user and existing_user.onboarding_status == User.OnboardingStatus.ACTIVE:
             return None, "active_exists"
@@ -150,7 +151,7 @@ class InvitationViewSet(viewsets.ModelViewSet):
         user_id = uuid.uuid4().hex
         user = User.objects.create(
             username=user_id,
-            email=normalized_email,
+            email=user_email,
             first_name="",
             last_name="",
             account_type=role,
