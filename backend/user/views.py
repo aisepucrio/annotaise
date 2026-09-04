@@ -22,6 +22,7 @@ from django.db import transaction
 
 from .models import Invitation, UserGroup, UserGroupMembership
 from .permissions import IsAdminAccount, IsMasterAdminAccount
+from user.services import create_invitation
 from .serializers import (
     AdminUserReadSerializer,
     AdminUserWriteSerializer,
@@ -312,42 +313,23 @@ class InvitationViewSet(viewsets.ModelViewSet):
         return Response({"projects": output}, status=200)
 
     def create(self, request, *args, **kwargs):
-        '''apos a criação do convite é enviado um email com o token para o email convidado'''
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        email = serializer.validated_data.get("email", None)
-        role = serializer.validated_data.get("role")
-        project_ids = serializer.validated_data.get("project_ids", [])
-        labeling_ids = serializer.validated_data.get("labeling_ids", [])
-        email_language = serializer.validated_data.get("email_language", "pt-BR")
+        result = create_invitation(
+            invited_by=request.user,
+            email=serializer.validated_data.get("email"),
+            role=serializer.validated_data.get("role"),
+            project_ids=serializer.validated_data.get("project_ids", []),
+            labeling_ids=serializer.validated_data.get("labeling_ids", []),
+            email_language=serializer.validated_data.get("email_language"), 
+        )
 
-        with transaction.atomic():
-            user, err = self._create_or_get_pending_user(email, role)
-            if err == "active_exists":
-                return Response(
-                    {"detail": "Usuário com esse email já existe.", "code": "EMAIL_ALREADY_EXISTS"},
-                    status=400,
-                )
-
-            resolved_labeling_ids, assignment_error = self._resolve_labeling_assignment_ids(
-                request_user=request.user,
-                project_ids=project_ids,
-                labeling_ids=labeling_ids,
-            )
-            if assignment_error is not None:
-                return assignment_error
-
-            self._assign_user_to_labelings(user, resolved_labeling_ids)
-
-            invitation = serializer.save(invited_by=request.user, user=user)
-        link = FRONTEND_URL + f"/accept-invitation/{invitation.token}?lang={email_language}"
-
-        send_invitation_email(invitation, link, language=email_language)
-
-        headers = self.get_success_headers(serializer.data)
-        return Response({"link": link, "invitation": serializer.data}, status=status.HTTP_201_CREATED, headers=headers)
+        invitation_serializer = self.get_serializer(result["invitation"])
+        headers = self.get_success_headers(invitation_serializer.data)
+        return Response({"link": result["link"], "invitation": invitation_serializer.data}, status=status.HTTP_201_CREATED, headers=headers,
+        )
 
     @action(detail=False, methods=["post"], url_path="accept/(?P<token>[^/.]+)")
     def accept_invitation(self, request, token=None):
