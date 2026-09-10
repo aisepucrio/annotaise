@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, UserManager
 from django.conf import settings
 from django.utils import timezone
 from django.core.exceptions import ValidationError
@@ -33,6 +33,8 @@ class CustomUser(AbstractUser):
         choices=OnboardingStatus.choices,
         default=OnboardingStatus.ACTIVE,
     )
+
+
 
     def save(self, *args, **kwargs):
         if self.is_superuser:

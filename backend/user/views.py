@@ -1,6 +1,5 @@
-from .querysets import  UserQuerySet
 from annotaise.settings import FRONTEND_URL
-from.utils import send_invitation_email
+#from.utils import send_invitation_email
 
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, permissions, status, viewsets
@@ -15,14 +14,15 @@ from django.contrib.auth import get_user_model
 from django.db.models import Count, F, Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.db.models import Count, OuterRef, Subquery, IntegerField
+#from django.db.models import Count, OuterRef, Subquery, IntegerField
 
 from django.db import connection, reset_queries
-from django.db import transaction
+#from django.db import transaction
 
 from .models import Invitation, UserGroup, UserGroupMembership
 from .permissions import IsAdminAccount, IsMasterAdminAccount
-from user.services import create_invitation
+from user.services.create_invitation import create_invitation
+from user.services.assignment_options import assignment_options
 from .serializers import (
     AdminUserReadSerializer,
     AdminUserWriteSerializer,
@@ -93,7 +93,7 @@ class AdminUserViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="dashboard", pagination_class=StandardCursorPagination)
     def user_dashboard(self, request, pk=None):
-        # Cada subquery é executada de forma independente e otimizada
+        #Cada subquery é executada de forma independente e otimizada
         #Parte comentada vai embora, pois sua lógica está em querysets.py
         '''pending_items_sq = ItemMembership.objects.filter(
             item__labeling__memberships__user_id=OuterRef('id'),
@@ -132,8 +132,10 @@ class InvitationViewSet(viewsets.ModelViewSet):
         else:
             permission_classes = self.permission_classes
         return [permission() for permission in permission_classes]
+    
+    #Tudo comentado vai para o services de create_invitation.py
 
-    def _create_or_get_pending_user(self, email: str, role: str):
+    '''def _create_or_get_pending_user(self, email: str, role: str):
         #normalized_email = (email or "").strip().lower() 
         user_email = UserQuerySet.user_email
         existing_user = User.objects.user_email(email).first()
@@ -274,43 +276,12 @@ class InvitationViewSet(viewsets.ModelViewSet):
 
             if membership.role == LabelingMembership.Role.VIEWER:
                 membership.role = LabelingMembership.Role.ANNOTATOR
-                membership.save(update_fields=["role"])
+                membership.save(update_fields=["role"])'''
 
     @action(detail=False, methods=["get"], url_path="assignment-options")
     def assignment_options(self, request):
-        owner_projects = (
-            ProjectMembership.objects.filter(
-                user=request.user,
-                role=ProjectMembership.RoleChoices.OWNER,
-            )
-            .select_related("project")
-            .order_by("project__name", "project__id")
-        )
-        owner_project_ids = [membership.project_id for membership in owner_projects]
-
-        labelings_by_project = {}
-        labelings_qs = (
-            Labeling.objects.filter(project_id__in=owner_project_ids)
-            .order_by("title", "id")
-            .values("id", "title", "project_id")
-        )
-        for labeling in labelings_qs:
-            labelings_by_project.setdefault(labeling["project_id"], []).append(
-                {"id": labeling["id"], "title": labeling["title"]}
-            )
-
-        output = []
-        for membership in owner_projects:
-            project = membership.project
-            output.append(
-                {
-                    "id": project.id,
-                    "name": project.name,
-                    "labelings": labelings_by_project.get(project.id, []),
-                }
-            )
-
-        return Response({"projects": output}, status=200)
+        projects = assignment_options(user=request.user)
+        return Response({"projects": projects}, status=200)
 
     def create(self, request, *args, **kwargs):
 
