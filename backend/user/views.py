@@ -22,7 +22,7 @@ from django.db import connection, reset_queries
 from .models import Invitation, UserGroup, UserGroupMembership
 from .permissions import IsAdminAccount, IsMasterAdminAccount
 from user.services.create_invitation import create_invitation
-from user.services.assignment_options import assignment_options
+from user.services.assignment_options import get_assignment_options
 from .serializers import (
     AdminUserReadSerializer,
     AdminUserWriteSerializer,
@@ -280,7 +280,7 @@ class InvitationViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="assignment-options")
     def assignment_options(self, request):
-        projects = assignment_options(user=request.user)
+        projects = get_assignment_options(user=request.user)
         return Response({"projects": projects}, status=200)
 
     def create(self, request, *args, **kwargs):

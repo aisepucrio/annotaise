@@ -5,12 +5,11 @@ from annotaise.settings import FRONTEND_URL
 from labeling.models import Labeling, LabelingMembership
 from project.models import ProjectMembership
 
-
 from ..models import Invitation, CustomUser
 from ..utils import send_invitation_email
 
-def create_invitation(*, invited_by, email, role, project_ids, labeling_ids, email_language):
 
+def create_invitation(*, invited_by, email, role, project_ids, labeling_ids, email_language):
     with transaction.atomic():
         user = _create_or_get_pending_user(email, role)
 
@@ -36,10 +35,14 @@ def create_invitation(*, invited_by, email, role, project_ids, labeling_ids, ema
 
 
 def _create_or_get_pending_user(email, role):
-    existing_user = CustomUser.objects.user_email(email).first()
+    normalized_email = (email or "").strip().lower()
+    existing_user = CustomUser.objects.filter(email__iexact=normalized_email).first()
 
     if existing_user and existing_user.onboarding_status == CustomUser.OnboardingStatus.ACTIVE:
-        return None, "active_exists"
+        raise ValidationError({
+            "detail": "Usuário com esse email já existe.",
+            "code": "EMAIL_ALREADY_EXISTS",
+        })
 
     if existing_user:
         user = existing_user
@@ -52,7 +55,7 @@ def _create_or_get_pending_user(email, role):
     user_id = uuid.uuid4().hex
     user = CustomUser.objects.create(
         username=user_id,
-        email=(email or "").strip().lower(),
+        email=normalized_email,
         first_name="",
         last_name="",
         account_type=role,
@@ -61,7 +64,7 @@ def _create_or_get_pending_user(email, role):
     )
     user.set_unusable_password()
     user.save(update_fields=["password"])
-    return user
+    return user  
 
 
 def _parse_int_ids(raw_ids):
@@ -74,11 +77,15 @@ def _parse_int_ids(raw_ids):
             invalid_ids.append(raw_id)
     return valid_ids, invalid_ids
 
+
 def _assign_user_to_labelings(target_user, labeling_ids):
     if not labeling_ids:
         return
 
-    memberships = LabelingMembership.objects.for_user_in_labelings(target_user, labeling_ids)
+    memberships = LabelingMembership.objects.filter(
+        labeling_id__in=labeling_ids,
+        user=target_user,
+    )
     memberships_by_labeling = {membership.labeling_id: membership for membership in memberships}
 
     for labeling_id in labeling_ids:
@@ -94,8 +101,6 @@ def _assign_user_to_labelings(target_user, labeling_ids):
         if membership.role == LabelingMembership.Role.VIEWER:
             membership.role = LabelingMembership.Role.ANNOTATOR
             membership.save(update_fields=["role"])
-
-
 
 
 def _resolve_labeling_assignment_ids(request_user, project_ids, labeling_ids):
@@ -116,7 +121,10 @@ def _resolve_labeling_assignment_ids(request_user, project_ids, labeling_ids):
         })
 
     owner_project_ids = set(
-        ProjectMembership.objects.owned_by(request_user).values_list("project_id", flat=True)
+        ProjectMembership.objects.filter(
+            user=request_user,
+            role=ProjectMembership.RoleChoices.OWNER,
+        ).values_list("project_id", flat=True)
     )
 
     requested_project_ids = set(valid_project_ids)
@@ -154,10 +162,6 @@ def _resolve_labeling_assignment_ids(request_user, project_ids, labeling_ids):
         })
 
     expanded_from_projects = set(
-        Labeling.objects.in_projects(requested_project_ids).values_list("id", flat=True)
+        Labeling.objects.filter(project_id__in=requested_project_ids).values_list("id", flat=True)
     )
     return expanded_from_projects | requested_labeling_ids
-
-
-
-
