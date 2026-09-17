@@ -225,6 +225,7 @@ export const translations: Record<Language, TranslationMap> = {
     'labelings.upload.noProjects': 'Você precisa ter pelo menos um projeto para criar rotulações.',
     'labelings.upload.startDateLabel': 'Data inicial',
     'labelings.upload.finalDateLabel': 'Data final',
+    'labelings.upload.backToSection': 'Voltar para sessão',
     'labelings.upload.decisionLabel': 'Ativar decisão automática',
     'labelings.upload.decisionTooltip':
       '*Experimental* Ative para decidir respostas finais automaticamente quando todos os usuários finalizarem um item.\nEm caso de empate, a rotulação continua.',
@@ -981,6 +982,7 @@ export const translations: Record<Language, TranslationMap> = {
     'labelings.upload.noProjects': 'You need at least one annotation project to create annotation tasks.',
     'labelings.upload.startDateLabel': 'Start date',
     'labelings.upload.finalDateLabel': 'End date',
+    'labelings.upload.goToSection': 'Back to section',
     'labelings.upload.decisionLabel': 'Enable majority-resolution mode',
     'labelings.upload.decisionTooltip':
       '*Experimental* Enable to decide final annotations automatically when all annotators finish a data record.\nIf there is a tie, the annotation task continues.',

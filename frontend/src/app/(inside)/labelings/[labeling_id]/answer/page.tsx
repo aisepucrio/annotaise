@@ -19,6 +19,8 @@ import type { LabelingStructureSection } from '@/modules/labelings/labelingsType
 
 import InnerPageHeader from '@/components/InnerPageHeader';
 import Button from '@/components/button/Button';
+import ArrowLeftButton from '@/components/button/ArrowLeftButton';
+import ArrowRightButton from '@/components/button/ArrowRightButton';
 import GuidePanel from '@/components/answer/GuidePanel';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 
@@ -179,6 +181,21 @@ export default function LabelingAnswerPage() {
     setCurrentSectionIdx((idx) => Math.min(idx + 1, totalSections - 1));
   }, [answers, currentSection, showError, t, totalSections]);
 
+    const goToPreviousSection = useCallback(() => {
+    // Section navigation validates only the current section to keep the flow progressive.
+    if (!currentSection) return;
+
+    //const sectionError = validateRequiredUserSection(currentSection, answers, t);
+    //if (sectionError) {
+      //showError(sectionError);
+      //return;
+    //}
+
+    //setLoadError(null); não vamos precisar, não faz sentido
+    setSubmitMessage(null);
+    setCurrentSectionIdx((idx) => Math.min(idx - 1, totalSections - 1));
+  }, [answers, currentSection, totalSections]);
+
   const handleSubmit = useCallback(async () => {
     // Final submission still guards route/item state because loading can fail independently.
     if (Number.isNaN(labelingId)) {
@@ -253,6 +270,9 @@ export default function LabelingAnswerPage() {
     }
   }, [answers, currentItemId, currentSection, labelingId, loadItem, sections, showError, t]);
 
+    const isFirstSection = currentSectionIdx <= 0;
+
+
   // Header controls for current item metadata and guide visibility.
   const HeaderBadges = (
     <div className="flex flex-1 flex-wrap items-center justify-end gap-3">
@@ -306,7 +326,6 @@ export default function LabelingAnswerPage() {
             <div className="flex gap-3">
               {!isLastSection ? (
                 <Button type="button" onClick={goToNextSection} disabled={isLoading || isSubmitting} fill={false}>
-                  {t('answer.advance')}
                 </Button>
               ) : (
                 <Button
@@ -330,6 +349,7 @@ export default function LabelingAnswerPage() {
   // position is preserved.
   return (
     <div className="flex flex-col h-full overflow-hidden">
+
       <InnerPageHeader onBack={() => router.push('/labelings')}>
         {/* Prefer the loaded labeling title, then fall back to loading/default copy. */}
         <div>
@@ -341,11 +361,26 @@ export default function LabelingAnswerPage() {
         {/* Item progress and guide controls live in the page header. */}
         {HeaderBadges}
       </InnerPageHeader>
+ 
 
       <div className="flex-1 min-h-0 mt-4">
         <ResizablePanelGroup direction="horizontal" className="h-full gap-3">
           <ResizablePanel id="answer" order={1} defaultSize={showGuide ? 70 : 100} minSize={30}>
-            <div className="h-full">{MainPanel}</div>
+          <div className="relative h-full">
+              <div className="absolute right-2 top-1/2 z-0 -translate-y-1/">
+                <ArrowRightButton
+                  onNext={goToNextSection}
+                  disableNext={isLastSection}
+                />
+            </div>
+            <div className="absolute left-2 top-1/2 z-0 -translate-y-1/2">
+                <ArrowLeftButton
+                  onPrevious={goToPreviousSection}
+                  disablePrevious={isFirstSection}
+                />
+          </div>
+              <div className="h-full">{MainPanel}</div>
+          </div>
           </ResizablePanel>
           {showGuide ? (
             <>
@@ -360,6 +395,8 @@ export default function LabelingAnswerPage() {
           ) : null}
         </ResizablePanelGroup>
       </div>
+
+
     </div>
   );
 }

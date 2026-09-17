@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
+import {useRouter, useParams} from 'next/navigation';
 import { Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Labeling, LabelingPayload } from '@/modules/labelings/labelingsTypes';
@@ -96,6 +97,18 @@ export default function EditLabelingModal({ open, labeling, project, onClose, on
       decision: labeling.decision,
     });
   };
+  const params = useParams();
+
+    const labelingId = useMemo(() => {
+      const parsed = Number(params?.labeling_id);
+      return Number.isFinite(parsed) ? parsed : NaN;
+    }, [params]);
+  
+
+  const router = useRouter();
+  const handleGoBack = () => (router.push(`/labelings/${labelingId}/answer`))
+
+  
 
   // Only the current project is available here because project switching is not exposed in this flow yet.
   const projectOptions = project ? [{ value: String(project.id), label: project.name }] : [];
@@ -202,6 +215,12 @@ export default function EditLabelingModal({ open, labeling, project, onClose, on
                 </div>
               </div>
             )}
+          </div>
+          {/*Back to section */}
+          <div className="mt-4">
+            <Button onClick={handleGoBack} variant="white">
+              {t('labelings.upload.goToSection')}
+            </Button>
           </div>
 
           {/* Save action */}
