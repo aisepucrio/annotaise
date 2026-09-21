@@ -92,7 +92,7 @@ class LabelingViewSet(viewsets.ModelViewSet):
     def duplicate(self, request, pk=None):
         original = self.get_object()
         with transaction.atomic():
-            #redefine pks id para indicar a criação de uma nova anotação
+            #redefine pks e id para indicar a criação de uma nova anotação
             copy = Labeling.objects.get(pk=original.pk)
             copy.pk = None
             copy.id = None
