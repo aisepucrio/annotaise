@@ -67,7 +67,7 @@ export default function EditLabelingModal({ open, labeling, project, onClose, on
 
   const [allowSectionBack, setAllowSectionBack] = useState(false);
 
-  
+  //test
 
   // Mirror the latest labeling values so the modal always starts from the current server state.
   useEffect(() => {
