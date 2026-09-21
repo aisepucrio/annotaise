@@ -4,7 +4,7 @@
 
 **Repository:** [https://github.com/aisepucrio/annotaise](https://github.com/aisepucrio/annotaise)
 
-**Accepted article:** _AnnotAISE: Web-Based Data Annotation Platform For Software Engineering Research_ — SBES-Tools 2026. DOI: [https://zenodo.org/records/21462965](https://doi.org/10.5281/zenodo.20388574)
+**Accepted article:** _AnnotAISE: Web-Based Data Annotation Platform For Software Engineering Research_ — SBES-Tools 2026. DOI: [https://zenodo.org/records/21462965](https://doi.org/10.5281/zenodo.21462965)
 
 ---
 
