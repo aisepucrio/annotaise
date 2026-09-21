@@ -40,9 +40,13 @@ const refreshAuthLogic = async () => {
   }
 };
 
+const PUBLIC_AUTH_PATHS = ['/api/auth/token/', '/api/auth/forgot-password/', '/api/auth/reset-password/'];
 // axios-auth-refresh queues concurrent requests and retries them automatically after refresh.
 createAuthRefreshInterceptor(api, refreshAuthLogic, {
-  statusCodes: [401],
+  shouldRefresh: (error) =>
+    error.response?.status === 401 &&
+    !PUBLIC_AUTH_PATHS.some((path) => 
+    error.config?.url?.includes(path)),
 });
 
 export const fetcher = async <T = unknown>(url: string): Promise<T> => {
