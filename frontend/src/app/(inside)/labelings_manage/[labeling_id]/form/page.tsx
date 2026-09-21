@@ -4,16 +4,20 @@ import { useCallback, useEffect, useMemo, useImperativeHandle, forwardRef, useRe
 import { useParams } from 'next/navigation';
 import { toast } from 'sonner';
 import SegmentedSelector from '../SegmentedSelector';
+import TwoOptionSelector from '../TwoOptionSelector';
 import { useTranslations } from '@/i18n/use-translations';
 import { useLabelingHeaderQuery, useLabelingStructureQueryByType } from '@/modules/labelings/manage/labelingManagerQueries';
 import { useSaveLabelingStructureMutation } from '@/modules/labelings/manage/labelingManagerMutations';
 import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 import { AdminFormBuilder, normalizeAdminSections, sanitizeAdminSectionsForSave } from '@/components/context-question';
 import type { LabelingStructureSection } from '@/modules/labelings/labelingsTypes';
+import { useInvitationAssignmentOptionsQuery } from '@/modules/user/userQueries';
 
 type FormTabProps = {
   labelingId: number;
   hasBackgroundForm: boolean;
+  isFormOnly: boolean; //either has or not csv file
+
 };
 
 type FormType = 'main' | 'background';
@@ -26,7 +30,7 @@ export type FormTabHandle = {
 
 const AUTO_SAVE_INTERVAL_MS = 30000;
 
-const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgroundForm }, ref) => {
+const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgroundForm, isFormOnly }, ref) => {
   const { t } = useTranslations();
   const [activeFormType, setActiveFormType] = useState<FormType>('main');
   const [sections, setSections] = useState<LabelingStructureSection[]>([]);
@@ -34,7 +38,7 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgr
   const structureQuery = useLabelingStructureQueryByType(labelingId, activeFormType);
   const saveMutation = useSaveLabelingStructureMutation();
 
-  const allowContext = activeFormType === 'main';
+  const allowContext = activeFormType === 'main' && !isFormOnly; //if is only a form, allowContext won't be "allowed" //therefore, we wont have "AddContext" button
   const unsavedChangesRef = useRef({ hasChanges: false, version: 0 });
   const loadedSnapshotRef = useRef<string | null>(null);
   const pendingSaveRef = useRef<Promise<boolean> | null>(null);
@@ -200,7 +204,7 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgr
     <div className="mx-auto w-[80%]">
       {hasBackgroundForm ? (
         <div className="mx-auto mt-2">
-          <SegmentedSelector
+          <TwoOptionSelector
             value={activeFormType}
             onChange={(nextFormType) => void handleFormTypeChange(nextFormType)}
             ariaLabel={t('labelings.create.formType.ariaLabel')}
@@ -241,5 +245,11 @@ export default function FormPage() {
   const labelingId = useMemo(() => Number(params?.labeling_id), [params]);
   const headerQuery = useLabelingHeaderQuery(labelingId);
 
-  return <FormTab labelingId={labelingId} hasBackgroundForm={Boolean(headerQuery.data?.labeling?.has_background_form)} />;
+    return(
+   <FormTab labelingId={labelingId} hasBackgroundForm={Boolean(headerQuery.data?.labeling?.has_background_form)} 
+   isFormOnly={Boolean(headerQuery.data?.labeling?.form_mode)}
+    />
+  );
+
+
 }

@@ -9,6 +9,7 @@ import type { AnswerResponse, LabelingStructureSection } from '@/modules/labelin
 import { useTranslations } from '@/i18n/use-translations';
 import ItemTab from './ItemTab';
 import { resolveItemLabel } from '../answer-utils';
+import { useInvitationAssignmentOptionsQuery } from '@/modules/user/userQueries';
 
 type ResponderOption = { id: number; label: string };
 

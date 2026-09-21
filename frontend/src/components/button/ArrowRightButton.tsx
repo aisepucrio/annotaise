@@ -1,6 +1,6 @@
 'use client'; 
 import React from 'react';
-import { ArrowRight } from 'lucide-react';   
+import { ArrowLeft, ArrowRight } from 'lucide-react';   
 
 //botão simples sem o controle da navegação. Colocar isso no page.tsx do form
 
@@ -16,7 +16,7 @@ const ArrowRightButton: React.FC<ArrowButtonProps> = (
                 <button
                     onClick={onNext}
                     disabled={disableNext}
-                    className="px-4 py-2 bg-blue-600 text-white rounded disabled:bg-gray-300 disabled:cursor-not-allowed transition"
+                    className="px-4 py-2 bg-blueberry-700 text-white rounded disabled:bg-gray-300 disabled:cursor-not-allowed transition"
                 >
                    <ArrowRight /> 
                 </button>

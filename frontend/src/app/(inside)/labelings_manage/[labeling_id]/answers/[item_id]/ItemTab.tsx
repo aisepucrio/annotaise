@@ -155,22 +155,10 @@ export default function ItemTab({ itemGroup, itemGroups, onBack, onSelectItem, g
                 </p>
               )}
             </div>
+            
           </div>
         </div>
-
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-5 pt-4 md:px-6 md:pb-6">
-          {activeTab === 'item-summary' ? (
-            <ItemSummary answers={itemGroup.answers} sections={sections} t={t} locale={locale} />
-          ) : (
-            <ItemAnswers
-              answerEntries={answerEntries}
-              orderedSections={orderedSections}
-              answersByQuestion={answersByQuestion}
-              itemPayload={itemPayload}
-              t={t}
-            />
-          )}
-        </div>
+ 
       </div>
     </DetailViewLayout>
   );
