@@ -13,6 +13,7 @@ import PasswordInput from '@/components/form/PasswordInput';
 import { useTranslations } from '@/i18n/use-translations';
 import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 import Link from 'next/link';
+import axios from 'axios';
 
 type FormData = {
   email: string;
@@ -46,7 +47,8 @@ export default function LoginPage() {
 
       router.push('/labelings');
     } catch (err) {
-      toast.error(getApiErrorMessage(err, t('login.error.invalidCredentials')));
+      const isBadCredentials = axios.isAxiosError(err) && err.response?.status === 401;
+      toast.error(isBadCredentials ? t('login.error.invalidCredentials') : getApiErrorMessage(err, t('login.error.invalidCredentials')));
     } finally {
       setIsLoading(false);
     }
