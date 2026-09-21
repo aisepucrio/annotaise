@@ -33,7 +33,7 @@ export type Labeling = {
 // Fields accepted by the backend to create or update a labeling.
 export type LabelingPayload = Omit<
   Labeling,
-  'id' | 'status' | 'column_names' | 'created_at' | 'created_by' | 'anonymous_token' | 'anonymous_url'
+  'id' | 'status' | 'column_names' | 'created_at' | 'created_by' | 'anonymous_token' | 'anonymous_url'| 'block_section_back: boolean'
 >;
 
 // Types related to labeling creation with CSV

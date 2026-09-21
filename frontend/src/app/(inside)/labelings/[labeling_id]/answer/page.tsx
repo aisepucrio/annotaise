@@ -24,6 +24,7 @@ import ArrowRightButton from '@/components/button/ArrowRightButton';
 import GuidePanel from '@/components/answer/GuidePanel';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 
+
 export default function LabelingAnswerPage() {
   const { t } = useTranslations();
   const router = useRouter();
@@ -73,6 +74,12 @@ export default function LabelingAnswerPage() {
     setErrorEventId((current) => current + 1);
   }, []);
 
+
+  const [allowSectionBack, setAllowSectionBack] = useState(false);
+
+  const isEnabled = allowSectionBack;
+
+
   // Toasts mirror the page-level feedback state so repeated equal messages are still shown.
   useEffect(() => {
     if (!loadError) return;
@@ -106,6 +113,7 @@ export default function LabelingAnswerPage() {
       const labeling = await fetchLabelingById(labelingId);
       setLabelingTitle(labeling.title);
       setGuideText(labeling.guide ?? '');
+      setAllowSectionBack(Boolean(labeling.block_section_back));
 
       const nextAnswer = await fetchNextAnswer(labelingId);
       const nextSections = nextAnswer.sections ?? [];
@@ -185,15 +193,9 @@ export default function LabelingAnswerPage() {
     // Section navigation validates only the current section to keep the flow progressive.
     if (!currentSection) return;
 
-    //const sectionError = validateRequiredUserSection(currentSection, answers, t);
-    //if (sectionError) {
-      //showError(sectionError);
-      //return;
-    //}
 
-    //setLoadError(null); não vamos precisar, não faz sentido
     setSubmitMessage(null);
-    setCurrentSectionIdx((idx) => Math.min(idx - 1, totalSections - 1));
+    setCurrentSectionIdx((idx) => Math.max(idx - 1, 0));
   }, [answers, currentSection, totalSections]);
 
   const handleSubmit = useCallback(async () => {
@@ -325,8 +327,10 @@ export default function LabelingAnswerPage() {
             <div />
             <div className="flex gap-3">
               {!isLastSection ? (
-                <Button type="button" onClick={goToNextSection} disabled={isLoading || isSubmitting} fill={false}>
-                </Button>
+                  !isEnabled && (
+                        <Button type="button" onClick={goToNextSection} disabled={isLoading || isSubmitting} fill={false}>
+                          {t('answer.advance')}
+                        </Button>)
               ) : (
                 <Button
                   type="button"
@@ -367,18 +371,25 @@ export default function LabelingAnswerPage() {
         <ResizablePanelGroup direction="horizontal" className="h-full gap-3">
           <ResizablePanel id="answer" order={1} defaultSize={showGuide ? 70 : 100} minSize={30}>
           <div className="relative h-full">
-              <div className="absolute right-2 top-1/2 z-0 -translate-y-1/">
-                <ArrowRightButton
-                  onNext={goToNextSection}
-                  disableNext={isLastSection}
-                />
-            </div>
-            <div className="absolute left-2 top-1/2 z-0 -translate-y-1/2">
-                <ArrowLeftButton
-                  onPrevious={goToPreviousSection}
-                  disablePrevious={isFirstSection}
-                />
-          </div>
+            {isEnabled? (
+              <div>
+                <div className="absolute right-1 top-1/2 z-0 -translate-y-1/">
+                  <ArrowRightButton
+                    onNext={goToNextSection}
+                    disableNext={isLastSection}
+                  />
+              </div>
+              <div className="absolute left-1 top-1/2 z-0 -translate-y-1/2">
+                  <ArrowLeftButton
+                    onPrevious={goToPreviousSection}
+                    disablePrevious={isFirstSection}
+                  />
+             </div>
+             </div>
+            ): (
+              null
+            )
+            }
               <div className="h-full">{MainPanel}</div>
           </div>
           </ResizablePanel>

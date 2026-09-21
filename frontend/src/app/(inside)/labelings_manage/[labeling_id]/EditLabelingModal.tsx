@@ -12,6 +12,7 @@ import Select from '@/components/form/Select';
 import DatePicker from '@/components/form/DatePicker';
 import Button from '@/components/button/Button';
 import { useTranslations } from '@/i18n/use-translations';
+import Checkbox from '@/components/form/Checkbox';
 
 type EditLabelingFormField = 'title' | 'startDate' | 'finalDate';
 type EditLabelingFormErrors = Partial<Record<EditLabelingFormField, string>>;
@@ -25,6 +26,34 @@ type EditLabelingModalProps = {
   isSaving?: boolean;
 };
 
+type EnableBackAndFoward = {
+  file: File | null;
+  payload: Omit<LabelingPayload, 'project' | 'users_per_item'> & {
+    project: number | null;
+    users_per_item: number | null;
+  };
+};
+
+function createInitialState(): EnableBackAndFoward {
+  return {
+    file: null,
+    payload: {
+      title: '',
+      project: null,
+      users_per_item: 1,
+      start_date: new Date().toISOString().split('T')[0],
+      final_date: '',
+      block_section_back: true,
+      decision: false,
+      decision_mode: 'manual',
+      has_background_form: false,
+      distribution_strategy: 'auto',
+      form_mode: false,
+    },
+  };
+}
+
+
 export default function EditLabelingModal({ open, labeling, project, onClose, onSave, isSaving = false }: EditLabelingModalProps) {
   const { t } = useTranslations();
 
@@ -34,6 +63,11 @@ export default function EditLabelingModal({ open, labeling, project, onClose, on
   const [finalDate, setFinalDate] = useState('');
   const [projectId, setProjectId] = useState<number | null>(null);
   const [formErrors, setFormErrors] = useState<EditLabelingFormErrors>({});
+  const [draft, setDraft] = useState<EnableBackAndFoward>(() => createInitialState());
+
+  const [allowSectionBack, setAllowSectionBack] = useState(false);
+
+  
 
   // Mirror the latest labeling values so the modal always starts from the current server state.
   useEffect(() => {
@@ -49,6 +83,10 @@ export default function EditLabelingModal({ open, labeling, project, onClose, on
     setFinalDate(labeling.final_date ?? '');
     setProjectId(labeling.project ?? null);
     setFormErrors({});
+      setDraft((prev) => ({
+    ...prev,
+    payload: { ...prev.payload, block_section_back: labeling.block_section_back ?? true },
+  }));
   }, [labeling, open]);
 
   const clearFormError = (field: EditLabelingFormField) => {
@@ -95,19 +133,10 @@ export default function EditLabelingModal({ open, labeling, project, onClose, on
       project: projectId ?? labeling.project,
       users_per_item: labeling.users_per_item,
       decision: labeling.decision,
+      block_section_back: allowSectionBack, 
+
     });
   };
-  const params = useParams();
-
-    const labelingId = useMemo(() => {
-      const parsed = Number(params?.labeling_id);
-      return Number.isFinite(parsed) ? parsed : NaN;
-    }, [params]);
-  
-
-  const router = useRouter();
-  const handleGoBack = () => (router.push(`/labelings/${labelingId}/answer`))
-
   
 
   // Only the current project is available here because project switching is not exposed in this flow yet.
@@ -126,6 +155,11 @@ export default function EditLabelingModal({ open, labeling, project, onClose, on
       toast.error(t('labelings.create.edit.anonymousUrlCopyError'));
     }
   };
+
+  const isPerPerson = draft.payload.distribution_strategy === 'per_person';
+  const isAnonymous = draft.payload.distribution_strategy === 'anonymous_mode';
+  const forcesSingleAnswer = isPerPerson || isAnonymous;
+
 
   return (
     <Modal
@@ -216,11 +250,23 @@ export default function EditLabelingModal({ open, labeling, project, onClose, on
               </div>
             )}
           </div>
-          {/*Back to section */}
-          <div className="mt-4">
-            <Button onClick={handleGoBack} variant="white">
-              {t('labelings.upload.goToSection')}
-            </Button>
+          {/*Enable back and forth between sections */}
+            <div className="flex items-center gap-2 mt-4">
+              <Checkbox
+                id="block-section-back"
+                checked={allowSectionBack}
+                onChange={setAllowSectionBack}
+                disabled={forcesSingleAnswer}
+                variant="square"
+                hoverColor="var(--metal-500)"
+                checkedColor="var(--metal-700)"
+                className="shrink-0"
+              />
+            <div className="flex items-center gap-1">
+              <label htmlFor="section-decision" className="cursor-pointer text-sm font-medium text-metal-900">
+                        {t('labelings.upload.decisionSection')}
+              </label>
+            </div>
           </div>
 
           {/* Save action */}
