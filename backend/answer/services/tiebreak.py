@@ -10,6 +10,8 @@ Falha de LLM nunca derruba o POST da resposta: volta como resultado de erro
 para o item guardar em `llm_tiebreak_result`.
 """
 
+from datetime import datetime, timezone
+
 from django.views.decorators.debug import sensitive_variables
 
 from annotaise.crypto import decrypt_secret
@@ -21,9 +23,17 @@ BYOK_ERROR_MESSAGE = "Não foi possível executar a decisão por LLM (BYOK)."
 PROVIDER_MISSING_MESSAGE = "Chave de IA enviada sem um provedor válido."
 
 
-def _error_result(code, message):
-    """Falha no mesmo formato que `run_llm_tiebreak_decision` devolve."""
+def error_result(code, message):
+    """Falha no mesmo formato que `run_llm_tiebreak_decision` devolve.
+
+    As chaves de diagnóstico (`attempted_at`, `model_pool`, `models_used`)
+    entram mesmo vazias: o resultado é gravado em `Item.llm_tiebreak_result` e
+    a tela de item lê sempre o mesmo formato, tenha dado certo ou não.
+    """
     return {
+        "attempted_at": datetime.now(timezone.utc).isoformat(),
+        "model_pool": "byok",
+        "models_used": [],
         "models": [],
         "vote_count": {},
         "winner": None,
@@ -46,7 +56,7 @@ def _run_byok(*, provider, api_key, labeling, question_text, options, contexts):
             contexts=contexts,
         )
     except Exception:
-        return _error_result("BYOK_ERROR", BYOK_ERROR_MESSAGE)
+        return error_result("BYOK_ERROR", BYOK_ERROR_MESSAGE)
 
 
 @sensitive_variables("session_llm_key", "session_api_key", "api_key")
@@ -60,7 +70,7 @@ def run_tiebreak_decision(*, labeling, session_llm_key, question_text, options, 
         # escolher "só nesta sessão" muda onde a chave mora, não o provedor.
         provider = provider or (credential.provider if credential else None)
         if provider not in AICredential.Provider.values:
-            return _error_result("BYOK_PROVIDER_MISSING", PROVIDER_MISSING_MESSAGE)
+            return error_result("BYOK_PROVIDER_MISSING", PROVIDER_MISSING_MESSAGE)
         return _run_byok(
             provider=provider,
             api_key=session_api_key,
@@ -74,7 +84,7 @@ def run_tiebreak_decision(*, labeling, session_llm_key, question_text, options, 
         try:
             api_key = decrypt_secret(credential.encrypted_api_key)
         except Exception:
-            return _error_result("BYOK_ERROR", BYOK_ERROR_MESSAGE)
+            return error_result("BYOK_ERROR", BYOK_ERROR_MESSAGE)
         return _run_byok(
             provider=credential.provider,
             api_key=api_key,

@@ -476,8 +476,14 @@ export const translations: Record<Language, TranslationMap> = {
     'labelings.create.decision.aiConfig.unlinkError': 'Não foi possível desvincular a chave.',
     'labelings.create.decision.aiConfig.storageTitle': 'Onde guardar a chave',
     'labelings.create.decision.aiConfig.storageServer': 'Salvar no servidor',
+    'labelings.create.decision.aiConfig.storageServerHint':
+      'A chave é criptografada e fica guardada no servidor. Vale para as respostas de todos os anotadores desta rotulação.',
     
     'labelings.create.decision.aiConfig.storageLocal': 'Usar só nesta sessão',
+    'labelings.create.decision.aiConfig.storageLocalHint':
+      'A chave fica só neste navegador e viaja em cada resposta que você envia. O servidor usa e descarta, sem guardar nada.',
+    'labelings.create.decision.aiConfig.localScopeNotice':
+      'O desempate só usa esta chave nas respostas enviadas deste navegador. Nas respostas dos outros anotadores, a tarefa cai na chave salva no servidor (ou nos modelos locais padrão).',
     
     'labelings.create.decision.aiConfig.localOverridesServerNotice':
       'Esta rotulação também tem uma chave salva no servidor: nas suas respostas, a deste navegador tem prioridade.',
@@ -1284,8 +1290,12 @@ export const translations: Record<Language, TranslationMap> = {
     'labelings.create.decision.aiConfig.cancel': 'Cancel',
     'labelings.create.decision.aiConfig.storageTitle': 'Where to keep the key',
     'labelings.create.decision.aiConfig.storageServer': 'Save on the server',
+    'labelings.create.decision.aiConfig.storageServerHint':
+      'Stored encrypted on the server. It applies to the answers of every annotator on this annotation task.',
    
     'labelings.create.decision.aiConfig.storageLocal': 'Use in this session only',
+    'labelings.create.decision.aiConfig.storageLocalHint':
+      'Kept in this browser only and sent with each answer you submit. The server uses it and discards it, storing nothing.',
    
     'labelings.create.decision.aiConfig.localScopeNotice':
       'The tie-break only uses this key on answers submitted from this browser. For other annotators\' answers, the task falls back to the key saved on the server (or to the default local models).',
