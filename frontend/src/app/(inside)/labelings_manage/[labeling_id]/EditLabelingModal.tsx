@@ -43,7 +43,6 @@ function createInitialState(): EnableBackAndFoward {
       users_per_item: 1,
       start_date: new Date().toISOString().split('T')[0],
       final_date: '',
-      block_section_back: true,
       decision: false,
       decision_mode: 'manual',
       has_background_form: false,
@@ -64,7 +63,6 @@ export default function EditLabelingModal({ open, labeling, project, onClose, on
   const [projectId, setProjectId] = useState<number | null>(null);
   const [formErrors, setFormErrors] = useState<EditLabelingFormErrors>({});
   const [draft, setDraft] = useState<EnableBackAndFoward>(() => createInitialState());
-
   const [allowSectionBack, setAllowSectionBack] = useState(false);
 
   //test
@@ -82,11 +80,8 @@ export default function EditLabelingModal({ open, labeling, project, onClose, on
     setStartDate(labeling.start_date ?? '');
     setFinalDate(labeling.final_date ?? '');
     setProjectId(labeling.project ?? null);
+    setAllowSectionBack(!(labeling.block_section_back ?? false)); //if labeling.block_secction_back, falls in true so !true == false. BUT, if false, then !false == true
     setFormErrors({});
-      setDraft((prev) => ({
-    ...prev,
-    payload: { ...prev.payload, block_section_back: labeling.block_section_back ?? true },
-  }));
   }, [labeling, open]);
 
   const clearFormError = (field: EditLabelingFormField) => {
@@ -133,8 +128,8 @@ export default function EditLabelingModal({ open, labeling, project, onClose, on
       project: projectId ?? labeling.project,
       users_per_item: labeling.users_per_item,
       decision: labeling.decision,
-      block_section_back: allowSectionBack, 
-
+      block_section_back: !allowSectionBack, //in this line (and the rest of the logic), one works as the opposite of the other
+      //if block_section_back == true, allowSectionBack will not happen
     });
   };
   

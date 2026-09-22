@@ -18,7 +18,7 @@ from django.utils import timezone
 
 from django.db import connection, reset_queries
 #from django.db import transaction
-
+from .querysets import UserQuerySet
 from .models import Invitation, UserGroup, UserGroupMembership
 from .permissions import IsAdminAccount, IsMasterAdminAccount
 from user.services.create_invitation import create_invitation
@@ -93,25 +93,7 @@ class AdminUserViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="dashboard", pagination_class=StandardCursorPagination)
     def user_dashboard(self, request, pk=None):
-        #Cada subquery é executada de forma independente e otimizada
-        #Parte comentada vai embora, pois sua lógica está em querysets.py
-        '''pending_items_sq = ItemMembership.objects.filter(
-            item__labeling__memberships__user_id=OuterRef('id'),
-            user_id=OuterRef('id')  # memberships do próprio usuário
-        ).values('user_id').annotate(
-            count=Count('id', distinct=True)
-        ).values('count')'''
-        
-        '''qs = self.get_queryset().annotate(
-            projects_count=Count("project_memberships", distinct=True),
-            labelings_total=Count("labeling_memberships", distinct=True),
-            answers_count=Count("answers_given", distinct=True),
-            pending_items_count=Subquery(
-                pending_items_sq,
-                output_field=IntegerField()
-            )
-        )'''
-        qs = self.get_queryset().annotate()
+        qs = self.get_queryset.user_dashboard_qs() #using the function instead of empty annotate
         qs = self.filter_queryset(qs)
         return paginated_response(self, qs)
             
@@ -133,150 +115,6 @@ class InvitationViewSet(viewsets.ModelViewSet):
             permission_classes = self.permission_classes
         return [permission() for permission in permission_classes]
     
-    #Tudo comentado vai para o services de create_invitation.py
-
-    '''def _create_or_get_pending_user(self, email: str, role: str):
-        #normalized_email = (email or "").strip().lower() 
-        user_email = UserQuerySet.user_email
-        existing_user = User.objects.user_email(email).first()
-
-        if existing_user and existing_user.onboarding_status == User.OnboardingStatus.ACTIVE:
-            return None, "active_exists"
-
-        if existing_user:
-            user = existing_user
-            user.account_type = role
-            user.is_active = False
-            user.onboarding_status = User.OnboardingStatus.PENDING
-            user.save(update_fields=["account_type", "is_active", "onboarding_status"])
-            return user, None
-
-        user_id = uuid.uuid4().hex
-        user = User.objects.create(
-            username=user_id,
-            email=user_email,
-            first_name="",
-            last_name="",
-            account_type=role,
-            is_active=False,
-            onboarding_status=User.OnboardingStatus.PENDING,
-        )
-        user.set_unusable_password()
-        user.save(update_fields=["password"])
-        return user, None
-
-    def _parse_int_ids(self, raw_ids):
-        valid_ids = []
-        invalid_ids = []
-        for raw_id in raw_ids or []:
-            try:
-                valid_ids.append(int(raw_id))
-            except (TypeError, ValueError):
-                invalid_ids.append(raw_id)
-        return valid_ids, invalid_ids
-
-    def _resolve_labeling_assignment_ids(self, request_user, project_ids, labeling_ids):
-        valid_project_ids, invalid_project_ids = self._parse_int_ids(project_ids)
-        if invalid_project_ids:
-            return None, Response(
-                {
-                    "detail": "Há project_ids inválidos.",
-                    "code": "INVALID_PROJECT_IDS",
-                    "invalid_project_ids": invalid_project_ids,
-                },
-                status=400,
-            )
-
-        valid_labeling_ids, invalid_labeling_ids = self._parse_int_ids(labeling_ids)
-        if invalid_labeling_ids:
-            return None, Response(
-                {
-                    "detail": "Há labeling_ids inválidos.",
-                    "code": "INVALID_LABELING_IDS",
-                    "invalid_labeling_ids": invalid_labeling_ids,
-                },
-                status=400,
-            )
-
-        owner_project_ids = set(
-            ProjectMembership.objects.filter(
-                user=request_user,
-                role=ProjectMembership.RoleChoices.OWNER,
-            ).values_list("project_id", flat=True)
-        )
-
-        requested_project_ids = set(valid_project_ids)
-        unauthorized_project_ids = sorted(requested_project_ids - owner_project_ids)
-        if unauthorized_project_ids:
-            return None, Response(
-                {
-                    "detail": "Você só pode atribuir usuários em projetos onde é owner.",
-                    "code": "PROJECT_ASSIGNMENT_FORBIDDEN",
-                    "project_ids": unauthorized_project_ids,
-                },
-                status=403,
-            )
-
-        requested_labeling_ids = set(valid_labeling_ids)
-        requested_labeling_map = {
-            item["id"]: item["project_id"]
-            for item in Labeling.objects.filter(id__in=requested_labeling_ids).values("id", "project_id")
-        }
-        missing_labeling_ids = sorted(requested_labeling_ids - set(requested_labeling_map.keys()))
-        if missing_labeling_ids:
-            return None, Response(
-                {
-                    "detail": "Há labeling_ids inexistentes.",
-                    "code": "LABELING_NOT_FOUND",
-                    "labeling_ids": missing_labeling_ids,
-                },
-                status=400,
-            )
-
-        unauthorized_labeling_ids = sorted(
-            labeling_id
-            for labeling_id, project_id in requested_labeling_map.items()
-            if project_id not in owner_project_ids
-        )
-        if unauthorized_labeling_ids:
-            return None, Response(
-                {
-                    "detail": "Você só pode atribuir usuários em rotulações de projetos onde é owner.",
-                    "code": "LABELING_ASSIGNMENT_FORBIDDEN",
-                    "labeling_ids": unauthorized_labeling_ids,
-                },
-                status=403,
-            )
-
-        expanded_from_projects = set(
-            Labeling.objects.filter(project_id__in=requested_project_ids).values_list("id", flat=True)
-        )
-        resolved_labeling_ids = expanded_from_projects | requested_labeling_ids
-        return resolved_labeling_ids, None
-
-    def _assign_user_to_labelings(self, target_user, labeling_ids):
-        if not labeling_ids:
-            return
-
-        memberships = LabelingMembership.objects.filter(
-            labeling_id__in=labeling_ids,
-            user=target_user,
-        )
-        memberships_by_labeling = {membership.labeling_id: membership for membership in memberships}
-
-        for labeling_id in labeling_ids:
-            membership = memberships_by_labeling.get(labeling_id)
-            if membership is None:
-                LabelingMembership.objects.create(
-                    labeling_id=labeling_id,
-                    user=target_user,
-                    role=LabelingMembership.Role.ANNOTATOR,
-                )
-                continue
-
-            if membership.role == LabelingMembership.Role.VIEWER:
-                membership.role = LabelingMembership.Role.ANNOTATOR
-                membership.save(update_fields=["role"])'''
 
     @action(detail=False, methods=["get"], url_path="assignment-options")
     def assignment_options(self, request):

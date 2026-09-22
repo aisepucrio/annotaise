@@ -113,7 +113,7 @@ export default function LabelingAnswerPage() {
       const labeling = await fetchLabelingById(labelingId);
       setLabelingTitle(labeling.title);
       setGuideText(labeling.guide ?? '');
-      setAllowSectionBack(Boolean(labeling.block_section_back));
+      setAllowSectionBack(!labeling.block_section_back);
 
       const nextAnswer = await fetchNextAnswer(labelingId);
       const nextSections = nextAnswer.sections ?? [];

@@ -1,12 +1,17 @@
 import uuid
 from django.db import transaction
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, APIException
+from rest_framework import status
 from annotaise.settings import FRONTEND_URL
 from labeling.models import Labeling, LabelingMembership
 from project.models import ProjectMembership
 
 from ..models import Invitation, CustomUser
 from ..utils import send_invitation_email
+
+class ForbiddenValidationError(APIException):
+    def __init__(self, detail):
+        super().__init__(status_code=status.HTTP_403_FORBIDDEN, detail=detail)
 
 
 def create_invitation(*, invited_by, email, role, project_ids, labeling_ids, email_language):
@@ -155,11 +160,11 @@ def _resolve_labeling_assignment_ids(request_user, project_ids, labeling_ids):
         if project_id not in owner_project_ids
     )
     if unauthorized_labeling_ids:
-        raise ValidationError({
+        raise ForbiddenValidationError({
             "detail": "Você só pode atribuir usuários em rotulações de projetos onde é owner.",
             "code": "LABELING_ASSIGNMENT_FORBIDDEN",
             "labeling_ids": unauthorized_labeling_ids,
-        })
+        })        
 
     expanded_from_projects = set(
         Labeling.objects.filter(project_id__in=requested_project_ids).values_list("id", flat=True)
