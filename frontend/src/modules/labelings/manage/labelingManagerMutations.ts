@@ -27,9 +27,6 @@ export function useDeleteLabelingMutation() {
 export function useDuplicateLabelingMutation() {
   const qc = useQueryClient();
 
-export function useDuplicateLabelingMutation() {
-  const qc = useQueryClient();
-
   return useMutation({
     mutationFn: (id: number) => duplicateLabeling(id),
     onSuccess: () => {

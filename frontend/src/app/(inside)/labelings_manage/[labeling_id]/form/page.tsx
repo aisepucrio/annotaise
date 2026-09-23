@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useImperativeHandle, forwardRef, useRe
 import { useParams } from 'next/navigation';
 import { toast } from 'sonner';
 import SegmentedSelector from '../SegmentedSelector';
-import TwoOptionSelector from '../TwoOptionSelector';
 import { useTranslations } from '@/i18n/use-translations';
 import { useLabelingHeaderQuery, useLabelingStructureQueryByType } from '@/modules/labelings/manage/labelingManagerQueries';
 import { useSaveLabelingStructureMutation } from '@/modules/labelings/manage/labelingManagerMutations';
@@ -204,7 +203,7 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgr
     <div className="mx-auto w-[80%]">
       {hasBackgroundForm ? (
         <div className="mx-auto mt-2">
-          <TwoOptionSelector
+          <SegmentedSelector
             value={activeFormType}
             onChange={(nextFormType) => void handleFormTypeChange(nextFormType)}
             ariaLabel={t('labelings.create.formType.ariaLabel')}
