@@ -1,0 +1,33 @@
+name: Validate branch name
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  validate-branch:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validate branch name
+        shell: bash
+        run: |
+          BRANCH="${{ github.head_ref }}"
+
+          echo "Validating branch: $BRANCH"
+
+          if [[ ! "$BRANCH" =~ ^(feat|fix|docs|style|refactor|test|chore)/[a-z0-9._-]+$ ]]; then
+            echo "❌ Invalid branch name: $BRANCH"
+            echo ""
+            echo "Expected format:"
+            echo "<type>/<description>"
+            echo ""
+            echo "Examples:"
+            echo "feat/user-authentication"
+            echo "fix/login-error"
+            echo "docs/update-readme"
+            echo "refactor/payment-service"
+            exit 1
+          fi
+
+          echo "✅ Valid branch name"
