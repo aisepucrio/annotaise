@@ -78,13 +78,25 @@ class ImportItemsCsvView(APIView):
 
         uploaded_file = serializer.validated_data['file']
 
+        # The labeling is created by a previous request. Any failure here must remove it,
+        # otherwise it lingers empty and a retry creates a duplicate.
         if uploaded_file is None:
+            labeling.delete()
             return Response({"detail": "Nenhum arquivo enviado"}, status=400)
 
         if not getattr(uploaded_file, "name", "").lower().endswith(".csv"):
+            labeling.delete()
             return Response({"detail": "O arquivo deve ser .csv"}, status=400)
-        
-        df = pd.read_csv(uploaded_file, dtype=str)
+
+        try:
+            df = pd.read_csv(uploaded_file, dtype=str)
+        except Exception:
+            labeling.delete()
+            return Response(
+                {"detail": "Não foi possível ler o arquivo CSV. Verifique o conteúdo e envie novamente."},
+                status=400,
+            )
+
         df.fillna("Valor Nulo", inplace=True)
 
         cols = df.columns
@@ -98,20 +110,30 @@ class ImportItemsCsvView(APIView):
         labeling.column_names = list(cols)
         labeling.save()
 
-        items = []
+        # A row with more columns than the header does not fail the parsing above:
+        # pandas turns the extra leading column into the index, and only the insert
+        # below rejects it. Guard here too, so no failure leaves the labeling behind.
+        try:
+            items = []
 
-        for idx, row in df.iterrows():
-            items.append(
-                Item(
-                    labeling=labeling,
-                    row_index=idx,
-                    payload=row.to_dict(),
-                    status="pending",
+            for idx, row in df.iterrows():
+                items.append(
+                    Item(
+                        labeling=labeling,
+                        row_index=idx,
+                        payload=row.to_dict(),
+                        status="pending",
+                    )
                 )
+
+            Item.objects.bulk_create(items)
+        except Exception:
+            labeling.delete()
+            return Response(
+                {"detail": "Não foi possível importar as linhas do arquivo. Verifique se todas as linhas têm o mesmo número de colunas do cabeçalho."},
+                status=400,
             )
 
-        Item.objects.bulk_create(items)
-        
         return Response({"detail": "Arquivo recebido"}, status=200)
 
 class AddItemsToExistingLabelingView(APIView):
