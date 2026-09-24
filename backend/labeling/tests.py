@@ -1434,6 +1434,34 @@ class LabelingReliabilityViewTest(TestCase):
             self.assertIsNotNone(question[key]["ci_low"])
             self.assertIsNotNone(question[key]["ci_high"])
 
+    def test_reports_numeric_alpha_with_confidence_intervals(self):
+        self.client.force_authenticate(self.owner)
+        ratings = [(1, 2), (3, 3), (5, 4), (9, 9)]
+        for question_type, scale, expected in (
+            (LabelingElement.QuestionType.NUMBER, metrics.INTERVAL, 5 / 6),
+            (LabelingElement.QuestionType.RANGE, metrics.ORDINAL, 46 / 51),
+        ):
+            with self.subTest(scale=scale):
+                self.question.question_type = question_type
+                self.question.save(update_fields=["question_type"])
+                for answer in Answer.objects.filter(labeling=self.labeling).select_related("item"):
+                    rater = 0 if answer.answered_by_id == self.annotator_a.id else 1
+                    answer.answer_payload = {str(self.question.id): ratings[answer.item.row_index][rater]}
+                    answer.save(update_fields=["answer_payload"])
+
+                response = self.client.get(self.url)
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                question = response.data["questions"][0]
+                self.assertEqual(question["scale"], scale)
+                self.assertEqual(question["items_considered"], 3)
+                self.assertEqual(question["excluded_items"], 1)
+                self.assertIsNone(question["fleiss_kappa"])
+                estimate = question["krippendorff_alpha"]
+                self.assertAlmostEqual(estimate["value"], expected, places=12)
+                self.assertIsNotNone(estimate["ci_low"])
+                self.assertIsNotNone(estimate["ci_high"])
+                self.assertLessEqual(estimate["ci_low"], estimate["ci_high"])
+
     def test_llm_tiebreak_bot_does_not_count_as_an_annotator(self):
         self.client.force_authenticate(self.owner)
         question = self.client.get(self.url).data["questions"][0]

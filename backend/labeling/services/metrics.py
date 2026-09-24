@@ -10,7 +10,6 @@ Returns `None` when there is nothing to measure, never NaN.
 """
 
 from collections import Counter
-from itertools import combinations
 
 import numpy as np
 
@@ -63,27 +62,11 @@ def _set_similarity(left, right, distance):
     return jaccard * monotonicity
 
 
-def _delta(values, distance, marginals):
+def _delta(values, distance):
     """Squared difference between every pair of values. Diagonal is always 0."""
     size = len(values)
     if distance == NOMINAL:
         return 1.0 - np.eye(size)
-
-    if distance == INTERVAL:
-        points = np.asarray(values, dtype=float)
-        return (points[:, None] - points[None, :]) ** 2
-
-    if distance == ORDINAL:
-        # values are sorted ascending, so the ranks between c and k are contiguous
-        cumulative = np.cumsum(marginals)
-        matrix = np.zeros((size, size))
-        for low in range(size):
-            for high in range(low + 1, size):
-                span = cumulative[high] - cumulative[low] + marginals[low]
-                matrix[low, high] = matrix[high, low] = (
-                    span - (marginals[low] + marginals[high]) / 2.0
-                ) ** 2
-        return matrix
 
     matrix = np.zeros((size, size))
     for low in range(size):
@@ -93,11 +76,53 @@ def _delta(values, distance, marginals):
     return matrix
 
 
+def _numeric_alpha(units, distance):
+    """Squared-distance alpha without matrices indexed by distinct values.
+
+    For m ratings, the sum of ordered squared pair differences is
+    2 * m * sum((x - mean(x)) ** 2). Applying that identity within each
+    item and across all ratings gives the same Do/De as the coincidence
+    formula, including its 1 / (m - 1) weighting for ragged panels.
+
+    Ordinal distances are squared differences between marginal midpoint
+    ranks. Recompute those ranks on every call, including bootstrap draws.
+    Memory is linear in the number of ratings; ordinal sorting adds
+    O(R log R) time, while interval alpha takes O(R) time.
+    """
+    sizes = np.fromiter((len(responses) for responses in units.values()), dtype=np.intp)
+    ratings = [value for responses in units.values() for value in responses]
+    if distance == ORDINAL:
+        _, inverse, counts = np.unique(ratings, return_inverse=True, return_counts=True)
+        midpoints = np.cumsum(counts) - counts / 2.0
+        points = midpoints[inverse]
+    else:
+        points = np.asarray(ratings, dtype=float)
+
+    # Center before taking means to retain small differences at large offsets.
+    # Centered squares also avoid cancellation in sum(x*x) - sum(x)**2 / n.
+    points = points - points[0]
+    centered = points - points.mean()
+    total_squares = float(np.dot(centered, centered))
+    if total_squares == 0:
+        return 1.0
+
+    starts = np.cumsum(sizes) - sizes
+    means = np.add.reduceat(points, starts) / sizes
+    residuals = points - np.repeat(means, sizes)
+    item_squares = np.add.reduceat(residuals * residuals, starts)
+    weighted_squares = float(np.sum(item_squares * sizes / (sizes - 1)))
+    total = len(points)
+    return 1.0 - (total - 1) / total * weighted_squares / total_squares
+
+
 def krippendorff_alpha(units, distance=NOMINAL):
     """alpha = 1 - Do/De. Handles ragged data and any number of annotators."""
     units = _comparable(units)
     if not units:
         return None
+
+    if distance in (INTERVAL, ORDINAL):
+        return _numeric_alpha(units, distance)
 
     values = _ordered_values(units, distance)
     if len(values) < 2:
@@ -109,7 +134,7 @@ def krippendorff_alpha(units, distance=NOMINAL):
     if total < 2:
         return None
 
-    delta = _delta(values, distance, marginals)
+    delta = _delta(values, distance)
     disagreement = float((observed * delta).sum()) / total
     expected = float((np.outer(marginals, marginals) * delta).sum()) / (total * (total - 1))
     if expected == 0:
