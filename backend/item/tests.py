@@ -8,6 +8,7 @@ from project.models import ProjectMembership
 from labeling.models import Labeling, LabelingMembership
 from .models import Item
 from .serializers import ItemSerializer
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils import timezone
 import csv
 import io
@@ -158,3 +159,101 @@ class ExportImportedItemsCsvViewTest(TestCase):
         response = self.client.get(self.url)
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class ImportItemsCsvViewTest(TestCase):
+    """The labeling is created by a previous request, so a failed import must not leave it behind."""
+
+    def setUp(self):
+        User = get_user_model()
+        self.owner = User.objects.create_user(
+            username="import_owner",
+            password="pass123",
+            email="import_owner@example.com",
+            account_type="admin",
+        )
+
+        self.project = Project.objects.create(
+            name="Import Project",
+            description="project for csv import",
+            created_by=self.owner,
+        )
+        ProjectMembership.objects.create(
+            project=self.project,
+            user=self.owner,
+            role=ProjectMembership.RoleChoices.OWNER,
+        )
+
+        self.labeling = Labeling.objects.create(
+            project=self.project,
+            title="CSV a importar",
+            created_by=self.owner,
+            start_date=timezone.now().date(),
+            final_date=timezone.now().date(),
+        )
+        LabelingMembership.objects.create(
+            labeling=self.labeling,
+            user=self.owner,
+            role=LabelingMembership.Role.OWNER,
+        )
+
+        self.client = APIClient()
+        self.client.force_authenticate(self.owner)
+        self.url = reverse("import-items-csv", args=[self.labeling.id])
+
+    def test_valid_csv_imports_items(self):
+        upload = SimpleUploadedFile(
+            "itens.csv",
+            b"titulo,descricao\nTenis,Bom estado\nCamisa,Nova\n",
+            content_type="text/csv",
+        )
+
+        response = self.client.put(self.url, {"file": upload}, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(Labeling.objects.filter(id=self.labeling.id).exists())
+        self.assertEqual(Item.objects.filter(labeling=self.labeling).count(), 2)
+
+        self.labeling.refresh_from_db()
+        self.assertEqual(self.labeling.column_names, ["titulo", "descricao"])
+
+    def test_unreadable_csv_deletes_the_labeling(self):
+        # Unterminated quote: pandas raises while parsing.
+        upload = SimpleUploadedFile(
+            "quebrado.csv",
+            b'titulo,descricao\n"Tenis,Bom estado\n',
+            content_type="text/csv",
+        )
+
+        response = self.client.put(self.url, {"file": upload}, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(Labeling.objects.filter(id=self.labeling.id).exists())
+        self.assertEqual(Item.objects.filter(labeling_id=self.labeling.id).count(), 0)
+
+    def test_row_with_extra_column_deletes_the_labeling(self):
+        # Parsing succeeds here: pandas turns the extra column into the index,
+        # and the failure only shows up when the items are inserted.
+        upload = SimpleUploadedFile(
+            "coluna_a_mais.csv",
+            b"titulo,descricao\nTenis,Bom estado,sobrando\n",
+            content_type="text/csv",
+        )
+
+        response = self.client.put(self.url, {"file": upload}, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(Labeling.objects.filter(id=self.labeling.id).exists())
+        self.assertEqual(Item.objects.filter(labeling_id=self.labeling.id).count(), 0)
+
+    def test_non_csv_file_deletes_the_labeling(self):
+        upload = SimpleUploadedFile(
+            "planilha.txt",
+            b"titulo,descricao\nTenis,Bom estado\n",
+            content_type="text/plain",
+        )
+
+        response = self.client.put(self.url, {"file": upload}, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(Labeling.objects.filter(id=self.labeling.id).exists())
