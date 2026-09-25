@@ -23,7 +23,7 @@ export function useDeleteLabelingMutation() {
     },
   });
 }
-
+// Utilizada para duplicar um labeling
 export function useDuplicateLabelingMutation() {
   const qc = useQueryClient();
 

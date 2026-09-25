@@ -14,7 +14,6 @@ type IndividualProjectCardProps = {
   labelings_done: number;
   labelings_pending: number;
   labelings_late: number;
-  onManage: () => void;
 };
 
 export default function IndividualProjectCard({
@@ -24,7 +23,6 @@ export default function IndividualProjectCard({
   labelings_done,
   labelings_pending,
   labelings_late,
-  onManage,
 }: IndividualProjectCardProps) {
   const router = useRouter();
   const { t } = useTranslations();
@@ -79,7 +77,7 @@ export default function IndividualProjectCard({
           <div className="relative w-full">
             <Button
               icon={<NotebookPen size={20} strokeWidth={1.75} />}
-              onClick={onManage}
+              href={`/projects/${projectId}`}
               variant="normal"
               ariaLabel={t('projects.manageAria')}
             >
