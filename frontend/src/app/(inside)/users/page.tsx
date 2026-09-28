@@ -19,18 +19,14 @@ import NewUserModal from './NewUserModal';
 import EditUserModal from './EditUserModal';
 
 export default function UsersPage() {
-  // Contexto e i18n
   const { t } = useTranslations();
 
-  // Estado de UI
   const [searchTerm, setSearchTerm] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
-  // Ações
   const handleCreateInvitation = useInvitationCreator();
 
-  // Dados (React Query)
   const {
     items: usersList,
     count,

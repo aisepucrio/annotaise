@@ -1,30 +1,22 @@
 import React from 'react';
 
-/* Variantes de cor disponíveis para o botão */
 type ButtonVariant = 'normal' | 'light' | 'red' | 'green' | 'disabled' | 'white' | 'muted';
 
 type ButtonProps = {
-  /** Texto do botão */
   children?: React.ReactNode;
-  /** Ícone opcional (componente Lucide ou similar) */
+  /** Lucide icon or similar. */
   icon?: React.ReactNode;
-  /** Função de clique */
   onClick?: () => void;
-  /** Variante de cor do botão */
   variant?: ButtonVariant;
-  /** Se a fonte deve ser bold */
   bold?: boolean;
-  /** Se o botão está desabilitado */
   disabled?: boolean;
-  /** Se deve preencher todo o espaço disponível. Padrão: true */
+  /** Fills available width when true. Default: true. */
   fill?: boolean;
-  /** Classes CSS adicionais */
   className?: string;
-  /** Aria label para acessibilidade */
   ariaLabel?: string;
-  /** Tipo do botão (padrão: "button"). Permite 'submit' para submeter formulários. */
+  /** Default: "button"; use "submit" to submit forms. */
   type?: 'button' | 'submit' | 'reset';
-  /** Tamanho do padding básico */
+  /** Controls base padding size. */
   size?: 'normal' | 'icon';
 };
 
@@ -41,7 +33,6 @@ export default function Button({
   size = 'normal',
   type = 'button',
 }: ButtonProps) {
-  // Define as cores baseadas na variante ou no estado disabled
   const getColors = () => {
     if (disabled || variant === 'disabled') {
       return {
@@ -69,26 +60,26 @@ export default function Button({
         return {
           bg: 'var(--blueberry-500)',
           text: 'var(--metal-50)',
-          hoverBg: '#3a50c5', // Ligeiramente mais escuro que blueberry-500
+          hoverBg: '#3a50c5', // Slightly darker than blueberry-500
         };
       case 'green':
         return {
           bg: 'var(--green-blueberry)',
           text: 'var(--metal-50)',
-          hoverBg: '#1f463f', // Ligeiramente mais escuro que green-blueberry
+          hoverBg: '#1f463f', // Slightly darker than green-blueberry
         };
       case 'red':
         return {
           bg: 'var(--red-blueberry)',
           text: 'var(--metal-50)',
-          hoverBg: '#5f1e34', // Ligeiramente mais escuro que red-blueberry
+          hoverBg: '#5f1e34', // Slightly darker than red-blueberry
         };
       case 'normal':
       default:
         return {
           bg: 'var(--blueberry-700)',
           text: 'var(--metal-50)',
-          hoverBg: '#172673', // Ligeiramente mais escuro que blueberry-700
+          hoverBg: '#172673', // Slightly darker than blueberry-700
         };
     }
   };

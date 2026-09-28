@@ -16,7 +16,6 @@ type ItemAnswersProps = {
 export default function ItemAnswers({ answerEntries, orderedSections, answersByQuestion, itemPayload, t }: ItemAnswersProps) {
   let content: ReactNode;
 
-  // Estado do conteúdo principal
   if (answerEntries.length === 0) {
     content = <p className="text-sm text-gray-600">{t('labelings.create.answers.modal.answersEmpty')}</p>;
   } else if (orderedSections.length === 0) {

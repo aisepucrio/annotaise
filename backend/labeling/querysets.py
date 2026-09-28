@@ -1,4 +1,4 @@
-"""Leitura dos modelos de `labeling` (designpattern.MD §3.2).
+"""Leitura dos modelos de `labeling` (designpattern.md §3.2).
 
 Filtro, anotação e ordenação usados pelas views moram aqui como métodos
 encadeáveis, e sempre devolvem `QuerySet` — nunca `list`.

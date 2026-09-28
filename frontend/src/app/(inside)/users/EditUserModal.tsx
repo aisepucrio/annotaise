@@ -23,10 +23,8 @@ type EditUserModalProps = {
 };
 
 export default function EditUserModal({ open, user, onClose, onSubmit, onDelete }: EditUserModalProps) {
-  // i18n
   const { t } = useTranslations();
 
-  // Estado local
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -42,7 +40,6 @@ export default function EditUserModal({ open, user, onClose, onSubmit, onDelete 
 
   const applyGroupChangesMutation = useApplyUserGroupChangesMutation(user?.id);
 
-  // Opções do select
   const accountOptions = useMemo(
     () => [
       { value: 'standard', label: t('users.new.accountType.standard') },
@@ -51,7 +48,6 @@ export default function EditUserModal({ open, user, onClose, onSubmit, onDelete 
     [t]
   );
 
-  // Atualiza/reset do estado quando modal/usuário mudam
   useEffect(() => {
     if (!open || !user) {
       setEmail('');
@@ -73,7 +69,6 @@ export default function EditUserModal({ open, user, onClose, onSubmit, onDelete 
     setSubmitting(false);
   }, [open, user]);
 
-  // Submissão do formulário
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -97,7 +92,7 @@ export default function EditUserModal({ open, user, onClose, onSubmit, onDelete 
 
       await onSubmit(payload);
 
-      // Aplica as alterações de grupos: remove os marcados, cria os novos e adiciona os selecionados.
+      // Apply group changes: remove marked memberships, create new groups, and add selected ones.
       const { selectedGroupIds, newGroupNames, removedMembershipIds } = groupSelection;
       if (user && (selectedGroupIds.length > 0 || newGroupNames.length > 0 || removedMembershipIds.length > 0)) {
         await applyGroupChangesMutation.mutateAsync({ groupIds: selectedGroupIds, newGroupNames, removedMembershipIds });
@@ -133,9 +128,7 @@ export default function EditUserModal({ open, user, onClose, onSubmit, onDelete 
   return (
     <>
       <Modal open={open} onClose={onClose} title={t('users.edit.title')} description={t('users.edit.description')} maxWidth="lg">
-        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Email */}
           <Input
             id="edit-email"
             label={t('users.edit.emailLabel')}
@@ -146,7 +139,6 @@ export default function EditUserModal({ open, user, onClose, onSubmit, onDelete 
             required
           />
 
-          {/* Nome */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <Input
               id="edit-first"
@@ -164,7 +156,6 @@ export default function EditUserModal({ open, user, onClose, onSubmit, onDelete 
             />
           </div>
 
-          {/* Tipo de conta */}
           <Select
             id="edit-account"
             label={t('users.edit.accountTypeLabel')}
@@ -173,10 +164,8 @@ export default function EditUserModal({ open, user, onClose, onSubmit, onDelete 
             onChange={(e) => setAccountType((e.target as HTMLSelectElement).value as 'standard' | 'editor' | 'admin')}
           />
 
-          {/* Grupos */}
           <GroupSelector userId={user.id} value={groupSelection} onChange={setGroupSelection} />
 
-          {/* Ações */}
           <div className="flex items-center justify-between gap-3 pt-2">
             <Button type="button" variant="red" onClick={() => setConfirmDeleteOpen(true)} disabled={submitting}>
               {t('users.edit.deleteButton')}

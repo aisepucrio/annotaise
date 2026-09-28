@@ -2,18 +2,18 @@ from .models import Labeling, LabelingMembership, LabelingSection, LabelingEleme
 from .serializers import (LabelingSerializer, LabelingMembershipSerializer,
 LabelingSectionsBulkCreateSerializer, LabelingSectionSerializer, LabelingDashboardSerializer, LabelingMembershipDashboardSerializer, LabelingAgreementSummarySerializer,
 AICredentialSerializer, LabelingAICredentialLinkSerializer, LabelingAIConfigSerializer)
-from project.models import ProjectMembership
 from user.permissions import IsAdminAccount
-from .permissions import CanEditLabelingsInProjectPermission, IsLabelingOwnerPermission, IsAICredentialOwnerPermission
+from .permissions import (CanEditLabelingPermission, IsLabelingOwnerPermission, EDIT_ROLES, ANNOTATE_ROLES,
+CanManageLabelingAIConfigPermission, IsAICredentialOwnerPermission)
 from .services.ai_credentials import create_ai_credential, link_ai_credential, update_ai_credential
 from item.models import Item
 from user.models import UserGroup
 from .serializers import LabelingElementSerializer
+from .services.agreement import build_agreement_summary, parse_min_agreement
 
 from django.shortcuts import render, get_object_or_404
 from django.db import models, transaction
 from django.utils import timezone
-from django.contrib.auth import get_user_model
 from django.core.exceptions import ImproperlyConfigured
 
 from rest_framework import viewsets, status
@@ -36,21 +36,24 @@ from annotaise.pagination import StandardCursorPagination, paginated_response
 LLM_TIEBREAK_USERNAME = "llm_tiebreak_bot"
 LLM_TIEBREAK_EMAIL = "llm_tiebreak_bot@annotaise.local"
 
-# Posição das rotulações que o usuário nunca abriu: vão para o fim da ordem.
-# Tem que ser um valor concreto em vez de NULL — o cursor pagina comparando a
-# posição com __lt/__gt, e comparação com NULL nunca é verdadeira, então essas
-# linhas desapareceriam a partir da segunda página.
+LAST_OWNER_ERROR = "A rotulação precisa de pelo menos um dono."
+
+# Position for labelings the user never opened: they sort to the end.
+# Must be a concrete value rather than NULL — the cursor paginates by comparing
+# the position with __lt/__gt, and a comparison against NULL is never true, so
+# these rows would vanish starting on the second page.
 NEVER_OPENED = datetime(1970, 1, 1, tzinfo=dt_timezone.utc)
 
 
 class LabelingDashboardCursorPagination(StandardCursorPagination):
-    """Dashboard do rotulador: o que ele abriu mais recentemente vem primeiro.
+    """Annotator dashboard: most recently opened labeling comes first.
 
-    A posição do cursor é `last_opened` (anotado em `dashboard`); `-id` só
-    desempata dentro do mesmo instante. Note que rotulações nunca abertas
-    compartilham a posição NEVER_OPENED, e desempate por offset no cursor vale
-    até `offset_cutoff` (1000) linhas — folgado para esta listagem, que só traz
-    rotulações do usuário com itens pendentes que ele ainda não respondeu.
+    The cursor position is `last_opened` (annotated in `dashboard`); `-id` only
+    breaks ties within the same instant. Note that never-opened labelings share
+    the NEVER_OPENED position, and offset-based tie-breaking in the cursor is
+    valid up to `offset_cutoff` (1000) rows — comfortable for this listing,
+    which only carries the user's labelings with pending items they haven't
+    answered yet.
     """
 
     ordering = ("-last_opened", "-id")
@@ -68,10 +71,12 @@ class LabelingViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['create' ,'list_labeling_memberships']:
             self.permission_classes = [IsAdminAccount]
-        elif self.action in ['update','partial_update', 'destroy']:
-            self.permission_classes = [IsAdminAccount, CanEditLabelingsInProjectPermission]
-        elif self.action == 'ai_config':
+        elif self.action == 'destroy':
             self.permission_classes = [IsAdminAccount, IsLabelingOwnerPermission]
+        elif self.action in ['update','partial_update']:
+            self.permission_classes = [IsAdminAccount, CanEditLabelingPermission]
+        elif self.action == 'ai_config':
+            self.permission_classes = [IsAdminAccount, CanManageLabelingAIConfigPermission]
         else:
             self.permission_classes = [IsAuthenticated]
         return super().get_permissions()
@@ -87,15 +92,51 @@ class LabelingViewSet(viewsets.ModelViewSet):
             )
             .distinct()
         )
+  
 
-    
+    @action(detail=True, methods=['post'])
+    def duplicate(self, request, pk=None):
+        original = self.get_object()
+        with transaction.atomic():
+            #redefine pks e id para indicar a criação de uma nova anotação
+            copy = Labeling.objects.get(pk=original.pk)
+            copy.pk = None
+            copy.id = None
+            copy._state.adding = True
+            copy.title = "Cópia de " + original.title
+            copy.start_date = timezone.now().date()
+            copy.save()
+            
+            sections = original.sections.prefetch_related('elements').all()#duplicação das seções de uma anotação
+            for section in sections:
+                new_section = LabelingSection.objects.create(
+                    labeling=copy,
+                    form_type=section.form_type,
+                    title=section.title,
+                    order=section.order,
+                )
+                for element in section.elements.all():#duplicação dos elementos que podem compor uma seção
+                    LabelingElement.objects.create(
+                        labeling_section=new_section,
+                        order=element.order,
+                        text=element.text,
+                        required=element.required,
+                        question_type=element.question_type,
+                        context_type=element.context_type,
+                        column_name=element.column_name,
+                        allow_multiple=element.allow_multiple,
+                    )
+
+        serializer = self.get_serializer(copy)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
     @action(methods=['get'], detail=False, url_path='dashboard/edit', pagination_class=StandardCursorPagination)
     def editdashboard(self, request):
-        '''a ideia é que esse dashboard serve pra mostrar o dashboard pro admin, entao tem todos os labelings de todos os projetos
-        que o usuario é admin ou owner.'''
+        '''This dashboard is for the admin view: it lists all labelings across every
+        project where the user is admin or owner.'''
         today = datetime.now().date()
         search = request.query_params.get("search")
-        qs = (Labeling.objects.filter(project__memberships__user=request.user)
+        qs = (Labeling.objects.filter(memberships__user=request.user, memberships__role__in=EDIT_ROLES)
             .select_related('project')
             .annotate(
                 total_labelings=Count('items', distinct=True),
@@ -106,6 +147,16 @@ class LabelingViewSet(viewsets.ModelViewSet):
                 answers_collected=Count('answers', distinct=True),
             )
         )
+        # The folders shown on screen are the projects the user is a member of.
+        # `ungrouped` returns the rest: labelings with no project, or in a project
+        # the user isn't part of (permission today lives on the labeling itself).
+        if request.query_params.get("ungrouped") == "true":
+            qs = qs.exclude(project__memberships__user=request.user)
+        else:
+            project = request.query_params.get("project")
+            if project and project.isdigit():
+                qs = qs.filter(project_id=project)
+
         if search:
             qs = qs.filter(
                 Q(title__icontains=search) | Q(project__name__icontains=search)
@@ -115,7 +166,7 @@ class LabelingViewSet(viewsets.ModelViewSet):
             return [{
                 "id" : element.id,
                 "labeling_name" : element.title,
-                "project_name" : element.project.name,
+                "project_name" : element.project.name if element.project else None,
                 "total_days" : (element.final_date - element.start_date).days,
                 "days_passed" : (today - element.start_date).days,
                 "items_done" : element.done_labelings,
@@ -136,26 +187,15 @@ class LabelingViewSet(viewsets.ModelViewSet):
             .exclude(user__email__iexact=LLM_TIEBREAK_EMAIL)
             .select_related('user')
         )
+        background_users = set(
+            BackgroundAnswer.objects.filter(labeling=labeling).values_list("answered_by_id", flat=True)
+        )
+
+        answers_done = dict(
+            Answer.objects.filter(labeling=labeling).done_count_by_user()
+        )
 
         def build_rows(page):
-            # Agregados só dos membros exibidos: com cursor a página é uma
-            # fatia, então varrer o labeling inteiro seria desperdício.
-            user_ids = [membership.user_id for membership in page]
-
-            background_users = set(
-                BackgroundAnswer.objects
-                .filter(labeling=labeling, answered_by_id__in=user_ids)
-                .values_list("answered_by_id", flat=True)
-            )
-
-            answers_done = dict(
-                Answer.objects
-                .filter(labeling=labeling, answered_by_id__in=user_ids)
-                .values_list("answered_by_id")
-                .annotate(total=Count("item", distinct=True))
-                .values_list("answered_by_id", "total")
-            )
-
             return [{
                 "id": membership.id,
                 "user": membership.user_id,
@@ -195,14 +235,15 @@ class LabelingViewSet(viewsets.ModelViewSet):
             LabelingAIConfigSerializer(labeling, context={'requesting_user': request.user}).data
         )
 
+
     def _user_can_answer_labeling(self, labeling, user, user_group_names):
         """
-        True se ainda há ao menos um item pendente desta rotulação onde o
-        usuário consegue preencher um grupo em aberto.
+        True if this labeling still has at least one pending item where the
+        user can fill an open group slot.
 
-        Usa Item.remaining_groups_for (uma única query agregada para todos os
-        itens) + Item._slot_open — a mesma regra da distribuição, mantendo
-        dashboard e next-item em acordo.
+        Uses Item.remaining_groups_for (a single aggregated query for all
+        items) + Item._slot_open — the same rule used by distribution, keeping
+        the dashboard and next-item in agreement.
         """
         items = list(
             Item.objects
@@ -219,7 +260,8 @@ class LabelingViewSet(viewsets.ModelViewSet):
 
     @action(methods=['get'], detail=False, url_path='dashboard', pagination_class=LabelingDashboardCursorPagination)
     def dashboard(self, request):
-        '''esse é o dashboard normal, que mostra os labelings dos projetos que o usuario participa em respostas. tirei os labelings que ja terminaram
+        '''The regular dashboard: shows labelings from projects the user participates
+        in as an annotator. Finished labelings are excluded.
         '''
         today = datetime.now().date()
         search = request.query_params.get("search")
@@ -234,10 +276,10 @@ class LabelingViewSet(viewsets.ModelViewSet):
             .distinct()
         )
 
-        # Instante em que o usuário abriu cada rotulação. Subquery escalar sobre o
-        # membership (uma linha por usuário/rotulação) em vez de Max sobre uma
-        # relação multivalorada: o filtro do cursor vira WHERE em vez de HAVING,
-        # sem multiplicar linhas nos Count abaixo.
+        # Moment the user last opened each labeling. Scalar subquery over the
+        # membership (one row per user/labeling) instead of Max over a
+        # multi-valued relation: the cursor filter becomes a WHERE instead of a
+        # HAVING, without multiplying rows in the Counts below.
         last_opened_at = Subquery(
             LabelingMembership.objects
             .filter(labeling=OuterRef('pk'), user=request.user)
@@ -246,7 +288,7 @@ class LabelingViewSet(viewsets.ModelViewSet):
 
         qs = (
             Labeling.objects
-            .filter(memberships__user=request.user, id__in=items)
+            .filter(memberships__user=request.user, memberships__role__in=ANNOTATE_ROLES, id__in=items)
             .select_related('project')
             .annotate(
                 done_labelings=Count(
@@ -274,8 +316,8 @@ class LabelingViewSet(viewsets.ModelViewSet):
                     labeling_id__in=labeling_ids,
                 ).values_list("labeling_id", flat=True)
             )
-            # Grupos do usuário, pré-computados uma vez para avaliar elegibilidade
-            # por grupo sem uma consulta por item.
+            # User's groups, pre-computed once to evaluate group eligibility
+            # without a per-item query.
             user_group_names = set(
                 UserGroup.objects
                 .filter(memberships__user=request.user)
@@ -284,11 +326,11 @@ class LabelingViewSet(viewsets.ModelViewSet):
 
             rows = []
             for element in page:
-                # Em rotulações com cotas por grupo, só exibe se o usuário ainda
-                # consegue preencher algum grupo em aberto em algum item — mesma
-                # regra usada na distribuição (remaining_groups_for / _slot_open).
-                # O descarte é por página, então uma página pode vir com menos
-                # linhas que o page_size; o scroll infinito segue pelo `next`.
+                # For labelings with group quotas, only show it if the user can
+                # still fill an open group slot on some item — same rule used by
+                # distribution (remaining_groups_for / _slot_open). Filtering
+                # happens per page, so a page can come back with fewer rows than
+                # page_size; infinite scroll still follows `next`.
                 if element.has_group_quotas and not self._user_can_answer_labeling(
                     element, request.user, user_group_names
                 ):
@@ -300,7 +342,7 @@ class LabelingViewSet(viewsets.ModelViewSet):
                 rows.append({
                     "id" : element.id,
                     "labeling_name" : element.title,
-                    "project_name" : element.project.name,
+                    "project_name" : element.project.name if element.project else None,
                     "total_days" : (element.final_date - element.start_date).days,
                     "days_passed" : (today - element.start_date).days,
                     "items_done" : element.done_labelings,
@@ -314,17 +356,14 @@ class LabelingViewSet(viewsets.ModelViewSet):
         return paginated_response(self, qs, build_rows=build_rows)
 
     def retrieve(self, request, *args, **kwargs):
-        '''Abrir uma rotulação passa sempre por aqui — tanto a tela de resposta
-        (answer/background/guide) quanto as de gerenciamento buscam este detalhe
-        antes de renderizar. Por isso é este o ponto que registra o "abriu", e
-        não um endpoint separado: pega deep link, refresh e qualquer rota nova
-        de graça.
+        '''Opening a labeling always goes through here — both the answer screen
+        (answer/background/guide) and the management screens fetch this detail
+        before rendering. That's why this is where an "open" gets recorded,
+        instead of a separate endpoint: it covers deep links, refreshes, and any
+        new route for free.
         '''
         response = super().retrieve(request, *args, **kwargs)
 
-        # Só depois do super(): um 404/403 não deve contar como abertura.
-        # update() direto para não tocar em nenhum outro campo do membership, e
-        # 0 linhas é no-op esperado (ex.: admin que gerencia sem ser membro).
         LabelingMembership.objects.filter(
             labeling_id=kwargs.get('pk'),
             user=request.user,
@@ -335,11 +374,17 @@ class LabelingViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         user = self.request.user
 
-        perm = CanEditLabelingsInProjectPermission()
+        perm = CanEditLabelingPermission()
 
-        if perm.can_edit_labeling_by_project(user,self.request.data.get('project')) == False:
+        if self.request.data.get('project') and perm.can_edit_labeling_by_project(user,self.request.data.get('project')) == False:
             raise PermissionDenied(detail=perm.message)
-        serializer.save(created_by=user)
+        labeling = serializer.save(created_by=user)
+
+        LabelingMembership.objects.create(
+            labeling=labeling,
+            user=user,
+            role=LabelingMembership.Role.OWNER,
+        )
 
     @action(methods=["get"], detail=True, url_path="elements")
     def elements(self, request, pk=None):
@@ -365,215 +410,18 @@ class LabelingViewSet(viewsets.ModelViewSet):
     @action(methods=["get"], detail=True, url_path="agreement-summary")
     def agreement_summary(self, request, pk=None):
         labeling = self.get_object()
-        min_agreement = self._parse_min_agreement(request)
+        min_agreement = parse_min_agreement(request.query_params.get("min_agreement"))
+        summary = build_agreement_summary(labeling, min_agreement)
 
-        elements = (
-            LabelingElement.objects
-            .filter(
-                labeling_section__labeling=labeling,
-                labeling_section__form_type=LabelingSection.FormType.MAIN,
-                question_type=LabelingElement.QuestionType.MULTIPLE_CHOICE,
-            )
-            .prefetch_related("multiple_choice_items")
-        )
-
-        question_meta = {}
-        for element in elements:
-            options = [
-                item.text
-                for item in element.multiple_choice_items.all().order_by("order", "id")
-                if item.text and item.text.strip()
-            ]
-            question_meta[element.id] = {
-                "ordered_options": options,
-                "option_set": set(options),
-            }
-
-        if not question_meta:
-            serializer = LabelingAgreementSummarySerializer(
-                data={
-                    "min_agreement": min_agreement,
-                    "max_min_agreement": 2,
-                    "questions": [],
-                }
-            )
-            serializer.is_valid(raise_exception=True)
-            return Response(serializer.data, status=200)
-
-        answers = (
-            Answer.objects
-            .filter(labeling=labeling)
-            .order_by("-created_at", "-id")
-            .values("item_id", "answered_by_id", "answer_payload")
-        )
-
-        latest_by_item_user = {}
-        for answer in answers:
-            answered_by_id = answer.get("answered_by_id")
-            item_id = answer.get("item_id")
-            if answered_by_id is None or item_id is None:
-                continue
-            key = (item_id, answered_by_id)
-            if key not in latest_by_item_user:
-                latest_by_item_user[key] = answer
-
-        responders = {
-            answer["answered_by_id"]
-            for answer in latest_by_item_user.values()
-            if answer.get("answered_by_id") is not None
-        }
-        annotator_count = (
-            LabelingMembership.objects
-            .filter(labeling=labeling, role=LabelingMembership.Role.ANNOTATOR)
-            .values("user_id")
-            .distinct()
-            .count()
-        )
-        max_min_agreement = max(2, annotator_count, len(responders))
-        if min_agreement > max_min_agreement:
-            raise ValidationError(
-                detail={
-                    "detail": (
-                        f"min_agreement deve estar entre 2 e {max_min_agreement} "
-                        "para esta rotulação."
-                    ),
-                    "code": "INVALID_MIN_AGREEMENT",
-                }
-            )
-
-        per_question = {
-            question_id: {
-                "item_responders": defaultdict(set),
-                "option_users_by_item": defaultdict(lambda: defaultdict(set)),
-                "other_present": False,
-            }
-            for question_id in question_meta.keys()
-        }
-
-        for answer in latest_by_item_user.values():
-            payload = answer.get("answer_payload") or {}
-            item_id = answer["item_id"]
-            user_id = answer["answered_by_id"]
-
-            for question_id, meta in question_meta.items():
-                raw_value = self._resolve_payload_value(payload, question_id)
-                normalized_choices = self._normalize_choice_values(raw_value)
-                if not normalized_choices:
-                    continue
-
-                per_question[question_id]["item_responders"][item_id].add(user_id)
-                selected_options = set()
-                for choice in normalized_choices:
-                    if choice in meta["option_set"]:
-                        selected_options.add(choice)
-                    else:
-                        selected_options.add("__other__")
-                        per_question[question_id]["other_present"] = True
-
-                for option in selected_options:
-                    per_question[question_id]["option_users_by_item"][item_id][option].add(user_id)
-
-        output = []
-        for question_id, meta in question_meta.items():
-            state = per_question[question_id]
-            possible_agreements = len(state["item_responders"])
-
-            ordered_options = list(meta["ordered_options"])
-            if state["other_present"]:
-                ordered_options.append("__other__")
-
-            options_output = []
-            for option in ordered_options:
-                agreement_count = 0
-                for item_id, option_users in state["option_users_by_item"].items():
-                    users = option_users.get(option, set())
-                    if len(users) >= min_agreement:
-                        agreement_count += 1
-
-                options_output.append({
-                    "key": option,
-                    "label": option,
-                    "agreement_count": agreement_count,
-                })
-
-            output.append({
-                "question_id": question_id,
-                "possible_agreements": possible_agreements,
-                "options": options_output,
-            })
-
-        serializer = LabelingAgreementSummarySerializer(
-            data={
-                "min_agreement": min_agreement,
-                "max_min_agreement": max_min_agreement,
-                "questions": output,
-            }
-        )
+        serializer = LabelingAgreementSummarySerializer(data=summary)
         serializer.is_valid(raise_exception=True)
         return Response(serializer.data, status=200)
 
-    def _parse_min_agreement(self, request):
-        raw_value = request.query_params.get("min_agreement")
-        if raw_value in (None, ""):
-            return 2
-
-        try:
-            parsed_value = int(raw_value)
-        except (TypeError, ValueError):
-            raise ValidationError(
-                detail={
-                    "detail": "min_agreement deve ser um número inteiro.",
-                    "code": "INVALID_MIN_AGREEMENT",
-                }
-            )
-
-        if parsed_value < 2:
-            raise ValidationError(
-                detail={
-                    "detail": "min_agreement deve ser maior ou igual a 2.",
-                    "code": "INVALID_MIN_AGREEMENT",
-                }
-            )
-
-        return parsed_value
-
-    def _resolve_payload_value(self, payload, question_id):
-        if not isinstance(payload, dict):
-            return None
-
-        question_key = str(question_id)
-        if question_key in payload:
-            return payload.get(question_key)
-
-        if question_id in payload:
-            return payload.get(question_id)
-
-        return None
-
-    def _normalize_choice_values(self, value):
-        entries = value if isinstance(value, list) else [value]
-        normalized = []
-        for entry in entries:
-            if entry is None:
-                continue
-            if isinstance(entry, bool):
-                normalized.append("true" if entry else "false")
-                continue
-            text = str(entry).strip()
-            if not text:
-                continue
-            lowered = text.lower()
-            if lowered in {"true", "false"}:
-                normalized.append(lowered)
-            else:
-                normalized.append(text)
-        # deduplica escolhas duplicadas na mesma resposta
-        return list(dict.fromkeys(normalized))
 
 class LabelingMembershipViewSet(viewsets.ModelViewSet):
-    '''Só o owner/colaborator pode mexer nisso'''
+    '''Only the owner/admin can touch this.'''
     serializer_class = LabelingMembershipSerializer
-    permission_classes = [IsAdminAccount, CanEditLabelingsInProjectPermission]
+    permission_classes = [IsAdminAccount, CanEditLabelingPermission]
     queryset = (
         LabelingMembership.objects
         .select_related('labeling', 'user')
@@ -583,6 +431,18 @@ class LabelingMembershipViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     
+    def perform_update(self, serializer):
+        membership = serializer.instance
+        new_role = serializer.validated_data.get("role", membership.role)
+        if new_role != LabelingMembership.Role.OWNER and membership.is_last_owner():
+            raise ValidationError({"role": LAST_OWNER_ERROR})
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        if instance.is_last_owner():
+            raise ValidationError({"detail": LAST_OWNER_ERROR})
+        instance.delete()
+
     def get_queryset(self):
         user = getattr(self.request, "user", None)
         username = getattr(user, "username", "anonymous")
@@ -590,11 +450,10 @@ class LabelingMembershipViewSet(viewsets.ModelViewSet):
         if not user or not getattr(user, "is_authenticated", False):
             return self.queryset.none()
 
-        # Filtra memberships de labelings onde o usuário é owner/contributor do projeto
         return (
             self.queryset.filter(
-                Q(labeling__project__memberships__user=user,
-                  labeling__project__memberships__role__in=[ProjectMembership.RoleChoices.OWNER, ProjectMembership.RoleChoices.CONTRIBUTOR]) |
+                Q(labeling__memberships__user=user,
+                  labeling__memberships__role__in=EDIT_ROLES) |
                 Q(labeling__created_by=user)
             )
             .distinct()
@@ -617,12 +476,12 @@ class CreateReadLabelingStructureView(APIView):
         return form_type
 
     def get_permissions(self):
-        if self.request.method in ['GET']:# TODO isso aqui tem que ser retirado mas acho que vai quebrar o frontend
+        if self.request.method in ['GET']:# TODO this should be removed, but I think it'll break the frontend
             return [IsAuthenticated()]
         return [IsAdminAccount()]
 
     @extend_schema(
-        responses={200: [LabelingSectionSerializer]},      # resposta
+        responses={200: [LabelingSectionSerializer]},
         examples=None)    
     def get(self, request, labeling_id):
         labeling = get_object_or_404(Labeling, id=labeling_id)
@@ -637,10 +496,10 @@ class CreateReadLabelingStructureView(APIView):
         return Response(out, status=status.HTTP_200_OK)
 
     @extend_schema(
-        request=LabelingSectionsBulkCreateSerializer,         # corpo esperado
-        responses={200: [LabelingSectionSerializer]},      # resposta
+        request=LabelingSectionsBulkCreateSerializer,
+        responses={200: [LabelingSectionSerializer]},
         examples=None)
-    @transaction.atomic # importante pra se der problema nao deletar o que ja existe
+    @transaction.atomic # so a failure mid-write doesn't delete what already existed
     def put(self, request, labeling_id):
         labeling = get_object_or_404(Labeling, id=labeling_id)
         form_type = self._resolve_form_type(request)
@@ -656,7 +515,7 @@ class CreateReadLabelingStructureView(APIView):
                 status=400,
             )
 
-        perm = CanEditLabelingsInProjectPermission()
+        perm = CanEditLabelingPermission()
         if not perm.can_edit_labeling(request.user, labeling_id):
             raise PermissionDenied(detail=perm.message)
 
@@ -685,13 +544,13 @@ class CreateReadLabelingStructureView(APIView):
         sections_to_keep = set()
         created_sections = []
 
-        # Libera as ordens atuais para evitar colisão de constraint
-        # usa um deslocamento pequeno para liberar ordens sem estourar smallint
+        # Free up the current orders to avoid a unique-constraint collision;
+        # use a small offset so freeing the orders doesn't overflow smallint.
         temp_offset = 1000
         for idx, sec in enumerate(existing_sections_qs):
             sec.order = temp_offset + idx
             sec.save(update_fields=["order"])
-            # idem para elementos da seção
+            # same for the section's elements
             for el_idx, el in enumerate(sec.elements.all()):
                 el.order = temp_offset + el_idx
                 el.save(update_fields=["order"])
@@ -701,7 +560,7 @@ class CreateReadLabelingStructureView(APIView):
             section_id = section_data.pop("id", None)
             section_order = section_data.pop("order", None)
             if section_order is None:
-                section_order = idx + 1  # fallback: mantém 1-based sequencial
+                section_order = idx + 1  # fallback: keeps a sequential 1-based order
 
             if section_id and section_id in existing_sections:
                 section = existing_sections[section_id]
@@ -727,8 +586,8 @@ class CreateReadLabelingStructureView(APIView):
                 mc_items_data = element_data.pop("multiple_choice_items", [])
                 range_data = element_data.pop("question_range", None)
                 element_id = element_data.pop("id", None)
-                element_data.pop("order", None)  # evitar duplicação
-                element_order = element_idx + 1  # idem: 1-based sequencial
+                element_data.pop("order", None)  # avoid setting it twice
+                element_order = element_idx + 1  # same: sequential 1-based order
 
                 if element_id and element_id in existing_elements:
                     element = existing_elements[element_id]
@@ -744,7 +603,6 @@ class CreateReadLabelingStructureView(APIView):
                     )
                 elements_to_keep.add(element.id)
 
-                # atualiza range
                 if range_data is not None:
                     if hasattr(element, "question_range"):
                         for attr, value in range_data.items():
@@ -756,7 +614,7 @@ class CreateReadLabelingStructureView(APIView):
                     if hasattr(element, "question_range"):
                         element.question_range.delete()
 
-                # ressincroniza múltipla escolha recriando (simplifica)
+                # resync multiple-choice items by recreating them (simpler than diffing)
                 # remove old follow-up elements before deleting items
                 old_follow_up_ids = list(
                     element.multiple_choice_items
@@ -800,12 +658,12 @@ class CreateReadLabelingStructureView(APIView):
                     if follow_up_element:
                         elements_to_keep.add(follow_up_element.id)
 
-            # remove elementos não enviados
+            # remove elements not present in the submitted data
             to_delete_elements = [el_id for el_id in existing_elements.keys() if el_id not in elements_to_keep]
             if to_delete_elements:
                 LabelingElement.objects.filter(id__in=to_delete_elements).delete()
 
-        # remove seções não enviadas
+        # remove sections not present in the submitted data
         to_delete_sections = [sec_id for sec_id in existing_sections.keys() if sec_id not in sections_to_keep]
         if to_delete_sections:
             LabelingSection.objects.filter(id__in=to_delete_sections).delete()

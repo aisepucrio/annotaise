@@ -8,10 +8,24 @@ from unittest.mock import patch
 from item.models import Item 
 from item.models import ItemMembership
 from project.models import Project
-from labeling.models import Labeling, LabelingSection, LabelingElement, MultipleChoiceItem
+from labeling.models import Labeling, LabelingSection, LabelingElement, MultipleChoiceItem, LabelingMembership
 from user.models import UserGroup, UserGroupMembership
 from .models import Answer
 from .serializers import AnswerSerializer
+
+class AnswerTestsHelper():
+    @staticmethod
+    def enroll(labeling, *users, role="annotator"):
+        """
+        Whoever answers is a member of the labeling: in the real flow, next-item
+        only hands out an item (and only creates an ItemMembership) for someone
+        who already passed this check.
+        """
+        for user in users:
+            LabelingMembership.objects.get_or_create(
+                labeling=labeling, user=user, defaults={"role": role}
+            )
+
 
 class AnswerSerializerTest(TestCase):
     def setUp(self):
@@ -78,15 +92,15 @@ class AnswerSerializerTest(TestCase):
     def test_deserialization_failure(self):
         bad_payload = {
             "labeling": self.labeling.id,
-            # item faltando
+            # item missing
             "labeling_question": self.question.id,
             "answered_by": self.user.id,
-            "answer_payload": "not a dict",  # inválido
+            "answer_payload": "not a dict",  # invalid
         }
         ser = AnswerSerializer(data=bad_payload)
         self.assertFalse(ser.is_valid())
         self.assertIn("item", ser.errors)
-        #TODO funcao que valida o payload como dict
+        #TODO function that validates the payload as a dict
 
 
 class AnswerViewsetCreateTest(TestCase):
@@ -137,6 +151,7 @@ class AnswerViewsetCreateTest(TestCase):
             item=self.item,
             user=self.user,
         )
+        AnswerTestsHelper.enroll(self.labeling, self.user)
 
         self.client = APIClient()
         self.client.force_authenticate(self.user)
@@ -164,6 +179,49 @@ class AnswerViewsetCreateTest(TestCase):
         )
         self.item.refresh_from_db()
         self.assertIsNone(self.item.decision_payload)
+
+    def test_viewer_cannot_post_answer(self):
+        """'viewer' is read-only: even with a reserved item, it cannot register an answer."""
+        viewer = get_user_model().objects.create_user(
+            username="answer_viewer", email="answer_viewer@example.com", password="123"
+        )
+        AnswerTestsHelper.enroll(self.labeling, viewer, role="viewer")
+        ItemMembership.objects.create(item=self.item, user=viewer)
+
+        client = APIClient()
+        client.force_authenticate(viewer)
+        response = client.post(
+            self.url,
+            {
+                "labeling": self.labeling.id,
+                "item": self.item.id,
+                "answer_payload": {str(self.decisive_question.id): "aceitar"},
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(Answer.objects.filter(answered_by=viewer).exists())
+
+    def test_non_member_cannot_post_answer(self):
+        """The permission used to only define has_object_permission, which create never calls."""
+        outsider = get_user_model().objects.create_user(
+            username="answer_outsider", email="answer_outsider@example.com", password="123"
+        )
+        client = APIClient()
+        client.force_authenticate(outsider)
+        response = client.post(
+            self.url,
+            {
+                "labeling": self.labeling.id,
+                "item": self.item.id,
+                "answer_payload": {str(self.decisive_question.id): "aceitar"},
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(Answer.objects.filter(answered_by=outsider).exists())
 
     def test_decision_valid_answer_creates_and_consumes_membership(self):
         payload = {
@@ -233,6 +291,7 @@ class AutomaticDecisionTest(TestCase):
         )
         ItemMembership.objects.create(item=self.item, user=self.user1)
         ItemMembership.objects.create(item=self.item, user=self.user2)
+        AnswerTestsHelper.enroll(self.labeling, self.user1, self.user2)
 
         self.client = APIClient()
         self.url = reverse("answers-list")
@@ -357,6 +416,7 @@ class LLMDecisionTieBreakTest(TestCase):
 
         ItemMembership.objects.create(item=self.item, user=self.user1)
         ItemMembership.objects.create(item=self.item, user=self.user2)
+        AnswerTestsHelper.enroll(self.labeling, self.user1, self.user2)
 
         self.client = APIClient()
         self.url = reverse("answers-list")
@@ -415,6 +475,51 @@ class LLMDecisionTieBreakTest(TestCase):
             3,
         )
 
+    def test_answer_without_reservation_is_forbidden(self):
+        ItemMembership.objects.filter(item=self.item, user=self.user1).delete()
+
+        response = self._answer(self.user1, "yes")
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(Answer.objects.filter(item=self.item).exists())
+
+    def test_answer_to_finished_item_is_forbidden(self):
+        Item.objects.filter(id=self.item.id).update(status="finished")
+
+        response = self._answer(self.user1, "yes")
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(Answer.objects.filter(item=self.item).exists())
+        self.assertTrue(ItemMembership.objects.filter(item=self.item, user=self.user1).exists())
+
+    @patch("answer.services.tiebreak.run_llm_tiebreak_decision")
+    def test_stale_llm_result_does_not_overwrite_human_winner(self, mocked_llm):
+        def human_decides_while_llm_runs(**kwargs):
+            Item.objects.filter(id=self.item.id).update(
+                status="finished",
+                final_decision_source="human",
+                final_decision_value="no",
+                decision_payload={"yes": 1, "no": 2},
+            )
+            return {"winner": "yes", "tied": False, "models": [], "vote_count": {"yes": 3}, "valid_votes": 3}
+
+        mocked_llm.side_effect = human_decides_while_llm_runs
+
+        self._answer(self.user1, "yes")
+        response = self._answer(self.user2, "no")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        mocked_llm.assert_called_once()
+        self.item.refresh_from_db()
+        self.assertEqual(self.item.final_decision_source, "human")
+        self.assertEqual(self.item.final_decision_value, "no")
+        self.assertEqual(self.item.decision_payload, {"yes": 1, "no": 2})
+        self.assertEqual(self.item.llm_tiebreak_result["error"], "ITEM_ALREADY_DECIDED")
+        self.assertFalse(self.item.llm_tiebreak_result["applied"])
+        self.assertFalse(
+            Answer.objects.filter(item=self.item, answered_by__username="llm_tiebreak_bot").exists()
+        )
+
     @patch("answer.services.tiebreak.run_llm_tiebreak_decision")
     def test_llm_tiebreak_runs_once_when_result_is_tie(self, mocked_llm):
         mocked_llm.return_value = {
@@ -438,6 +543,7 @@ class LLMDecisionTieBreakTest(TestCase):
         self.assertEqual(self.item.final_decision_source, None)
 
         ItemMembership.objects.create(item=self.item, user=self.user3)
+        AnswerTestsHelper.enroll(self.labeling, self.user3)
         r3 = self._answer(self.user3, "yes")
         self.assertEqual(r3.status_code, status.HTTP_201_CREATED)
         self.assertEqual(mocked_llm.call_count, 1)
@@ -566,6 +672,7 @@ class LabelingCompletionTest(TestCase):
         )
         ItemMembership.objects.create(item=self.item1, user=self.user)
         ItemMembership.objects.create(item=self.item2, user=self.user)
+        AnswerTestsHelper.enroll(self.labeling, self.user)
 
         self.client = APIClient()
         self.client.force_authenticate(self.user)
@@ -604,10 +711,10 @@ class LabelingCompletionTest(TestCase):
 
 class GroupQuotaAnswerEnforcementTest(TestCase):
     """
-    Cotas por grupo são checadas na distribuição, mas reservas não consomem
-    slots: dois usuários podem reservar o mesmo item enquanto o slot 'any'
-    ainda está aberto. A criação da resposta precisa rechecar a cota sob o
-    lock do item e rejeitar (NO_GROUP_SLOT) quem ficou sem slot compatível.
+    Group quotas are checked at distribution time, but reservations don't
+    consume slots: two users can reserve the same item while the 'any' slot
+    is still open. Answer creation must recheck the quota under the item
+    lock and reject (NO_GROUP_SLOT) whoever ends up without a compatible slot.
     """
 
     def setUp(self):
@@ -647,11 +754,12 @@ class GroupQuotaAnswerEnforcementTest(TestCase):
             row_index=1,
         )
 
-        # Simula reservas concorrentes: os dois usuários sem grupo reservaram o
-        # item enquanto o slot 'any' ainda estava aberto.
+        # Simulates concurrent reservations: the two groupless users reserved the
+        # item while the 'any' slot was still open.
         ItemMembership.objects.create(item=self.item, user=self.user_b1)
         ItemMembership.objects.create(item=self.item, user=self.user_b2)
         ItemMembership.objects.create(item=self.item, user=self.user_a)
+        AnswerTestsHelper.enroll(self.labeling, self.user_b1, self.user_b2, self.user_a)
 
         self.url = reverse("answers-list")
 
@@ -674,21 +782,86 @@ class GroupQuotaAnswerEnforcementTest(TestCase):
         answer_b1 = Answer.objects.get(answered_by=self.user_b1)
         self.assertIsNone(answer_b1.responded_as)
 
-        # O slot 'any' já foi preenchido; só resta o slot do grupo A.
+        # The 'any' slot is already filled; only group A's slot remains.
         r2 = self._answer_as(self.user_b2)
         self.assertEqual(r2.status_code, status.HTTP_409_CONFLICT)
         self.assertEqual(r2.data["code"], "NO_GROUP_SLOT")
         self.assertFalse(Answer.objects.filter(answered_by=self.user_b2).exists())
-        # A reserva é liberada para o usuário poder buscar outro item.
+        # The reservation is released so the user can fetch another item.
         self.assertFalse(
             ItemMembership.objects.filter(item=self.item, user=self.user_b2).exists()
         )
 
-        # O usuário do grupo A ainda consegue preencher o slot do grupo,
-        # e o item finaliza com a cota respeitada.
+        # The group A user can still fill the group's slot,
+        # and the item finishes with the quota respected.
         r3 = self._answer_as(self.user_a)
         self.assertEqual(r3.status_code, status.HTTP_201_CREATED)
         answer_a = Answer.objects.get(answered_by=self.user_a)
         self.assertEqual(answer_a.responded_as, self.group_a)
         self.item.refresh_from_db()
         self.assertEqual(self.item.status, "finished")
+
+
+class LLMTiebreakVotingTest(TestCase):
+    QUESTION = {
+        "labeling_guide": "Guia",
+        "question_text": "Aceitar?",
+        "options": ["yes", "no"],
+        "contexts": [{"context_type": "text", "label": "Texto", "value": "abc"}],
+    }
+
+    @patch("answer.services.llm_clients.ollama_generate")
+    def test_ollama_majority_wins_and_invalid_votes_are_kept(self, mocked_generate):
+        from answer.services.llm_tiebreak import OLLAMA_MODELS_GENERAL, run_llm_tiebreak_decision
+
+        mocked_generate.side_effect = ["yes", "YES", "no", "talvez"]
+
+        result = run_llm_tiebreak_decision(**self.QUESTION)
+
+        self.assertEqual(result["model_pool"], "general")
+        self.assertEqual(result["models_used"], OLLAMA_MODELS_GENERAL)
+        self.assertEqual(result["vote_count"], {"yes": 2, "no": 1})
+        self.assertEqual(result["winner"], "yes")
+        self.assertFalse(result["tied"])
+        self.assertEqual(result["valid_votes"], 3)
+        self.assertEqual(
+            [m["status"] for m in result["models"]], ["ok", "ok", "ok", "invalid_vote"]
+        )
+
+    @patch("answer.services.llm_clients.cloud_completion")
+    def test_byok_error_never_carries_the_api_key(self, mocked_completion):
+        from answer.services.llm_tiebreak import run_llm_tiebreak_decision_byok
+
+        secret = "sk-segredo-que-nao-pode-vazar"
+        mocked_completion.side_effect = RuntimeError(f"401 invalid key {secret}")
+
+        result = run_llm_tiebreak_decision_byok(provider="openai", api_key=secret, **self.QUESTION)
+
+        self.assertEqual(result["model_pool"], "byok")
+        self.assertIsNone(result["winner"])
+        self.assertEqual(result["models"][0]["status"], "error")
+        self.assertNotIn(secret, str(result))
+        self.assertIn("[REDACTED]", result["models"][0]["error"])
+
+    def test_byok_unknown_provider_has_the_same_shape_as_a_success(self):
+        from answer.services.llm_tiebreak import run_llm_tiebreak_decision_byok
+
+        result = run_llm_tiebreak_decision_byok(provider="nope", api_key="x", **self.QUESTION)
+
+        self.assertEqual(result["error"], "UNSUPPORTED_PROVIDER")
+        self.assertEqual(
+            set(result),
+            {"attempted_at", "model_pool", "models_used", "models", "vote_count",
+             "winner", "tied", "valid_votes", "error", "error_message"},
+        )
+
+    @patch("answer.services.llm_clients.ollama_generate")
+    def test_video_context_is_rejected_before_asking_any_model(self, mocked_generate):
+        from answer.services.llm_tiebreak import run_llm_tiebreak_decision
+
+        question = {**self.QUESTION, "contexts": [{"context_type": "video", "value": "x.mp4"}]}
+
+        result = run_llm_tiebreak_decision(**question)
+
+        self.assertEqual(result["error"], "UNSUPPORTED_VIDEO_CONTEXT")
+        mocked_generate.assert_not_called()

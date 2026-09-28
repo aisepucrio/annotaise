@@ -1,13 +1,9 @@
 export type StatPillColor = 'blue' | 'orange' | 'red' | 'green';
 
 type StatPillProps = {
-  /** Texto descritivo da métrica */
   label: string;
-  /** Valor numérico a ser exibido */
   value: number;
-  /** Paleta de cor base do componente */
   color: StatPillColor;
-  /** Indica se o "corte" visual deve aparecer à esquerda ou à direita */
   cut?: 'left' | 'right';
 };
 

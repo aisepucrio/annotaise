@@ -3,7 +3,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import type { QueryKey } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 
-// Tamanho do bloco pedido a cada avanço do scroll infinito.
+// Page size requested on each infinite-scroll fetch.
 const DEFAULT_PAGE_SIZE = 12;
 
 export type CursorPage<T> = {
@@ -13,11 +13,11 @@ export type CursorPage<T> = {
   results: T[];
 };
 
-/** Filtros de uma listagem. O cursor não entra aqui: quem controla é o useInfiniteQuery. */
+/** Filters for a listing. The cursor isn't part of this type — useInfiniteQuery manages it. */
 export type CursorQuery<TFilters extends object = object> = TFilters & { pageSize?: number };
 export type CursorSearchQuery = CursorQuery<{ search?: string }>;
 
-/** O que chega no service: os filtros mais o cursor do bloco pedido. */
+/** What reaches the service layer: filters plus the cursor for the requested block. */
 export type CursorRequest<TFilters extends object = object> = CursorQuery<TFilters> & { cursor?: string | null };
 export type CursorSearchRequest = CursorRequest<{ search?: string }>;
 
@@ -25,7 +25,7 @@ function toApiParams<TFilters extends object>({ pageSize, cursor, ...filters }: 
   return {
     ...filters,
     page_size: pageSize ?? DEFAULT_PAGE_SIZE,
-    // undefined faz o axios omitir o param — o backend então devolve o primeiro bloco.
+    // undefined makes axios omit the param — the backend then returns the first page.
     cursor: cursor ?? undefined,
   };
 }
@@ -41,11 +41,11 @@ export async function fetchCursorPage<T, TParams extends CursorRequest = CursorR
 }
 
 /**
- * Extrai o token de cursor de um link `next`/`previous` do DRF.
+ * Extracts the cursor token from a DRF `next`/`previous` link.
  *
- * Reaproveitamos só o token em vez de seguir o link inteiro: assim a requisição
- * continua passando pelo cliente axios (baseURL, credenciais e interceptors de
- * auth), sem depender do host absoluto que o backend montou.
+ * We reuse only the token instead of following the full link so the request
+ * still goes through the axios client (baseURL, credentials, auth
+ * interceptors) instead of depending on the absolute host the backend built.
  */
 export function extractCursor(link: string | null | undefined): string | null {
   if (!link) return null;
@@ -53,7 +53,7 @@ export function extractCursor(link: string | null | undefined): string | null {
   const queryStart = link.indexOf('?');
   if (queryStart === -1) return null;
 
-  // URLSearchParams já resolve o percent-encoding do token.
+  // URLSearchParams already handles percent-decoding of the token.
   return new URLSearchParams(link.slice(queryStart + 1)).get('cursor');
 }
 
@@ -65,9 +65,9 @@ type UseCursorQueryOptions<TParams extends CursorQuery, TItem> = {
 };
 
 export type CursorListResult<TItem> = {
-  /** Todos os blocos já carregados, concatenados na ordem de chegada. */
+  /** All pages loaded so far, concatenated in arrival order. */
   items: TItem[];
-  /** Total no servidor, quando conhecido — usado nos contadores das telas. */
+  /** Server-side total, when known — used for on-screen counters. */
   count?: number;
   isLoading: boolean;
   isFetching: boolean;
@@ -78,11 +78,11 @@ export type CursorListResult<TItem> = {
 };
 
 /**
- * Listagem paginada por cursor, pronta para scroll infinito.
+ * Cursor-paginated listing, ready for infinite scroll.
  *
- * Mudar qualquer filtro em `params` troca a queryKey, então os blocos
- * acumulados são descartados e a lista recomeça do topo — não há mais estado
- * de página para resetar na mão.
+ * Changing any filter in `params` changes the queryKey, so accumulated pages
+ * are discarded and the list restarts from the top — no manual page-reset
+ * state needed.
  */
 export function useCursorQuery<TParams extends CursorQuery, TItem>({
   queryKey,
@@ -102,7 +102,7 @@ export function useCursorQuery<TParams extends CursorQuery, TItem>({
 
   const items = useMemo(() => data?.pages.flatMap((page) => page.results) ?? [], [data]);
 
-  // Identidade estável: o observer do scroll infinito depende desta callback.
+  // Stable identity: the infinite-scroll observer depends on this callback.
   const loadMore = useCallback(() => {
     void fetchNextPage();
   }, [fetchNextPage]);

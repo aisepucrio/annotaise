@@ -4,16 +4,10 @@ import Cookies from 'js-cookie';
 import { api } from '@/lib/api';
 import { clearAllUserLlmKeys } from '@/lib/userLlmKey';
 
-/**
- * Stores a token in cookies.
- */
 const storeToken = (token: string, type: 'access' | 'refresh') => {
   Cookies.set(type + 'Token', token);
 };
 
-/**
- * Retrieves a token from cookies.
- */
 const getToken = (type: 'access' | 'refresh') => {
   return Cookies.get(type + 'Token');
 };
@@ -21,14 +15,14 @@ const getToken = (type: 'access' | 'refresh') => {
 const removeTokens = () => {
   Cookies.remove('accessToken');
   Cookies.remove('refreshToken');
-  // Nenhuma chave de IA local pode sobreviver à troca de usuário no navegador.
+  // Nenhuma chave de IA da sessão pode sobreviver à troca de usuário no navegador.
   // Fica aqui porque o logout forçado (refresh token expirado) passa por aqui.
   clearAllUserLlmKeys();
 };
 
 /**
- * Centraliza o comportamento de logout forçado: remove tokens e redireciona para /login.
- * Protege contra execução server-side.
+ * Centralizes forced logout: clears tokens and redirects to /login.
+ * Guards against running on the server (no `window`).
  */
 const forceLogoutAndRedirect = () => {
   removeTokens();
@@ -39,6 +33,7 @@ const forceLogoutAndRedirect = () => {
 };
 
 const login = (email: string, password: string) => {
+  clearAllUserLlmKeys();
   return api.post('/api/auth/token/', { email, password });
 };
 
@@ -65,8 +60,6 @@ export const AuthActions = () => {
     resetPassword,
   };
 };
-
-/* esqueceu a senha e reset */
 
 const forgotPassword = (email: string) => {
   return api.post('/api/auth/forgot-password/', { email });

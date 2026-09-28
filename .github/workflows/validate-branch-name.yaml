@@ -1,0 +1,35 @@
+name: Branch Name Validation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+jobs:
+  validate-branch-name:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validate branch name
+        env:
+          BRANCH_NAME: ${{ github.head_ref }}
+        shell: bash
+        run: |
+          echo "Validating branch: $BRANCH_NAME"
+
+          if [[ ! "$BRANCH_NAME" =~ ^(feat|fix|docs|style|refactor|test|chore)/[a-z0-9._-]+$ ]]; then
+            echo "❌ Invalid branch name: $BRANCH_NAME"
+            echo ""
+            echo "Expected format:"
+            echo "<type>/<description>"
+            echo ""
+            echo "Allowed types:"
+            echo "feat, fix, docs, style, refactor, test, chore"
+            echo ""
+            echo "Examples:"
+            echo "feat/add-annotation-voting"
+            echo "fix/annotation-validation"
+            echo "docs/update-readme"
+            exit 1
+          fi
+
+          echo "✅ Valid branch name"

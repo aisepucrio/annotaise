@@ -35,7 +35,7 @@ Use os controles para testar diferentes **títulos**, **descrições** e **toolt
 };
 
 /* =======================
-   VARIAÇÕES
+   VARIATIONS
 ======================= */
 
 export const Variations: StoryObj<typeof PageHeader> = {
@@ -87,7 +87,7 @@ export const Variations: StoryObj<typeof PageHeader> = {
 };
 
 /* =======================
-   DIFERENTES TAMANHOS DE TÍTULO
+   DIFFERENT TITLE SIZES
 ======================= */
 
 export const TitleLengths: StoryObj<typeof PageHeader> = {
@@ -124,7 +124,7 @@ Exemplos com diferentes tamanhos de título para verificar o comportamento respo
 };
 
 /* =======================
-   CONTEXTOS DE USO
+   USAGE CONTEXTS
 ======================= */
 
 export const UsageContexts: StoryObj<typeof PageHeader> = {

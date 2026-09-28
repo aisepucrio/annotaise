@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchGroups, fetchUserGroupMemberships } from './groupService';
 import type { UserGroup, UserGroupMembership } from './groupTypes';
 
-// Lista os grupos disponíveis para seleção.
 export function useGroupsQuery(enabled = true) {
   return useQuery<UserGroup[]>({
     queryKey: ['groups'],
@@ -11,7 +10,7 @@ export function useGroupsQuery(enabled = true) {
   });
 }
 
-// Lista os grupos de que o usuário já faz parte (para evitar associações duplicadas).
+// Groups the user already belongs to, used to avoid duplicate associations.
 export function useUserGroupMembershipsQuery(userId?: number | null) {
   return useQuery<UserGroupMembership[]>({
     queryKey: ['group-memberships', userId],

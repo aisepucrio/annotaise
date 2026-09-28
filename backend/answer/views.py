@@ -1,5 +1,5 @@
 from .models import Answer, BackgroundAnswer
-from item.models import ItemMembership, Item
+from item.models import Item
 from .serializers import (
     AnswerSerializer,
     AnswerDashboardSerializer,
@@ -8,7 +8,7 @@ from .serializers import (
 from labeling.models import LabelingElement
 from labeling.models import Labeling, LabelingMembership, LabelingSection
 from annotaise.pagination import StandardCursorPagination
-from annotaise.user_llm_key import pop_user_llm_key
+from .session_llm_key import pop_user_llm_key
 
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
@@ -17,13 +17,15 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.views import APIView
 from user.permissions import IsAdminAccount
 from django.http import HttpResponse
-from .permissions import CanAnswerLabelingPermission
-from labeling.permissions import CanEditLabelingsInProjectPermission
-from .services.submit_answer import (
+from .permissions import CanAnswerLabelingPermission, HasItemReservationPermission
+from labeling.permissions import CanEditLabelingPermission, can_annotate_labeling
+from .services.exceptions import (
+    BackgroundFormRequired,
     DecisionInputError,
+    ItemAlreadyFinished,
     NoGroupSlotAvailable,
-    submit_answer,
 )
+from .services.submit_answer import submit_answer
 
 import pandas as pd
 
@@ -32,7 +34,6 @@ from django.db.models import F, Q
 from django.db import transaction
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.views.decorators.debug import sensitive_variables
-#TODO aqui é melhor usar permission pra ver se o item membership existe!
 class AnswerViewset(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
     serializer_class = AnswerSerializer
@@ -41,7 +42,7 @@ class AnswerViewset(viewsets.ModelViewSet):
     def get_permissions(self):
 
         if self.action in ['create']:
-            perm = [CanAnswerLabelingPermission()]
+            perm = [CanAnswerLabelingPermission(), HasItemReservationPermission()]
         else:
             perm = [IsAdminAccount()]
         return perm
@@ -66,61 +67,26 @@ class AnswerViewset(viewsets.ModelViewSet):
 
     @sensitive_variables("session_llm_key")
     def create(self, request, *args, **kwargs):
-        # Chave de IA do modo "só nesta sessão": sai da requisição já aqui,
-        # antes de qualquer outro processamento. Ver annotaise/user_llm_key.py.
+        # Tira a chave de IA da sessão do request antes de qualquer outra coisa.
         session_llm_key = pop_user_llm_key(request)
 
-        user = request.user
-        data = request.data
-
-        item_id = data.get('item')
-        item = get_object_or_404(Item, pk=item_id)
-
-        # Garante que o usuário tenha membership nesse item TODO isso era pra trr na permission... T-T
-        membership = ItemMembership.objects.filter(
-            user=user,
-            item_id=item_id,
-        ).first()
-        if not membership:
-            return Response(
-                {'detail': 'Você não pode responder a esse item da rotulação.'},
-                status=403
-        )
-        # TODO eu acho que esse finished era pra tar no enum...
-        if item.status == 'finished':
-            return Response(
-                {'detail': 'Esse item já foi finalizado e não pode mais receber respostas.'},
-                status=403
-        )
-
-        labeling:Labeling = item.labeling
-        if labeling.has_background_form and not BackgroundAnswer.objects.filter(
-            labeling=labeling,
-            answered_by=user,
-        ).exists():
-            return Response(
-                {
-                    "detail": "Você precisa responder o formulário background antes de rotular.",
-                    "code": "BACKGROUND_REQUIRED",
-                },
-                status=403,
-            )
-
-        serializer = self.get_serializer(data=data, context={'request':request})
+        item = get_object_or_404(Item, pk=request.data.get('item'))
+        serializer = self.get_serializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
 
         try:
             result = submit_answer(
-                user=user,
+                user=request.user,
                 item=item,
-                membership=membership,
                 answer_payload=serializer.validated_data.get("answer_payload", {}),
                 session_llm_key=session_llm_key,
             )
+        except (ItemAlreadyFinished, BackgroundFormRequired) as exc:
+            return self._rejected(exc, status=403)
         except DecisionInputError as exc:
-            return Response({'detail': str(exc)}, status=400)
+            return self._rejected(exc, status=400)
         except NoGroupSlotAvailable as exc:
-            return Response({'detail': str(exc), 'code': 'NO_GROUP_SLOT'}, status=409)
+            return self._rejected(exc, status=409)
 
         response_data = self.get_serializer(result.answer).data
         if result.decision_warning:
@@ -131,6 +97,12 @@ class AnswerViewset(viewsets.ModelViewSet):
             status=201,
             headers=self.get_success_headers(response_data),
         )
+
+    def _rejected(self, exc, status):
+        body = {'detail': str(exc)}
+        if exc.code:
+            body['code'] = exc.code
+        return Response(body, status=status)
 
     def _assert_owner_or_admin(self, answer):
         user = self.request.user
@@ -159,14 +131,14 @@ class AnswerViewset(viewsets.ModelViewSet):
 
 class AnonymousSubmitAnswerView(APIView):
     """
-    Submissão pública/anônima de respostas para rotulações em modo anônimo.
+    Public/anonymous answer submission for labelings in anonymous mode.
 
-    Identifica a rotulação pelo token da URL e dispensa autenticação e
-    verificações de usuário/membership. A resposta é gravada sem autor
-    (answered_by=None). Como no modo anônimo assume-se users_per_item=1
-    (cada visitante responde um item uma única vez), o item é marcado como
-    finalizado assim que recebe uma resposta — exceto em form_mode, em que os
-    itens permanecem abertos.
+    Identifies the labeling by the URL token and skips authentication and
+    user/membership checks. The answer is stored without an author
+    (answered_by=None). Since anonymous mode assumes users_per_item=1 (each
+    visitor answers an item exactly once), the item is marked finished as
+    soon as it receives an answer — except in form_mode, where items stay
+    open.
     """
     permission_classes = [AllowAny]
     authentication_classes = []
@@ -211,7 +183,7 @@ class AnonymousSubmitAnswerView(APIView):
             answer_payload=answer_payload,
         )
 
-        # users_per_item == 1 no modo anônimo: uma resposta já finaliza o item.
+        # users_per_item == 1 in anonymous mode: a single answer already finishes the item.
         if not labeling.form_mode:
             item.status = "finished"
             item.save(update_fields=["status"])
@@ -233,8 +205,8 @@ class AnonymousSubmitAnswerView(APIView):
 
 
 class AnswerRowCursorPagination(StandardCursorPagination):
-    # A tela lista as respostas na ordem das linhas do CSV. O cursor não aceita
-    # lookups com "__", então row_index chega anotado do item (ver get_queryset).
+    # The screen lists answers in CSV row order. The cursor doesn't accept
+    # "__" lookups, so row_index arrives annotated from the item (see get_queryset).
     ordering = ("row_index", "id")
 
 
@@ -267,7 +239,7 @@ class LabelingBackgroundAnswerView(APIView):
     def _can_view_labeling(self, user, labeling):
         if LabelingMembership.objects.filter(labeling=labeling, user=user).exists():
             return True
-        perm = CanEditLabelingsInProjectPermission()
+        perm = CanEditLabelingPermission()
         return perm.can_edit_labeling(user, labeling.id)
 
     def get(self, request, labeling_id, **kwargs):
@@ -289,10 +261,7 @@ class LabelingBackgroundAnswerView(APIView):
 
     def put(self, request, labeling_id, **kwargs):
         labeling = self._get_labeling(labeling_id)
-        if not LabelingMembership.objects.filter(
-            labeling=labeling,
-            user=request.user,
-        ).exists():
+        if not can_annotate_labeling(request.user, labeling.id):
             raise PermissionDenied("Você não tem acesso a essa rotulação.")
 
         if not labeling.has_background_form:
@@ -340,7 +309,7 @@ class LabelingBackgroundAnswersView(APIView):
 
     def get(self, request, labeling_id, **kwargs):
         labeling = get_object_or_404(Labeling, id=labeling_id)
-        perm = CanEditLabelingsInProjectPermission()
+        perm = CanEditLabelingPermission()
         if not perm.can_edit_labeling(request.user, labeling.id):
             raise PermissionDenied("Você não tem permissão para visualizar essas respostas.")
 
@@ -436,7 +405,7 @@ class ExportAnswersView(APIView):
         if not has_llm and "LLM" in df.columns:
             df = df.drop(columns=["LLM"])
 
-        # Gera o conteúdo do CSV como *string*, sem salvar em arquivo
+        # Builds the CSV content as a string, without writing to a file
         csv_data = df.to_csv(index=False)
 
         response = HttpResponse(csv_data, content_type="text/csv")

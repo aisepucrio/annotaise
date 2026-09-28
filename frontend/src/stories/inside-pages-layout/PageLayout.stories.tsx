@@ -16,7 +16,7 @@ const meta = {
 export default meta;
 
 /* =======================
-   EXEMPLO BÁSICO
+   BASIC EXAMPLE
 ======================= */
 
 export const Basic: StoryObj<typeof PageLayout> = {
@@ -62,7 +62,7 @@ A busca possui **debounce automático** de 300ms.
 };
 
 /* =======================
-   COM BOTÃO DE AÇÃO
+   WITH ACTION BUTTON
 ======================= */
 
 export const WithActionButton: StoryObj<typeof PageLayout> = {
@@ -105,7 +105,7 @@ Use \`hasButton={true}\` para exibir o botão. Configure texto, ícone e callbac
 };
 
 /* =======================
-   ESTADOS: LOADING
+   STATES: LOADING
 ======================= */
 
 export const Loading: StoryObj<typeof PageLayout> = {
@@ -131,7 +131,7 @@ Use \`isLoading={true}\` para exibir o loader.
 };
 
 /* =======================
-   ESTADOS: VAZIO
+   STATES: EMPTY
 ======================= */
 
 export const Empty: StoryObj<typeof PageLayout> = {
@@ -192,7 +192,7 @@ Layout com **texto informativo** exibido abaixo da grid.
 };
 
 /* =======================
-   GRID CUSTOMIZADA
+   CUSTOM GRID
 ======================= */
 
 export const CustomGridWidth: StoryObj<typeof PageLayout> = {
@@ -233,7 +233,7 @@ Padrão: **420px**. Ajuste conforme o conteúdo dos cards para obter melhor legi
 };
 
 /* =======================
-   EXEMPLO COMPLETO
+   COMPLETE EXAMPLE
 ======================= */
 
 export const Complete: StoryObj<typeof PageLayout> = {

@@ -9,11 +9,11 @@ import Checkbox from '@/components/form/Checkbox';
 import { useGroupsQuery, useUserGroupMembershipsQuery } from '@/modules/group/groupQueries';
 
 export type GroupSelectionValue = {
-  // IDs de grupos existentes selecionados para adicionar o usuário.
+  // IDs of existing groups selected to add the user to.
   selectedGroupIds: number[];
-  // Nomes de novos grupos digitados que ainda não existem.
+  // Names of newly typed groups that don't exist yet.
   newGroupNames: string[];
-  // IDs das associações atuais marcadas para remoção.
+  // IDs of current memberships marked for removal.
   removedMembershipIds: number[];
 };
 
@@ -24,14 +24,14 @@ type GroupSelectorProps = {
 };
 
 /**
- * Caixa de texto que também funciona como seletor por checkboxes:
- * - digite para filtrar os grupos existentes (carregados de /groups/);
- * - o menu de opções (dropdown) só aparece quando a caixa está selecionada;
- * - marque grupos para inserir/remover o usuário neles.
+ * Text box that doubles as a checkbox selector:
+ * - typing filters the existing groups (loaded from /groups/);
+ * - the options dropdown only appears while the box is focused;
+ * - check groups to add/remove the user from them.
  *
- * Os grupos de que o usuário já participa são exibidos junto com os que serão
- * adicionados; todos podem ser removidos pelo botão do chip (a remoção dos
- * grupos atuais é aplicada ao salvar).
+ * Groups the user already belongs to are shown alongside the ones about to be
+ * added; all of them can be removed via the chip button (removal of current
+ * groups is only applied on save).
  */
 export default function GroupSelector({ userId, value, onChange }: GroupSelectorProps) {
   const { t } = useTranslations();
@@ -44,7 +44,6 @@ export default function GroupSelector({ userId, value, onChange }: GroupSelector
 
   const { selectedGroupIds, newGroupNames, removedMembershipIds } = value;
 
-  // Fecha o dropdown ao clicar fora do componente.
   useEffect(() => {
     if (!open) return;
     const handlePointerDown = (event: PointerEvent) => {
@@ -56,7 +55,7 @@ export default function GroupSelector({ userId, value, onChange }: GroupSelector
     return () => document.removeEventListener('pointerdown', handlePointerDown);
   }, [open]);
 
-  // Associações atuais agrupadas por grupo (um grupo pode ter mais de uma).
+  // Current memberships grouped by group id (a user can have more than one membership in the same group).
   const membershipIdsByGroup = useMemo(() => {
     const map = new Map<number, number[]>();
     for (const m of memberships ?? []) {
@@ -69,32 +68,29 @@ export default function GroupSelector({ userId, value, onChange }: GroupSelector
 
   const removedSet = useMemo(() => new Set(removedMembershipIds), [removedMembershipIds]);
 
-  // Mapa id -> nome para exibir os grupos como chips.
   const groupNameById = useMemo(() => new Map((groups ?? []).map((g) => [g.id, g.name])), [groups]);
 
   const isCurrentMember = (groupId: number) => membershipIdsByGroup.has(groupId);
 
-  // Um grupo atual está "marcado para remoção" quando todas as suas associações estão na lista.
+  // An existing group counts as "marked for removal" only when all of its memberships are in the list.
   const isGroupRemoved = (groupId: number) => {
     const ids = membershipIdsByGroup.get(groupId);
     return !!ids && ids.length > 0 && ids.every((id) => removedSet.has(id));
   };
 
-  // Estado efetivo após salvar: membro atual (não removido) ou selecionado para adicionar.
+  // Effective state after saving: currently a member (and not removed), or newly selected to add.
   const isEffectiveMember = (groupId: number) =>
     (isCurrentMember(groupId) && !isGroupRemoved(groupId)) || selectedGroupIds.includes(groupId);
 
   const normalizedQuery = query.trim();
   const lowerQuery = normalizedQuery.toLowerCase();
 
-  // Grupos filtrados pela busca.
   const filteredGroups = useMemo(() => {
     const list = groups ?? [];
     if (!lowerQuery) return list;
     return list.filter((g) => g.name.toLowerCase().includes(lowerQuery));
   }, [groups, lowerQuery]);
 
-  // O nome digitado já existe (como grupo ou como novo nome pendente)?
   const exactMatchExists = useMemo(() => {
     if (!lowerQuery) return true;
     const inGroups = (groups ?? []).some((g) => g.name.toLowerCase() === lowerQuery);
@@ -104,13 +100,12 @@ export default function GroupSelector({ userId, value, onChange }: GroupSelector
 
   const canCreate = normalizedQuery.length > 0 && !exactMatchExists;
 
-  // Liga/desliga a participação efetiva do usuário em um grupo.
   const toggleGroup = (groupId: number) => {
     if (isCurrentMember(groupId)) {
       const ids = membershipIdsByGroup.get(groupId) ?? [];
       const nextRemoved = isGroupRemoved(groupId)
-        ? removedMembershipIds.filter((id) => !ids.includes(id)) // desfaz remoção
-        : Array.from(new Set([...removedMembershipIds, ...ids])); // marca remoção
+        ? removedMembershipIds.filter((id) => !ids.includes(id)) // undo removal
+        : Array.from(new Set([...removedMembershipIds, ...ids])); // mark for removal
       onChange({ ...value, removedMembershipIds: nextRemoved });
       return;
     }
@@ -121,7 +116,7 @@ export default function GroupSelector({ userId, value, onChange }: GroupSelector
     onChange({ ...value, selectedGroupIds: nextSelected });
   };
 
-  // Garante a participação efetiva (usado pelo Enter / botão de criar).
+  // Ensures effective membership (used by Enter / the create button).
   const ensureMember = (groupId: number) => {
     if (isEffectiveMember(groupId)) return;
     if (isCurrentMember(groupId)) {
@@ -132,8 +127,8 @@ export default function GroupSelector({ userId, value, onChange }: GroupSelector
     }
   };
 
-  // Adiciona o termo digitado: se casar com um grupo existente, seleciona-o; senão, marca para criação.
-  // Em ambos os casos a busca é limpa e o dropdown é fechado.
+  // Commits the typed term: matches an existing group and selects it, or marks a new one for
+  // creation. Either way the search is cleared and the dropdown closes.
   const commitQuery = () => {
     if (!normalizedQuery) return;
 
@@ -154,7 +149,7 @@ export default function GroupSelector({ userId, value, onChange }: GroupSelector
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
-      // Evita submeter o formulário ao confirmar um grupo.
+      // Prevents the form from submitting when confirming a group.
       event.preventDefault();
       if (canCreate || (groups ?? []).some((g) => g.name.toLowerCase() === lowerQuery)) {
         commitQuery();
@@ -164,7 +159,6 @@ export default function GroupSelector({ userId, value, onChange }: GroupSelector
     }
   };
 
-  // Grupos atuais que continuam efetivos (não marcados para remoção).
   const memberChipGroupIds = useMemo(
     () => Array.from(membershipIdsByGroup.keys()).filter((groupId) => !isGroupRemoved(groupId)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -191,7 +185,6 @@ export default function GroupSelector({ userId, value, onChange }: GroupSelector
           onKeyDown={handleKeyDown}
         />
 
-        {/* Menu de opções: só aparece quando a caixa está selecionada */}
         {open && (
           <div className="absolute left-0 right-0 top-full z-20 mt-1 max-h-44 overflow-auto rounded-md border border-gray-200 bg-full-white p-2 shadow-lg space-y-1">
             {canCreate && (
@@ -237,7 +230,6 @@ export default function GroupSelector({ userId, value, onChange }: GroupSelector
 
       <p className="text-xs text-gray-400">{t('users.edit.groupsHelp')}</p>
 
-      {/* Grupos do usuário: atuais + selecionados para adicionar + novos a criar */}
       {hasChips && (
         <div className="flex flex-wrap gap-2">
           {memberChipGroupIds.map((groupId) => (

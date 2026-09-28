@@ -10,10 +10,13 @@ import { useSaveLabelingStructureMutation } from '@/modules/labelings/manage/lab
 import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 import { AdminFormBuilder, normalizeAdminSections, sanitizeAdminSectionsForSave } from '@/components/context-question';
 import type { LabelingStructureSection } from '@/modules/labelings/labelingsTypes';
+import { useInvitationAssignmentOptionsQuery } from '@/modules/user/userQueries';
 
 type FormTabProps = {
   labelingId: number;
   hasBackgroundForm: boolean;
+  isFormOnly: boolean; //either has or not csv file
+
 };
 
 type FormType = 'main' | 'background';
@@ -26,16 +29,15 @@ export type FormTabHandle = {
 
 const AUTO_SAVE_INTERVAL_MS = 30000;
 
-const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgroundForm }, ref) => {
+const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgroundForm, isFormOnly }, ref) => {
   const { t } = useTranslations();
   const [activeFormType, setActiveFormType] = useState<FormType>('main');
   const [sections, setSections] = useState<LabelingStructureSection[]>([]);
 
-  // Queries and mutations
   const structureQuery = useLabelingStructureQueryByType(labelingId, activeFormType);
   const saveMutation = useSaveLabelingStructureMutation();
 
-  const allowContext = activeFormType === 'main';
+  const allowContext = activeFormType === 'main' && !isFormOnly; //if is only a form, allowContext won't be "allowed" //therefore, we wont have "AddContext" button
   const unsavedChangesRef = useRef({ hasChanges: false, version: 0 });
   const loadedSnapshotRef = useRef<string | null>(null);
   const pendingSaveRef = useRef<Promise<boolean> | null>(null);
@@ -52,7 +54,6 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgr
     sectionsRef.current = sections;
   }, [sections]);
 
-  // Load structure into local state
   useEffect(() => {
     if (!structureQuery.data?.structure) {
       return;
@@ -67,10 +68,8 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgr
     loadedSnapshotRef.current = snapshotKey;
   }, [activeFormType, allowContext, structureQuery.data?.structure, structureQuery.dataUpdatedAt, t]);
 
-  // Derived state
   const columns = structureQuery.data?.columns ?? [];
 
-  // Save structure handler
   const handleSaveStructure = useCallback(async (reason: SaveReason = 'manual'): Promise<boolean> => {
     if (Number.isNaN(labelingId)) {
       toast.error(t('labelings.create.errors.invalidId'));
@@ -181,7 +180,6 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgr
     };
   }, [handleSaveStructure]);
 
-  // Expose methods to parent via ref
   useImperativeHandle(
     ref,
     () => ({
@@ -193,17 +191,18 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgr
     [handleSaveStructure, saveMutation.isPending]
   );
 
-  // Error handling for query errors
   useEffect(() => {
     if (structureQuery.error) {
       toast.error(getApiErrorMessage(structureQuery.error, t('labelings.create.errors.loadData')));
     }
   }, [structureQuery.error, t]);
 
+
   return (
-    <>
+  <div className="relative min-h-full w-full">
+    <div className="mx-auto w-[80%]">
       {hasBackgroundForm ? (
-        <div className="w-[80%] mx-auto mt-2">
+        <div className="mx-auto mt-2">
           <TwoOptionSelector
             value={activeFormType}
             onChange={(nextFormType) => void handleFormTypeChange(nextFormType)}
@@ -224,15 +223,20 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgr
         </div>
       ) : null}
 
-      <div className="mx-auto mt-2 w-[80%] space-y-6">
-        <AdminFormBuilder sections={sections} columns={columns} allowContext={allowContext} onChange={handleSectionsChange} />
+      <div className="mt-2 space-y-6">
+        <AdminFormBuilder
+          sections={sections}
+          columns={columns}
+          allowContext={allowContext}
+          onChange={handleSectionsChange}
+        />
       </div>
-    </>
-  );
-});
+    </div>
+
+  </div>
+  )});
 
 FormTab.displayName = 'FormTab';
-
 export { FormTab };
 
 export default function FormPage() {
@@ -240,5 +244,11 @@ export default function FormPage() {
   const labelingId = useMemo(() => Number(params?.labeling_id), [params]);
   const headerQuery = useLabelingHeaderQuery(labelingId);
 
-  return <FormTab labelingId={labelingId} hasBackgroundForm={Boolean(headerQuery.data?.labeling?.has_background_form)} />;
+    return(
+   <FormTab labelingId={labelingId} hasBackgroundForm={Boolean(headerQuery.data?.labeling?.has_background_form)} 
+   isFormOnly={Boolean(headerQuery.data?.labeling?.form_mode)}
+    />
+  );
+
+
 }

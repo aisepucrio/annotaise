@@ -30,7 +30,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * Tooltip padrão com ícone de informação
+ * Default tooltip with an info icon
  */
 export const Default: Story = {
   args: {
@@ -41,7 +41,7 @@ export const Default: Story = {
 };
 
 /**
- * Tooltip com ícone customizado
+ * Tooltip with a custom icon
  */
 export const CustomIcon: Story = {
   args: {
@@ -53,7 +53,7 @@ export const CustomIcon: Story = {
 };
 
 /**
- * Tooltip com conteúdo complexo (ReactNode)
+ * Tooltip with complex content (ReactNode)
  */
 export const ComplexContent: Story = {
   args: {
@@ -64,7 +64,7 @@ export const ComplexContent: Story = {
 };
 
 /**
- * Múltiplos tamanhos lado a lado
+ * Multiple sizes side by side
  */
 export const AllSizes: Story = {
   args: { content: 'Exemplo de tooltip', color: '#1E3A8A', size: 'md' },

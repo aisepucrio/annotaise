@@ -41,7 +41,7 @@ LLM_TIEBREAK_EMAIL = "llm_tiebreak_bot@annotaise.local"
 class CurrentAPIView(RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = CustomUserSerializer
-    http_method_names = ["get", "patch","delete"] #TODO deixei o delete mas não é o ideal... talvez seja melhor desativar a conta 
+    http_method_names = ["get", "patch","delete"] #TODO kept delete here, but it's not ideal — deactivating the account might be better
 
     def get_object(self):
         return self.request.user
@@ -66,7 +66,7 @@ class AdminUserViewSet(viewsets.ModelViewSet):
         target_user = self.get_object()
 
         if target_user.account_type == "admin" and target_user != request.user:
-            # verifica se QUEM ESTÁ FAZENDO A REQUISIÇÃO é master admin
+            # check whether the REQUESTING user (not the target) is a master admin
             if not IsMasterAdminAccount().has_permission(request, self):
                 raise PermissionDenied("Apenas um master admin pode alterar dados de outro admin.")
 
@@ -76,7 +76,7 @@ class AdminUserViewSet(viewsets.ModelViewSet):
         target_user = self.get_object()
 
         if target_user.account_type == "admin" and target_user != request.user:
-            # verifica se QUEM ESTÁ FAZENDO A REQUISIÇÃO é master admin
+            # check whether the REQUESTING user (not the target) is a master admin
             if not IsMasterAdminAccount().has_permission(request, self):
                 raise PermissionDenied("Apenas um master admin pode deletar outro admin.")
 
@@ -92,11 +92,9 @@ class AdminUserViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="dashboard", pagination_class=StandardCursorPagination)
     def user_dashboard(self, request, pk=None):
-        # Cada subquery é executada de forma independente e otimizada
-        
         pending_items_sq = ItemMembership.objects.filter(
             item__labeling__memberships__user_id=OuterRef('id'),
-            user_id=OuterRef('id')  # memberships do próprio usuário
+            user_id=OuterRef('id')  # restrict to the outer user's own item memberships
         ).values('user_id').annotate(
             count=Count('id', distinct=True)
         ).values('count')

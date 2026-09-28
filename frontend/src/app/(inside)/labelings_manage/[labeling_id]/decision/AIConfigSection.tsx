@@ -71,7 +71,7 @@ export default function AIConfigSection({ labelingId, isLlmMode }: AIConfigSecti
   const [localApiKey, setLocalApiKey] = useState('');
   const [storageAvailable, setStorageAvailable] = useState(true);
 
-  // localStorage só existe no cliente: ler na renderização quebraria a
+  // sessionStorage só existe no cliente: ler na renderização quebraria a
   // hidratação, então a chave local entra depois da montagem.
   useEffect(() => {
     setStorageAvailable(isUserLlmKeyStorageAvailable());

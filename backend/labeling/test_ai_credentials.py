@@ -17,7 +17,7 @@ from rest_framework.test import APIClient
 from annotaise.crypto import decrypt_secret, encrypt_secret
 from project.models import Project, ProjectMembership
 
-from .models import AICredential, Labeling
+from .models import AICredential, Labeling, LabelingMembership
 
 TEST_ENCRYPTION_KEY = base64.b64encode(os.urandom(32)).decode("ascii")
 
@@ -150,6 +150,9 @@ class LabelingAIConfigActionTest(TestCase):
             project=self.project,
             start_date=now().date(),
             final_date=now().date(),
+        )
+        LabelingMembership.objects.create(
+            labeling=self.labeling, user=self.owner, role=LabelingMembership.Role.OWNER
         )
         self.credential = AICredential.objects.create(
             owner=self.owner,

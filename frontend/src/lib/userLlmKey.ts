@@ -1,9 +1,9 @@
 import type { AIProvider } from '@/modules/labelings/labelingsTypes';
 
 /*
- * Modo "usar a chave de IA só nesta sessão": ela fica no localStorage deste
- * navegador e viaja no header X-User-LLM-Key nas requisições que podem
- * disparar o desempate por LLM — o backend usa e descarta, sem gravar nada.
+ * Modo "usar a chave de IA só nesta sessão": ela fica no sessionStorage desta
+ * aba e viaja no header X-User-LLM-Key nas requisições que podem disparar o
+ * desempate por LLM — o backend usa e descarta, sem gravar nada.
  * É o caminho alternativo ao de salvar a chave criptografada no servidor.
  * O armazenamento é por rotulação, espelhando o vínculo de AICredential.
  */
@@ -20,7 +20,6 @@ export type UserLlmKey = {
 
 const storageKeyFor = (labelingId: number) => `${PREFIX}${labelingId}`;
 
-
 export function isHeaderSafeKey(value: string): boolean {
   return /^[\x20-\x7e]+$/.test(value);
 }
@@ -28,7 +27,7 @@ export function isHeaderSafeKey(value: string): boolean {
 function getStorage(): Storage | null {
   if (typeof window === 'undefined') return null;
   try {
-    return window.localStorage;
+    return window.sessionStorage;
   } catch {
     return null;
   }
@@ -78,15 +77,14 @@ export function clearUserLlmKey(labelingId: number): void {
 }
 
 /**
- * Apaga as chaves de todas as rotulações. Chamada no logout: nenhuma chave
- * pode sobreviver à troca de usuário no mesmo navegador.
+ * Apaga as chaves de todas as rotulações. Chamada no login e no logout:
+ * nenhuma chave pode sobreviver à troca de usuário no mesmo navegador.
  */
 export function clearAllUserLlmKeys(): void {
   const storage = getStorage();
   if (!storage) return;
 
   try {
-   
     const keys = Object.keys(storage).filter((key) => key.startsWith(PREFIX));
     keys.forEach((key) => storage.removeItem(key));
   } catch {

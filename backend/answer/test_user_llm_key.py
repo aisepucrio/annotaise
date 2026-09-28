@@ -7,7 +7,7 @@ O que precisa ficar provado aqui:
 * sem header e sem credencial, cai no Ollama local;
 * a chave sai de request.META antes de a requisição terminar, e não sobra nem
   no cache de request.headers;
-* o filtro do relatório de exceção esconde o header.
+* o relatório de exceção do Django esconde o header.
 
 Os cenários são montados de ponta a ponta pela API (POST /answers/), com o setup
 de answer.tests.LLMDecisionTieBreakTest: rotulação com decision=True,
@@ -20,6 +20,7 @@ import os
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
+from django.views.debug import SafeExceptionReporterFilter
 from django.urls import reverse
 from django.utils.timezone import now
 from rest_framework import status
@@ -28,16 +29,10 @@ from rest_framework.test import APIClient, APIRequestFactory, force_authenticate
 from unittest.mock import patch
 
 from annotaise.crypto import encrypt_secret
-from annotaise.user_llm_key import (
-    KEY_META,
-    PROVIDER_META,
-    USER_LLM_KEY_HEADER,
-    UserLlmKeyReporterFilter,
-    pop_user_llm_key,
-)
 from item.models import Item, ItemMembership
 from labeling.models import (
     AICredential,
+    AIProvider,
     Labeling,
     LabelingElement,
     LabelingSection,
@@ -46,6 +41,13 @@ from labeling.models import (
 from project.models import Project
 
 from .models import Answer
+from .tests import AnswerTestsHelper
+from .session_llm_key import (
+    KEY_META,
+    PROVIDER_META,
+    USER_LLM_KEY_HEADER,
+    pop_user_llm_key,
+)
 from .views import AnswerViewset
 
 # Chave AES-256 própria do teste: assim os testes não dependem de
@@ -123,13 +125,14 @@ class UserLlmKeyTieBreakTestBase(TestCase):
         )
         ItemMembership.objects.create(item=self.item, user=self.user1)
         ItemMembership.objects.create(item=self.item, user=self.user2)
+        AnswerTestsHelper.enroll(self.labeling, self.user1, self.user2)
 
         self.client = APIClient()
         self.url = reverse("answers-list")
 
     # --- helpers -----------------------------------------------------------
 
-    def _link_credential(self, provider=AICredential.Provider.OPENAI, api_key=STORED_KEY):
+    def _link_credential(self, provider=AIProvider.OPENAI, api_key=STORED_KEY):
         credential = AICredential.objects.create(
             owner=self.user1,
             name=f"cred-{provider}",
@@ -219,7 +222,7 @@ class StoredCredentialStillWorksTest(UserLlmKeyTieBreakTestBase):
         self, mocked_byok, mocked_ollama
     ):
         self._link_credential(
-            provider=AICredential.Provider.GEMINI, api_key=STORED_KEY
+            provider=AIProvider.GEMINI, api_key=STORED_KEY
         )
         mocked_byok.return_value = _llm_result("no")
 
@@ -229,7 +232,7 @@ class StoredCredentialStillWorksTest(UserLlmKeyTieBreakTestBase):
         mocked_ollama.assert_not_called()
         kwargs = mocked_byok.call_args.kwargs
         self.assertEqual(kwargs["api_key"], STORED_KEY)
-        self.assertEqual(kwargs["provider"], AICredential.Provider.GEMINI)
+        self.assertEqual(kwargs["provider"], AIProvider.GEMINI)
 
         self.item.refresh_from_db()
         self.assertEqual(self.item.final_decision_source, "llm")
@@ -264,7 +267,7 @@ class ProviderFallbackToCredentialTest(UserLlmKeyTieBreakTestBase):
         self, mocked_byok, mocked_ollama
     ):
         self._link_credential(
-            provider=AICredential.Provider.ANTHROPIC, api_key=STORED_KEY
+            provider=AIProvider.ANTHROPIC, api_key=STORED_KEY
         )
         mocked_byok.return_value = _llm_result("yes")
 
@@ -273,7 +276,7 @@ class ProviderFallbackToCredentialTest(UserLlmKeyTieBreakTestBase):
         mocked_byok.assert_called_once()
         mocked_ollama.assert_not_called()
         kwargs = mocked_byok.call_args.kwargs
-        self.assertEqual(kwargs["provider"], AICredential.Provider.ANTHROPIC)
+        self.assertEqual(kwargs["provider"], AIProvider.ANTHROPIC)
         self.assertEqual(kwargs["api_key"], SESSION_KEY)
         self.assertNotEqual(kwargs["api_key"], STORED_KEY)
 
@@ -324,7 +327,7 @@ class PrecedenceTest(UserLlmKeyTieBreakTestBase):
     @patch("answer.services.tiebreak.run_llm_tiebreak_decision_byok")
     def test_header_wins_over_stored_credential(self, mocked_byok, mocked_ollama):
         credential = self._link_credential(
-            provider=AICredential.Provider.OPENAI, api_key=STORED_KEY
+            provider=AIProvider.OPENAI, api_key=STORED_KEY
         )
         mocked_byok.return_value = _llm_result("yes")
 
@@ -341,7 +344,7 @@ class PrecedenceTest(UserLlmKeyTieBreakTestBase):
 
         # A credencial salva continua intacta no banco (nada foi sobrescrito).
         credential.refresh_from_db()
-        self.assertEqual(credential.provider, AICredential.Provider.OPENAI)
+        self.assertEqual(credential.provider, AIProvider.OPENAI)
         self.assertNotEqual(kwargs["api_key"], STORED_KEY)
 
 
@@ -416,7 +419,7 @@ class KeyDoesNotSurviveTheRequestTest(UserLlmKeyTieBreakTestBase):
 
 
 class PopUserLlmKeyUnitTest(TestCase):
-    """Contrato de annotaise.user_llm_key.pop_user_llm_key isolado da view."""
+    """Contrato de answer.session_llm_key.pop_user_llm_key isolado da view."""
 
     def setUp(self):
         self.factory = APIRequestFactory()
@@ -490,8 +493,8 @@ class PopUserLlmKeyUnitTest(TestCase):
         self.assertEqual(pop_user_llm_key(request), (None, None))
 
 
-class UserLlmKeyReporterFilterTest(TestCase):
-    """A página de debug / e-mail de erro não pode mostrar a chave."""
+class ExceptionReportHidesKeyTest(TestCase):
+    """O filtro padrão do Django já esconde headers com KEY no nome."""
 
     def setUp(self):
         self.factory = APIRequestFactory()
@@ -504,7 +507,7 @@ class UserLlmKeyReporterFilterTest(TestCase):
             HTTP_X_USER_LLM_KEY=SESSION_KEY,
             HTTP_X_USER_LLM_PROVIDER="openai",
         )
-        reporter_filter = UserLlmKeyReporterFilter()
+        reporter_filter = SafeExceptionReporterFilter()
 
         meta = reporter_filter.get_safe_request_meta(request)
 

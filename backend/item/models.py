@@ -25,22 +25,22 @@ class Item(models.Model):
 
     def remaining_groups(self):
         """
-        Quanto ainda falta de cada grupo na cota da rotulação para este item.
+        How much of each group's quota is still left on this item.
 
-        Retorno: dict[group_name, remaining_count], só com entradas > 0. A chave
-        'any' é o slot residual (preenchível por qualquer respondente);
-        respostas com responded_as=None contam para 'any'.
+        Returns: dict[group_name, remaining_count], only entries > 0. The key
+        'any' is the residual slot (fillable by any respondent); answers with
+        responded_as=None count towards 'any'.
 
-        Cada Answer é contada exatamente uma vez, pelo grupo registrado em
-        responded_as — sem dupla contagem quando o respondente pertence a
-        múltiplos grupos da mesma rotulação.
+        Each Answer is counted exactly once, by the group recorded in
+        responded_as — no double counting when the respondent belongs to
+        multiple groups of the same labeling.
 
-        Em decision mode com desempate em andamento (cotas configuradas já
-        preenchidas mas ainda sem vencedor único), mantém um slot 'any' aberto
-        para que novos respondentes possam destravar a votação.
+        In decision mode with a tiebreak in progress (configured quotas
+        already filled but no single winner yet), keeps an 'any' slot open so
+        new respondents can unblock the vote.
 
-        Uma query por item. Para avaliar vários itens, prefira o método de
-        classe remaining_groups_for (uma única query agregada).
+        One query per item. To evaluate several items, prefer the class
+        method remaining_groups_for (a single aggregated query).
         """
         answered = (
             self.answers
@@ -53,12 +53,12 @@ class Item(models.Model):
     @classmethod
     def remaining_groups_for(cls, labeling, items):
         """
-        remaining_groups para vários itens da MESMA rotulação, com uma única
-        query agregada — em vez de uma por item.
+        remaining_groups for several items of the SAME labeling, with a single
+        aggregated query — instead of one per item.
 
-        `items`: iterável de Item já carregados (usamos id, status e
-        decision_payload de cada um, sem novas queries).
-        Retorno: {item_id: {group_name: remaining}}.
+        `items`: iterable of already-loaded Item objects (we use each one's
+        id, status, and decision_payload, without new queries).
+        Returns: {item_id: {group_name: remaining}}.
         """
         from answer.models import Answer
 
@@ -85,12 +85,12 @@ class Item(models.Model):
 
     def _remaining_from_counts(self, counts, labeling=None):
         """
-        Núcleo do cálculo de cotas, compartilhado pelo caminho de item único
-        (remaining_groups) e pelo lote (remaining_groups_for).
+        Core of the quota calculation, shared by the single-item path
+        (remaining_groups) and the batch one (remaining_groups_for).
 
-        `counts`: {group_name: respostas_registradas} já com 'any' agregando os
-        responded_as nulos. `labeling`: evita acessar self.labeling (e a query
-        que isso pode disparar) quando o chamador já o tem em mãos.
+        `counts`: {group_name: recorded_answers}, already with 'any' aggregating
+        null responded_as values. `labeling`: avoids accessing self.labeling
+        (and the query that could trigger) when the caller already has it.
         """
         labeling = labeling or self.labeling
         quotas = dict(labeling.items_per_group or {})
@@ -114,9 +114,9 @@ class Item(models.Model):
     @staticmethod
     def _slot_open(remaining, user_group_names):
         """
-        Predicado de elegibilidade sobre um dict de remaining_groups já
-        calculado: há slot 'any' em aberto, ou algum grupo do usuário ainda tem
-        cota. Usado tanto na distribuição quanto no dashboard.
+        Eligibility predicate over an already-computed remaining_groups dict:
+        there's an open 'any' slot, or one of the user's groups still has
+        quota left. Used both in distribution and in the dashboard.
         """
         if not remaining:
             return False
@@ -125,7 +125,7 @@ class Item(models.Model):
         return not user_group_names.isdisjoint(remaining.keys())
 
     def _decision_has_winner(self):
-        """True se decision_payload já indica um líder único entre os votos."""
+        """True if decision_payload already indicates a single leader among the votes."""
         payload = self.decision_payload or {}
         if not payload:
             return False
@@ -135,11 +135,12 @@ class Item(models.Model):
 
     def pick_responded_as_for(self, user):
         """
-        Escolhe qual UserGroup uma resposta deste usuário deve preencher.
+        Chooses which UserGroup an answer from this user should fill.
 
-        Estratégia: entre os grupos do usuário que ainda têm cota neste item,
-        escolhe o de maior déficit. Se o usuário não pertence a nenhum grupo
-        ainda com cota, retorna None — a resposta cai no slot residual 'any'.
+        Strategy: among the user's groups that still have quota on this item,
+        pick the one with the largest deficit. If the user belongs to no
+        group with quota left, returns None — the answer falls into the
+        residual 'any' slot.
         """
         remaining = self.remaining_groups()
         if not remaining:
@@ -162,9 +163,9 @@ class ItemMembership(models.Model):
     item = models.ForeignKey('Item', on_delete=models.CASCADE, related_name='memberships')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='item_memberships')
     created_at = models.DateTimeField(auto_now_add=True)
-    # Renovado (via save) toda vez que o usuário rebusca o item no next-item.
-    # A expiração de reservas (roubo) usa este campo, não created_at — created_at
-    # é auto_now_add e nunca muda após a criação.
+    # Renewed (via save) every time the user re-fetches the item in next-item.
+    # Reservation expiry (stealing) uses this field, not created_at — created_at
+    # is auto_now_add and never changes after creation.
     last_seen_at = models.DateTimeField(auto_now=True)
 
     class Meta:

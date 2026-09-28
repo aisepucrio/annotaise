@@ -28,13 +28,11 @@ export default function LabelingAnswerPage() {
   const params = useParams<{ labeling_id: string }>();
   const loadedLabelingIdRef = useRef<number | null>(null);
 
-  // Route-derived values
   const labelingId = useMemo(() => {
     const parsed = Number(params?.labeling_id);
     return Number.isFinite(parsed) ? parsed : NaN;
   }, [params]);
 
-  // Loaded labeling data and current answer state
   const [labelingTitle, setLabelingTitle] = useState('');
   const [guideText, setGuideText] = useState('');
   const [sections, setSections] = useState<LabelingStructureSection[]>([]);
@@ -43,13 +41,11 @@ export default function LabelingAnswerPage() {
   const [currentItemId, setCurrentItemId] = useState<number | null>(null);
   const [rowIndex, setRowIndex] = useState<number | null>(null);
 
-  // Local UI flow state
   const [currentSectionIdx, setCurrentSectionIdx] = useState(0);
   // The annotation guide starts open by default so annotators see it without
   // having to look for it; the header button still lets them hide it.
   const [showGuide, setShowGuide] = useState(true);
 
-  // Loading and feedback state
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -86,14 +82,12 @@ export default function LabelingAnswerPage() {
 
   // Loads the labeling metadata and the next available item to answer.
   const loadItem = useCallback(async () => {
-    // Guard invalid route params before hitting the API.
     if (Number.isNaN(labelingId)) {
       showError(t('answer.invalidId'));
       setIsLoading(false);
       return;
     }
 
-    // Clear transient feedback before showing the next item.
     setIsLoading(true);
     setLoadError(null);
     setLoadErrorCode(null);
@@ -121,7 +115,6 @@ export default function LabelingAnswerPage() {
       setRowIndex(null);
       setSections([]);
 
-      // Prefer backend messages when available, then fall back to generic copy.
       let message = t('answer.loadError');
       let code: string | null = null;
 
@@ -155,7 +148,6 @@ export default function LabelingAnswerPage() {
     void loadItem();
   }, [labelingId, loadItem]);
 
-  // User interaction handlers
   const handleAnswerChange = useCallback((questionId: number | string, value: unknown) => {
     // Any answer edit clears stale feedback from the previous attempt.
     setLoadError(null);
@@ -211,7 +203,6 @@ export default function LabelingAnswerPage() {
     setSubmitMessage(null);
 
     try {
-      // Submit the current item answer payload exactly as produced by the question modules.
       const submitResult = await submitAnswer({
         labeling: labelingId,
         item: currentItemId,
@@ -224,7 +215,6 @@ export default function LabelingAnswerPage() {
 
       setSubmitMessage(t('answer.answerSent'));
 
-      // After a successful submit, immediately advance to the next available item.
       await loadItem();
     } catch (error) {
       let message = t('answer.sendError');
@@ -253,7 +243,6 @@ export default function LabelingAnswerPage() {
     }
   }, [answers, currentItemId, currentSection, labelingId, loadItem, sections, showError, t]);
 
-  // Header controls for current item metadata and guide visibility.
   const HeaderBadges = (
     <div className="flex flex-1 flex-wrap items-center justify-end gap-3">
       {rowIndex !== null ? (
@@ -276,7 +265,6 @@ export default function LabelingAnswerPage() {
     </div>
   );
 
-  // Main answer panel: current section plus navigation or submit action.
   const MainPanel = (
     <section className="rounded-xl bg-white p-4 h-full overflow-y-auto ">
       {isLoading ? (
@@ -300,7 +288,6 @@ export default function LabelingAnswerPage() {
             onAnswerChange={handleAnswerChange}
           />
 
-          {/* Intermediate sections advance; the last section submits the item. */}
           <div className="flex justify-center items-center pt-2">
             <div />
             <div className="flex gap-3">
@@ -331,14 +318,12 @@ export default function LabelingAnswerPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <InnerPageHeader onBack={() => router.push('/labelings')}>
-        {/* Prefer the loaded labeling title, then fall back to loading/default copy. */}
         <div>
           <h1 className="text-lg font-semibold leading-tight">
             {labelingTitle || (isLoading ? t('answer.loadingLabeling') : t('answer.answerLabeling'))}
           </h1>
         </div>
 
-        {/* Item progress and guide controls live in the page header. */}
         {HeaderBadges}
       </InnerPageHeader>
 

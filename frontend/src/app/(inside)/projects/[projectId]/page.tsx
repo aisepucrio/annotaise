@@ -36,13 +36,11 @@ export default function ProjectDetailsPage() {
   const { t } = useTranslations();
   const projectId = Number(params?.projectId);
 
-  // Estados locais
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [newMemberId, setNewMemberId] = useState<string>('');
   const [newMemberRole, setNewMemberRole] = useState<ProjectMembershipPayload['role']>('viewer');
 
-  // Opções de status do projeto
   const STATUS_OPTIONS = [
     { value: 'planning', label: t('projects.new.status.planning') },
     { value: 'active', label: t('projects.new.status.active') },
@@ -50,19 +48,16 @@ export default function ProjectDetailsPage() {
     { value: 'cancelled', label: t('projects.new.status.cancelled') },
   ];
 
-  // Opções de papel/permissão de membro
   const ROLE_OPTIONS = [
     { value: 'owner', label: t('projects.detail.role.owner') },
     { value: 'contributor', label: t('projects.detail.role.contributor') },
     { value: 'viewer', label: t('projects.detail.role.viewer') },
   ];
 
-  // Ainda precisamos saber se é admin para mostrar botões de ação nos membros
+  // Still need to know whether the current user is admin, to conditionally show member action buttons.
 
-  // Buscar dados do projeto
   const { data: project, isLoading: loadingProject, error: projectError } = useProjectQuery(projectId);
 
-  // Buscar membros do projeto
   const {
     items: membershipList,
     count: membershipsCount,
@@ -73,17 +68,14 @@ export default function ProjectDetailsPage() {
     loadMore: loadMoreMemberships,
   } = useProjectMembershipsQuery(projectId);
 
-  // Buscar todos os usuários
   const { data: users, isLoading: loadingUsers, error: usersError } = useUsersQuery();
 
-  // Mutations
   const updateProjectMutation = useUpdateProjectMutation(projectId);
   const deleteProjectMutation = useDeleteProjectMutation(projectId);
   const createMembershipMutation = useCreateProjectMembershipMutation(projectId);
   const updateMembershipMutation = useUpdateProjectMembershipMutation(projectId);
   const deleteMembershipMutation = useDeleteProjectMembershipMutation(projectId);
 
-  // Form para editar projeto
   const {
     register,
     handleSubmit,
@@ -93,23 +85,18 @@ export default function ProjectDetailsPage() {
     defaultValues: { name: '', description: '', status: 'planning' },
   });
 
-  // Usuários disponíveis para adicionar (que não são membros ainda)
   const availableUsers = useMemo(() => {
     if (!users) return [];
     const assignedIds = new Set(membershipList.map((m) => m.user));
     return users.filter((user) => !assignedIds.has(user.id));
   }, [users, membershipList]);
 
-  // Exibir nome do usuário
   const getUserName = (user?: Partial<User> | { email?: string; first_name?: string; last_name?: string }) => {
     if (!user) return '';
     const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
     return fullName || user.email || '';
   };
 
-  // ===============================
-  // EFEITOS - Tratamento de erros e reset de formulário
-  // ===============================
   useEffect(() => {
     if (projectError) {
       toast.error(projectError instanceof Error ? projectError.message : t('projects.detail.updateError'));
@@ -133,9 +120,6 @@ export default function ProjectDetailsPage() {
     }
   }, [project, reset]);
 
-  // ===============================
-  // HANDLERS - Ações do usuário
-  // ===============================
   const handleSaveProject = handleSubmit(async (values) => {
     if (!projectId) return;
 
@@ -154,7 +138,7 @@ export default function ProjectDetailsPage() {
       setDeleteLoading(true);
       await deleteProjectMutation.mutateAsync();
       setIsDeleteModalOpen(false);
-      router.push('/projects');
+      router.push('/labelings_manage');
     } catch (error) {
       toast.error(getApiErrorMessage(error, t('projects.detail.deleteError')));
     } finally {
@@ -203,15 +187,11 @@ export default function ProjectDetailsPage() {
     }
   };
 
-  // ===============================
-  // RENDERIZAÇÃO
-  // ===============================
   if (!projectId) return null;
 
   return (
     <div className="flex flex-col h-screen">
-      {/* Header */}
-      <InnerPageHeader onBack={() => router.push('/projects')}>
+      <InnerPageHeader onBack={() => router.push('/labelings_manage')}>
         <>
           <h1 className="text-xl font-semibold">{project ? project.name : t('projects.detail.loading')}</h1>
           <div className="flex items-center gap-3">
@@ -233,9 +213,7 @@ export default function ProjectDetailsPage() {
         </>
       </InnerPageHeader>
 
-      {/* Conteúdo */}
       <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden px-8 py-6">
-        {/* Seção: Informações do Projeto */}
         <div className="shrink-0 border-l-5 pl-4 border-blueberry-700">
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-metal-900">{t('projects.detail.infoTitle')}</h2>
@@ -259,7 +237,6 @@ export default function ProjectDetailsPage() {
             </form>
           ) : null}
         </div>
-        {/* Seção: Membros do Projeto */}
         <div className="flex min-h-0 flex-1 flex-col border-l-5 pl-4 border-blueberry-700">
           <div className="mb-6 shrink-0">
             <h2 className="text-lg font-semibold text-metal-900">{t('projects.detail.membersTitle')}</h2>
@@ -270,7 +247,6 @@ export default function ProjectDetailsPage() {
             <p className="text-sm text-metal-500">{t('projects.detail.loadingMembers')}</p>
           ) : (
             <div className="grid min-h-0 flex-1 grid-cols-1 items-stretch gap-8 lg:grid-cols-[1fr_auto_1fr] lg:grid-rows-[minmax(0,1fr)]">
-              {/* Coluna Esquerda: Formulário para adicionar novo membro */}
               <div className="flex min-h-0 flex-col space-y-4">
                 <h3 className="text-sm font-semibold text-metal-900">{t('projects.detail.addMemberTitle')}</h3>
 
@@ -318,17 +294,15 @@ export default function ProjectDetailsPage() {
                 </form>
               </div>
 
-              {/* Separador */}
               <div className="hidden lg:block w-px bg-metal-200 self-stretch" />
 
-              {/* Coluna Direita: Lista de membros */}
               <div className="flex min-h-0 flex-col space-y-4">
                 <h3 className="text-sm font-semibold text-metal-900">
                   {t('projects.detail.currentMembersTitle')} ({membershipsCount ?? membershipList.length})
                 </h3>
 
-                {/* A sentinela do scroll infinito precisa ficar dentro da área
-                    rolável, logo depois da lista. */}
+                {/* The infinite-scroll sentinel must stay inside the scrollable
+                    area, right after the list. */}
                 <div className="min-h-0 flex-1 overflow-y-auto pr-2">
                   <ul className="space-y-2">
                     {membershipList.map((membership) => {

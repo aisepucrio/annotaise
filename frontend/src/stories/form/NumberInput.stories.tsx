@@ -35,7 +35,7 @@ export const Playground: StoryObj<typeof NumberInput> = {
 };
 
 /* =======================
-   VARIANTES BÁSICAS
+   BASIC VARIANTS
 ======================= */
 
 export const Variants: StoryObj<typeof NumberInput> = {
@@ -64,7 +64,7 @@ export const Variants: StoryObj<typeof NumberInput> = {
 };
 
 /* =======================
-   COM VALIDAÇÃO
+   WITH VALIDATION
 ======================= */
 
 export const WithValidation: StoryObj<typeof NumberInput> = {
@@ -87,7 +87,7 @@ export const WithValidation: StoryObj<typeof NumberInput> = {
 };
 
 /* =======================
-   COM AUTO-VALIDAÇÃO
+   WITH AUTO-VALIDATION
 ======================= */
 
 export const WithAutoValidation: StoryObj<typeof NumberInput> = {
@@ -140,7 +140,7 @@ export const WithAutoValidation: StoryObj<typeof NumberInput> = {
 };
 
 /* =======================
-   COM ERRO
+   WITH ERROR
 ======================= */
 
 export const WithError: StoryObj<typeof NumberInput> = {
@@ -174,7 +174,7 @@ export const WithError: StoryObj<typeof NumberInput> = {
 };
 
 /* =======================
-   DESABILITADO
+   DISABLED
 ======================= */
 
 export const Disabled: StoryObj<typeof NumberInput> = {
@@ -195,7 +195,7 @@ export const Disabled: StoryObj<typeof NumberInput> = {
 };
 
 /* =======================
-   COM TOOLTIP
+   WITH TOOLTIP
 ======================= */
 
 export const WithTooltip: StoryObj<typeof NumberInput> = {
@@ -221,7 +221,7 @@ export const WithTooltip: StoryObj<typeof NumberInput> = {
 };
 
 /* =======================
-   OBRIGATÓRIO
+   REQUIRED
 ======================= */
 
 export const Required: StoryObj<typeof NumberInput> = {
@@ -247,7 +247,7 @@ export const Required: StoryObj<typeof NumberInput> = {
 };
 
 /* =======================
-   CONTROLADO (STATEFUL)
+   CONTROLLED (STATEFUL)
 ======================= */
 
 export const Controlled: StoryObj<typeof NumberInput> = {
@@ -279,7 +279,7 @@ export const Controlled: StoryObj<typeof NumberInput> = {
 };
 
 /* =======================
-   CASOS DE USO
+   USE CASES
 ======================= */
 
 export const UseCases: StoryObj<typeof NumberInput> = {

@@ -35,7 +35,7 @@ export const Playground: StoryObj<typeof Input> = {
 };
 
 /* =======================
-   VARIANTES
+   VARIANTS
 ======================= */
 
 export const Variants: StoryObj<typeof Input> = {
@@ -60,7 +60,7 @@ export const Variants: StoryObj<typeof Input> = {
 };
 
 /* =======================
-   COM ERRO
+   WITH ERROR
 ======================= */
 
 export const WithError: StoryObj<typeof Input> = {
@@ -95,7 +95,7 @@ export const WithError: StoryObj<typeof Input> = {
 };
 
 /* =======================
-   OBRIGATÓRIO
+   REQUIRED
 ======================= */
 
 export const Required: StoryObj<typeof Input> = {
@@ -116,7 +116,7 @@ export const Required: StoryObj<typeof Input> = {
 };
 
 /* =======================
-   COM TOOLTIP
+   WITH TOOLTIP
 ======================= */
 
 export const WithTooltip: StoryObj<typeof Input> = {
@@ -157,7 +157,7 @@ export const WithTooltip: StoryObj<typeof Input> = {
 };
 
 /* =======================
-   DESABILITADO
+   DISABLED
 ======================= */
 
 export const Disabled: StoryObj<typeof Input> = {
@@ -185,7 +185,7 @@ export const Disabled: StoryObj<typeof Input> = {
 };
 
 /* =======================
-   SEM LABEL
+   WITHOUT LABEL
 ======================= */
 
 export const WithoutLabel: StoryObj<typeof Input> = {
@@ -206,7 +206,7 @@ export const WithoutLabel: StoryObj<typeof Input> = {
 };
 
 /* =======================
-   PASSWORD COM TOGGLE
+   PASSWORD WITH TOGGLE
 ======================= */
 
 export const PasswordWithToggle: StoryObj<typeof Input> = {
@@ -259,7 +259,7 @@ export const Multiline: StoryObj<typeof Input> = {
 };
 
 /* =======================
-   MULTILINE REDIMENSIONÁVEL
+   RESIZABLE MULTILINE
 ======================= */
 
 export const MultilineResizable: StoryObj<typeof Input> = {
@@ -286,7 +286,7 @@ export const MultilineResizable: StoryObj<typeof Input> = {
 };
 
 /* =======================
-   MULTILINE COM ALTURA CUSTOMIZADA
+   MULTILINE WITH CUSTOM HEIGHT
 ======================= */
 
 export const MultilineCustomHeight: StoryObj<typeof Input> = {

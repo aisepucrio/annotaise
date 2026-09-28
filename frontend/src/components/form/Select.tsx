@@ -9,32 +9,21 @@ import { formFieldClasses } from './base/formFieldClasses';
 export type SelectOption = {
   value: string;
   label: string;
-  /** Texto secundário exibido abaixo do label (ex.: e-mail). Ignorado pelo Select nativo. */
+  /** Secondary text shown below the label (e.g. email). Ignored by the native Select. */
   description?: string;
 };
 
 export type SelectProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, 'size'> & {
-  /** Label do select */
   label?: string;
-  /** Mensagem de erro */
   error?: string;
-  /** Opções do select */
   options: SelectOption[];
-  /** Texto do placeholder */
   placeholder?: string;
-  /** Se o campo é obrigatório */
   required?: boolean;
-  /** Ícone customizado */
   icon?: ReactNode;
-  /** Classes CSS adicionais para o container */
   containerClassName?: string;
-  /** Tooltip informativo ao lado do label */
   tooltip?: string;
 };
 
-/**
- * Componente de Select padronizado com label flutuante
- */
 const Select = forwardRef<HTMLSelectElement, SelectProps>(
   (
     {

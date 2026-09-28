@@ -4,22 +4,19 @@ import { useEffect, useRef } from 'react';
 import { useTranslations } from '@/i18n/use-translations';
 
 export type InfiniteScrollProps = {
-  /** Ainda há bloco seguinte no servidor. */
   hasNextPage: boolean;
   isFetchingNextPage: boolean;
   onLoadMore: () => void;
-  /** Quantos itens já estão na tela. */
   loadedCount: number;
-  /** Total no servidor, quando conhecido. */
   totalCount?: number;
 };
 
 /**
- * Rodapé de lista que carrega o bloco seguinte ao entrar em vista.
+ * List footer that loads the next page once it scrolls into view.
  *
- * Precisa ficar *dentro* do container que rola: o IntersectionObserver leva em
- * conta o recorte dos ancestrais, então uma sentinela fora da área rolável
- * ficaria sempre visível e dispararia o carregamento de tudo de uma vez.
+ * Must stay *inside* the scrolling container: IntersectionObserver accounts for
+ * ancestor clipping, so a sentinel outside the scrollable area would always be
+ * visible and trigger loading everything at once.
  */
 export default function InfiniteScroll({
   hasNextPage,
@@ -37,11 +34,10 @@ export default function InfiniteScroll({
 
     const observer = new IntersectionObserver(
       (entries) => {
-        // Chamadas concorrentes são ignoradas pelo react-query, então não
-        // precisamos travar por isFetchingNextPage aqui.
+        // Concurrent calls are deduped by react-query, so no need to guard on isFetchingNextPage here.
         if (entries.some((entry) => entry.isIntersecting)) onLoadMore();
       },
-      // Antecipa o carregamento antes de o usuário encostar no fim da lista.
+      // Start loading before the user reaches the end of the list.
       { rootMargin: '240px' }
     );
 
@@ -63,8 +59,8 @@ export default function InfiniteScroll({
           {t('pagination.loadingMore')}
         </span>
       ) : hasNextPage ? (
-        // Fallback clicável para quem navega por teclado ou quando o observer
-        // não dispara (lista mais curta que a área visível, por exemplo).
+        // Clickable fallback for keyboard navigation, or when the observer never fires
+        // (e.g. a list shorter than the visible area).
         <button
           type="button"
           onClick={onLoadMore}

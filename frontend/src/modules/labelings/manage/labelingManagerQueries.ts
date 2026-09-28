@@ -22,7 +22,6 @@ import type {
   LabelingElementSummary,
 } from '@/modules/labelings/labelingsTypes';
 
-// Utilizada para buscar os dados básicos do labeling + projeto (para o header)
 export function useLabelingHeaderQuery(labelingId: number) {
   const enabled = !Number.isNaN(labelingId);
 
@@ -38,7 +37,6 @@ export function useLabelingHeaderQuery(labelingId: number) {
   });
 }
 
-// Utilizada para buscar a estrutura do labeling + colunas (derivadas do CSV ou da estrutura)
 export function useLabelingStructureQuery(labelingId: number) {
   return useLabelingStructureQueryByType(labelingId, 'main');
 }
@@ -52,7 +50,7 @@ export function useLabelingStructureQueryByType(labelingId: number, formType: 'm
     queryFn: async () => {
       const [labeling, structure] = await Promise.all([fetchLabeling(labelingId), fetchLabelingStructure(labelingId, formType)]);
 
-      // Prioriza colunas do CSV, mas se não tiver, deriva da estrutura
+      // Prefer CSV columns; fall back to columns derived from the structure.
       const csvColumns = Array.isArray(labeling.column_names) ? labeling.column_names : [];
       const structureColumns = deriveColumnsFromStructure(structure);
       const columns = csvColumns.length > 0 ? csvColumns : structureColumns;
@@ -62,7 +60,7 @@ export function useLabelingStructureQueryByType(labelingId: number, formType: 'm
   });
 }
 
-// Auxiliar, utilizada para derivar colunas da estrutura do labeling (para casos sem CSV ou para mostrar colunas mesmo quando tem CSV)
+// Derives columns from the structure, used when there's no CSV or to show columns even when a CSV exists.
 function deriveColumnsFromStructure(sections: LabelingStructureSection[]): string[] {
   const cols: string[] = [];
   for (const section of sections) {
@@ -75,7 +73,6 @@ function deriveColumnsFromStructure(sections: LabelingStructureSection[]): strin
   return cols;
 }
 
-// Utilizada para buscar os membros do labeling
 export function useLabelingMembershipsQuery(params: CursorQuery<{ labelingId: number }>, shouldFetch = true) {
   const enabled = !Number.isNaN(params.labelingId) && shouldFetch;
 
@@ -87,7 +84,6 @@ export function useLabelingMembershipsQuery(params: CursorQuery<{ labelingId: nu
   });
 }
 
-// Utilizada para buscar os usuários disponíveis (para adicionar como membros)
 export function useAvailableUsersQuery(shouldFetch = true) {
   return useQuery({
     queryKey: ['users'],
@@ -96,7 +92,6 @@ export function useAvailableUsersQuery(shouldFetch = true) {
   });
 }
 
-// Utilizada para buscar as respostas do labeling (para a tab de respostas)
 export function useLabelingAnswersQuery(labelingId: number) {
   const enabled = !Number.isNaN(labelingId);
 
@@ -107,7 +102,6 @@ export function useLabelingAnswersQuery(labelingId: number) {
   });
 }
 
-// Utilizada para listar os itens respondidos em scroll infinito
 type AnswerItemsQuery = CursorQuery<{ labelingId: number; answeredBy?: number }>;
 
 export function useLabelingAnswerItemsQuery(params: AnswerItemsQuery) {
@@ -121,7 +115,6 @@ export function useLabelingAnswerItemsQuery(params: AnswerItemsQuery) {
   });
 }
 
-// Utilizada para buscar as respostas do labeling + estrutura (para a tab de respostas, para mostrar perguntas e respostas juntas)
 export function useLabelingAnswersWithStructureQuery(labelingId: number, shouldFetch = true) {
   const enabled = !Number.isNaN(labelingId) && shouldFetch;
 
@@ -151,7 +144,6 @@ export function useLabelingAgreementSummaryQuery(labelingId: number, minAgreemen
   });
 }
 
-// Utilizada para buscar perguntas elegíveis como questão decisiva
 export function useLabelingDecisionQuestionsQuery(labelingId: number) {
   const enabled = !Number.isNaN(labelingId);
 

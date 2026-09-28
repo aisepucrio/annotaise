@@ -7,6 +7,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 
+# Fixos pelo algoritmo (AES-256-GCM), não são configuração.
 _NONCE_SIZE = 12
 _KEY_SIZE = 32
 

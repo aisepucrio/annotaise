@@ -2,13 +2,10 @@ import React from 'react';
 import { useGridColumns } from './GridLayout';
 
 type GridItemCardProps = {
-  /** Elementos filhos a serem renderizados dentro do card */
   children: React.ReactNode;
-  /** Índice do item no array  */
   index: number;
-  /** Cor da borda (CSS color value), quando definida sobrescreve o padrão alternado */
+  /** CSS color value; overrides the alternating default border color when set. */
   borderColor?: string;
-  /** Classes CSS adicionais para personalização */
   className?: string;
 };
 

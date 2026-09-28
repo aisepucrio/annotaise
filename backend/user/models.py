@@ -77,7 +77,7 @@ class Invitation(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.expires_at:
-            #convite válido por 7 dias
+            # invitations are valid for 7 days
             self.expires_at = timezone.now() + timedelta(days=7)
         super().save(*args, **kwargs)
 

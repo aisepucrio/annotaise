@@ -1,4 +1,3 @@
-// PageHeader.tsx
 import Tooltip from '../Tooltip';
 
 type PageHeaderProps = {

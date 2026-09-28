@@ -3,10 +3,12 @@
 import { useCallback, useMemo, useRef, useEffect, useState, type ReactNode } from 'react';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-
+import hasGroups from '@/app/(inside)/labelings_manage/[labeling_id]/groups/page';
 import LabelingHeader from './LabelingHeader';
 import EditLabelingModal from './EditLabelingModal';
 import AddItemsCsvModal from './AddItemsCsvModal';
+
+import ConfirmActionModal from '@/components/ConfirmActionModal';
 
 import { useTranslations } from '@/i18n/use-translations';
 
@@ -16,6 +18,7 @@ import { useLabelingHeaderQuery } from '@/modules/labelings/manage/labelingManag
 import {
   useAddItemsCsvMutation,
   useDeleteLabelingMutation,
+  useDuplicateLabelingMutation, // ← novo
   useExportImportedLabelingCsvMutation,
   useUpdateLabelingMutation,
 } from '@/modules/labelings/manage/labelingManagerMutations';
@@ -29,7 +32,6 @@ type LayoutProps = {
 
 type HeaderTabKey = 'form' | 'assign' | 'groups' | 'answers' | 'guide' | 'decision';
 
-// Maps the current nested route to the header tab that should be highlighted.
 function getActiveTabFromPath(pathname: string): HeaderTabKey {
   if (pathname.includes('/groups')) return 'groups';
   if (pathname.includes('/assign')) return 'assign';
@@ -55,16 +57,23 @@ export default function LabelingsManageLayout({ children }: LayoutProps) {
   const [isEditInfoOpen, setIsEditInfoOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isImportCsvOpen, setIsImportCsvOpen] = useState(false);
+  const [isDuplicateConfirmOpen, setIsDuplicateConfirmOpen] = useState(false);
 
   const headerQuery = useLabelingHeaderQuery(labelingId);
   const labeling = headerQuery.data?.labeling;
   const project = headerQuery.data?.project;
+  
+  const ANY_GROUP_KEY = 'any';
+  const quota = labeling?.items_per_group ?? {}; 
+  const hasGroups = Object.keys(quota).some((name) => name !== ANY_GROUP_KEY); 
+
 
   const deleteMutation = useDeleteLabelingMutation();
   const updateMutation = useUpdateLabelingMutation();
   const addItemsCsvMutation = useAddItemsCsvMutation();
   const exportImportedCsvMutation = useExportImportedLabelingCsvMutation();
-
+  const duplicateMutation = useDuplicateLabelingMutation();
+  
   const handleUpdateLabeling = (payload: Partial<LabelingPayload>) => {
     if (!labeling) return;
 
@@ -82,6 +91,7 @@ export default function LabelingsManageLayout({ children }: LayoutProps) {
       }
     );
   };
+  
 
   const handleDeleteLabeling = () => {
     if (Number.isNaN(labelingId)) return;
@@ -96,6 +106,21 @@ export default function LabelingsManageLayout({ children }: LayoutProps) {
       },
     });
   };
+
+  const handleDuplicateLabeling = useCallback(() => {
+  if (Number.isNaN(labelingId)) return;
+
+  duplicateMutation.mutate(labelingId, {
+    onSuccess: (newLabeling) => {
+      toast.success(t('labelings.create.success.duplicated'));
+      setIsDuplicateConfirmOpen(false);
+      router.push(`/labelings_manage/${newLabeling.id}/form`);
+    },
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, t('labelings.create.errors.duplicateLabeling')));
+    },
+  });
+}, [duplicateMutation, labelingId, router, t]);
 
   const handleImportCsv = useCallback(
     async (file: File) => {
@@ -141,7 +166,7 @@ export default function LabelingsManageLayout({ children }: LayoutProps) {
     const base = [
       { key: 'form', label: t('labelings.create.tabs.form') },
       { key: 'assign', label: t('labelings.create.tabs.assign') },
-      { key: 'groups', label: t('labelings.create.tabs.assignGroups') },
+      ...(hasGroups ? [{ key: 'groups', label: t('labelings.create.tabs.groups') }] : []),
       { key: 'answers', label: t('labelings.create.tabs.answers') },
       { key: 'guide', label: t('labelings.create.tabs.guide') },
     ];
@@ -192,7 +217,9 @@ export default function LabelingsManageLayout({ children }: LayoutProps) {
         onDownloadCsv={labeling?.form_mode ? undefined : () => void handleDownloadCsv()}
         isDownloadingCsv={exportImportedCsvMutation.isPending}
         onImportCsv={labeling?.form_mode ? undefined : () => setIsImportCsvOpen(true)}
-      />
+        onDuplicate={() => setIsDuplicateConfirmOpen(true)}     
+        isDuplicating={duplicateMutation.isPending} 
+/>
 
       <div className="flex-1 min-h-0 overflow-y-auto">{children}</div>
 
@@ -217,6 +244,15 @@ export default function LabelingsManageLayout({ children }: LayoutProps) {
         description={t('labelings.create.delete.description')}
         confirmButtonText={t('labelings.create.delete.confirm')}
         cancelButtonText={t('common.cancel')}
+      />
+       <ConfirmActionModal
+        open={isDuplicateConfirmOpen}
+        onClose={() => setIsDuplicateConfirmOpen(false)}
+        onConfirm={handleDuplicateLabeling}
+        isLoading={duplicateMutation.isPending}
+        title={t('labelings.create.duplicate.title')}
+        description={t('labelings.create.duplicate.description')}
+        confirmButtonText={t('labelings.create.duplicate.confirm')}
       />
     </div>
   );

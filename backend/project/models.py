@@ -9,20 +9,17 @@ class Project(models.Model):
         COMPLETED = "completed", "Concluído"
         CANCELLED = "cancelled", "Cancelado"
 
-
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     status = models.CharField(max_length=50, choices=status.choices, default=status.PLANNING)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="projects_created"
-    )
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="projects_created")
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
         ordering = ["-created_at", "name"]
 
     def __str__(self):
-        return self.name
+        return f"project {self.name} created by {self.created_by}"
 
 
 class ProjectMembership(models.Model):
@@ -30,6 +27,7 @@ class ProjectMembership(models.Model):
         OWNER = "owner", "Proprietário"
         CONTRIBUTOR = "contributor", "Colaborador"
         VIEWER = "viewer", "Visualizador"
+        ANNOTATOR = "annotator", "Anotador"
 
     role = models.CharField(max_length=50, choices=RoleChoices.choices, default=RoleChoices.VIEWER)
     project = models.ForeignKey("Project", on_delete=models.CASCADE, related_name="memberships")
@@ -42,7 +40,6 @@ class ProjectMembership(models.Model):
         unique_together = ("project", "user")
         ordering = ["-joined_at"]
         indexes = [
-            # Índice composto para encontrar memberships por usuário e item
             models.Index(fields=['project', 'user'], name='membership_project_user_idx'),
         ]
 

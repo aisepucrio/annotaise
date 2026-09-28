@@ -39,9 +39,9 @@ export function AnswerTab({ labelingId, users, usersPerItem }: AnswerTabProps) {
   });
   const structureQuery = useLabelingStructureQuery(labelingId);
   const summaryQuery = useLabelingAnswersWithStructureQuery(labelingId, activeView === 'summary');
-  // Lista de membros para alimentar o filtro por usuário. Como as respostas
-  // chegam em blocos, derivar o filtro apenas do que está carregado deixava o
-  // seletor incompleto e o colapsava no usuário selecionado.
+  // Member list to feed the user filter. Since answers arrive in pages,
+  // deriving the filter only from what's loaded left the selector incomplete
+  // and collapsed it down to just the selected user.
   const membersQuery = useLabelingMembershipsQuery({ labelingId, pageSize: 100 });
 
   const loadedAnswers = answerItemsQuery.items;
@@ -98,9 +98,9 @@ export function AnswerTab({ labelingId, users, usersPerItem }: AnswerTabProps) {
   );
 
   const responderOptions = useMemo(() => {
-    // Membros da rotulação (fonte estável e completa) unidos a quem aparece nas
-    // respostas carregadas — assim respondentes que não são membros (ex.: o bot
-    // de desempate por LLM) continuam disponíveis quando presentes.
+    // Labeling members (stable, complete source) merged with whoever appears in the
+    // loaded answers — so respondents who aren't members (e.g. the LLM tiebreak
+    // bot) remain available when present.
     const uniqueUsers = new Set<number>();
     labelingMembers.forEach((member) => {
       if (member.user != null) uniqueUsers.add(member.user);
@@ -113,8 +113,8 @@ export function AnswerTab({ labelingId, users, usersPerItem }: AnswerTabProps) {
       .sort((a, b) => a.label.localeCompare(b.label));
   }, [labelingMembers, loadedAnswers, getUserLabel]);
 
-  // Trocar de respondente muda a queryKey, então os blocos já carregados são
-  // descartados e a lista recomeça do topo sozinha.
+  // Changing the responder changes the queryKey, so already-loaded pages are
+  // discarded and the list restarts from the top on its own.
   const handleResponderChange = useCallback((value: 'all' | number) => {
     setSelectedResponder(value);
   }, []);

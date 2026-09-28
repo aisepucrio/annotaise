@@ -4,36 +4,21 @@ import FormFieldBase from './base/FormFieldBase';
 import { formFieldClasses } from './base/formFieldClasses';
 
 export type NumberInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'size' | 'type' | 'onChange' | 'value'> & {
-  /** Label do input */
   label?: string;
-  /** Mensagem de erro */
   error?: string;
-  /** Ícone à direita do input */
   icon?: ReactNode;
-  /** Ícone à esquerda do input */
   leftIcon?: ReactNode;
-  /** Se o campo é obrigatório */
   required?: boolean;
-  /** Classes CSS adicionais para o container */
   containerClassName?: string;
-  /** Tooltip informativo ao lado do label */
   tooltip?: string;
-  /** Valor mínimo permitido */
   min?: number;
-  /** Valor máximo permitido */
   max?: number;
-  /** Valor do input */
   value?: number | string;
-  /** Callback chamado quando o valor muda */
   onChange?: (value: number | string) => void;
-  /** Se true, aplica validação automática de min/max */
+  /** When true, clamps the value to min/max on change. */
   autoValidate?: boolean;
 };
 
-/**
- * Componente de Input numérico padronizado com label flutuante e suporte para ícones
- * Suporta validação automática de min e max
- */
 const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
   (
     {
@@ -71,7 +56,6 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
 
       const inputValue = event.target.value;
 
-      // Se o campo está vazio, retorna string vazia
       if (inputValue === '') {
         onChange('');
         return;
@@ -79,7 +63,6 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
 
       let numValue = Number(inputValue);
 
-      // Se autoValidate está ativo, aplica as validações
       if (autoValidate) {
         if (min !== undefined && numValue < min) {
           numValue = min;
