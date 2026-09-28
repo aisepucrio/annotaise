@@ -31,7 +31,6 @@ class CustomUserCreateSerializer(serializers.ModelSerializer):
         write_only_fields = ['password']
 
 
-
     def create(self, validated_data):
 
         user_id = uuid.uuid4()          

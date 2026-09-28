@@ -3,9 +3,9 @@
 import { Download } from 'lucide-react';
 import Button from '@/components/button/Button';
 import { useTranslations } from '@/i18n/use-translations';
-import TwoOptionSelector from '../TwoOptionSelector';
+import SegmentedSelector from '../SegmentedSelector';
 
-export type AnswerView = 'answers' | 'summary';
+export type AnswerView = 'answers' | 'summary' | 'agreement';
 
 type AnswerTabHeaderProps = {
   activeView: AnswerView;
@@ -25,10 +25,10 @@ export default function AnswerTabHeader({ activeView, onViewChange, exporting, o
       <div className="grid grid-cols-1 items-center gap-3 md:grid-cols-[1fr_minmax(320px,460px)_1fr]">
         <div className="md:col-start-2">
           <div className="mx-auto w-full">
-            <TwoOptionSelector
+            <SegmentedSelector
               value={activeView}
               onChange={onViewChange}
-              ariaLabel={`${t('labelings.create.tabs.answers')} / ${t('labelings.create.tabs.summary')}`}
+              ariaLabel={`${t('labelings.create.tabs.answers')} / ${t('labelings.create.tabs.summary')} / ${t('labelings.create.tabs.agreement')}`}
               options={[
                 {
                   value: 'answers',
@@ -37,6 +37,10 @@ export default function AnswerTabHeader({ activeView, onViewChange, exporting, o
                 {
                   value: 'summary',
                   label: t('labelings.create.tabs.summary'),
+                },
+                {
+                  value: 'agreement',
+                  label: t('labelings.create.tabs.agreement'),
                 },
               ]}
             />
