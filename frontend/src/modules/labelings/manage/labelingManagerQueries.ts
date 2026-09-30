@@ -9,6 +9,8 @@ import {
   fetchLabelingAnswers,
   fetchLabelingElements,
   fetchLabelingAgreementSummary,
+  fetchLabelingAIConfig,
+  fetchAICredentials,
 } from '../labelingService';
 import { fetchProject } from '@/modules/projects/projectService';
 import { fetchUsers } from '@/modules/user/userService';
@@ -150,5 +152,26 @@ export function useLabelingDecisionQuestionsQuery(labelingId: number) {
     enabled,
     queryFn: () => fetchLabelingElements(labelingId, { type: 'multiple_choice' }),
     select: (questions: LabelingElementSummary[]) => [...questions].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+  });
+}
+
+// Utilizada para saber qual credencial de IA o labeling usa (aba Decisão)
+export function useLabelingAIConfigQuery(labelingId: number, shouldFetch = true) {
+  const enabled = !Number.isNaN(labelingId) && shouldFetch;
+
+  return useQuery({
+    queryKey: ['labelings', labelingId, 'ai-config'],
+    enabled,
+    queryFn: () => fetchLabelingAIConfig(labelingId),
+  });
+}
+
+// Utilizada para listar a biblioteca de chaves de IA do usuário logado.
+// Não depende do labeling: a mesma chave serve para várias rotulações.
+export function useAICredentialsQuery(shouldFetch = true) {
+  return useQuery({
+    queryKey: ['ai-credentials'],
+    enabled: shouldFetch,
+    queryFn: fetchAICredentials,
   });
 }

@@ -35,8 +35,7 @@ from labeling.models import Labeling, LabelingMembership
 
 import uuid
 
-LLM_TIEBREAK_USERNAME = "llm_tiebreak_bot"
-LLM_TIEBREAK_EMAIL = "llm_tiebreak_bot@annotaise.local"
+from common.constants import LLM_TIEBREAK_EMAIL, LLM_TIEBREAK_USERNAME
 
 class CurrentAPIView(RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]

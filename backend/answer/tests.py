@@ -12,6 +12,8 @@ from labeling.models import Labeling, LabelingSection, LabelingElement, Multiple
 from user.models import UserGroup, UserGroupMembership
 from .models import Answer
 from .serializers import AnswerSerializer
+from .services.exceptions import ItemAlreadyFinished, ReservationMissing
+from .services.record_answer import record_answer
 
 class AnswerTestsHelper():
     @staticmethod
@@ -341,6 +343,54 @@ class AutomaticDecisionTest(TestCase):
         self.item.refresh_from_db()
         self.assertEqual(self.item.decision_payload, {"yes": 2})
 
+    def test_record_answer_rejects_item_finished_while_waiting_for_lock(self):
+        """
+        submit_answer checks the status before taking the lock. If another
+        request finishes the item in between, record_answer must re-check under
+        the lock and reject — otherwise a late vote lands on a decided item.
+        """
+        self._answer(self.user1, "yes")
+        # user2's request passed the pre-lock check; meanwhile the item got decided.
+        Item.objects.filter(id=self.item.id).update(
+            status="finished",
+            final_decision_source="human",
+            final_decision_value="yes",
+            decision_payload={"yes": 2},
+        )
+
+        with self.assertRaises(ItemAlreadyFinished):
+            record_answer(
+                user=self.user2,
+                item_id=self.item.id,
+                answer_payload={str(self.decisive_question.id): "no"},
+                decisive_answer="no",
+            )
+
+        self.assertFalse(Answer.objects.filter(item=self.item, answered_by=self.user2).exists())
+        self.item.refresh_from_db()
+        self.assertEqual(self.item.decision_payload, {"yes": 2})
+        self.assertEqual(self.item.final_decision_value, "yes")
+
+    def test_record_answer_rejects_reservation_lost_after_permission_check(self):
+        """
+        HasItemReservationPermission runs before the transaction. If the
+        reservation is stolen or consumed in between, record_answer must
+        re-check it under the lock and write nothing.
+        """
+        ItemMembership.objects.filter(item=self.item, user=self.user2).delete()
+
+        with self.assertRaises(ReservationMissing):
+            record_answer(
+                user=self.user2,
+                item_id=self.item.id,
+                answer_payload={str(self.decisive_question.id): "yes"},
+                decisive_answer="yes",
+            )
+
+        self.assertFalse(Answer.objects.filter(item=self.item, answered_by=self.user2).exists())
+        self.item.refresh_from_db()
+        self.assertIsNone(self.item.decision_payload or None)
+
 
 class LLMDecisionTieBreakTest(TestCase):
     def setUp(self):
@@ -433,7 +483,7 @@ class LLMDecisionTieBreakTest(TestCase):
             format="json",
         )
 
-    @patch("answer.views.run_llm_tiebreak_decision")
+    @patch("answer.services.tiebreak.run_llm_tiebreak_decision")
     def test_llm_tiebreak_finishes_item_when_has_winner(self, mocked_llm):
         mocked_llm.return_value = {
             "winner": "yes",
@@ -475,7 +525,52 @@ class LLMDecisionTieBreakTest(TestCase):
             3,
         )
 
-    @patch("answer.views.run_llm_tiebreak_decision")
+    def test_answer_without_reservation_is_forbidden(self):
+        ItemMembership.objects.filter(item=self.item, user=self.user1).delete()
+
+        response = self._answer(self.user1, "yes")
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(Answer.objects.filter(item=self.item).exists())
+
+    def test_answer_to_finished_item_is_forbidden(self):
+        Item.objects.filter(id=self.item.id).update(status="finished")
+
+        response = self._answer(self.user1, "yes")
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(Answer.objects.filter(item=self.item).exists())
+        self.assertTrue(ItemMembership.objects.filter(item=self.item, user=self.user1).exists())
+
+    @patch("answer.services.tiebreak.run_llm_tiebreak_decision")
+    def test_stale_llm_result_does_not_overwrite_human_winner(self, mocked_llm):
+        def human_decides_while_llm_runs(**kwargs):
+            Item.objects.filter(id=self.item.id).update(
+                status="finished",
+                final_decision_source="human",
+                final_decision_value="no",
+                decision_payload={"yes": 1, "no": 2},
+            )
+            return {"winner": "yes", "tied": False, "models": [], "vote_count": {"yes": 3}, "valid_votes": 3}
+
+        mocked_llm.side_effect = human_decides_while_llm_runs
+
+        self._answer(self.user1, "yes")
+        response = self._answer(self.user2, "no")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        mocked_llm.assert_called_once()
+        self.item.refresh_from_db()
+        self.assertEqual(self.item.final_decision_source, "human")
+        self.assertEqual(self.item.final_decision_value, "no")
+        self.assertEqual(self.item.decision_payload, {"yes": 1, "no": 2})
+        self.assertEqual(self.item.llm_tiebreak_result["error"], "ITEM_ALREADY_DECIDED")
+        self.assertFalse(self.item.llm_tiebreak_result["applied"])
+        self.assertFalse(
+            Answer.objects.filter(item=self.item, answered_by__username="llm_tiebreak_bot").exists()
+        )
+
+    @patch("answer.services.tiebreak.run_llm_tiebreak_decision")
     def test_llm_tiebreak_runs_once_when_result_is_tie(self, mocked_llm):
         mocked_llm.return_value = {
             "winner": None,
@@ -508,7 +603,7 @@ class LLMDecisionTieBreakTest(TestCase):
         self.assertEqual(self.item.final_decision_source, "human")
         self.assertEqual(self.item.final_decision_value, "yes")
 
-    @patch("answer.views.run_llm_tiebreak_decision")
+    @patch("answer.services.tiebreak.run_llm_tiebreak_decision")
     def test_manual_mode_does_not_call_llm_tiebreak(self, mocked_llm):
         self.labeling.decision_mode = Labeling.DecisionMode.MANUAL
         self.labeling.save(update_fields=["decision_mode"])
@@ -524,7 +619,7 @@ class LLMDecisionTieBreakTest(TestCase):
         self.assertNotEqual(self.item.status, "finished")
         self.assertFalse(self.item.llm_tiebreak_attempted)
 
-    @patch("answer.views.run_llm_tiebreak_decision")
+    @patch("answer.services.tiebreak.run_llm_tiebreak_decision")
     def test_returns_warning_when_video_context_is_not_supported(self, mocked_llm):
         self.context_element.context_type = LabelingElement.ContextType.VIDEO
         self.context_element.save(update_fields=["context_type"])
@@ -551,7 +646,7 @@ class LLMDecisionTieBreakTest(TestCase):
         self.assertIn("decision_warning", response.data)
         self.assertIn("tipo 'video'", response.data["decision_warning"])
 
-    @patch("answer.views.run_llm_tiebreak_decision")
+    @patch("answer.services.tiebreak.run_llm_tiebreak_decision")
     def test_returns_warning_when_audio_context_is_not_supported(self, mocked_llm):
         self.context_element.context_type = LabelingElement.ContextType.AUDIO
         self.context_element.save(update_fields=["context_type"])
@@ -755,3 +850,68 @@ class GroupQuotaAnswerEnforcementTest(TestCase):
         self.assertEqual(answer_a.responded_as, self.group_a)
         self.item.refresh_from_db()
         self.assertEqual(self.item.status, "finished")
+
+
+class LLMTiebreakVotingTest(TestCase):
+    QUESTION = {
+        "labeling_guide": "Guia",
+        "question_text": "Aceitar?",
+        "options": ["yes", "no"],
+        "contexts": [{"context_type": "text", "label": "Texto", "value": "abc"}],
+    }
+
+    @patch("answer.services.llm_clients.ollama_generate")
+    def test_ollama_majority_wins_and_invalid_votes_are_kept(self, mocked_generate):
+        from answer.services.llm_tiebreak import OLLAMA_MODELS_GENERAL, run_llm_tiebreak_decision
+
+        mocked_generate.side_effect = ["yes", "YES", "no", "talvez"]
+
+        result = run_llm_tiebreak_decision(**self.QUESTION)
+
+        self.assertEqual(result["model_pool"], "general")
+        self.assertEqual(result["models_used"], OLLAMA_MODELS_GENERAL)
+        self.assertEqual(result["vote_count"], {"yes": 2, "no": 1})
+        self.assertEqual(result["winner"], "yes")
+        self.assertFalse(result["tied"])
+        self.assertEqual(result["valid_votes"], 3)
+        self.assertEqual(
+            [m["status"] for m in result["models"]], ["ok", "ok", "ok", "invalid_vote"]
+        )
+
+    @patch("answer.services.llm_clients.cloud_completion")
+    def test_byok_error_never_carries_the_api_key(self, mocked_completion):
+        from answer.services.llm_tiebreak import run_llm_tiebreak_decision_byok
+
+        secret = "sk-segredo-que-nao-pode-vazar"
+        mocked_completion.side_effect = RuntimeError(f"401 invalid key {secret}")
+
+        result = run_llm_tiebreak_decision_byok(provider="openai", api_key=secret, **self.QUESTION)
+
+        self.assertEqual(result["model_pool"], "byok")
+        self.assertIsNone(result["winner"])
+        self.assertEqual(result["models"][0]["status"], "error")
+        self.assertNotIn(secret, str(result))
+        self.assertIn("[REDACTED]", result["models"][0]["error"])
+
+    def test_byok_unknown_provider_has_the_same_shape_as_a_success(self):
+        from answer.services.llm_tiebreak import run_llm_tiebreak_decision_byok
+
+        result = run_llm_tiebreak_decision_byok(provider="nope", api_key="x", **self.QUESTION)
+
+        self.assertEqual(result["error"], "UNSUPPORTED_PROVIDER")
+        self.assertEqual(
+            set(result),
+            {"attempted_at", "model_pool", "models_used", "models", "vote_count",
+             "winner", "tied", "valid_votes", "error", "error_message"},
+        )
+
+    @patch("answer.services.llm_clients.ollama_generate")
+    def test_video_context_is_rejected_before_asking_any_model(self, mocked_generate):
+        from answer.services.llm_tiebreak import run_llm_tiebreak_decision
+
+        question = {**self.QUESTION, "contexts": [{"context_type": "video", "value": "x.mp4"}]}
+
+        result = run_llm_tiebreak_decision(**question)
+
+        self.assertEqual(result["error"], "UNSUPPORTED_VIDEO_CONTEXT")
+        mocked_generate.assert_not_called()
