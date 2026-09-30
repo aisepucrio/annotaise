@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import {useRouter, useParams} from 'next/navigation';
 import { Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Labeling, LabelingPayload } from '@/modules/labelings/labelingsTypes';
@@ -26,31 +25,7 @@ type EditLabelingModalProps = {
   isSaving?: boolean;
 };
 
-type EnableBackAndFoward = {
-  file: File | null;
-  payload: Omit<LabelingPayload, 'project' | 'users_per_item'> & {
-    project: number | null;
-    users_per_item: number | null;
-  };
-};
 
-function createInitialState(): EnableBackAndFoward {
-  return {
-    file: null,
-    payload: {
-      title: '',
-      project: null,
-      users_per_item: 1,
-      start_date: new Date().toISOString().split('T')[0],
-      final_date: '',
-      decision: false,
-      decision_mode: 'manual',
-      has_background_form: false,
-      distribution_strategy: 'auto',
-      form_mode: false,
-    },
-  };
-}
 
 
 export default function EditLabelingModal({ open, labeling, project, onClose, onSave, isSaving = false }: EditLabelingModalProps) {
@@ -62,11 +37,9 @@ export default function EditLabelingModal({ open, labeling, project, onClose, on
   const [finalDate, setFinalDate] = useState('');
   const [projectId, setProjectId] = useState<number | null>(null);
   const [formErrors, setFormErrors] = useState<EditLabelingFormErrors>({});
-  const [draft, setDraft] = useState<EnableBackAndFoward>(() => createInitialState());
   const [allowSectionBack, setAllowSectionBack] = useState(false);
 
-  //test
-
+  
   // Mirror the latest labeling values so the modal always starts from the current server state.
   useEffect(() => {
     if (!open) {
@@ -80,7 +53,7 @@ export default function EditLabelingModal({ open, labeling, project, onClose, on
     setStartDate(labeling.start_date ?? '');
     setFinalDate(labeling.final_date ?? '');
     setProjectId(labeling.project ?? null);
-    setAllowSectionBack(!(labeling.block_section_back ?? false)); //if labeling.block_secction_back, falls in true so !true == false. BUT, if false, then !false == true
+    setAllowSectionBack(!(labeling.block_section_back ?? true)); 
     setFormErrors({});
   }, [labeling, open]);
 
@@ -128,8 +101,7 @@ export default function EditLabelingModal({ open, labeling, project, onClose, on
       project: projectId ?? labeling.project,
       users_per_item: labeling.users_per_item,
       decision: labeling.decision,
-      block_section_back: !allowSectionBack, //in this line (and the rest of the logic), one works as the opposite of the other
-      //if block_section_back == true, allowSectionBack will not happen
+      block_section_back: !allowSectionBack 
     });
   };
   
@@ -151,9 +123,7 @@ export default function EditLabelingModal({ open, labeling, project, onClose, on
     }
   };
 
-  const isPerPerson = draft.payload.distribution_strategy === 'per_person';
-  const isAnonymous = draft.payload.distribution_strategy === 'anonymous_mode';
-  const forcesSingleAnswer = isPerPerson || isAnonymous;
+
 
 
   return (
@@ -251,14 +221,13 @@ export default function EditLabelingModal({ open, labeling, project, onClose, on
                 id="block-section-back"
                 checked={allowSectionBack}
                 onChange={setAllowSectionBack}
-                disabled={forcesSingleAnswer}
                 variant="square"
                 hoverColor="var(--metal-500)"
                 checkedColor="var(--metal-700)"
                 className="shrink-0"
               />
             <div className="flex items-center gap-1">
-              <label htmlFor="section-decision" className="cursor-pointer text-sm font-medium text-metal-900">
+              <label htmlFor="block-section-back" className="cursor-pointer text-sm font-medium text-metal-900">
                         {t('labelings.upload.decisionSection')}
               </label>
             </div>

@@ -10,8 +10,7 @@ from ..models import Invitation, CustomUser
 from ..utils import send_invitation_email
 
 class ForbiddenValidationError(APIException):
-    def __init__(self, detail):
-        super().__init__(status_code=status.HTTP_403_FORBIDDEN, detail=detail)
+    status_code = status.HTTP_403_FORBIDDEN
 
 
 def create_invitation(*, invited_by, email, role, project_ids, labeling_ids, email_language):
@@ -135,7 +134,7 @@ def _resolve_labeling_assignment_ids(request_user, project_ids, labeling_ids):
     requested_project_ids = set(valid_project_ids)
     unauthorized_project_ids = sorted(requested_project_ids - owner_project_ids)
     if unauthorized_project_ids:
-        raise ValidationError({
+        raise ForbiddenValidationError({
             "detail": "Você só pode atribuir usuários em projetos onde é owner.",
             "code": "PROJECT_ASSIGNMENT_FORBIDDEN",
             "project_ids": unauthorized_project_ids,

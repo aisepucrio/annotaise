@@ -272,8 +272,7 @@ export default function LabelingAnswerPage() {
     }
   }, [answers, currentItemId, currentSection, labelingId, loadItem, sections, showError, t]);
 
-    const isFirstSection = currentSectionIdx <= 0;
-
+    const isFirstSection = currentSectionIdx <= 1;
 
   // Header controls for current item metadata and guide visibility.
   const HeaderBadges = (
@@ -373,13 +372,13 @@ export default function LabelingAnswerPage() {
           <div className="relative h-full">
             {isEnabled? (
               <div>
-                <div className="absolute right-1 top-1/2 z-0 -translate-y-1/">
+                <div className="absolute right-1 top-1/2 z-10 -translate-y-1/2">
                   <ArrowRightButton
                     onNext={goToNextSection}
                     disableNext={isLastSection}
                   />
               </div>
-              <div className="absolute left-1 top-1/2 z-0 -translate-y-1/2">
+              <div className="absolute left-1 top-1/2 z-10 -translate-y-1/2">
                   <ArrowLeftButton
                     onPrevious={goToPreviousSection}
                     disablePrevious={isFirstSection}

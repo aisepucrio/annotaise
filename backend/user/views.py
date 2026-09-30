@@ -1,6 +1,3 @@
-from annotaise.settings import FRONTEND_URL
-#from.utils import send_invitation_email
-
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
@@ -14,11 +11,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import Count, F, Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-#from django.db.models import Count, OuterRef, Subquery, IntegerField
 
-from django.db import connection, reset_queries
-#from django.db import transaction
-from .querysets import UserQuerySet
 from .models import Invitation, UserGroup, UserGroupMembership
 from .permissions import IsAdminAccount, IsMasterAdminAccount
 from user.services.create_invitation import create_invitation
@@ -31,8 +24,6 @@ from .serializers import (
     UserGroupMembershipSerializer,
     UserGroupSerializer,
 )
-from project.models import ProjectMembership
-from labeling.models import Labeling, LabelingMembership
 
 import uuid
 
@@ -87,13 +78,11 @@ class AdminUserViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action in ("create", "update", "partial_update"):
             return AdminUserWriteSerializer
-        elif self.action == "user_dashboard":
-            return AdminUserReadSerializer
         return AdminUserReadSerializer
 
     @action(detail=False, methods=["get"], url_path="dashboard", pagination_class=StandardCursorPagination)
     def user_dashboard(self, request, pk=None):
-        qs = self.get_queryset.user_dashboard_qs() #using the function instead of empty annotate
+        qs = self.get_queryset().user_dashboard_qs() 
         qs = self.filter_queryset(qs)
         return paginated_response(self, qs)
             

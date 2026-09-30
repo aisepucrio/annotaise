@@ -2,7 +2,7 @@ from labeling.models import Labeling
 from project.models import ProjectMembership
 
 def get_assignment_options(*, user):
-    owner_projects = (  #mudar a escrita do que estava em views pois 1. está dando problema na interpretação 2. request não é identificado
+    owner_projects = (  
         ProjectMembership.objects.filter(
             user=user,
             role=ProjectMembership.RoleChoices.OWNER,
@@ -33,4 +33,4 @@ def get_assignment_options(*, user):
                 "labelings": labelings_by_project.get(project.id, []),
             }
         )
-    return output #we dont want to return response in a sefvice module, so we return the output (response only in views)
+    return output
