@@ -61,7 +61,7 @@ services:
     # O watcher do Turbopack quebra neste bind mount ("watch error ... NotFound")
     # e o hot reload nunca dispara. O webpack respeita WATCHPACK_POLLING acima,
     # então em dev usamos ele. Compila mais devagar, mas recarrega ao salvar.
-    command: sh -c "npm install --no-audit --no-fund && npx next dev"
+    command: sh -c "npm install --no-audit --no-fund && if [ \"$$DEBUG_NEXT\" = \"false\" ]; then npm run build && npm run start; else npx next dev; fi"
     restart: unless-stopped
       
   db:
