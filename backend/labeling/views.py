@@ -33,8 +33,7 @@ from answer.models import BackgroundAnswer, Answer
 from collections import defaultdict
 from annotaise.pagination import StandardCursorPagination, paginated_response
 
-LLM_TIEBREAK_USERNAME = "llm_tiebreak_bot"
-LLM_TIEBREAK_EMAIL = "llm_tiebreak_bot@annotaise.local"
+from common.constants import LLM_TIEBREAK_EMAIL, LLM_TIEBREAK_USERNAME
 
 LAST_OWNER_ERROR = "A rotulação precisa de pelo menos um dono."
 

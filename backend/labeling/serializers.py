@@ -6,8 +6,7 @@ from rest_framework import serializers
 from django.db import transaction
 from django.utils import timezone
 
-LLM_TIEBREAK_USERNAME = "llm_tiebreak_bot"
-LLM_TIEBREAK_EMAIL = "llm_tiebreak_bot@annotaise.local"
+from common.constants import LLM_TIEBREAK_EMAIL, LLM_TIEBREAK_USERNAME
 
 
 class LabelingSerializer(serializers.ModelSerializer):

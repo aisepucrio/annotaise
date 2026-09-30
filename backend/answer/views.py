@@ -7,6 +7,7 @@ from .serializers import (
 )
 from labeling.models import LabelingElement
 from labeling.models import Labeling, LabelingMembership, LabelingSection
+from common.constants import LLM_TIEBREAK_USERNAME
 from annotaise.pagination import StandardCursorPagination
 from .session_llm_key import pop_user_llm_key
 
@@ -24,6 +25,7 @@ from .services.exceptions import (
     DecisionInputError,
     ItemAlreadyFinished,
     NoGroupSlotAvailable,
+    ReservationMissing,
 )
 from .services.submit_answer import submit_answer
 
@@ -81,7 +83,7 @@ class AnswerViewset(viewsets.ModelViewSet):
                 answer_payload=serializer.validated_data.get("answer_payload", {}),
                 session_llm_key=session_llm_key,
             )
-        except (ItemAlreadyFinished, BackgroundFormRequired) as exc:
+        except (ItemAlreadyFinished, BackgroundFormRequired, ReservationMissing) as exc:
             return self._rejected(exc, status=403)
         except DecisionInputError as exc:
             return self._rejected(exc, status=400)
@@ -366,7 +368,7 @@ class ExportAnswersView(APIView):
             row["context_id"] = (answer.item.row_index or 0) + 1
             is_llm = (
                 answer.answered_by_id is not None
-                and answer.answered_by.username == "llm_tiebreak_bot"
+                and answer.answered_by.username == LLM_TIEBREAK_USERNAME
             )
             if not answer.answered_by_id:
                 row["user_id"] = "anonymous"

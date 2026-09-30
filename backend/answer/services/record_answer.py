@@ -8,8 +8,7 @@ from item.models import Item, ItemMembership
 from labeling.models import Labeling, LabelingElement, LabelingSection
 from user.models import UserGroup
 
-
-from .exceptions import DecisionInputError
+from .exceptions import DecisionInputError, ItemAlreadyFinished, ReservationMissing
 
 @dataclass
 class TiebreakRequest:
@@ -53,9 +52,24 @@ def record_answer(*, user, item_id, answer_payload, decisive_answer):
     )
     labeling = item.labeling
 
+    # submit_answer already checked, but another answer may have finished the
+    # item before this lock. Raising is safe here, nothing has been written yet.
+    if item.status == "finished":
+        raise ItemAlreadyFinished()
+
+    # HasItemReservationPermission ran before this transaction: the reservation
+    # may have been stolen, or consumed by a concurrent submission.
+    reservation = (
+        ItemMembership.objects
+        .select_for_update()
+        .filter(user=user, item_id=item_id)
+        .first()
+    )
+    if reservation is None:
+        raise ReservationMissing()
+
     if not _group_slot_still_open(item, labeling, user):
-        # Sem exceção aqui: a liberação da reserva precisa ser commitada.
-        _release_reservation(user, item_id)
+        reservation.delete()
         return None, None
 
     answer = Answer.objects.create(
@@ -65,7 +79,7 @@ def record_answer(*, user, item_id, answer_payload, decisive_answer):
         answered_by=user,
         responded_as=item.pick_responded_as_for(user),
     )
-    _release_reservation(user, item_id)
+    reservation.delete()
 
     if not labeling.decision:
         _close_item_without_decision(item, labeling)
@@ -79,12 +93,7 @@ def record_answer(*, user, item_id, answer_payload, decisive_answer):
     return answer, tiebreak_request
 
 
-def _release_reservation(user, item_id):
-    ItemMembership.objects.filter(user=user, item_id=item_id).delete()
-
-
 def _group_slot_still_open(item, labeling, user):
-    # Reservas não consomem slot: outra resposta pode ter ocupado a vaga do grupo.
     if not labeling.has_group_quotas:
         return True
     user_group_names = set(

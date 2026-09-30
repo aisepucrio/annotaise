@@ -178,6 +178,12 @@ export default function AIConfigSection({ labelingId, isLlmMode }: AIConfigSecti
     toast.success(t('labelings.create.decision.aiConfig.localRemoveSuccess'));
   };
 
+  // userLlmKeyHeaders() sends any stored key, so server mode must not leave one behind.
+  const handleStorageModeChange = (mode: KeyStorageMode) => {
+    setStorageMode(mode);
+    if (mode === 'server' && localKey) handleLocalRemove();
+  };
+
   const isLinking = linkMutation.isPending;
   const isCreating = createMutation.isPending;
   const isUnlinking = unlinkMutation.isPending;
@@ -441,7 +447,7 @@ export default function AIConfigSection({ labelingId, isLlmMode }: AIConfigSecti
                   name="ai-key-storage"
                   value={option.value}
                   checked={storageMode === option.value}
-                  onChange={() => setStorageMode(option.value)}
+                  onChange={() => handleStorageModeChange(option.value)}
                   className="mt-1 cursor-pointer accent-blueberry-700"
                 />
                 <span>

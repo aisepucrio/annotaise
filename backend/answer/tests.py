@@ -12,6 +12,8 @@ from labeling.models import Labeling, LabelingSection, LabelingElement, Multiple
 from user.models import UserGroup, UserGroupMembership
 from .models import Answer
 from .serializers import AnswerSerializer
+from .services.exceptions import ItemAlreadyFinished, ReservationMissing
+from .services.record_answer import record_answer
 
 class AnswerTestsHelper():
     @staticmethod
@@ -340,6 +342,54 @@ class AutomaticDecisionTest(TestCase):
 
         self.item.refresh_from_db()
         self.assertEqual(self.item.decision_payload, {"yes": 2})
+
+    def test_record_answer_rejects_item_finished_while_waiting_for_lock(self):
+        """
+        submit_answer checks the status before taking the lock. If another
+        request finishes the item in between, record_answer must re-check under
+        the lock and reject — otherwise a late vote lands on a decided item.
+        """
+        self._answer(self.user1, "yes")
+        # user2's request passed the pre-lock check; meanwhile the item got decided.
+        Item.objects.filter(id=self.item.id).update(
+            status="finished",
+            final_decision_source="human",
+            final_decision_value="yes",
+            decision_payload={"yes": 2},
+        )
+
+        with self.assertRaises(ItemAlreadyFinished):
+            record_answer(
+                user=self.user2,
+                item_id=self.item.id,
+                answer_payload={str(self.decisive_question.id): "no"},
+                decisive_answer="no",
+            )
+
+        self.assertFalse(Answer.objects.filter(item=self.item, answered_by=self.user2).exists())
+        self.item.refresh_from_db()
+        self.assertEqual(self.item.decision_payload, {"yes": 2})
+        self.assertEqual(self.item.final_decision_value, "yes")
+
+    def test_record_answer_rejects_reservation_lost_after_permission_check(self):
+        """
+        HasItemReservationPermission runs before the transaction. If the
+        reservation is stolen or consumed in between, record_answer must
+        re-check it under the lock and write nothing.
+        """
+        ItemMembership.objects.filter(item=self.item, user=self.user2).delete()
+
+        with self.assertRaises(ReservationMissing):
+            record_answer(
+                user=self.user2,
+                item_id=self.item.id,
+                answer_payload={str(self.decisive_question.id): "yes"},
+                decisive_answer="yes",
+            )
+
+        self.assertFalse(Answer.objects.filter(item=self.item, answered_by=self.user2).exists())
+        self.item.refresh_from_db()
+        self.assertIsNone(self.item.decision_payload or None)
 
 
 class LLMDecisionTieBreakTest(TestCase):
