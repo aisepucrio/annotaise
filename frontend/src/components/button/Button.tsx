@@ -16,8 +16,8 @@ type ButtonProps = {
   ariaLabel?: string;
   /** Default: "button"; use "submit" to submit forms. */
   type?: 'button' | 'submit' | 'reset';
-  /** Controls base padding size. */
-  size?: 'normal' | 'icon';
+  /** Controls base padding and text size. */
+  size?: 'normal' | 'small' | 'icon';
 };
 
 export default function Button({
@@ -86,7 +86,7 @@ export default function Button({
 
   const colors = getColors();
   const fontWeight = bold ? 'font-bold' : 'font-normal';
-  const paddingClasses = size === 'icon' ? 'p-2 ' : 'px-4 py-2';
+  const paddingClasses = size === 'icon' ? 'p-2 ' : size === 'small' ? 'px-3 py-1.5' : 'px-4 py-2';
 
   return (
     <button
@@ -95,7 +95,8 @@ export default function Button({
       className={`
         inline-flex items-center justify-center ${children ? 'gap-2' : ''} 
         rounded-lg ${paddingClasses}
-        transition-colors text-sm cursor-pointer
+        transition-colors cursor-pointer
+        ${size === 'small' ? 'text-xs' : 'text-sm'}
         ${fill ? 'w-full' : 'w-auto'}
         disabled:cursor-not-allowed
         ${fontWeight}

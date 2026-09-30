@@ -1,7 +1,6 @@
 import { UserCog } from 'lucide-react';
 
 import StatPill from '@/components/StatPill';
-import Button from '@/components/button/Button';
 import { useTranslations } from '@/i18n/use-translations';
 
 type IndividualUserCardProps = {
@@ -25,34 +24,56 @@ export default function IndividualUserCard({
 }: IndividualUserCardProps) {
   const { t } = useTranslations();
 
+  // A pending user has no name yet, so `name` is their email — one initial is all there is.
+  const initials = name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0] ?? '')
+    .join('')
+    .toUpperCase();
+
   return (
-    <div className="mt-1 flex justify-between items-end gap-3">
-      <div className="flex flex-col">
-        <div className="flex flex-col mb-12">
-          <span className="text-black font-semibold leading-tight max-w-40 break-words truncate flex items-center gap-2">
-            {name}
+    <>
+      <div className="flex items-center gap-2.5">
+        <span
+          aria-hidden
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blueberry-700-15 text-[11px] font-bold text-blueberry-700"
+        >
+          {initials}
+        </span>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="truncate text-sm font-semibold tracking-tight text-metal-900">{name}</span>
             {onboardingStatus === 'pending' ? (
-              <span className="rounded bg-orange-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-orange-700">
+              <span className="shrink-0 rounded bg-orange-blueberry-15 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-orange-blueberry">
                 {t('users.status.pending')}
               </span>
             ) : null}
-          </span>
+          </div>
 
-          <span className="text-gray-500 font-semibold leading-tight min-w-40 max-w-40 break-words truncate">{email}</span>
+          <p className="truncate text-xs text-metal-400">{email}</p>
         </div>
 
-        <Button icon={<UserCog size={20} strokeWidth={1.75} />} onClick={onManage} variant="normal" ariaLabel={t('users.manageAria')}>
-          {t('users.manage')}
-        </Button>
+        {/* Same corner control as the folder tiles: the card is a row of facts, the action
+            sits out of the way. */}
+        <button
+          type="button"
+          onClick={onManage}
+          aria-label={t('users.manageAria')}
+          title={t('users.manage')}
+          className="-mr-1.5 shrink-0 cursor-pointer rounded-md p-1.5 text-metal-400 transition-colors hover:bg-metal-50 hover:text-blueberry-700"
+        >
+          <UserCog size={16} strokeWidth={1.75} />
+        </button>
       </div>
 
-      <div className="w-0.75 rounded-full bg-metal-50 self-stretch" />
-
-      <div className="-mr-3 grid grid-cols-1 gap-2 flex-1 justify-end items-start min-w-0">
-        <StatPill label={t('users.stats.projects')} value={projects} color="blue" cut="left" />
-        <StatPill label={t('users.stats.labelingsDone')} value={labelings_done} color="green" cut="left" />
-        <StatPill label={t('users.stats.labelingsPending')} value={labelings_pending} color="orange" cut="left" />
+      <div className="mt-2.5 flex flex-wrap gap-1.5">
+        <StatPill label={t('users.stats.projects')} value={projects} color="blue" />
+        <StatPill label={t('users.stats.labelingsDone')} value={labelings_done} color="green" />
+        <StatPill label={t('users.stats.labelingsPending')} value={labelings_pending} color="orange" />
       </div>
-    </div>
+    </>
   );
 }

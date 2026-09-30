@@ -4,8 +4,6 @@ import { useEffect, useState } from 'react';
 import PageLayout from '@/components/inside-pages-layout/PageLayout';
 import IndividualLabelingCard from '@/components/IndividualLabelingCard';
 import GridItemCard from '@/components/grid/GridItemCard';
-import Button from '@/components/button/Button';
-import { Tag } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useLabelingDashboardQuery } from '@/modules/labelings/labelingQueries';
 import InfiniteScroll from '@/components/InfiniteScroll';
@@ -49,7 +47,7 @@ export default function LabelingsPage() {
       filterButtonText={t('filterBar.filterButton')}
       isLoading={isLoading}
       message={!isLoading && labelingsList.length === 0 ? t('labelings.empty') : undefined}
-      minColumnWidth="420px"
+      minColumnWidth="260px"
       footer={
         // totalCount intentionally omitted: this dashboard discards labelings whose
         // group quota is already filled after counting, so the server total is only
@@ -62,10 +60,10 @@ export default function LabelingsPage() {
         />
       }
     >
-      {labelingsList.map((l, index) => {
+      {labelingsList.map((l) => {
         const mustAnswerBackgroundFirst = Boolean(l.background_required && !l.background_answered);
         return (
-          <GridItemCard key={l.id} index={index}>
+          <GridItemCard key={l.id}>
             <IndividualLabelingCard
               title={l.labeling_name}
               project={l.project_name ?? t('labelings.manage.noProject')}
@@ -75,16 +73,8 @@ export default function LabelingsPage() {
               formMode={l.form_mode}
               answersCollected={l.answers_collected}
               variant="labelings"
-              actionButton={
-                <Button
-                  icon={<Tag size={20} strokeWidth={1.75} />}
-                  onClick={() => handleOpenLabeling(l.id, mustAnswerBackgroundFirst)}
-                  variant="normal"
-                  ariaLabel={t('labelings.action.answerAria')}
-                >
-                  {mustAnswerBackgroundFirst ? 'BACKGROUND' : t('labelings.action.answer')}
-                </Button>
-              }
+              backgroundFirst={mustAnswerBackgroundFirst}
+              onOpen={() => handleOpenLabeling(l.id, mustAnswerBackgroundFirst)}
             />
           </GridItemCard>
         );

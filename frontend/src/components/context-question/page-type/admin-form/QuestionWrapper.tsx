@@ -30,7 +30,7 @@ export default function QuestionWrapper({ element, t: tProp, onUpdate, onRemove,
   };
 
   return (
-    <GridItemCard index={0} className="mb-2">
+    <GridItemCard className="mb-2" accentColor="var(--blueberry-500)">
       <div data-actions-anchor="true" data-section-element-id={element.id}>
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-blueberry-900">{t('labelings.create.question.title')}</h3>

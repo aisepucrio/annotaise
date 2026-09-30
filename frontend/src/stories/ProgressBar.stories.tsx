@@ -9,10 +9,9 @@ const meta = {
     value: 50,
     max: 100,
     label: '50%',
-    bgColor: 'bg-gray-200',
-    fillColor: 'bg-blue-500',
-    rounded: 'all',
-    height: '32px',
+    bgColor: 'bg-metal-100',
+    fillColor: 'bg-blueberry-700',
+    height: '6px',
   },
   parameters: {
     layout: 'centered',
@@ -96,46 +95,6 @@ A lógica de qual cor usar é gerenciada pelo código que utiliza o componente.
    BORDER STYLES
 ======================= */
 
-export const BorderStyles: StoryObj<typeof ProgressBar> = {
-  render: () => (
-    <div className="flex flex-col items-center gap-4 w-96">
-      <div className="w-full">
-        <p className="text-sm mb-1 text-gray-600">Todas as bordas arredondadas (all)</p>
-        <ProgressBar value={70} max={100} label="70%" rounded="all" />
-      </div>
-
-      <div className="w-full">
-        <p className="text-sm mb-1 text-gray-600">Apenas direita arredondada (right)</p>
-        <ProgressBar value={70} max={100} label="70%" rounded="right" />
-      </div>
-
-      <div className="w-full">
-        <p className="text-sm mb-1 text-gray-600">Apenas esquerda arredondada (left)</p>
-        <ProgressBar value={70} max={100} label="70%" rounded="left" />
-      </div>
-
-      <div className="w-full">
-        <p className="text-sm mb-1 text-gray-600">Sem bordas arredondadas (none)</p>
-        <ProgressBar value={70} max={100} label="70%" rounded="none" />
-      </div>
-    </div>
-  ),
-  parameters: {
-    docs: {
-      description: {
-        story: `
-### Opções de borda
-
-- **all**: Todas as bordas arredondadas (padrão)
-- **right**: Apenas bordas direitas arredondadas
-- **left**: Apenas bordas esquerdas arredondadas
-- **none**: Sem bordas arredondadas
-        `,
-      },
-    },
-  },
-};
-
 /* =======================
    DIFFERENT HEIGHTS
 ======================= */
@@ -144,23 +103,23 @@ export const Heights: StoryObj<typeof ProgressBar> = {
   render: () => (
     <div className="flex flex-col items-center gap-4 w-96">
       <div className="w-full">
-        <p className="text-sm mb-1 text-gray-600">Pequena (24px)</p>
-        <ProgressBar value={60} max={100} label="60%" height="24px" />
+        <p className="text-sm mb-1 text-gray-600">Fina (4px)</p>
+        <ProgressBar value={60} max={100} label="60%" height="4px" />
       </div>
 
       <div className="w-full">
-        <p className="text-sm mb-1 text-gray-600">Normal (32px)</p>
-        <ProgressBar value={60} max={100} label="60%" height="32px" />
+        <p className="text-sm mb-1 text-gray-600">Padrão (6px)</p>
+        <ProgressBar value={60} max={100} label="60%" />
       </div>
 
       <div className="w-full">
-        <p className="text-sm mb-1 text-gray-600">Grande (40px)</p>
-        <ProgressBar value={60} max={100} label="60%" height="40px" />
+        <p className="text-sm mb-1 text-gray-600">Média (10px)</p>
+        <ProgressBar value={60} max={100} label="60%" height="10px" />
       </div>
 
       <div className="w-full">
-        <p className="text-sm mb-1 text-gray-600">Extra grande (48px)</p>
-        <ProgressBar value={60} max={100} label="60%" height="48px" />
+        <p className="text-sm mb-1 text-gray-600">Grossa (16px)</p>
+        <ProgressBar value={60} max={100} label="60%" height="16px" />
       </div>
     </div>
   ),
@@ -279,8 +238,6 @@ export const RealWorldExample: StoryObj<typeof ProgressBar> = {
                   label={daysLabel}
                   bgColor={daysBgColor}
                   fillColor={daysFillColor}
-                  rounded="right"
-                  className="-ml-3"
                 />
                 <ProgressBar
                   value={ex.labelings_done}
@@ -288,8 +245,6 @@ export const RealWorldExample: StoryObj<typeof ProgressBar> = {
                   label={labelingsLabel}
                   bgColor={labelingsBgColor}
                   fillColor={labelingsFillColor}
-                  rounded="right"
-                  className="-ml-3"
                 />
               </div>
             </div>

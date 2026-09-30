@@ -27,19 +27,19 @@ export const Basic: StoryObj<typeof PageLayout> = {
     filterButtonText: 'Filtrar',
     children: (
       <>
-        <GridItemCard index={0}>
+        <GridItemCard>
           <div className="p-4 bg-white rounded-lg">
             <h3 className="font-semibold">Projeto Alpha</h3>
             <p className="text-sm text-gray-600">5 tarefas pendentes</p>
           </div>
         </GridItemCard>
-        <GridItemCard index={1}>
+        <GridItemCard>
           <div className="p-4 bg-white rounded-lg">
             <h3 className="font-semibold">Projeto Beta</h3>
             <p className="text-sm text-gray-600">12 tarefas concluídas</p>
           </div>
         </GridItemCard>
-        <GridItemCard index={2}>
+        <GridItemCard>
           <div className="p-4 bg-white rounded-lg">
             <h3 className="font-semibold">Projeto Gamma</h3>
             <p className="text-sm text-gray-600">3 tarefas em andamento</p>
@@ -76,13 +76,13 @@ export const WithActionButton: StoryObj<typeof PageLayout> = {
     buttonText: 'Novo usuário',
     children: (
       <>
-        <GridItemCard index={0}>
+        <GridItemCard>
           <div className="p-4 bg-white rounded-lg">
             <h3 className="font-semibold">John Doe</h3>
             <p className="text-sm text-gray-600">john@example.com</p>
           </div>
         </GridItemCard>
-        <GridItemCard index={1}>
+        <GridItemCard>
           <div className="p-4 bg-white rounded-lg">
             <h3 className="font-semibold">Jane Smith</h3>
             <p className="text-sm text-gray-600">jane@example.com</p>
@@ -168,7 +168,7 @@ export const WithInfoText: StoryObj<typeof PageLayout> = {
     filterButtonText: 'Filtrar',
     children: (
       <>
-        <GridItemCard index={0}>
+        <GridItemCard>
           <div className="p-4 bg-white rounded-lg">
             <h3 className="font-semibold">Tarefa nº 1</h3>
             <p className="text-sm text-gray-600">50% concluída</p>
@@ -204,13 +204,13 @@ export const CustomGridWidth: StoryObj<typeof PageLayout> = {
     minColumnWidth: '600px',
     children: (
       <>
-        <GridItemCard index={0}>
+        <GridItemCard>
           <div className="p-6 bg-white rounded-lg">
             <h3 className="font-semibold text-lg">Item largo 1</h3>
             <p className="text-sm text-gray-600">Esta grade tem largura mínima de coluna de 600px</p>
           </div>
         </GridItemCard>
-        <GridItemCard index={1}>
+        <GridItemCard>
           <div className="p-6 bg-white rounded-lg">
             <h3 className="font-semibold text-lg">Item largo 2</h3>
             <p className="text-sm text-gray-600">Os itens ficarão mais largos</p>
@@ -250,7 +250,7 @@ export const Complete: StoryObj<typeof PageLayout> = {
     children: (
       <>
         {[1, 2, 3, 4, 5, 6].map((i) => (
-          <GridItemCard key={i} index={i - 1}>
+          <GridItemCard key={i}>
             <div className="p-4 bg-white rounded-lg border border-gray-200">
               <div className="flex justify-between items-start mb-2">
                 <h3 className="font-semibold">Tarefa de rotulação {i}</h3>

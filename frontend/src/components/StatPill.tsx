@@ -4,7 +4,6 @@ type StatPillProps = {
   label: string;
   value: number;
   color: StatPillColor;
-  cut?: 'left' | 'right';
 };
 
 const statPillPalette: Record<StatPillColor, { textColor: string; backgroundColor: string }> = {
@@ -26,21 +25,17 @@ const statPillPalette: Record<StatPillColor, { textColor: string; backgroundColo
   },
 };
 
-export default function StatPill({ label, value, color, cut }: StatPillProps) {
+/** Compact metric chip: the number carries the weight, the label stays quiet. */
+export default function StatPill({ label, value, color }: StatPillProps) {
   const { textColor, backgroundColor } = statPillPalette[color];
 
-  const cutClass = cut === 'left' ? 'rounded-l-md' : cut === 'right' ? 'rounded-r-md' : 'rounded-md';
-
   return (
-    <div
-      className={`flex flex-wrap items-center gap-1 ${cutClass} px-3 py-2 text-sm w-full`}
-      style={{
-        color: textColor,
-        backgroundColor: backgroundColor,
-      }}
+    <span
+      className="inline-flex max-w-full items-baseline gap-1 rounded-md px-2 py-1 text-[11px]"
+      style={{ color: textColor, backgroundColor }}
     >
-      <span className="text-lg font-bold leading-none">{value}</span>
-      <span className="leading-tight">{label}</span>
-    </div>
+      <span className="text-xs font-bold leading-none">{value}</span>
+      <span className="truncate leading-none">{label}</span>
+    </span>
   );
 }

@@ -32,11 +32,8 @@ export default function ContextWrapper({ element, payload, t: tProp }: UserConte
       </div>
 
       <div
-        className="rounded-br-xl rounded-ss-3xl border-t-6 border-l-6 bg-blueberry-700-15 p-5 shadow-md"
-        style={{
-          borderTopColor: 'var(--blueberry-700)',
-          borderLeftColor: 'var(--blueberry-700)',
-        }}
+        className="rounded-xl border border-l-4 border-metal-100 bg-blueberry-700-15 p-5 shadow-sm"
+        style={{ borderLeftColor: 'var(--blueberry-700)' }}
       >
         {renderContextModule({
           dataType,

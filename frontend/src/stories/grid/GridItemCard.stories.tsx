@@ -7,7 +7,6 @@ const meta = {
   component: GridItemCard,
   tags: ['autodocs'],
   args: {
-    index: 0,
     children: (
       <div className="p-4">
         <h3 className="font-bold text-lg mb-2">Projeto Atlas</h3>
@@ -20,7 +19,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Container card used inside responsive grids. It applies the project visual style and can alternate the left/top border color based on the item position in the current grid.',
+          'Container card used inside responsive grids: blueberry spine across the top over a hairline frame. Pass accentColor to change the spine.',
       },
     },
   },
@@ -38,32 +37,15 @@ export const Playground: Story = {
   ),
 };
 
-export const WithCustomBorderColor: Story = {
-  args: {
-    borderColor: 'var(--green-blueberry)',
-    children: (
-      <div className="p-4">
-        <h3 className="font-bold text-lg mb-2">Completed labeling</h3>
-        <p className="text-gray-600 text-sm">Use `borderColor` to override the default alternating border.</p>
-      </div>
-    ),
-  },
-  render: (args) => (
-    <div className="w-[360px]">
-      <GridItemCard {...args} />
-    </div>
-  ),
-};
-
-export const AlternatingBordersInGrid: Story = {
+export const MultipleInGrid: Story = {
   render: () => (
     <div className="w-[840px]">
       <GridLayout minColumnWidth="260px">
         {Array.from({ length: 6 }).map((_, index) => (
-          <GridItemCard key={index} index={index}>
+          <GridItemCard key={index}>
             <div className="p-4">
               <h3 className="font-semibold mb-2">Item {index + 1}</h3>
-              <p className="text-sm text-gray-600">Border colors alternate according to row and column position.</p>
+              <p className="text-sm text-gray-600">Cards share one frame, with the blueberry spine across the top.</p>
             </div>
           </GridItemCard>
         ))}
@@ -75,7 +57,7 @@ export const AlternatingBordersInGrid: Story = {
 export const CustomContent: Story = {
   render: () => (
     <div className="w-[360px]">
-      <GridItemCard index={0}>
+      <GridItemCard>
         <div className="p-4">
           <h3 className="font-bold text-lg mb-3">Team assignment</h3>
           <div className="flex flex-wrap gap-2 mb-3">

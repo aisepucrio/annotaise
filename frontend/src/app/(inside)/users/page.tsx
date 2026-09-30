@@ -71,7 +71,7 @@ export default function UsersPage() {
       onButtonClick={() => setModalOpen(true)}
       isLoading={isLoading}
       message={!isLoading && usersList.length === 0 ? t('users.empty') : undefined}
-      minColumnWidth="420px"
+      minColumnWidth="290px"
       footer={
         <InfiniteScroll
           hasNextPage={hasNextPage}
@@ -94,13 +94,13 @@ export default function UsersPage() {
         </>
       }
     >
-      {usersList.map((user, index) => {
+      {usersList.map((user) => {
         const isPending = user.onboarding_status === 'pending';
         const fullName = `${user.first_name ?? ''} ${user.last_name ?? ''}`.trim();
         const name = isPending ? user.email : fullName || user.username;
 
         return (
-          <GridItemCard key={user.id} index={index}>
+          <GridItemCard key={user.id}>
             <IndividualUserCard
               name={name}
               email={user.email}

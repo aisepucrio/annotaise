@@ -3,7 +3,7 @@
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-import { ArrowLeft, Check, FolderPlus, Pen } from 'lucide-react';
+import { ArrowLeft, Check, FolderPlus } from 'lucide-react';
 
 import { toast } from 'sonner';
 
@@ -13,7 +13,7 @@ import PageLayout from '@/components/inside-pages-layout/PageLayout';
 import GridItemCard from '@/components/grid/GridItemCard';
 import Button from '@/components/button/Button';
 import IndividualLabelingCard from '@/components/IndividualLabelingCard';
-import IndividualProjectCard from '@/components/IndividualProjectCard';
+import FolderCard from '@/components/FolderCard';
 import NewProjectModal from '@/components/NewProjectModal';
 import InfiniteScroll from '@/components/InfiniteScroll';
 
@@ -126,14 +126,6 @@ export default function LabelingsPage() {
     await createProject.mutateAsync(payload);
   }
 
-  const getLabelingCardBorderColor = (daysPassed: number, daysTotal: number, itemsDone: number, totalItems?: number) => {
-    const pending = Math.max((totalItems ?? 0) - itemsDone, 0);
-    const isComplete = itemsDone !== 0 && pending === 0;
-    const isLate = daysPassed > daysTotal && daysTotal > 0;
-
-    return isComplete ? 'var(--green-blueberry)' : isLate ? 'var(--red-blueberry)' : undefined;
-  };
-
   // Built as a flat list (not fragments) because GridLayout counts children
   // to decide the number of columns.
   const gridChildren: ReactNode[] = [];
@@ -159,22 +151,30 @@ export default function LabelingsPage() {
     gridChildren.push(<SectionTitle key="section-projects">{t('labelings.manage.section.projects')}</SectionTitle>);
   }
 
-  if (showProjects) {
-    projects.items.forEach((project, index) => {
-      gridChildren.push(
-        <GridItemCard key={`project-${project.id}`} index={index}>
-          <IndividualProjectCard
-            projectId={project.id}
+  if (showProjects && projects.items.length > 0) {
+    gridChildren.push(
+      // Folders are tiles, not full-width cards: they get their own denser track size
+      // inside a single row of the page grid.
+      <div
+        key="folders"
+        className="col-span-full grid gap-3"
+        style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(200px, 100%), 1fr))' }}
+      >
+        {projects.items.map((project) => (
+          <FolderCard
+            key={project.id}
             title={project.name}
-            user_count={project.labeling_users}
-            labelings_done={project.finished_labelings}
-            labelings_pending={project.pending_labelings}
-            labelings_late={project.late_labelings}
+            userCount={project.labeling_users}
+            labelingsDone={project.finished_labelings}
+            labelingsPending={project.pending_labelings}
+            labelingsLate={project.late_labelings}
+            // Uses the id, not the name, because project names can repeat.
+            onOpen={() => router.push(`/labelings_manage?project=${project.id}`)}
             onManage={() => router.push(`/projects/${project.id}`)}
           />
-        </GridItemCard>
-      );
-    });
+        ))}
+      </div>
+    );
   }
 
   if (hasBothSections) {
@@ -183,13 +183,9 @@ export default function LabelingsPage() {
 
   const visibleLabelings = showLabelings ? labelings.items : [];
 
-  visibleLabelings.forEach((l, index) => {
+  visibleLabelings.forEach((l) => {
     gridChildren.push(
-      <GridItemCard
-        key={`labeling-${l.id}`}
-        index={index}
-        borderColor={getLabelingCardBorderColor(l.days_passed, l.total_days, l.items_done, l.total_items)}
-      >
+      <GridItemCard key={`labeling-${l.id}`}>
         <IndividualLabelingCard
           title={l.labeling_name}
           project={l.project_name ?? t('labelings.manage.noProject')}
@@ -200,18 +196,7 @@ export default function LabelingsPage() {
           formMode={l.form_mode}
           answersCollected={l.answers_collected}
           variant="manage"
-          actionButton={
-            <Button
-              icon={<Pen size={18} strokeWidth={1.75} />}
-              onClick={() => router.push(`/labelings_manage/${l.id}/form`)}
-              variant="normal"
-              fill={true}
-              className="px-4"
-              ariaLabel={t('labelings.manage.action.manageAria')}
-            >
-              {t('labelings.manage.action.manage')}
-            </Button>
-          }
+          onOpen={() => router.push(`/labelings_manage/${l.id}/form`)}
         />
       </GridItemCard>
     );
@@ -268,7 +253,7 @@ export default function LabelingsPage() {
       }
       isLoading={isLoading}
       message={!isLoading && loadedCount === 0 ? t('labelings.manage.empty') : undefined}
-      minColumnWidth="420px"
+      minColumnWidth="220px"
       footer={
         <InfiniteScroll
           hasNextPage={hasNextPage}

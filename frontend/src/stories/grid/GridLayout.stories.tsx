@@ -24,7 +24,7 @@ export const Playground: StoryObj<typeof GridLayout> = {
   render: (args) => (
     <GridLayout {...args}>
       {Array.from({ length: 6 }).map((_, i) => (
-        <GridItemCard key={i} index={i}>
+        <GridItemCard key={i}>
           <div className="p-4">
             <h3 className="font-bold text-lg mb-2">Item {i + 1}</h3>
             <p className="text-gray-600">Conteúdo do card {i + 1}. Este é um exemplo de item no grid.</p>
@@ -53,7 +53,7 @@ export const Examples: StoryObj<typeof GridLayout> = {
         <h3 className="text-xl font-bold mb-4">Grid com 6 itens</h3>
         <GridLayout>
           {Array.from({ length: 6 }).map((_, i) => (
-            <GridItemCard key={i} index={i}>
+            <GridItemCard key={i}>
               <div className="p-4">
                 <h4 className="font-semibold text-lg mb-2">Projeto {i + 1}</h4>
                 <p className="text-gray-600 text-sm">Descrição do projeto de rotulação</p>
@@ -86,7 +86,7 @@ export const DifferentCounts: StoryObj<typeof GridLayout> = {
       <div>
         <h3 className="text-xl font-bold mb-4">1 item</h3>
         <GridLayout>
-          <GridItemCard index={0}>
+          <GridItemCard>
             <div className="p-4">
               <h4 className="font-semibold">Único item</h4>
               <p className="text-gray-600 text-sm">Quando há apenas um item, ele não se expande para preencher toda a largura</p>
@@ -99,7 +99,7 @@ export const DifferentCounts: StoryObj<typeof GridLayout> = {
         <h3 className="text-xl font-bold mb-4">3 itens</h3>
         <GridLayout>
           {Array.from({ length: 3 }).map((_, i) => (
-            <GridItemCard key={i} index={i}>
+            <GridItemCard key={i}>
               <div className="p-4">
                 <h4 className="font-semibold">Item {i + 1}</h4>
               </div>
@@ -112,7 +112,7 @@ export const DifferentCounts: StoryObj<typeof GridLayout> = {
         <h3 className="text-xl font-bold mb-4">9 itens</h3>
         <GridLayout>
           {Array.from({ length: 9 }).map((_, i) => (
-            <GridItemCard key={i} index={i}>
+            <GridItemCard key={i}>
               <div className="p-4">
                 <h4 className="font-semibold">Item {i + 1}</h4>
               </div>
@@ -142,7 +142,7 @@ export const ColumnSizes: StoryObj<typeof GridLayout> = {
         <h3 className="text-xl font-bold mb-4">Colunas pequenas (300px)</h3>
         <GridLayout minColumnWidth="300px">
           {Array.from({ length: 6 }).map((_, i) => (
-            <GridItemCard key={i} index={i}>
+            <GridItemCard key={i}>
               <div className="p-4">
                 <h4 className="font-semibold">Item {i + 1}</h4>
                 <p className="text-gray-600 text-sm">Coluna de 300px</p>
@@ -156,7 +156,7 @@ export const ColumnSizes: StoryObj<typeof GridLayout> = {
         <h3 className="text-xl font-bold mb-4">Colunas médias (400px)</h3>
         <GridLayout minColumnWidth="400px">
           {Array.from({ length: 6 }).map((_, i) => (
-            <GridItemCard key={i} index={i}>
+            <GridItemCard key={i}>
               <div className="p-4">
                 <h4 className="font-semibold">Item {i + 1}</h4>
                 <p className="text-gray-600 text-sm">Coluna de 400px</p>
@@ -170,7 +170,7 @@ export const ColumnSizes: StoryObj<typeof GridLayout> = {
         <h3 className="text-xl font-bold mb-4">Colunas grandes (500px)</h3>
         <GridLayout minColumnWidth="500px">
           {Array.from({ length: 6 }).map((_, i) => (
-            <GridItemCard key={i} index={i}>
+            <GridItemCard key={i}>
               <div className="p-4">
                 <h4 className="font-semibold">Item {i + 1}</h4>
                 <p className="text-gray-600 text-sm">Coluna de 500px</p>
@@ -197,14 +197,14 @@ export const ColumnSizes: StoryObj<typeof GridLayout> = {
 export const VariedContent: StoryObj<typeof GridLayout> = {
   render: () => (
     <GridLayout>
-      <GridItemCard index={0}>
+      <GridItemCard>
         <div className="p-4">
           <h4 className="font-bold text-lg mb-2">Projeto Simples</h4>
           <p className="text-gray-600 text-sm">Descrição breve</p>
         </div>
       </GridItemCard>
 
-      <GridItemCard index={1}>
+      <GridItemCard>
         <div className="p-4">
           <h4 className="font-bold text-lg mb-2">Projeto com Mais Detalhes</h4>
           <p className="text-gray-600 text-sm mb-3">
@@ -218,7 +218,7 @@ export const VariedContent: StoryObj<typeof GridLayout> = {
         </div>
       </GridItemCard>
 
-      <GridItemCard index={2}>
+      <GridItemCard>
         <div className="p-4">
           <h4 className="font-bold text-lg mb-2">Projeto Complexo</h4>
           <p className="text-gray-600 text-sm mb-3">Um projeto com múltiplos elementos e informações mais complexas.</p>
@@ -237,7 +237,7 @@ export const VariedContent: StoryObj<typeof GridLayout> = {
         </div>
       </GridItemCard>
 
-      <GridItemCard index={3}>
+      <GridItemCard>
         <div className="p-4">
           <h4 className="font-bold text-lg mb-2">Lista de Tarefas</h4>
           <ul className="space-y-1 text-sm text-gray-600">
@@ -249,7 +249,7 @@ export const VariedContent: StoryObj<typeof GridLayout> = {
         </div>
       </GridItemCard>
 
-      <GridItemCard index={4}>
+      <GridItemCard>
         <div className="p-4">
           <h4 className="font-bold text-lg mb-2">Informações do Usuário</h4>
           <div className="space-y-2 text-sm">
@@ -269,7 +269,7 @@ export const VariedContent: StoryObj<typeof GridLayout> = {
         </div>
       </GridItemCard>
 
-      <GridItemCard index={5}>
+      <GridItemCard>
         <div className="p-4">
           <h4 className="font-bold text-lg mb-2">Estatísticas</h4>
           <div className="grid grid-cols-2 gap-3 text-center">
@@ -310,7 +310,7 @@ export const ColorPattern: StoryObj<typeof GridLayout> = {
         </p>
         <GridLayout>
           {Array.from({ length: 12 }).map((_, i) => (
-            <GridItemCard key={i} index={i}>
+            <GridItemCard key={i}>
               <div className="p-4">
                 <h4 className="font-semibold">Item {i + 1}</h4>
                 <p className="text-gray-500 text-xs mt-1">Índice: {i}</p>

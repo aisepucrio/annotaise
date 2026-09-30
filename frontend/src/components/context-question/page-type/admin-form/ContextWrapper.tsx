@@ -25,7 +25,7 @@ export default function ContextWrapper({ element, columns, t: tProp, onUpdate, o
   const dataType = getContextDataType(element);
 
   return (
-    <GridItemCard index={1} className="mb-2">
+    <GridItemCard className="mb-2" accentColor="var(--blueberry-700)">
       <div data-actions-anchor="true" data-section-element-id={element.id}>
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-blueberry-900">{t('labelings.create.context.title')}</h3>

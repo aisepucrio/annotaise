@@ -1,4 +1,5 @@
-import { ReactNode } from 'react';
+import { CalendarClock, ChevronRight, ClipboardList, Pencil } from 'lucide-react';
+import Metric from './Metric';
 import ProgressBar from './ProgressBar';
 import StatPill from './StatPill';
 import { useTranslations } from '@/i18n/use-translations';
@@ -13,15 +14,12 @@ type IndividualManageLabelingCardProps = {
   labelingsDone: number;
   labelingsPending?: number;
   variant: LabelingCardVariant;
-  actionButton: ReactNode;
+  /** The whole card is the way in. */
+  onOpen: () => void;
+  /** Annotators must answer the background form before the items. */
+  backgroundFirst?: boolean;
   formMode?: boolean;
   answersCollected?: number;
-  colors?: {
-    normal: {
-      bg: string;
-      fill: string;
-    };
-  };
 };
 
 export default function IndividualLabelingCard({
@@ -32,10 +30,10 @@ export default function IndividualLabelingCard({
   labelingsDone,
   labelingsPending,
   variant,
-  actionButton,
+  onOpen,
+  backgroundFirst,
   formMode,
   answersCollected,
-  colors,
 }: IndividualManageLabelingCardProps) {
   const { t } = useTranslations();
 
@@ -48,6 +46,16 @@ export default function IndividualLabelingCard({
   const isLate = isManageVariant && hasDeadlineEnded;
   const isDeadlineFinished = !isManageVariant && hasDeadlineEnded;
 
+  // The spine stays blueberry — it is the house style, not a status. State colours the
+  // icon tile, the bar and the deadline line.
+  const state = isComplete
+    ? { tile: 'bg-green-blueberry-15 text-green-blueberry', track: 'bg-green-blueberry-15', fill: 'bg-green-blueberry', text: 'text-green-blueberry' }
+    : isLate
+      ? { tile: 'bg-red-blueberry-15 text-red-blueberry', track: 'bg-red-blueberry-15', fill: 'bg-red-blueberry', text: 'text-red-blueberry' }
+      : { tile: 'bg-blueberry-700-15 text-blueberry-700', track: 'bg-blueberry-700-15', fill: 'bg-blueberry-700', text: 'text-metal-500' };
+
+  const OpenIcon = isManageVariant ? ChevronRight : Pencil;
+
   const getDaysLabel = () => {
     if (isComplete) return t('labelings.progress.completed');
     if (isLate) return `${daysPassed - daysTotal} ${t('labelings.progress.daysLate')}`;
@@ -55,73 +63,67 @@ export default function IndividualLabelingCard({
     return `${daysPassed} / ${daysTotal} ${t('labelings.progress.daysPassed')}`;
   };
 
-  const getLabelingsLabel = () => {
-    if (isComplete) return `${labelingsDone} ${t('labelings.progress.labelingsDone')}`;
-    if (labelingsDone > totalLabelings) {
-      return `${labelingsDone - totalLabelings} ${t('labelings.progress.labelingsLate')}`;
-    }
-    return `${labelingsDone} / ${totalLabelings} ${t('labelings.progress.labelingsDone')}`;
-  };
-
-  const normalColors = colors?.normal || {
-    bg: 'bg-blueberry-700-15',
-    fill: 'bg-blueberry-700-25',
-  };
-
-  const itemsFillColor = isComplete ? 'bg-green-blueberry-25' : isLate ? 'bg-red-blueberry-25' : normalColors.fill;
-
   return (
     <>
-      <h3
-        className={`${
-          isComplete ? 'text-green-blueberry' : isLate ? 'text-red-blueberry' : 'text-black'
-        } font-semibold leading-tight pr-10`}
-      >
-        {title}
-      </h3>
+      {/* Covers the whole card: absolute children paint above the static content, so a
+          click anywhere opens the labeling. */}
+      <button
+        type="button"
+        onClick={onOpen}
+        aria-label={t('labelings.openAria', { name: title })}
+        className="absolute inset-0 cursor-pointer"
+      />
 
-      <h3 className="text-gray-500 font-semibold leading-tight pr-10">{project}</h3>
+      <div className="flex items-center gap-2.5">
+        <span aria-hidden className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${state.tile}`}>
+          <ClipboardList size={16} strokeWidth={1.75} />
+        </span>
 
-      <div className="mt-2 h-0.75 rounded-full bg-metal-50" />
-
-      <div className="mt-3 flex flex-col gap-3 min-w-0 w-full">
-        {formMode ? (
-          <div className="-ml-3 w-full">
-            <StatPill
-              label={t('labelings.progress.answersCollected')}
-              value={answersCollected ?? 0}
-              color="blue"
-              cut="right"
-            />
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-center gap-1.5">
+            <h3 className="truncate text-sm font-semibold tracking-tight text-metal-900">{title}</h3>
+            {backgroundFirst && (
+              <span className="shrink-0 rounded bg-orange-blueberry-15 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-orange-blueberry">
+                {t('labelings.action.background')}
+              </span>
+            )}
           </div>
+          <p className="truncate text-xs text-metal-400">{project}</p>
+        </div>
+      </div>
+
+      <div className="mt-3">
+        {formMode ? (
+          <StatPill label={t('labelings.progress.answersCollected')} value={answersCollected ?? 0} color="blue" />
         ) : isManageVariant ? (
           <ProgressBar
             value={labelingsDone}
             max={totalLabelings}
-            label={getLabelingsLabel()}
-            bgColor={normalColors.bg}
-            fillColor={normalColors.fill}
-            rounded="right"
-            className="-ml-3"
+            label={
+              <Metric
+                label={t('labelings.progress.labelingsDone')}
+                value={
+                  labelingsDone > totalLabelings
+                    ? `+${labelingsDone - totalLabelings}`
+                    : `${labelingsDone} / ${totalLabelings}`
+                }
+              />
+            }
+            bgColor={state.track}
+            fillColor={state.fill}
           />
         ) : (
-          <div className="-ml-3 w-full">
-            <StatPill label={t('labelings.progress.labelingsDone')} value={labelingsDone} color="blue" cut="right" />
-          </div>
+          <StatPill label={t('labelings.progress.labelingsDone')} value={labelingsDone} color="blue" />
         )}
+      </div>
 
-        <ProgressBar
-          value={daysPassed}
-          max={isComplete ? daysPassed : daysTotal}
-          label={getDaysLabel()}
-          bgColor={itemsFillColor}
-          fillColor={itemsFillColor}
-          labelClassName="text-gray-800"
-          rounded="right"
-          className="-ml-3"
-        />
+      <div className="mt-auto flex items-center justify-between gap-3 pt-3">
+        <p className={`flex min-w-0 items-center gap-1.5 text-xs font-medium ${state.text}`}>
+          <CalendarClock size={14} className="shrink-0" />
+          <span className="truncate">{getDaysLabel()}</span>
+        </p>
 
-        <div className="flex items-center justify-center mt-2">{actionButton}</div>
+        <OpenIcon aria-hidden size={16} className="shrink-0 text-metal-300 transition-colors group-hover:text-blueberry-700" />
       </div>
     </>
   );

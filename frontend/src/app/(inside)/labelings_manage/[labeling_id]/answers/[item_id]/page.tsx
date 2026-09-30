@@ -128,14 +128,14 @@ export default function AnswersTab({
           </p>
         ) : (
           <GridLayout minColumnWidth="300px">
-            {groupedFilteredItems.map((group, index) => {
+            {groupedFilteredItems.map((group) => {
               const latestAnswer = group.answers[0];
               const answeredAt = latestAnswer ? new Date(latestAnswer.created_at).toLocaleString(locale) : '-';
               const answeredCount = getDisplayedResponseCount(group.answers);
               const itemLabel = resolveItemLabel(group.rowIndex, group.itemId, t); //lista necessária  
 
               return (
-                <GridItemCard key={group.key} index={index}>
+                <GridItemCard key={group.key}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1">
                       <p className="text-sm font-semibold text-blue-900">{itemLabel}</p>
