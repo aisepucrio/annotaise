@@ -185,7 +185,7 @@ export default function LabelingsPage() {
 
   visibleLabelings.forEach((l) => {
     gridChildren.push(
-      <GridItemCard key={`labeling-${l.id}`}>
+      <GridItemCard key={`labeling-${l.id}`} spine={false} borderColor="var(--blueberry-700-15)" borderWidth="2px">
         <IndividualLabelingCard
           title={l.labeling_name}
           project={l.project_name ?? t('labelings.manage.noProject')}

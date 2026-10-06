@@ -63,7 +63,7 @@ export default function LabelingsPage() {
       {labelingsList.map((l) => {
         const mustAnswerBackgroundFirst = Boolean(l.background_required && !l.background_answered);
         return (
-          <GridItemCard key={l.id}>
+          <GridItemCard key={l.id} spine={false} borderColor="var(--blueberry-700-15)" borderWidth="2px">
             <IndividualLabelingCard
               title={l.labeling_name}
               project={l.project_name ?? t('labelings.manage.noProject')}

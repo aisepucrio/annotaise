@@ -48,7 +48,7 @@ export default function ForgotPasswordPage() {
             label={t('forgotPassword.emailLabel')}
             type="email"
             placeholder={t('forgotPassword.emailPlaceholder')}
-            icon={<Mail className="w-8 h-8" />}
+            icon={<Mail className="w-6 h-6" />}
             error={errors.email?.message}
             {...register('email', {
               required: t('forgotPassword.emailRequired'),
@@ -61,7 +61,7 @@ export default function ForgotPasswordPage() {
         </div>
 
         <AuthFormButton
-          icon={<Send className="w-6 h-6 mr-2" />}
+          icon={<Send className="w-5 h-5" />}
           text={isLoading ? t('forgotPassword.loading') : t('forgotPassword.button')}
         />
 

@@ -9,6 +9,8 @@ export type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> & {
   icon?: ReactNode;
   /** When set, the right icon becomes a clickable button. */
   onIconClick?: () => void;
+  /** Accessible name for the icon button; set it whenever onIconClick is set. */
+  iconLabel?: string;
   leftIcon?: ReactNode;
   required?: boolean;
   containerClassName?: string;
@@ -26,6 +28,7 @@ const Input = forwardRef<HTMLInputElement | HTMLTextAreaElement, InputProps>(
       error,
       icon,
       onIconClick,
+      iconLabel,
       leftIcon,
       required = false,
       className = '',
@@ -72,7 +75,12 @@ const Input = forwardRef<HTMLInputElement | HTMLTextAreaElement, InputProps>(
           {icon && !multiline && (
             <div className="absolute right-2 top-1/2 -translate-y-1/2 text-metal-200">
               {onIconClick ? (
-                <button type="button" onClick={onIconClick} className="focus:outline-none hover:text-metal-500 transition-colors">
+                <button
+                  type="button"
+                  onClick={onIconClick}
+                  aria-label={iconLabel}
+                  className="cursor-pointer rounded-sm transition-colors hover:text-metal-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blueberry-500"
+                >
                   {icon}
                 </button>
               ) : (

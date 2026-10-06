@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { AuthActions } from '@/lib/authClient';
-import { Mail, LogIn } from 'lucide-react';
+import { Loader2, LogIn, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import AuthFormButton from '@/components/auth-layout/AuthFormButton';
 import Input from '@/components/form/Input';
@@ -56,13 +56,17 @@ export default function LoginPage() {
 
   return (
     <AuthLayout title={t('login.title')} subtitle={t('login.subtitle')}>
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="mt-8">
+      <form onSubmit={handleSubmit(onSubmit)} className="mt-8" noValidate>
+        <div className="flex flex-col gap-6">
           <Input
+            id="email"
             label={t('login.emailLabel')}
             type="email"
+            autoComplete="email"
+            autoFocus
             placeholder={t('login.emailPlaceholder')}
-            icon={<Mail className="w-8 h-8" />}
+            icon={<Mail className="w-6 h-6" />}
+            disabled={isLoading}
             error={errors.email?.message}
             {...register('email', {
               required: t('login.emailRequired'),
@@ -72,11 +76,13 @@ export default function LoginPage() {
               },
             })}
           />
-        </div>
-        <div className="mt-6">
+
           <PasswordInput
+            id="password"
             label={t('login.passwordLabel')}
+            autoComplete="current-password"
             placeholder={t('login.passwordPlaceholder')}
+            disabled={isLoading}
             error={errors.password?.message}
             {...register('password', {
               required: t('login.passwordRequired'),
@@ -84,16 +90,20 @@ export default function LoginPage() {
           />
         </div>
 
-        <div className="flex w-full justify-end mt-3">
+        <div className="mt-3 flex justify-end">
           <Link
             href="/forgot-password"
-            className="text-sm sm:text-md text-blueberry-900 underline cursor-pointer hover:text-blueberry-700"
+            className="text-sm text-blueberry-700 underline-offset-4 transition-colors hover:text-blueberry-500 hover:underline"
           >
             {t('login.forgotPassword')}
           </Link>
         </div>
 
-        <AuthFormButton icon={<LogIn className="w-6 h-6 mr-2" />} text={isLoading ? t('login.loading') : t('login.button')} />
+        <AuthFormButton
+          disabled={isLoading}
+          icon={isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogIn className="w-5 h-5" />}
+          text={isLoading ? t('login.loading') : t('login.button')}
+        />
       </form>
     </AuthLayout>
   );

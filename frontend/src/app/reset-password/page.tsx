@@ -70,7 +70,7 @@ function ResetPasswordForm() {
         </div>
 
         <AuthFormButton
-          icon={<KeyRound className="w-6 h-6 mr-2" />}
+          icon={<KeyRound className="w-5 h-5" />}
           text={isLoading ? t('resetPassword.loading') : t('resetPassword.button')}
         />
       </form>

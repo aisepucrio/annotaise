@@ -100,7 +100,7 @@ export default function UsersPage() {
         const name = isPending ? user.email : fullName || user.username;
 
         return (
-          <GridItemCard key={user.id}>
+          <GridItemCard key={user.id} spine={false} borderColor="var(--blueberry-700-15)" borderWidth="2px">
             <IndividualUserCard
               name={name}
               email={user.email}
