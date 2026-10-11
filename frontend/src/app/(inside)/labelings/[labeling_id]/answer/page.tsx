@@ -262,7 +262,7 @@ export default function LabelingAnswerPage() {
     }
   }, [answers, currentItemId, currentSection, labelingId, loadItem, sections, showError, t]);
 
-  const isFirstSection = currentSectionIdx <= 1;
+  const isFirstSection = currentSectionIdx === 0;
 
   const HeaderBadges = (
     <div className="flex flex-1 flex-wrap items-center justify-end gap-3">
@@ -360,13 +360,13 @@ export default function LabelingAnswerPage() {
                 <div className="absolute right-1 top-1/2 z-10 -translate-y-1/2">
                   <ArrowRightButton
                     onNext={goToNextSection}
-                    disableNext={isLastSection}
+                    disableNext={isLastSection || isLoading || isSubmitting}
                   />
               </div>
               <div className="absolute left-1 top-1/2 z-10 -translate-y-1/2">
                   <ArrowLeftButton
                     onPrevious={goToPreviousSection}
-                    disablePrevious={isFirstSection}
+                    disablePrevious={isFirstSection || isLoading || isSubmitting}
                   />
              </div>
              </div>
