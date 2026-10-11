@@ -19,8 +19,11 @@ import type { LabelingStructureSection } from '@/modules/labelings/labelingsType
 
 import InnerPageHeader from '@/components/InnerPageHeader';
 import Button from '@/components/button/Button';
+import ArrowLeftButton from '@/components/button/ArrowLeftButton';
+import ArrowRightButton from '@/components/button/ArrowRightButton';
 import GuidePanel from '@/components/answer/GuidePanel';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
+
 
 export default function LabelingAnswerPage() {
   const { t } = useTranslations();
@@ -67,6 +70,12 @@ export default function LabelingAnswerPage() {
     setErrorEventId((current) => current + 1);
   }, []);
 
+
+  const [allowSectionBack, setAllowSectionBack] = useState(false);
+
+  const isEnabled = allowSectionBack;
+
+
   // Toasts mirror the page-level feedback state so repeated equal messages are still shown.
   useEffect(() => {
     if (!loadError) return;
@@ -98,6 +107,7 @@ export default function LabelingAnswerPage() {
       const labeling = await fetchLabelingById(labelingId);
       setLabelingTitle(labeling.title);
       setGuideText(labeling.guide ?? '');
+      setAllowSectionBack(!labeling.block_section_back);
 
       const nextAnswer = await fetchNextAnswer(labelingId);
       const nextSections = nextAnswer.sections ?? [];
@@ -171,6 +181,15 @@ export default function LabelingAnswerPage() {
     setCurrentSectionIdx((idx) => Math.min(idx + 1, totalSections - 1));
   }, [answers, currentSection, showError, t, totalSections]);
 
+    const goToPreviousSection = useCallback(() => {
+    // Section navigation validates only the current section to keep the flow progressive.
+    if (!currentSection) return;
+
+
+    setSubmitMessage(null);
+    setCurrentSectionIdx((idx) => Math.max(idx - 1, 0));
+  }, [answers, currentSection, totalSections]);
+
   const handleSubmit = useCallback(async () => {
     // Final submission still guards route/item state because loading can fail independently.
     if (Number.isNaN(labelingId)) {
@@ -243,6 +262,8 @@ export default function LabelingAnswerPage() {
     }
   }, [answers, currentItemId, currentSection, labelingId, loadItem, sections, showError, t]);
 
+  const isFirstSection = currentSectionIdx === 0;
+
   const HeaderBadges = (
     <div className="flex flex-1 flex-wrap items-center justify-end gap-3">
       {rowIndex !== null ? (
@@ -292,9 +313,10 @@ export default function LabelingAnswerPage() {
             <div />
             <div className="flex gap-3">
               {!isLastSection ? (
-                <Button type="button" onClick={goToNextSection} disabled={isLoading || isSubmitting} fill={false}>
-                  {t('answer.advance')}
-                </Button>
+                  !isEnabled && (
+                        <Button type="button" onClick={goToNextSection} disabled={isLoading || isSubmitting} fill={false}>
+                          {t('answer.advance')}
+                        </Button>)
               ) : (
                 <Button
                   type="button"
@@ -317,6 +339,7 @@ export default function LabelingAnswerPage() {
   // position is preserved.
   return (
     <div className="flex flex-col h-full overflow-hidden">
+
       <InnerPageHeader onBack={() => router.push('/labelings')}>
         <div>
           <h1 className="text-lg font-semibold leading-tight">
@@ -326,11 +349,33 @@ export default function LabelingAnswerPage() {
 
         {HeaderBadges}
       </InnerPageHeader>
+ 
 
       <div className="flex-1 min-h-0 mt-4">
         <ResizablePanelGroup direction="horizontal" className="h-full gap-3">
           <ResizablePanel id="answer" order={1} defaultSize={showGuide ? 70 : 100} minSize={30}>
-            <div className="h-full">{MainPanel}</div>
+          <div className="relative h-full">
+            {isEnabled? (
+              <div>
+                <div className="absolute right-1 top-1/2 z-10 -translate-y-1/2">
+                  <ArrowRightButton
+                    onNext={goToNextSection}
+                    disableNext={isLastSection || isLoading || isSubmitting}
+                  />
+              </div>
+              <div className="absolute left-1 top-1/2 z-10 -translate-y-1/2">
+                  <ArrowLeftButton
+                    onPrevious={goToPreviousSection}
+                    disablePrevious={isFirstSection || isLoading || isSubmitting}
+                  />
+             </div>
+             </div>
+            ): (
+              null
+            )
+            }
+              <div className="h-full">{MainPanel}</div>
+          </div>
           </ResizablePanel>
           {showGuide ? (
             <>
@@ -345,6 +390,8 @@ export default function LabelingAnswerPage() {
           ) : null}
         </ResizablePanelGroup>
       </div>
+
+
     </div>
   );
 }

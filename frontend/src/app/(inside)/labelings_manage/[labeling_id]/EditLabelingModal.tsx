@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Labeling, LabelingPayload } from '@/modules/labelings/labelingsTypes';
@@ -11,6 +11,7 @@ import Select from '@/components/form/Select';
 import DatePicker from '@/components/form/DatePicker';
 import Button from '@/components/button/Button';
 import { useTranslations } from '@/i18n/use-translations';
+import Checkbox from '@/components/form/Checkbox';
 
 type EditLabelingFormField = 'title' | 'startDate' | 'finalDate';
 type EditLabelingFormErrors = Partial<Record<EditLabelingFormField, string>>;
@@ -24,6 +25,9 @@ type EditLabelingModalProps = {
   isSaving?: boolean;
 };
 
+
+
+
 export default function EditLabelingModal({ open, labeling, project, onClose, onSave, isSaving = false }: EditLabelingModalProps) {
   const { t } = useTranslations();
 
@@ -33,7 +37,9 @@ export default function EditLabelingModal({ open, labeling, project, onClose, on
   const [finalDate, setFinalDate] = useState('');
   const [projectId, setProjectId] = useState<number | null>(null);
   const [formErrors, setFormErrors] = useState<EditLabelingFormErrors>({});
+  const [allowSectionBack, setAllowSectionBack] = useState(false);
 
+  
   // Mirror the latest labeling values so the modal always starts from the current server state.
   useEffect(() => {
     if (!open) {
@@ -47,6 +53,7 @@ export default function EditLabelingModal({ open, labeling, project, onClose, on
     setStartDate(labeling.start_date ?? '');
     setFinalDate(labeling.final_date ?? '');
     setProjectId(labeling.project ?? null);
+    setAllowSectionBack(!(labeling.block_section_back ?? true)); 
     setFormErrors({});
   }, [labeling, open]);
 
@@ -94,8 +101,10 @@ export default function EditLabelingModal({ open, labeling, project, onClose, on
       project: projectId ?? labeling.project,
       users_per_item: labeling.users_per_item,
       decision: labeling.decision,
+      block_section_back: !allowSectionBack 
     });
   };
+  
 
   // Only the current project is available here because project switching is not exposed in this flow yet.
   const projectOptions = project ? [{ value: String(project.id), label: project.name }] : [];
@@ -113,6 +122,9 @@ export default function EditLabelingModal({ open, labeling, project, onClose, on
       toast.error(t('labelings.create.edit.anonymousUrlCopyError'));
     }
   };
+
+
+
 
   return (
     <Modal
@@ -197,6 +209,23 @@ export default function EditLabelingModal({ open, labeling, project, onClose, on
                 </div>
               </div>
             )}
+          </div>
+          {/*Enable back and forth between sections */}
+            <div className="flex items-center gap-2 mt-4">
+              <Checkbox
+                id="block-section-back"
+                checked={allowSectionBack}
+                onChange={setAllowSectionBack}
+                variant="square"
+                hoverColor="var(--metal-500)"
+                checkedColor="var(--metal-700)"
+                className="shrink-0"
+              />
+            <div className="flex items-center gap-1">
+              <label htmlFor="block-section-back" className="cursor-pointer text-sm font-medium text-metal-900">
+                        {t('labelings.upload.decisionSection')}
+              </label>
+            </div>
           </div>
 
           <div className="mt-6">
