@@ -23,36 +23,35 @@ export default function AuthGuard({ children }: PropsWithChildren) {
     const hasToken = Boolean(getToken('refresh') ?? getToken('access'));
     const isPublicPath = PUBLIC_PATHS.includes(pathname) || PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 
-    // Público sem token: permitir
+    // Public path without a token: allow.
     if (isPublicPath && !hasToken) {
       setIsAllowed(true);
       return;
     }
 
-    // Público com token: redirecionar para home
+    // Public path with a token: redirect to home.
     if (isPublicPath && hasToken) {
       router.replace('/labelings');
       return;
     }
 
-    // Privado sem token: redirecionar para login
+    // Private path without a token: redirect to login.
     if (!isPublicPath && !hasToken) {
       router.replace(LOGIN_PATH);
       return;
     }
 
-    // Privado com token: aguardar isAdmin carregar
+    // Private path with a token: wait for isAdmin to load.
     if (isLoading || isAdmin === undefined) return;
 
-    // Admin não tem restrição
+    // Admins have no route restrictions.
     if (isAdmin) {
       setIsAllowed(true);
       return;
     }
 
-    // Usuário normal:
-    // - Pode acessar apenas /labelings (e subrotas), EXCETO /labelings_manage
-    // - Qualquer outra rota -> /labelings
+    // Regular users can access only /labelings (and its subroutes), except
+    // /labelings_manage; any other route redirects to /labelings.
     const isLabelingsArea = pathname.startsWith(LABELINGS_ROOT);
     const isManageArea = pathname === LABELINGS_MANAGE || pathname.startsWith(`${LABELINGS_MANAGE}/`);
 

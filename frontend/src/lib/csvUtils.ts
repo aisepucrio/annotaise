@@ -1,4 +1,3 @@
-// Returns whether a file name has the expected CSV extension.
 export function isCsvFileName(fileName: string): boolean {
   return fileName.toLowerCase().endsWith('.csv');
 }

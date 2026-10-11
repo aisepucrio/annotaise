@@ -20,7 +20,7 @@ const meta = {
 export default meta;
 
 /* =======================
-   PLAYGROUND (BOTÃO BASE)
+   PLAYGROUND (BASE BUTTON)
 ======================= */
 
 export const Playground: StoryObj<typeof Button> = {
@@ -39,7 +39,7 @@ Este exemplo não impõe nenhuma largura.
 };
 
 /* =======================
-   VARIANTES DE COR
+   COLOR VARIANTS
 ======================= */
 
 export const Variants: StoryObj<typeof Button> = {
@@ -56,7 +56,7 @@ export const Variants: StoryObj<typeof Button> = {
 };
 
 /* =======================
-   COMPORTAMENTO DO FILL
+   FILL BEHAVIOR
 ======================= */
 
 export const FillBehavior: StoryObj<typeof Button> = {
@@ -74,18 +74,16 @@ export const FillBehavior: StoryObj<typeof Button> = {
 };
 
 /* =======================
-   TAMANHOS (SIZE)
+   SIZES
 ======================= */
 
 export const Sizes: StoryObj<typeof Button> = {
   render: () => (
     <div className="flex flex-col items-center gap-4 w-64">
-      {/* Botão com texto */}
       <Button size="normal" fill={false}>
         tx
       </Button>
 
-      {/* Botão apenas com ícone */}
       <Button size="icon" ariaLabel="Adicionar" fill={false}>
         {' '}
         <Plus size={16} />{' '}
@@ -108,7 +106,7 @@ export const Sizes: StoryObj<typeof Button> = {
 };
 
 /* =======================
-   PESO DA FONTE
+   FONT WEIGHT
 ======================= */
 
 export const FontWeight: StoryObj<typeof Button> = {
@@ -121,7 +119,7 @@ export const FontWeight: StoryObj<typeof Button> = {
 };
 
 /* =======================
-   BOTÕES COM ÍCONE
+   BUTTONS WITH ICON
 ======================= */
 
 export const WithIcon: StoryObj<typeof Button> = {

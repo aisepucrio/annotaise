@@ -22,7 +22,7 @@ const meta = {
 export default meta;
 
 /* =======================
-   PLAYGROUND (BARRA BASE)
+   PLAYGROUND (BASE BAR)
 ======================= */
 
 export const Playground: StoryObj<typeof ProgressBar> = {
@@ -46,7 +46,7 @@ A lógica de estado (completo, atrasado, etc.) deve ser gerenciada externamente.
 };
 
 /* =======================
-   EXEMPLOS DE CORES
+   COLOR EXAMPLES
 ======================= */
 
 export const ColorExamples: StoryObj<typeof ProgressBar> = {
@@ -93,7 +93,7 @@ A lógica de qual cor usar é gerenciada pelo código que utiliza o componente.
 };
 
 /* =======================
-   ESTILOS DE BORDAS
+   BORDER STYLES
 ======================= */
 
 export const BorderStyles: StoryObj<typeof ProgressBar> = {
@@ -137,7 +137,7 @@ export const BorderStyles: StoryObj<typeof ProgressBar> = {
 };
 
 /* =======================
-   ALTURAS DIFERENTES
+   DIFFERENT HEIGHTS
 ======================= */
 
 export const Heights: StoryObj<typeof ProgressBar> = {
@@ -176,7 +176,7 @@ A propriedade **height** aceita qualquer valor CSS válido (px, rem, etc.).
 };
 
 /* =======================
-   LABELS CUSTOMIZADAS
+   CUSTOM LABELS
 ======================= */
 
 export const CustomLabels: StoryObj<typeof ProgressBar> = {
@@ -220,12 +220,11 @@ O componente aceita qualquer texto como **label**. A formatação e lógica do t
 };
 
 /* =======================
-   EXEMPLO REAL (LABELINGS)
+   REAL-WORLD EXAMPLE (LABELINGS)
 ======================= */
 
 export const RealWorldExample: StoryObj<typeof ProgressBar> = {
   render: () => {
-    // Simulando diferentes estados de labelings
     const examples = [
       {
         title: 'Projeto em andamento',

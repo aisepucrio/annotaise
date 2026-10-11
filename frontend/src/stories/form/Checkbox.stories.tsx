@@ -47,7 +47,7 @@ export const Playground: Story = {
 };
 
 /* =======================
-   FORMATOS
+   SHAPES
 ======================= */
 
 export const Shapes: Story = {
@@ -75,7 +75,7 @@ export const Shapes: Story = {
 };
 
 /* =======================
-   CORES CUSTOMIZADAS
+   CUSTOM COLORS
 ======================= */
 
 export const CustomColors: Story = {
@@ -99,7 +99,7 @@ export const CustomColors: Story = {
 };
 
 /* =======================
-   DESABILITADO
+   DISABLED
 ======================= */
 
 export const Disabled: Story = {

@@ -42,7 +42,7 @@ Use os controles para testar **placeholder**, **filterButtonText**, **showFilter
 };
 
 /* =======================
-   EXEMPLO BÁSICO
+   BASIC EXAMPLE
 ======================= */
 
 export const Basic: StoryObj<typeof FilterBar> = {
@@ -64,7 +64,7 @@ A busca funciona com **estado controlado** (controlled component).
 };
 
 /* =======================
-   SEM BOTÃO DE FILTRO
+   WITHOUT FILTER BUTTON
 ======================= */
 
 export const WithoutFilterButton: StoryObj<typeof FilterBar> = {
@@ -86,7 +86,7 @@ Use \`showFilterButton={false}\` para ocultar o botão.
 };
 
 /* =======================
-   DESABILITADO
+   DISABLED
 ======================= */
 
 export const Disabled: StoryObj<typeof FilterBar> = {
@@ -108,7 +108,7 @@ O campo fica visualmente diferente e não aceita input.
 };
 
 /* =======================
-   COM VALOR PRÉ-PREENCHIDO
+   WITH PRE-FILLED VALUE
 ======================= */
 
 export const WithValue: StoryObj<typeof FilterBar> = {
@@ -130,7 +130,7 @@ Campo com **valor inicial**.
 };
 
 /* =======================
-   CUSTOMIZADO
+   CUSTOMIZED
 ======================= */
 
 export const Customized: StoryObj<typeof FilterBar> = {
@@ -160,7 +160,7 @@ Use \`filterButtonText\` para mudar o texto e \`onFilterClick\` para adicionar a
 };
 
 /* =======================
-   MÚLTIPLAS BARRAS
+   MULTIPLE BARS
 ======================= */
 
 export const MultipleBars: StoryObj<typeof FilterBar> = {

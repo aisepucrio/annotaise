@@ -1,23 +1,15 @@
 import React from 'react';
 
 type ProgressBarProps = {
-  /** Valor atual do progresso (0-100 ou qualquer escala) */
+  /** Value on a 0-100 scale, or any other scale paired with `max`. */
   value: number;
-  /** Valor máximo (padrão: 100) */
   max?: number;
-  /** Texto/label a ser exibido sobre a barra */
   label?: string;
-  /** Cor de fundo da barra (classe Tailwind ou CSS) */
   bgColor?: string;
-  /** Cor do progresso/preenchimento (classe Tailwind ou CSS) */
   fillColor?: string;
-  /** Posição da borda arredondada: 'all', 'right', 'left', 'none' (padrão: 'all') */
   rounded?: 'all' | 'right' | 'left' | 'none';
-  /** Altura da barra (padrão: 32px) */
   height?: string;
-  /** Classes CSS adicionais para o container */
   className?: string;
-  /** Classes CSS para o texto/label */
   labelClassName?: string;
 };
 
@@ -32,10 +24,8 @@ export default function ProgressBar({
   className = '',
   labelClassName = 'text-gray-800',
 }: ProgressBarProps) {
-  // Calcular porcentagem
   const percent = max > 0 ? Math.min(Math.max((value / max) * 100, 0), 100) : 0;
 
-  // Determinar classe de borda
   const getRoundedClass = () => {
     switch (rounded) {
       case 'right':

@@ -38,10 +38,8 @@ function validateEmail(email: string): boolean {
 }
 
 export default function NewUserModal({ open, onClose, onSubmit }: NewUserModalProps) {
-  // i18n
   const { t, language } = useTranslations();
 
-  // Estado local
   const [emailsRaw, setEmailsRaw] = useState('');
   const [accountType, setAccountType] = useState<Payload['account_type']>('standard');
   const [emailLanguage, setEmailLanguage] = useState<NonNullable<Payload['email_language']>>(language);
@@ -50,7 +48,6 @@ export default function NewUserModal({ open, onClose, onSubmit }: NewUserModalPr
   const [submitting, setSubmitting] = useState(false);
   const { data: assignmentProjects, isLoading: assignmentOptionsLoading } = useInvitationAssignmentOptionsQuery();
 
-  // Opções do select (memo pra não recriar a cada render)
   const accountOptions = useMemo(
     () => [
       { value: 'standard', label: t('users.new.accountType.standard') },
@@ -66,7 +63,6 @@ export default function NewUserModal({ open, onClose, onSubmit }: NewUserModalPr
     [t]
   );
 
-  // Reset do estado quando o modal fecha
   useEffect(() => {
     if (open) return;
     setEmailsRaw('');
@@ -112,7 +108,6 @@ export default function NewUserModal({ open, onClose, onSubmit }: NewUserModalPr
     });
   };
 
-  // Submissão do formulário
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -164,9 +159,7 @@ export default function NewUserModal({ open, onClose, onSubmit }: NewUserModalPr
 
   return (
     <Modal open={open} onClose={onClose} title={t('users.new.title')} description={t('users.new.description')} maxWidth="md">
-      {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Emails */}
         <div className="flex flex-col gap-1">
           <label htmlFor="invite-emails" className="text-sm font-medium">
             {t('users.new.emailLabel')}
@@ -182,7 +175,6 @@ export default function NewUserModal({ open, onClose, onSubmit }: NewUserModalPr
           <span className="text-xs text-gray-400">{t('users.new.emailHelp')}</span>
         </div>
 
-        {/* Tipo de conta */}
         <div>
           <Select
             id="invite-account"
@@ -261,7 +253,6 @@ export default function NewUserModal({ open, onClose, onSubmit }: NewUserModalPr
           )}
         </div>
 
-        {/* Ação */}
         <div className="flex items-center justify-end gap-3 pt-2 w-[70%] mx-auto">
           <Button type="submit" disabled={submitting}>
             {submitting ? t('users.new.submitting') : t('users.new.submit')}

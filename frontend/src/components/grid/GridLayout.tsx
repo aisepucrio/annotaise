@@ -2,15 +2,11 @@ import React from 'react';
 
 const GridContext = React.createContext(1);
 
-// Contexto para obter o número de colunas no grid e calcular estilos condicionalmente
 export const useGridColumns = () => React.useContext(GridContext);
 
 type GridLayoutProps = {
-  /** Elementos filhos a serem renderizados dentro do grid */
   children: React.ReactNode;
-  /** Tamanho máximo de cada coluna (ex: "360px", "380px", "400px") */
   minColumnWidth?: string;
-  /** Classes CSS adicionais para personalização */
   className?: string;
 };
 
@@ -20,8 +16,13 @@ export default function GridLayout({ children, minColumnWidth = '400px', classNa
 
   const childCount = React.Children.count(children);
 
+  // A single card still needs to grow past minColumnWidth (e.g. the wider project
+  // card mixed into a labelings grid) — cap it at 2x instead of pinning it exactly,
+  // so it isn't stretched edge-to-edge either.
   const gridTemplate =
-    childCount === 1 ? `minmax(0, ${minColumnWidth})` : `repeat(auto-fit, minmax(min(${minColumnWidth}, 100%), 1fr))`;
+    childCount === 1
+      ? `minmax(0, min(calc(${minColumnWidth} * 2), 100%))`
+      : `repeat(auto-fit, minmax(min(${minColumnWidth}, 100%), 1fr))`;
 
   React.useEffect(() => {
     const updateColumns = () => {

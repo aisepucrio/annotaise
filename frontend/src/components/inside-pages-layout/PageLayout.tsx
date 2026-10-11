@@ -20,16 +20,19 @@ interface PageLayoutProps {
   filterButtonText?: string;
   onFilterClick?: () => void;
   showFilterButton?: boolean;
+  filterMenu?: ReactNode;
 
-  // Action Button (opcional)
+  // Action button
   hasButton?: boolean;
   buttonText?: string;
   onButtonClick?: () => void;
   buttonDisabled?: boolean;
+  /** Extra action rendered to the left of the main button. */
+  secondaryButton?: ReactNode;
 
   // Content
   children: ReactNode;
-  /** Renderizado ao fim da área rolável — é onde vive a sentinela do scroll infinito. */
+  /** Rendered at the end of the scrollable area — this is where the infinite-scroll sentinel lives. */
   footer?: ReactNode;
   isLoading?: boolean;
   message?: string;
@@ -37,7 +40,7 @@ interface PageLayoutProps {
   // Grid configuration
   minColumnWidth?: string;
 
-  // Modal (renderizado fora do layout principal)
+  // Modal (rendered outside the main layout)
   modal?: ReactNode;
 }
 
@@ -50,10 +53,12 @@ export default function PageLayout({
   filterButtonText,
   onFilterClick,
   showFilterButton = true,
+  filterMenu,
   hasButton = false,
   buttonText,
   onButtonClick,
   buttonDisabled = false,
+  secondaryButton,
   children,
   footer,
   isLoading = false,
@@ -86,10 +91,8 @@ export default function PageLayout({
   return (
     <>
       <div className="flex h-full min-h-0 flex-col overflow-hidden">
-        {/* Header */}
         <PageHeader page_title={pageTitle} tooltip={tooltip} description={description} />
 
-        {/* Search Bar + Action Button */}
         <div className="mt-5 flex shrink-0 flex-nowrap items-center">
           <FilterBar
             value={searchTerm}
@@ -98,34 +101,37 @@ export default function PageLayout({
             filterButtonText={filterButtonText}
             onFilterClick={onFilterClick}
             showFilterButton={showFilterButton}
+            filterMenu={filterMenu}
           />
 
-          {hasButton && (
-            <div className="ml-auto mr-6 w-auto">
-              <Button
-                icon={<Plus size={16} strokeWidth={3} />}
-                onClick={onButtonClick}
-                disabled={buttonDisabled}
-                variant="normal"
-                fill={false}
-                className="px-4 py-2 shadow-md text-sm"
-              >
-                {buttonText}
-              </Button>
+          {(hasButton || secondaryButton) && (
+            <div className="ml-auto mr-6 flex w-auto items-center gap-3">
+              {secondaryButton}
+
+              {hasButton && (
+                <Button
+                  icon={<Plus size={16} strokeWidth={3} />}
+                  onClick={onButtonClick}
+                  disabled={buttonDisabled}
+                  variant="normal"
+                  fill={false}
+                  className="px-4 py-2 shadow-md text-sm"
+                >
+                  {buttonText}
+                </Button>
+              )}
             </div>
           )}
         </div>
 
-        {/* Main Content Grid */}
         <div className="ml-5 mt-5 flex min-h-0 w-[calc(100%-2.5rem)] flex-1 flex-col">
           {isLoading ? (
             <Loader variant="blue" />
-          ) : message ? (
-            <p className="text-sm text-gray-500">{message}</p>
           ) : (
             <div className="flex min-h-0 flex-1 flex-col">
               <div className="min-h-0 flex-1 overflow-y-auto pr-2">
                 <GridLayout minColumnWidth={minColumnWidth}>{children}</GridLayout>
+                {message && <p className="col-span-full text-sm text-gray-500">{message}</p>}
                 {footer}
               </div>
             </div>
@@ -133,7 +139,6 @@ export default function PageLayout({
         </div>
       </div>
 
-      {/* Modal (se fornecido) */}
       {modal}
     </>
   );

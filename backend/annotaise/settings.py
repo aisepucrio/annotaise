@@ -52,7 +52,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'drf_spectacular',
-    'drf_spectacular_sidecar',  # serve pra não ter que carregar por cdn mas pode ser removido
+    'drf_spectacular_sidecar',  # avoids loading assets via CDN; safe to remove if unused
     'answer',
     'authentication',
     'item',
@@ -114,7 +114,7 @@ DATABASES = {
     }
 }
 
-# opcional: fallback para SQLite local (fora do CI) se NAME não vier
+# Optional: falls back to local SQLite (outside CI) when NAME is not set
 if not DB_NAME:
     DATABASES["default"] = {
         "ENGINE": "django.db.backends.sqlite3",
@@ -201,14 +201,13 @@ SPECTACULAR_SETTINGS = {
 
 
 from datetime import timedelta
-#tempo de vida dos tokens (caso seja necessário)
+# Token lifetimes (tune as needed)
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=500),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=10),
 }
 
 
-#modelo de usuário customizado 
 AUTH_USER_MODEL = 'user.CustomUser'
 
 AUTHENTICATION_BACKENDS = [
@@ -254,7 +253,7 @@ STORAGES = {
         },
     }
 
-# Configurações do CORS (pra deixar o frontend acessar a API em outro ip)
+# CORS configuration (lets the frontend reach the API from a different origin)
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",

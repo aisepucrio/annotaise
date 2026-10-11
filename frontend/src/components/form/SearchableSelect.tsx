@@ -9,31 +9,21 @@ import { formFieldClasses } from './base/formFieldClasses';
 import type { SelectOption } from './Select';
 
 export type SearchableSelectProps = {
-  /** Valor selecionado (value de uma das options) */
   value: string;
-  /** Disparado quando o usuário escolhe uma opção */
   onChange: (value: string) => void;
-  /** Opções disponíveis */
   options: SelectOption[];
-  /** Texto exibido quando nada está selecionado / nada digitado */
   placeholder?: string;
-  /** Label do campo */
   label?: string;
-  /** Mensagem de erro */
   error?: string;
-  /** Se o campo é obrigatório */
   required?: boolean;
-  /** Se o campo está desabilitado */
   disabled?: boolean;
-  /** Classes CSS adicionais para o container */
   containerClassName?: string;
-  /** id do input */
   id?: string;
 };
 
 /**
- * Select com busca: o usuário digita para filtrar as opções exibidas no menu,
- * em vez de rolar uma lista longa.
+ * Select with search: the user types to filter the options shown in the menu,
+ * instead of scrolling a long list.
  */
 export default function SearchableSelect({
   value,

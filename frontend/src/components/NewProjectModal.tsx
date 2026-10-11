@@ -18,7 +18,6 @@ type NewProjectModalProps = {
 };
 
 export default function NewProjectModal({ open, onClose, onSubmit }: NewProjectModalProps) {
-  // Hooks: formulário e estado local
   const { t } = useTranslations();
   const { register, handleSubmit, reset } = useForm<ProjectPayload>({
     defaultValues: { name: '', description: '', status: 'planning' },
@@ -32,7 +31,6 @@ export default function NewProjectModal({ open, onClose, onSubmit }: NewProjectM
     { value: 'cancelled', label: t('projects.new.status.cancelled') },
   ];
 
-  // Efeitos: resetar formulário quando o modal fechar
   useEffect(() => {
     if (!open) {
       reset({ name: '', description: '', status: 'planning' });
@@ -40,7 +38,6 @@ export default function NewProjectModal({ open, onClose, onSubmit }: NewProjectM
     }
   }, [open, reset]);
 
-  // Manipuladores: submissão do formulário e validação
   const submitForm = handleSubmit(
     async (values) => {
       try {
@@ -64,7 +61,6 @@ export default function NewProjectModal({ open, onClose, onSubmit }: NewProjectM
 
   return (
     <Modal open={open} onClose={onClose} title={t('projects.new.title')} description={t('projects.new.description')} maxWidth="lg">
-      {/* Render: UI do formulário */}
       <form onSubmit={submitForm} className="space-y-5">
         <Input
           id="project-name"

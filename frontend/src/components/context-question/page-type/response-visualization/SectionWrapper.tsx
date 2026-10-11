@@ -95,10 +95,8 @@ export default function SectionWrapper({
     <section className={className}>
       {/* Header divider with optional section label and title */}
       <div className="not-prose mt-1 mb-3 flex items-center gap-3">
-        {/* Left divider line */}
         <div className="h-0.5 flex-1 bg-slate-200" aria-hidden="true" />
 
-        {/* Centered section heading */}
         <div className="flex min-w-0 shrink flex-wrap items-center justify-center gap-2 text-center">
           {sectionLabel && (
             <>
@@ -112,13 +110,11 @@ export default function SectionWrapper({
           <div className={titleStyle}>{title}</div>
         </div>
 
-        {/* Right divider line */}
         <div className="h-0.5 flex-1 bg-slate-200" aria-hidden="true" />
       </div>
 
-      {/* Section content with the blue side border */}
       <div className="border-l-4 border-blueberry-500 py-1 pl-4">
-        {/* Questions, contexts, or custom children */}
+        {/* content is either the custom children override, a "no questions" message, or the mapped question/context elements */}
         <div className="divide-y divide-metal-100">{content}</div>
       </div>
     </section>

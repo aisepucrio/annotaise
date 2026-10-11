@@ -33,7 +33,7 @@ LLM_TIEBREAK_EMAIL = "llm_tiebreak_bot@annotaise.local"
 class CurrentAPIView(RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = CustomUserSerializer
-    http_method_names = ["get", "patch","delete"] #TODO deixei o delete mas não é o ideal... talvez seja melhor desativar a conta 
+    http_method_names = ["get", "patch","delete"] #TODO kept delete here, but it's not ideal — deactivating the account might be better
 
     def get_object(self):
         return self.request.user
@@ -58,7 +58,7 @@ class AdminUserViewSet(viewsets.ModelViewSet):
         target_user = self.get_object()
 
         if target_user.account_type == "admin" and target_user != request.user:
-            # verifica se QUEM ESTÁ FAZENDO A REQUISIÇÃO é master admin
+            # check whether the REQUESTING user (not the target) is a master admin
             if not IsMasterAdminAccount().has_permission(request, self):
                 raise PermissionDenied("Apenas um master admin pode alterar dados de outro admin.")
 
@@ -68,7 +68,7 @@ class AdminUserViewSet(viewsets.ModelViewSet):
         target_user = self.get_object()
 
         if target_user.account_type == "admin" and target_user != request.user:
-            # verifica se QUEM ESTÁ FAZENDO A REQUISIÇÃO é master admin
+            # check whether the REQUESTING user (not the target) is a master admin
             if not IsMasterAdminAccount().has_permission(request, self):
                 raise PermissionDenied("Apenas um master admin pode deletar outro admin.")
 
@@ -82,7 +82,7 @@ class AdminUserViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="dashboard", pagination_class=StandardCursorPagination)
     def user_dashboard(self, request, pk=None):
-        qs = self.get_queryset().user_dashboard_qs() 
+        qs = self.get_queryset().user_dashboard_qs()
         qs = self.filter_queryset(qs)
         return paginated_response(self, qs)
             

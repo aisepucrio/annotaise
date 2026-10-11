@@ -45,7 +45,7 @@ export const Playground: StoryObj<typeof Select> = {
 };
 
 /* =======================
-   EXEMPLOS PRÁTICOS
+   PRACTICAL EXAMPLES
 ======================= */
 
 export const Examples: StoryObj<typeof Select> = {
@@ -99,7 +99,7 @@ export const Examples: StoryObj<typeof Select> = {
 };
 
 /* =======================
-   COM ERRO
+   WITH ERROR
 ======================= */
 
 export const WithError: StoryObj<typeof Select> = {
@@ -139,7 +139,7 @@ export const WithError: StoryObj<typeof Select> = {
 };
 
 /* =======================
-   OBRIGATÓRIO
+   REQUIRED
 ======================= */
 
 export const Required: StoryObj<typeof Select> = {
@@ -178,7 +178,7 @@ export const Required: StoryObj<typeof Select> = {
 };
 
 /* =======================
-   COM TOOLTIP
+   WITH TOOLTIP
 ======================= */
 
 export const WithTooltip: StoryObj<typeof Select> = {
@@ -220,7 +220,7 @@ export const WithTooltip: StoryObj<typeof Select> = {
 };
 
 /* =======================
-   DESABILITADO
+   DISABLED
 ======================= */
 
 export const Disabled: StoryObj<typeof Select> = {
@@ -259,7 +259,7 @@ export const Disabled: StoryObj<typeof Select> = {
 };
 
 /* =======================
-   SEM LABEL
+   WITHOUT LABEL
 ======================= */
 
 export const WithoutLabel: StoryObj<typeof Select> = {
@@ -295,7 +295,7 @@ export const WithoutLabel: StoryObj<typeof Select> = {
 };
 
 /* =======================
-   COM MUITAS OPÇÕES
+   WITH MANY OPTIONS
 ======================= */
 
 export const WithManyOptions: StoryObj<typeof Select> = {

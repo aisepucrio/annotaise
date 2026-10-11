@@ -1,8 +1,8 @@
 'use client';
 
-import Image from 'next/image'; // mantem para o LOGO
+import Image from 'next/image';
 import SidebarItem from './sidebar_item';
-import { User, FolderKanban, Tags, LogOut, PanelLeftClose, PanelLeftOpen, BookOpen } from 'lucide-react';
+import { User, Tags, LogOut, PanelLeftClose, PanelLeftOpen, BookOpen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { AuthActions } from '@/lib/authClient';
 import { useIsAdmin } from '@/lib/AdminContext';
@@ -20,7 +20,6 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
   const { removeTokens } = AuthActions();
   const { isAdmin } = useIsAdmin();
   const { t } = useTranslations();
-  const canSeeProjects = isAdmin;
 
   const handleLogout = () => {
     removeTokens();
@@ -74,7 +73,6 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
           )}
         </div>
 
-        {/* separador com botão de toggle */}
         {isOpen ? (
           <div className="w-full flex items-center gap-2 mb-2 pl-6">
             <div className="flex-1 bg-gray-300 h-0.5 rounded-2xl" />
@@ -104,16 +102,6 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
             />
           ) : null}
 
-          {canSeeProjects ? (
-            <SidebarItem
-              icon={<FolderKanban size={24} />}
-              label={t('sidebar.projects')}
-              href="/projects"
-              alias="/projects"
-              hover_color="blue"
-              collapsed={!isOpen}
-            />
-          ) : null}
           {isAdmin ? (
             <SidebarItem
               icon={<BookmarkPlus size={24} />}
@@ -134,7 +122,6 @@ export default function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
           />
         </ul>
 
-        {/* Rodape */}
         <div className="text-sm text-gray-500 mt-auto w-full space-y-1 pl-0">
           {isAdmin ? (
             <SidebarItem

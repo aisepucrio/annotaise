@@ -10,7 +10,6 @@ import type {
   InvitationAssignmentProject,
 } from './userTypes';
 
-// Busca todos os usuários com opção de busca
 export async function fetchUsers(search?: string): Promise<User[]> {
   const { data } = await api.get<User[]>('/users/', {
     params: search ? { search } : undefined,
@@ -18,12 +17,10 @@ export async function fetchUsers(search?: string): Promise<User[]> {
   return data;
 }
 
-// Busca usuários do dashboard com opção de busca
 export function fetchUsersDashboard(params: CursorSearchRequest) {
   return fetchCursorPage<User>('/users/dashboard/', params);
 }
 
-// Cria um novo usuário
 export async function createUser(payload: CreateUserPayload): Promise<User> {
   const { data } = await api.post<User>('/users/', {
     ...payload,
@@ -32,7 +29,6 @@ export async function createUser(payload: CreateUserPayload): Promise<User> {
   return data;
 }
 
-// Cria um convite para novo usuário
 export async function createInvitation(payload: CreateInvitationPayload): Promise<{ link: string; invitation: Invitation }> {
   const { data } = await api.post<{ link: string; invitation: Invitation }>('/invitations/', {
     email: payload.email,
@@ -49,7 +45,6 @@ export async function fetchInvitationAssignmentOptions(): Promise<InvitationAssi
   return data.projects ?? [];
 }
 
-// Atualiza dados de um usuário existente
 export async function updateUser(id: number, payload: UpdateUserPayload): Promise<User> {
   const { data } = await api.patch<User>(`/users/${id}/`, {
     ...payload,
@@ -58,7 +53,6 @@ export async function updateUser(id: number, payload: UpdateUserPayload): Promis
   return data;
 }
 
-// Deleta um usuário
 export async function deleteUser(id: number): Promise<void> {
   await api.delete(`/users/${id}/`);
 }

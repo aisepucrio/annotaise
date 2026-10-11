@@ -13,10 +13,10 @@ export type UserGroupMembership = {
 };
 
 export type UserGroupChangesPayload = {
-  // IDs de grupos já existentes em que o usuário deve ser inserido.
+  // IDs of existing groups the user should be added to.
   groupIds: number[];
-  // Nomes de grupos que ainda não existem e devem ser criados antes da inserção.
+  // Names of groups that don't exist yet and must be created before insertion.
   newGroupNames: string[];
-  // IDs das associações (memberships) atuais que devem ser removidas.
+  // IDs of current memberships that should be removed.
   removedMembershipIds: number[];
 };

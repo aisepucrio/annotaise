@@ -33,10 +33,12 @@ export type Labeling = {
 // Fields accepted by the backend to create or update a labeling.
 export type LabelingPayload = Omit<
   Labeling,
-  'id' | 'status' | 'column_names' | 'created_at' | 'created_by' | 'anonymous_token' | 'anonymous_url'
->;
+  'id' | 'status' | 'column_names' | 'created_at' | 'created_by' | 'anonymous_token' | 'anonymous_url' | 'project'
+> & {
+  // Optional: a labeling may exist without belonging to a project.
+  project: number | null;
+};
 
-// Types related to labeling creation with CSV
 export type CreateLabelingWithCsvPayload = {
   payload: LabelingPayload;
   file: File | null;
@@ -54,7 +56,6 @@ export type MultipleChoiceItemDTO = {
   follow_up_question?: ElementDTO | null;
 };
 
-// For "range" type questions
 export type QuestionRangeDTO = {
   start?: number | null;
   end?: number | null;
@@ -76,7 +77,6 @@ export type ElementDTO = {
   question_range?: QuestionRangeDTO | null;
 };
 
-// Labeling structure section containing multiple elements
 export type SectionDTO = {
   id?: number;
   title?: string;
@@ -163,7 +163,8 @@ export type LabelingMembershipDashboard = {
 export type LabelingDashboard = {
   id: number;
   labeling_name: string;
-  project_name: string;
+  // null when the labeling doesn't belong to any project.
+  project_name: string | null;
   total_days: number;
   days_passed: number;
   items_done: number;

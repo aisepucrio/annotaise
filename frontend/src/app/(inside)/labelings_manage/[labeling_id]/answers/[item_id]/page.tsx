@@ -21,7 +21,7 @@ type AnswersTabProps = {
   allAnswers: AnswerResponse[];
   filteredAnswers: AnswerResponse[];
   totalAnswers: number;
-  /** Total de respostas no servidor, para o contador do rodapé. */
+  /** Total answer count from the server, used for the footer counter. */
   answersCount?: number;
   hasMoreAnswers: boolean;
   loadingMoreAnswers: boolean;
@@ -162,8 +162,8 @@ export default function AnswersTab({
           </GridLayout>
         )}
 
-        {/* Dentro da área rolável, logo abaixo da grade: a sentinela só entra em
-            vista quando o usuário chega ao fim das respostas carregadas. */}
+        {/* Inside the scrollable area, right below the grid: the sentinel only comes
+            into view once the user reaches the end of the loaded answers. */}
         {!answersLoading && groupedFilteredItems.length > 0 ? (
           <InfiniteScroll
             hasNextPage={hasMoreAnswers}

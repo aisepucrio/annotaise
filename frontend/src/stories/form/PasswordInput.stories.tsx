@@ -33,7 +33,7 @@ export const Playground: StoryObj<typeof PasswordInput> = {
 };
 
 /* =======================
-   VARIANTES
+   VARIANTS
 ======================= */
 
 export const Variants: StoryObj<typeof PasswordInput> = {
@@ -56,7 +56,7 @@ export const Variants: StoryObj<typeof PasswordInput> = {
 };
 
 /* =======================
-   COM ERRO
+   WITH ERROR
 ======================= */
 
 export const WithError: StoryObj<typeof PasswordInput> = {
@@ -87,7 +87,7 @@ export const WithError: StoryObj<typeof PasswordInput> = {
 };
 
 /* =======================
-   DESABILITADO
+   DISABLED
 ======================= */
 
 export const Disabled: StoryObj<typeof PasswordInput> = {

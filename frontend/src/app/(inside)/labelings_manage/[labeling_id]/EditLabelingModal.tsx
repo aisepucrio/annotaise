@@ -138,9 +138,7 @@ export default function EditLabelingModal({ open, labeling, project, onClose, on
         <p className="text-sm text-metal-600">{t('labelings.create.edit.loadError')}</p>
       ) : (
         <>
-          {/* Basic metadata editing for the labeling. */}
           <div className="space-y-6">
-            {/* Title */}
             <Input
               label={t('labelings.create.edit.labelTitle')}
               required
@@ -153,7 +151,6 @@ export default function EditLabelingModal({ open, labeling, project, onClose, on
               placeholder={t('labelings.create.edit.placeholderTitle')}
             />
 
-            {/* Project */}
             <Select
               label={t('labelings.create.edit.labelProject')}
               value={String(projectId ?? '')}
@@ -163,7 +160,6 @@ export default function EditLabelingModal({ open, labeling, project, onClose, on
               disabled={!project}
             />
 
-            {/* Date range */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <DatePicker
                 label={t('labelings.create.edit.labelStartDate')}
@@ -188,7 +184,6 @@ export default function EditLabelingModal({ open, labeling, project, onClose, on
               />
             </div>
 
-            {/* Shareable URL for anonymous-mode labelings */}
             {anonymousUrl && (
               <div>
                 <label className="mb-1 block text-sm font-medium text-metal-900">
@@ -233,7 +228,6 @@ export default function EditLabelingModal({ open, labeling, project, onClose, on
             </div>
           </div>
 
-          {/* Save action */}
           <div className="mt-6">
             <Button onClick={handleSave} disabled={isSaving} variant="normal">
               {isSaving ? t('common.saving') : t('common.save')}

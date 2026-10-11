@@ -29,13 +29,11 @@ class ProjectMembershipSerializer(serializers.ModelSerializer):
         return user
 
     def update (self, instance, validated_data):
-        # bloqueia a troca de projeto
         if "project" in validated_data and validated_data["project"].id != instance.project_id:
             raise serializers.ValidationError({
                 "project": "Você não pode alterar o projeto de uma relação existente, crie outra."
             })
-        
-        # bloqueia a troca de usuário
+
         if "user" in validated_data and validated_data["user"].id != instance.user_id:
             raise serializers.ValidationError({
                 "project": "Você não pode alterar o usuário de uma relação existente, crie outra."

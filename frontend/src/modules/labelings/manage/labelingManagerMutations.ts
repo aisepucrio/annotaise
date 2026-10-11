@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   deleteLabeling,
   updateLabeling,
+  duplicateLabeling,
   saveLabelingStructure,
   createLabelingMembership,
   updateLabelingMembership,
@@ -11,7 +12,6 @@ import {
 } from '../labelingService';
 import type { LabelingPayload, SectionDTO, LabelingMembershipRole } from '@/modules/labelings/labelingsTypes';
 
-// Utilizada para deletar labeling
 export function useDeleteLabelingMutation() {
   const qc = useQueryClient();
 
@@ -24,7 +24,17 @@ export function useDeleteLabelingMutation() {
   });
 }
 
-// Utilizada para atualizar os dados básicos do labeling
+export function useDuplicateLabelingMutation() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => duplicateLabeling(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['labelings'] });
+    },
+  });
+}
+
 export function useUpdateLabelingMutation() {
   const qc = useQueryClient();
 
@@ -37,7 +47,6 @@ export function useUpdateLabelingMutation() {
   });
 }
 
-// Utilizada para salvar a estrutura do labeling (seções e itens)
 export function useSaveLabelingStructureMutation() {
   const qc = useQueryClient();
 
@@ -52,7 +61,6 @@ export function useSaveLabelingStructureMutation() {
   });
 }
 
-// Utilizada para criar membership
 export function useCreateMembershipMutation() {
   const qc = useQueryClient();
 
@@ -66,7 +74,6 @@ export function useCreateMembershipMutation() {
   });
 }
 
-// Utilizada para atualizar membership
 export function useUpdateMembershipMutation() {
   const qc = useQueryClient();
 
@@ -81,7 +88,6 @@ export function useUpdateMembershipMutation() {
   });
 }
 
-// Utilizada para adicionar itens via CSV a um labeling existente
 export function useAddItemsCsvMutation() {
   const qc = useQueryClient();
 
@@ -94,7 +100,6 @@ export function useAddItemsCsvMutation() {
   });
 }
 
-// Utilizada para exportar o CSV de itens importados do labeling
 export function useExportImportedLabelingCsvMutation() {
   return useMutation({
     // Treat CSV export as a user-triggered side effect instead of cached query data.
@@ -102,7 +107,6 @@ export function useExportImportedLabelingCsvMutation() {
   });
 }
 
-// Utilizada para remover membership
 export function useDeleteMembershipMutation() {
   const qc = useQueryClient();
 

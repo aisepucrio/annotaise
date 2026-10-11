@@ -29,10 +29,8 @@ export default function AnonymousAnswerPage() {
   const { t } = useTranslations();
   const params = useParams<{ token: string }>();
 
-  // Anonymous-mode token taken from the public URL.
   const token = useMemo(() => (typeof params?.token === 'string' ? params.token : ''), [params]);
 
-  // Current item / answer state.
   const [sections, setSections] = useState<LabelingStructureSection[]>([]);
   const [payload, setPayload] = useState<Record<string, unknown>>({});
   const [answers, setAnswers] = useState<UserAnswerMap>({});
@@ -41,7 +39,6 @@ export default function AnonymousAnswerPage() {
   const [isFormMode, setIsFormMode] = useState(false);
   const [guideText, setGuideText] = useState('');
 
-  // Local UI flow state.
   const [currentSectionIdx, setCurrentSectionIdx] = useState(0);
   // Anonymous annotators get no onboarding, so the guide starts open on every
   // page load; the header button still lets them hide it.
@@ -69,7 +66,6 @@ export default function AnonymousAnswerPage() {
     (isOkCode ? toast.success : toast.error)(message);
   }, []);
 
-  // Loads the next available item to answer for this token.
   const loadItem = useCallback(async () => {
     if (!token) {
       showError(t('answer.invalidId'));
