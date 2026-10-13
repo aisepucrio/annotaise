@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { toast } from 'sonner';
 import AnswersTab from './[item_id]/page';
 import SummaryTab from './summary/page';
+import AgreementTab from './agreement/page';
 import AnswerTabHeader, { type AnswerView } from './AnswerTabHeader';
 import { useTranslations } from '@/i18n/use-translations';
 import {
@@ -175,7 +176,7 @@ export function AnswerTab({ labelingId, users, usersPerItem }: AnswerTabProps) {
             structureSections={structureSections}
             onInspectingChange={setIsInspectingItem}
           />
-        ) : (
+        ) : activeView === 'summary' ? (
           <SummaryTab
             labelingId={labelingId}
             usersPerItem={usersPerItem}
@@ -183,6 +184,8 @@ export function AnswerTab({ labelingId, users, usersPerItem }: AnswerTabProps) {
             answersLoading={summaryQuery.isLoading}
             structureSections={structureSections}
           />
+        ) : (
+          <AgreementTab labelingId={labelingId} structureSections={structureSections} />
         )}
       </div>
     </div>

@@ -253,3 +253,29 @@ export type LabelingAgreementSummary = {
   max_min_agreement: number;
   questions: LabelingAgreementQuestionSummary[];
 };
+
+// Chance-corrected agreement (GET /labelings/{id}/reliability/).
+// Answers a different question from LabelingAgreementSummary above, which
+// counts operational consensus per option rather than reliability.
+export type LabelingReliabilityEstimate = {
+  value: number | null;
+  ci_low: number | null;
+  ci_high: number | null;
+};
+
+export type LabelingReliabilityQuestion = {
+  question_id: number;
+  question_type: string;
+  scale: string;
+  annotators: number;
+  items_considered: number;
+  excluded_items: number;
+  has_unknown_options: boolean;
+  krippendorff_alpha: LabelingReliabilityEstimate;
+  percent_agreement: LabelingReliabilityEstimate;
+  fleiss_kappa: (LabelingReliabilityEstimate & { items_used: number; ratings_per_item: number }) | null;
+};
+
+export type LabelingReliabilityReport = {
+  questions: LabelingReliabilityQuestion[];
+};
