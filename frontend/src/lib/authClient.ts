@@ -2,6 +2,7 @@
 
 import Cookies from 'js-cookie';
 import { api } from '@/lib/api';
+import { clearAllUserLlmKeys } from '@/lib/userLlmKey';
 
 const storeToken = (token: string, type: 'access' | 'refresh') => {
   Cookies.set(type + 'Token', token);
@@ -14,6 +15,9 @@ const getToken = (type: 'access' | 'refresh') => {
 const removeTokens = () => {
   Cookies.remove('accessToken');
   Cookies.remove('refreshToken');
+  // Nenhuma chave de IA da sessão pode sobreviver à troca de usuário no navegador.
+  // Fica aqui porque o logout forçado (refresh token expirado) passa por aqui.
+  clearAllUserLlmKeys();
 };
 
 /**
@@ -29,6 +33,7 @@ const forceLogoutAndRedirect = () => {
 };
 
 const login = (email: string, password: string) => {
+  clearAllUserLlmKeys();
   return api.post('/api/auth/token/', { email, password });
 };
 

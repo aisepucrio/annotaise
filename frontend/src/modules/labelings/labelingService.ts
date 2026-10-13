@@ -1,4 +1,5 @@
 import { api } from '@/lib/api';
+import { userLlmKeyHeaders } from '@/lib/userLlmKey';
 import { fetchCursorPage } from '@/modules/pagination';
 import type { CursorRequest, CursorSearchRequest } from '@/modules/pagination';
 import type {
@@ -16,6 +17,9 @@ import type {
   AnswerPayload,
   AnswerResponse,
   BackgroundAnswerResponse,
+  LabelingAIConfig,
+  AICredential,
+  AICredentialPayload,
 } from './labelingsTypes';
 
 // Labeling functions
@@ -61,6 +65,49 @@ export async function updateLabeling(id: number, payload: Partial<LabelingPayloa
 
 export async function deleteLabeling(id: number): Promise<void> {
   await api.delete(`/labelings/${id}/`);
+}
+
+// Biblioteca de chaves de IA do usuário logado (o backend filtra por dono)
+export async function fetchAICredentials(): Promise<AICredential[]> {
+  const { data } = await api.get<AICredential[]>('/ai-credentials/');
+  return data;
+}
+
+// Cadastra uma chave nova na biblioteca do usuário
+export async function createAICredential(payload: AICredentialPayload): Promise<AICredential> {
+  const { data } = await api.post<AICredential>('/ai-credentials/', payload);
+  return data;
+}
+
+// Atualiza uma chave existente. Sem api_key no payload, só renomeia/troca o
+// provedor — e todas as rotulações vinculadas passam a usar o novo valor.
+export async function updateAICredential(id: number, payload: AICredentialPayload): Promise<AICredential> {
+  const { data } = await api.patch<AICredential>(`/ai-credentials/${id}/`, payload);
+  return data;
+}
+
+// Remove a chave da biblioteca. As rotulações vinculadas voltam ao Ollama.
+export async function deleteAICredential(id: number): Promise<void> {
+  await api.delete(`/ai-credentials/${id}/`);
+}
+
+// Qual credencial esta rotulação usa no desempate (nunca retorna a chave)
+export async function fetchLabelingAIConfig(id: number): Promise<LabelingAIConfig> {
+  const { data } = await api.get<LabelingAIConfig>(`/labelings/${id}/ai-config/`);
+  return data;
+}
+
+// Vincula uma credencial já cadastrada à rotulação
+export async function linkLabelingAICredential(id: number, credentialId: number): Promise<LabelingAIConfig> {
+  const { data } = await api.post<LabelingAIConfig>(`/labelings/${id}/ai-config/`, {
+    credential: credentialId,
+  });
+  return data;
+}
+
+// Desvincula, voltando a rotulação ao desempate padrão (Ollama local)
+export async function unlinkLabelingAICredential(id: number): Promise<void> {
+  await api.delete(`/labelings/${id}/ai-config/`);
 }
 
 export async function duplicateLabeling(id: number): Promise<Labeling> {
@@ -208,8 +255,13 @@ export async function fetchNextAnswer(labelingId: number): Promise<AnswerStructu
   return data;
 }
 
+// Submete uma nova resposta para um item. É a requisição que pode disparar o
+// desempate por LLM, então leva a chave local quando o usuário guardou uma
+// para esta rotulação; sem ela não vai header e o backend usa a chave salva.
 export async function submitAnswer(payload: AnswerPayload): Promise<AnswerResponse> {
-  const { data } = await api.post<AnswerResponse>(`/answers/`, payload);
+  const { data } = await api.post<AnswerResponse>(`/answers/`, payload, {
+    headers: userLlmKeyHeaders(payload.labeling),
+  });
   return data;
 }
 

@@ -1,8 +1,11 @@
-from .models import Labeling, LabelingMembership, LabelingSection, LabelingElement, MultipleChoiceItem, QuestionRange
+from .models import Labeling, LabelingMembership, LabelingSection, LabelingElement, MultipleChoiceItem, QuestionRange, AICredential
 from .serializers import (LabelingSerializer, LabelingMembershipSerializer,
-LabelingSectionsBulkCreateSerializer, LabelingSectionSerializer, LabelingDashboardSerializer, LabelingMembershipDashboardSerializer, LabelingAgreementSummarySerializer)
+LabelingSectionsBulkCreateSerializer, LabelingSectionSerializer, LabelingDashboardSerializer, LabelingMembershipDashboardSerializer, LabelingAgreementSummarySerializer,
+AICredentialSerializer, LabelingAICredentialLinkSerializer, LabelingAIConfigSerializer)
 from user.permissions import IsAdminAccount
-from .permissions import CanEditLabelingPermission, IsLabelingOwnerPermission, EDIT_ROLES, ANNOTATE_ROLES
+from .permissions import (CanEditLabelingPermission, IsLabelingOwnerPermission, EDIT_ROLES, ANNOTATE_ROLES,
+CanManageLabelingAIConfigPermission, IsAICredentialOwnerPermission)
+from .services.ai_credentials import create_ai_credential, link_ai_credential, update_ai_credential
 from item.models import Item
 from user.models import UserGroup
 from .serializers import LabelingElementSerializer
@@ -11,6 +14,7 @@ from .services.agreement import build_agreement_summary, parse_min_agreement
 from django.shortcuts import render, get_object_or_404
 from django.db import models, transaction
 from django.utils import timezone
+from django.core.exceptions import ImproperlyConfigured
 
 from rest_framework import viewsets, status
 
@@ -29,8 +33,7 @@ from answer.models import BackgroundAnswer, Answer
 from collections import defaultdict
 from annotaise.pagination import StandardCursorPagination, paginated_response
 
-LLM_TIEBREAK_USERNAME = "llm_tiebreak_bot"
-LLM_TIEBREAK_EMAIL = "llm_tiebreak_bot@annotaise.local"
+from common.constants import LLM_TIEBREAK_EMAIL, LLM_TIEBREAK_USERNAME
 
 LAST_OWNER_ERROR = "A rotulação precisa de pelo menos um dono."
 
@@ -71,6 +74,8 @@ class LabelingViewSet(viewsets.ModelViewSet):
             self.permission_classes = [IsAdminAccount, IsLabelingOwnerPermission]
         elif self.action in ['update','partial_update']:
             self.permission_classes = [IsAdminAccount, CanEditLabelingPermission]
+        elif self.action == 'ai_config':
+            self.permission_classes = [IsAdminAccount, CanManageLabelingAIConfigPermission]
         else:
             self.permission_classes = [IsAuthenticated]
         return super().get_permissions()
@@ -206,6 +211,28 @@ class LabelingViewSet(viewsets.ModelViewSet):
             self, memberships, LabelingMembershipDashboardSerializer, build_rows=build_rows
         )
 
+    @action(methods=['get', 'post', 'delete'], detail=True, url_path='ai-config')
+    def ai_config(self, request, pk=None):
+        """Credencial de IA que esta rotulação usa no desempate por LLM.
+
+        POST recebe só o id de uma credencial já cadastrada — o segredo nunca
+        passa por aqui, ele vive em /ai-credentials/.
+        """
+        labeling = self.get_object()
+
+        if request.method == 'POST':
+            serializer = LabelingAICredentialLinkSerializer(
+                data=request.data, requesting_user=request.user
+            )
+            serializer.is_valid(raise_exception=True)
+            link_ai_credential(labeling=labeling, credential=serializer.validated_data['credential'])
+        elif request.method == 'DELETE':
+            link_ai_credential(labeling=labeling, credential=None)
+            return Response(status=204)
+
+        return Response(
+            LabelingAIConfigSerializer(labeling, context={'requesting_user': request.user}).data
+        )
 
 
     def _user_can_answer_labeling(self, labeling, user, user_group_names):
@@ -644,3 +671,42 @@ class CreateReadLabelingStructureView(APIView):
 
         return Response(out, status=status.HTTP_200_OK)
         
+
+
+class AICredentialViewSet(viewsets.ModelViewSet):
+    """Biblioteca de chaves de IA do usuário logado (CRUD).
+
+    Remover uma credencial não quebra nada de imediato: Labeling.ai_credential
+    é SET_NULL, então as rotulações que a usavam voltam ao Ollama local.
+    """
+
+    serializer_class = AICredentialSerializer
+    permission_classes = [IsAdminAccount, IsAICredentialOwnerPermission]
+    http_method_names = ['get', 'post', 'patch', 'delete']
+
+    def get_queryset(self):
+        # O filtro por dono é a primeira trava; IsAICredentialOwnerPermission é
+        # a segunda, para o caso de alguém afrouxar o queryset um dia.
+        return AICredential.objects.owned_by(self.request.user).with_labelings_count()
+
+    def perform_create(self, serializer):
+        credential = create_ai_credential(owner=self.request.user, **serializer.validated_data)
+        # Reconsulta pelo queryset anotado para a resposta trazer labelings_count.
+        serializer.instance = self.get_queryset().get(pk=credential.pk)
+
+    def perform_update(self, serializer):
+        update_ai_credential(credential=serializer.instance, **serializer.validated_data)
+
+    def handle_exception(self, exc):
+        # Sem AI_BYOK_ENCRYPTION_KEY no servidor não dá para cifrar a chave.
+        # Vira 503 com código próprio em vez de 500 genérico, para a tela poder
+        # dizer que o problema é de configuração do servidor, não da chave.
+        if isinstance(exc, ImproperlyConfigured):
+            return Response(
+                {
+                    'detail': 'Indisponível: criptografia não configurada no servidor.',
+                    'code': 'BYOK_ENCRYPTION_UNAVAILABLE',
+                },
+                status=503,
+            )
+        return super().handle_exception(exc)

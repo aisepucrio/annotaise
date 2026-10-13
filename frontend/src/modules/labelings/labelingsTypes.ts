@@ -2,6 +2,42 @@ export type LabelingStatus = 'draft' | 'active' | 'archived' | 'finished';
 export type DistributionStrategy = 'auto' | 'specified' | 'per_person' | 'anonymous_mode';
 export type DecisionMode = 'manual' | 'llm';
 
+// Chaves de API de IA (BYOK) usadas no desempate por LLM
+export type AIProvider = 'openai' | 'anthropic' | 'gemini';
+
+// Uma chave da biblioteca do usuário. A chave em si nunca volta do backend —
+// só key_hint (últimos 4 caracteres) para dar para identificar qual é.
+export type AICredential = {
+  id: number;
+  name: string;
+  provider: AIProvider;
+  key_hint: string | null;
+  // Quantas rotulações usam esta chave: a tela avisa antes de remover
+  labelings_count: number;
+  created_at: string;
+  updated_at: string;
+};
+
+// Corpo de POST/PATCH /ai-credentials/ — api_key é opcional no PATCH, o que
+// permite renomear a credencial sem recolar o segredo
+export type AICredentialPayload = {
+  name: string;
+  provider: AIProvider;
+  api_key?: string;
+};
+
+// Resposta de GET /labelings/{id}/ai-config/. owned_by_me é false quando a
+// chave é de outro admin: dá para ver qual é, mas não para editá-la.
+export type LabelingAIConfig = {
+  is_configured: boolean;
+  credential_id: number | null;
+  name: string | null;
+  provider: AIProvider | null;
+  key_hint: string | null;
+  owned_by_me: boolean;
+  updated_at: string | null;
+};
+
 // Fields returned by the backend for a labeling
 export type Labeling = {
   id: number;

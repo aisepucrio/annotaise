@@ -1,11 +1,16 @@
-import base64
-import json
-import os
 from collections import Counter
 from datetime import datetime, timezone
-from pathlib import Path
-from urllib import error, request
 
+from django.views.decorators.debug import sensitive_variables
+
+from . import llm_clients
+from .llm_prompt import (
+    UnsupportedContext,
+    build_prompt,
+    format_contexts,
+    normalized_options,
+    parse_vote,
+)
 
 OLLAMA_MODELS_CODE = [
     "qwen3-coder:30b",
@@ -20,25 +25,111 @@ OLLAMA_MODELS_GENERAL = [
     "mistral-nemo:12b",
 ]
 
+BYOK_MODEL_POOL = "byok"
 
-VIDEO_CONTEXT_ERROR_CODE = "UNSUPPORTED_VIDEO_CONTEXT"
-VIDEO_CONTEXT_ERROR_MESSAGE = (
-    "Não foi possível fazer essa pergunta decisiva porque existe contexto do tipo "
-    "'video' que a decisão por LLM não consegue rotular."
-)
+NO_VALID_OPTIONS = ("NO_VALID_OPTIONS", "Não há opções válidas para a pergunta decisiva.")
 
-AUDIO_CONTEXT_ERROR_CODE = "UNSUPPORTED_AUDIO_CONTEXT"
-AUDIO_CONTEXT_ERROR_MESSAGE = (
-    "Não foi possível fazer essa pergunta decisiva porque existe contexto do tipo "
-    "'audio' que a decisão por LLM não consegue rotular."
-)
+_MAX_ERROR_LENGTH = 500
 
 
-def _normalize_key(value):
-    return str(value).strip().casefold()
+def tiebreak_result(*, model_pool, models_used=(), models=(), vote_count=None, error=None, error_message=None):
+    vote_count = dict(vote_count or {})
+    winner, tied = _winner_from_votes(vote_count)
+    return {
+        "attempted_at": datetime.now(timezone.utc).isoformat(),
+        "model_pool": model_pool,
+        "models_used": list(models_used),
+        "models": list(models),
+        "vote_count": vote_count,
+        "winner": winner,
+        "tied": tied,
+        "valid_votes": sum(vote_count.values()),
+        "error": error,
+        "error_message": error_message,
+    }
 
 
-def _select_models_for_contexts(contexts):
+def run_llm_tiebreak_decision(*, labeling_guide, question_text, options, contexts):
+    models, pool = _ollama_models_for(contexts)
+    return _vote(
+        model_pool=pool,
+        models=models,
+        ask=llm_clients.ollama_generate,
+        labeling_guide=labeling_guide,
+        question_text=question_text,
+        options=options,
+        contexts=contexts,
+    )
+
+
+@sensitive_variables("api_key")
+def run_llm_tiebreak_decision_byok(*, provider, api_key, labeling_guide, question_text, options, contexts):
+    model_name = llm_clients.PROVIDER_MODEL_MAP.get(provider)
+    if not model_name:
+        return tiebreak_result(
+            model_pool=BYOK_MODEL_POOL,
+            error="UNSUPPORTED_PROVIDER",
+            error_message=f"Provedor de IA não suportado: {provider}.",
+        )
+
+    return _vote(
+        model_pool=BYOK_MODEL_POOL,
+        models=[model_name],
+        ask=lambda model, prompt: llm_clients.cloud_completion(model, api_key, prompt),
+        secret=api_key,
+        labeling_guide=labeling_guide,
+        question_text=question_text,
+        options=options,
+        contexts=contexts,
+    )
+
+
+@sensitive_variables("secret")
+def _vote(*, model_pool, models, ask, labeling_guide, question_text, options, contexts, secret=None):
+    options_by_key = normalized_options(options)
+    if not options_by_key:
+        code, message = NO_VALID_OPTIONS
+        return tiebreak_result(model_pool=model_pool, error=code, error_message=message)
+
+    try:
+        contexts_text = format_contexts(contexts)
+    except UnsupportedContext as exc:
+        return tiebreak_result(
+            model_pool=model_pool, models_used=models, error=exc.code, error_message=exc.message
+        )
+
+    prompt = build_prompt(labeling_guide, contexts_text, question_text, list(options_by_key.values()))
+
+    model_results = [_ask_model(model, prompt, ask, options_by_key, secret) for model in models]
+    votes = Counter(result["vote"] for result in model_results if result["vote"])
+
+    return tiebreak_result(
+        model_pool=model_pool, models_used=models, models=model_results, vote_count=votes
+    )
+
+
+@sensitive_variables("secret")
+def _ask_model(model_name, prompt, ask, options_by_key, secret):
+    try:
+        raw_response = ask(model_name, prompt)
+    except Exception as exc:
+        return {
+            "model": model_name,
+            "status": "error",
+            "vote": None,
+            "error": _redact(str(exc), secret),
+        }
+
+    vote = parse_vote(raw_response, options_by_key)
+    return {
+        "model": model_name,
+        "status": "ok" if vote else "invalid_vote",
+        "vote": vote,
+        "raw_response": str(raw_response).strip() if raw_response is not None else "",
+    }
+
+
+def _ollama_models_for(contexts):
     has_code_context = any(
         str((context or {}).get("context_type") or "").strip().lower() == "code"
         for context in (contexts or [])
@@ -48,342 +139,17 @@ def _select_models_for_contexts(contexts):
     return OLLAMA_MODELS_GENERAL, "general"
 
 
-def _is_http_url(value):
-    text = str(value).strip().lower()
-    return text.startswith("http://") or text.startswith("https://")
+def _winner_from_votes(vote_count):
+    if not vote_count:
+        return None, False
+    max_votes = max(vote_count.values())
+    top_options = [option for option, count in vote_count.items() if count == max_votes]
+    if len(top_options) == 1:
+        return top_options[0], False
+    return None, True
 
 
-def _is_data_url(value):
-    text = str(value).strip().lower()
-    return text.startswith("data:image/")
-
-
-def _looks_like_file_path(value):
-    text = str(value).strip()
-    if not text:
-        return False
-    if text.startswith("/") or text.startswith("./") or text.startswith("../"):
-        return True
-    return any(text.lower().endswith(ext) for ext in (".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp"))
-
-
-def _read_url_bytes(url, timeout_seconds):
-    req = request.Request(url, method="GET")
-    with request.urlopen(req, timeout=timeout_seconds) as resp:
-        return resp.read()
-
-
-def _read_image_bytes(image_value, timeout_seconds):
-    if image_value is None:
-        return None, "IMAGE_VALUE_EMPTY"
-
-    raw = str(image_value).strip()
-    if not raw:
-        return None, "IMAGE_VALUE_EMPTY"
-
-    if _is_data_url(raw):
-        try:
-            _, b64 = raw.split(",", 1)
-            return base64.b64decode(b64), None
-        except Exception:
-            return None, "IMAGE_DATA_URL_INVALID"
-
-    if _is_http_url(raw):
-        try:
-            return _read_url_bytes(raw, timeout_seconds), None
-        except Exception as exc:
-            return None, f"IMAGE_DOWNLOAD_ERROR: {exc}"
-
-    if _looks_like_file_path(raw):
-        path = Path(raw)
-        if path.exists() and path.is_file():
-            try:
-                return path.read_bytes(), None
-            except Exception as exc:
-                return None, f"IMAGE_FILE_READ_ERROR: {exc}"
-        return None, "IMAGE_FILE_NOT_FOUND"
-
-    return None, "IMAGE_SOURCE_UNSUPPORTED"
-
-
-def _call_ollama_chat(base_url, timeout_seconds, payload):
-    req = request.Request(
-        f"{base_url.rstrip('/')}/api/chat",
-        data=json.dumps(payload).encode("utf-8"),
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
-    with request.urlopen(req, timeout=timeout_seconds) as resp:
-        raw = resp.read().decode("utf-8")
-    return json.loads(raw)
-
-
-def _describe_image_with_ollama(base_url, timeout_seconds, image_value):
-    image_model = os.getenv("OLLAMA_IMAGE_CONTEXT_MODEL", "llava:7b")
-    image_bytes, read_error = _read_image_bytes(image_value, timeout_seconds)
-    if read_error:
-        return None, read_error
-
-    image_b64 = base64.b64encode(image_bytes).decode("utf-8")
-    payload = {
-        "model": image_model,
-        "stream": False,
-        "options": {"temperature": 0},
-        "messages": [
-            {
-                "role": "user",
-                "content": (
-                    "Descreva objetivamente esta imagem para decisão de anotação. "
-                    "Foque em sinais visuais úteis para classificar opções."
-                ),
-                "images": [image_b64],
-            }
-        ],
-    }
-    try:
-        response = _call_ollama_chat(base_url, timeout_seconds, payload)
-        description = (
-            response.get("message", {}).get("content", "")
-            if isinstance(response, dict)
-            else ""
-        )
-        description = str(description).strip()
-        if not description:
-            return None, "IMAGE_DESCRIPTION_EMPTY"
-        return description, None
-    except Exception as exc:
-        return None, f"IMAGE_DESCRIPTION_ERROR: {exc}"
-
-
-def _format_contexts_for_prompt(contexts, base_url, timeout_seconds):
-    lines = []
-
-    for idx, context in enumerate(contexts or [], start=1):
-        context_type = str(context.get("context_type") or "text").strip().lower()
-        label = (
-            str(context.get("label") or context.get("column_name") or f"Contexto {idx}")
-            .strip()
-        )
-        value = context.get("value")
-
-        if context_type == "video":
-            return None, {
-                "error": VIDEO_CONTEXT_ERROR_CODE,
-                "error_message": VIDEO_CONTEXT_ERROR_MESSAGE,
-            }
-
-        if context_type == "audio":
-            return None, {
-                "error": AUDIO_CONTEXT_ERROR_CODE,
-                "error_message": AUDIO_CONTEXT_ERROR_MESSAGE,
-            }
-
-        if context_type == "image":
-            description, err = _describe_image_with_ollama(
-                base_url=base_url,
-                timeout_seconds=timeout_seconds,
-                image_value=value,
-            )
-            if err:
-                return None, {
-                    "error": "IMAGE_CONTEXT_PROCESSING_ERROR",
-                    "error_message": f"Não foi possível processar contexto de imagem ({label}): {err}",
-                }
-            lines.append(f"{idx}. {label} [image]\nDescrição: {description}")
-            continue
-
-        if context_type == "code":
-            code_text = "" if value is None else str(value)
-            lines.append(f"{idx}. {label} [code]\n```text\n{code_text}\n```")
-            continue
-
-        text_value = "(sem valor)"
-        if value is not None and str(value).strip():
-            text_value = str(value).strip()
-        lines.append(f"{idx}. {label} [{context_type}]\n{text_value}")
-
-    return "\n\n".join(lines) if lines else "(sem contextos disponíveis)", None
-
-
-def _parse_vote(raw_response, normalized_options):
-    if raw_response is None:
-        return None
-
-    candidate = str(raw_response).strip()
-    if not candidate:
-        return None
-
-    exact = normalized_options.get(_normalize_key(candidate))
-    if exact:
-        return exact
-
-    try:
-        parsed_json = json.loads(candidate)
-    except (json.JSONDecodeError, TypeError):
-        parsed_json = None
-
-    if isinstance(parsed_json, dict):
-        for key in ("answer", "option", "choice", "response"):
-            if key in parsed_json:
-                option = normalized_options.get(_normalize_key(parsed_json[key]))
-                if option:
-                    return option
-
-    matches = []
-    lowered = _normalize_key(candidate)
-    for original in normalized_options.values():
-        option_key = _normalize_key(original)
-        if option_key and option_key in lowered:
-            matches.append(original)
-
-    if len(matches) == 1:
-        return matches[0]
-
-    return None
-
-
-def _build_prompt(labeling_guide, contexts_text, question_text, options):
-    options_text = "\n".join([f"- {option}" for option in options])
-
-    return (
-        "Você é um árbitro de desempate de anotação.\n"
-        "Tarefa: escolher exatamente UMA opção da pergunta decisiva.\n"
-        "Regras:\n"
-        "1. Use somente o guia, contexto e pergunta fornecidos.\n"
-        "2. Retorne APENAS o texto exato de uma opção da lista.\n"
-        "3. Não explique, não adicione texto extra.\n\n"
-        f"GUIA COMPLETO:\n{labeling_guide or '(sem guia)'}\n\n"
-        f"CONTEXTO DO ITEM:\n{contexts_text}\n\n"
-        f"PERGUNTA DECISIVA:\n{question_text or '(sem texto)'}\n\n"
-        f"OPÇÕES VÁLIDAS:\n{options_text}\n"
-    )
-
-
-def _call_ollama_model(base_url, timeout_seconds, model_name, prompt):
-    payload = {
-        "model": model_name,
-        "prompt": prompt,
-        "stream": False,
-        "options": {"temperature": 0},
-    }
-    req = request.Request(
-        f"{base_url.rstrip('/')}/api/generate",
-        data=json.dumps(payload).encode("utf-8"),
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
-    with request.urlopen(req, timeout=timeout_seconds) as resp:
-        raw = resp.read().decode("utf-8")
-    parsed = json.loads(raw)
-    return parsed.get("response")
-
-
-def run_llm_tiebreak_decision(*, labeling_guide, question_text, options, contexts):
-    normalized_options = {
-        _normalize_key(option): option
-        for option in options
-        if str(option).strip()
-    }
-    valid_options = list(normalized_options.values())
-    attempt_time = datetime.now(timezone.utc).isoformat()
-
-    if not valid_options:
-        return {
-            "attempted_at": attempt_time,
-            "models": [],
-            "vote_count": {},
-            "winner": None,
-            "tied": False,
-            "valid_votes": 0,
-            "error": "NO_VALID_OPTIONS",
-            "error_message": "Não há opções válidas para a pergunta decisiva.",
-        }
-
-    base_url = os.getenv("OLLAMA_BASE_URL", "http://host.docker.internal:11434")
-    timeout_seconds = float(os.getenv("OLLAMA_TIMEOUT_SECONDS", "60"))
-
-    contexts_text, context_error = _format_contexts_for_prompt(
-        contexts=contexts,
-        base_url=base_url,
-        timeout_seconds=timeout_seconds,
-    )
-    if context_error:
-        return {
-            "attempted_at": attempt_time,
-            "models": [],
-            "vote_count": {},
-            "winner": None,
-            "tied": False,
-            "valid_votes": 0,
-            "error": context_error["error"],
-            "error_message": context_error["error_message"],
-        }
-
-    selected_models, selected_pool = _select_models_for_contexts(contexts)
-    prompt = _build_prompt(labeling_guide, contexts_text, question_text, valid_options)
-
-    model_results = []
-    counter = Counter()
-
-    for model_name in selected_models:
-        try:
-            raw_response = _call_ollama_model(
-                base_url=base_url,
-                timeout_seconds=timeout_seconds,
-                model_name=model_name,
-                prompt=prompt,
-            )
-            vote = _parse_vote(raw_response, normalized_options)
-            if vote:
-                counter[vote] += 1
-                model_results.append(
-                    {
-                        "model": model_name,
-                        "status": "ok",
-                        "vote": vote,
-                        "raw_response": str(raw_response).strip(),
-                    }
-                )
-            else:
-                model_results.append(
-                    {
-                        "model": model_name,
-                        "status": "invalid_vote",
-                        "vote": None,
-                        "raw_response": (
-                            str(raw_response).strip() if raw_response is not None else ""
-                        ),
-                    }
-                )
-        except Exception as exc:
-            model_results.append(
-                {
-                    "model": model_name,
-                    "status": "error",
-                    "vote": None,
-                    "error": str(exc),
-                }
-            )
-
-    winner = None
-    tied = False
-    if counter:
-        max_votes = max(counter.values())
-        top_options = [option for option, count in counter.items() if count == max_votes]
-        if len(top_options) == 1:
-            winner = top_options[0]
-        else:
-            tied = True
-
-    return {
-        "attempted_at": attempt_time,
-        "model_pool": selected_pool,
-        "models_used": selected_models,
-        "models": model_results,
-        "vote_count": dict(counter),
-        "winner": winner,
-        "tied": tied,
-        "valid_votes": sum(counter.values()),
-        "error": None,
-        "error_message": None,
-    }
+def _redact(text, secret):
+    if secret:
+        text = text.replace(secret, "[REDACTED]")
+    return text[:_MAX_ERROR_LENGTH]

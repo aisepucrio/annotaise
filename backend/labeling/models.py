@@ -3,6 +3,8 @@ from django.utils import timezone
 from django.conf import settings
 from django.core.exceptions import ValidationError
 
+from .querysets import AICredentialQuerySet
+
 class Labeling(models.Model):
     class Status(models.TextChoices):
         DRAFT = "draft", "Rascunho"
@@ -51,6 +53,17 @@ class Labeling(models.Model):
     items_per_group = models.JSONField(default=dict, blank=True,)
 
     decisive_question = models.ForeignKey("LabelingElement", on_delete=models.SET_NULL, null=True, blank=True)
+
+    # Credencial de IA do desempate por LLM. Nula = Ollama local. SET_NULL para
+    # que apagar uma chave vazada não seja bloqueado pelas rotulações que a usam.
+    # Fora de LabelingSerializer de propósito: só a action 'ai_config' vincula.
+    ai_credential = models.ForeignKey(
+        "AICredential",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="labelings",
+    )
 
     class Meta:
         ordering = ["-created_at", "title"]
@@ -258,3 +271,41 @@ class LabelingMembership(models.Model):
 
     def __str__(self):
         return f"{self.user} {self.labeling} {self.role} {self.items_done}"
+
+
+class AIProvider(models.TextChoices):
+    """Provedores de LLM aceitos no desempate com chave própria."""
+    OPENAI = "openai", "OpenAI"
+    ANTHROPIC = "anthropic", "Anthropic"
+    GEMINI = "gemini", "Gemini"
+
+
+class AICredential(models.Model):
+    """Chave de API de IA cadastrada uma vez e reutilizada por N rotulações.
+
+    O escopo é o usuário: cada admin tem sua própria biblioteca de chaves.
+    Trocar uma chave revogada é uma edição só, e vale para todas as rotulações
+    que apontam para a credencial.
+    """
+
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="ai_credentials"
+    )
+    # Nome dado pelo dono ("Minha conta OpenAI"): a chave nunca é exibida.
+    name = models.CharField(max_length=80)
+    provider = models.CharField(max_length=16, choices=AIProvider.choices)
+    # base64(nonce || AES-256-GCM ciphertext+tag) — ver annotaise/crypto.py.
+    encrypted_api_key = models.TextField()
+    # Últimos caracteres da chave, só para exibir no frontend.
+    key_hint = models.CharField(max_length=8, blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    objects = AICredentialQuerySet.as_manager()
+
+    class Meta:
+        unique_together = ("owner", "name")
+        ordering = ["name"]
+
+    def __str__(self):
+        return f"{self.name} [{self.get_provider_display()}]"
