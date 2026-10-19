@@ -11,12 +11,22 @@ type UserQuestionWrapperProps = {
   element: LabelingStructureElement;
   value: unknown;
   answers: Record<string, unknown>;
+  /** The item's CSV row, forwarded to question types that display column content. */
+  payload?: Record<string, unknown>;
   t?: TranslateFn;
   onChange: (value: unknown) => void;
   onAnswerChange: (questionId: string | number, value: unknown) => void;
 };
 
-export default function QuestionWrapper({ element, value, answers, t: tProp, onChange, onAnswerChange }: UserQuestionWrapperProps) {
+export default function QuestionWrapper({
+  element,
+  value,
+  answers,
+  payload,
+  t: tProp,
+  onChange,
+  onAnswerChange,
+}: UserQuestionWrapperProps) {
   const { t: defaultT } = useTranslations();
   const t = tProp ?? defaultT;
   const dataType = getQuestionDataType(element);
@@ -47,6 +57,7 @@ export default function QuestionWrapper({ element, value, answers, t: tProp, onC
             element,
             value,
             answers,
+            payload,
             t,
             onChange,
             onAnswerChange,

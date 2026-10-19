@@ -127,6 +127,10 @@ class LabelingElement(models.Model):
         RANGE = "range", "Faixa"
         EMAIL = "email", "Email"
         CONTEXT = "context", "Contexto"
+        # The annotator drags CSV columns into order. Which columns take part is stored in
+        # multiple_choice_items (text = column name, order = starting position), so no new
+        # table is needed. The answer is the ordered list of those column names.
+        RANKING = "ranking", "Ordenação"
 
     class ContextType(models.TextChoices):
         TEXT = "text", "Texto"

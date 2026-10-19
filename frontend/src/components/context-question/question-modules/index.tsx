@@ -10,6 +10,7 @@ import NumberQuestionModule from './Number';
 import LinearScaleQuestionModule from './LinearScale';
 import MultipleChoiceQuestionModule from './MultipleChoice';
 import EmailQuestionModule from './Email';
+import RankingQuestionModule from './Ranking';
 
 export const questionModules: Record<QuestionDataType, QuestionModule> = {
   text: TextQuestionModule,
@@ -17,6 +18,7 @@ export const questionModules: Record<QuestionDataType, QuestionModule> = {
   'linear-scale': LinearScaleQuestionModule,
   'multiple-choice': MultipleChoiceQuestionModule,
   email: EmailQuestionModule,
+  ranking: RankingQuestionModule,
 };
 
 type RenderQuestionModuleArgs =
@@ -53,4 +55,11 @@ export function renderQuestionModule(args: RenderQuestionModuleArgs) {
   return <Component {...args.props} dataType={args.dataType} pageType="response-visualization" />;
 }
 
-export { TextQuestionModule, NumberQuestionModule, LinearScaleQuestionModule, MultipleChoiceQuestionModule, EmailQuestionModule };
+export {
+  TextQuestionModule,
+  NumberQuestionModule,
+  LinearScaleQuestionModule,
+  MultipleChoiceQuestionModule,
+  EmailQuestionModule,
+  RankingQuestionModule,
+};
