@@ -11,6 +11,7 @@ import { useLabelingDashboardQuery } from '@/modules/labelings/labelingQueries';
 import InfiniteScroll from '@/components/InfiniteScroll';
 import { toast } from 'sonner';
 import { useTranslations } from '@/i18n/use-translations';
+import {Draggable, Droppable, DragDropContext} from '@hello-pangea/dnd';
 
 export default function LabelingsPage() {
   const { t } = useTranslations();
@@ -39,54 +40,63 @@ export default function LabelingsPage() {
     router.push(mustAnswerBackgroundFirst ? `/labelings/${labelingId}/background` : `/labelings/${labelingId}/answer`);
   };
 
+  function onDragEnd(result: any) {
+    
+  }
+
   return (
-    <PageLayout
-      pageTitle={t('labelings.title')}
-      tooltip={t('labelings.tooltip')}
-      description={t('labelings.description')}
-      searchPlaceholder={t('labelings.searchPlaceholder')}
-      onSearch={setDebouncedSearch}
-      filterButtonText={t('filterBar.filterButton')}
-      isLoading={isLoading}
-      message={!isLoading && labelingsList.length === 0 ? t('labelings.empty') : undefined}
-      minColumnWidth="420px"
-      footer={
-        // totalCount intentionally omitted: this dashboard discards labelings whose
-        // group quota is already filled after counting, so the server total is only
-        // an upper bound — we show what's actually on screen.
-        <InfiniteScroll
-          hasNextPage={hasNextPage}
-          isFetchingNextPage={isFetchingNextPage}
-          onLoadMore={loadMore}
-          loadedCount={labelingsList.length}
-        />
-      }
+      <PageLayout
+        pageTitle={t('labelings.title')}
+        tooltip={t('labelings.tooltip')}
+        description={t('labelings.description')}
+        searchPlaceholder={t('labelings.searchPlaceholder')}
+        onSearch={setDebouncedSearch}
+        filterButtonText={t('filterBar.filterButton')}
+        isLoading={isLoading}
+        message={!isLoading && labelingsList.length === 0 ? t('labelings.empty') : undefined}
+        minColumnWidth="420px"
+        footer={
+          // totalCount intentionally omitted: this dashboard discards labelings whose
+          // group quota is already filled after counting, so the server total is only
+          // an upper bound — we show what's actually on screen.
+          <InfiniteScroll
+            hasNextPage={hasNextPage}
+            isFetchingNextPage={isFetchingNextPage}
+            onLoadMore={loadMore}
+            loadedCount={labelingsList.length}
+          />
+      
+        }
     >
       {labelingsList.map((l, index) => {
         const mustAnswerBackgroundFirst = Boolean(l.background_required && !l.background_answered);
         return (
-          <GridItemCard key={l.id} index={index}>
-            <IndividualLabelingCard
-              title={l.labeling_name}
-              project={l.project_name ?? t('labelings.manage.noProject')}
-              daysPassed={l.days_passed}
-              daysTotal={l.total_days}
-              labelingsDone={l.items_done}
-              formMode={l.form_mode}
-              answersCollected={l.answers_collected}
-              variant="labelings"
-              actionButton={
-                <Button
-                  icon={<Tag size={20} strokeWidth={1.75} />}
-                  onClick={() => handleOpenLabeling(l.id, mustAnswerBackgroundFirst)}
-                  variant="normal"
-                  ariaLabel={t('labelings.action.answerAria')}
-                >
-                  {mustAnswerBackgroundFirst ? 'BACKGROUND' : t('labelings.action.answer')}
-                </Button>
-              }
-            />
-          </GridItemCard>
+          //Vou mexer aqui no conexto do drag
+                <GridItemCard key={l.id} index={index}>
+  
+                    <IndividualLabelingCard
+    
+                      index={index}
+                      title={l.labeling_name}
+                      project={l.project_name ?? t('labelings.manage.noProject')}
+                      daysPassed={l.days_passed}
+                      daysTotal={l.total_days}
+                      labelingsDone={l.items_done}
+                      formMode={l.form_mode}
+                      answersCollected={l.answers_collected}
+                      variant="labelings"
+                      actionButton={
+                        <Button
+                          icon={<Tag size={20} strokeWidth={1.75} />}
+                          onClick={() => handleOpenLabeling(l.id, mustAnswerBackgroundFirst)}
+                          variant="normal"
+                          ariaLabel={t('labelings.action.answerAria')}
+                        >
+                          {mustAnswerBackgroundFirst ? 'BACKGROUND' : t('labelings.action.answer')}
+                        </Button>
+                      }
+                  />
+                </GridItemCard>
         );
       })}
     </PageLayout>
