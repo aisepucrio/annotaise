@@ -12,6 +12,8 @@ import InfiniteScroll from '@/components/InfiniteScroll';
 import { toast } from 'sonner';
 import { useTranslations } from '@/i18n/use-translations';
 import {Draggable, Droppable, DragDropContext} from '@hello-pangea/dnd';
+import api from '@/lib/fetcher';
+import { useMutation } from '@tanstack/react-query';
 
 export default function LabelingsPage() {
   const { t } = useTranslations();
@@ -40,9 +42,6 @@ export default function LabelingsPage() {
     router.push(mustAnswerBackgroundFirst ? `/labelings/${labelingId}/background` : `/labelings/${labelingId}/answer`);
   };
 
-  function onDragEnd(result: any) {
-    
-  }
 
   return (
       <PageLayout

@@ -22,12 +22,13 @@ import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 import { useLabelingDashboardEditQuery } from '@/modules/labelings/labelingQueries';
 import { useProjectDashboardQuery, useProjectQuery } from '@/modules/projects/projectsQueries';
 import type { CreateLabelingWithCsvPayload } from '@/modules/labelings/labelingsTypes';
-import { useCreateLabelingWithCsvMutation } from '@/modules/labelings/labelingMutations';
+import { useCreateLabelingWithCsvMutation, useAssignLabelingToProjectMutation } from '@/modules/labelings/labelingMutations';
 import { useCreateProjectMutation } from '@/modules/projects/projectsMutations';
 import type { ProjectPayload } from '@/modules/projects/projectsTypes';
 
 import { useTranslations } from '@/i18n/use-translations';
 import { DragDropContext, Draggable, Droppable, DropResult } from '@hello-pangea/dnd';
+
 
 // 'labelings' flattens every folder away (no `project`/`ungrouped` filter reaches the
 // API, so the backend returns every labeling the user can edit); 'projects' hides that
@@ -107,6 +108,7 @@ export default function LabelingsPage() {
 
   const createLabelingWithCsv = useCreateLabelingWithCsvMutation();
   const createProject = useCreateProjectMutation();
+  const assignLabeling = useAssignLabelingToProjectMutation();
 
   useEffect(() => {
     if (error) {
@@ -135,6 +137,8 @@ export default function LabelingsPage() {
     return isComplete ? 'var(--green-blueberry)' : isLate ? 'var(--red-blueberry)' : undefined;
   };
 
+  
+
   // Built as a flat list (not fragments) because GridLayout counts children
   // to decide the number of columns.
   const gridChildren: ReactNode[] = [];
@@ -156,31 +160,34 @@ export default function LabelingsPage() {
   // Section titles only make sense when both sections actually appear.
   const hasBothSections = showProjects && showLabelings && projects.items.length > 0 && labelings.items.length > 0;
 
+    type AssignLabelingToProjectPayload = {
+    labelingId: number;
+    projectId: number;
+  };
+  
+
+
   function onDragEnd(result: DropResult) {
-      const { source, destination, draggableId } = result;
+    console.log('onDragEnd', result);
+    console.log('destination:', result.destination);
 
-      if (!destination) return;
+    const { destination, draggableId } = result;
 
-      if (
-    source.droppableId === destination.droppableId &&
-    source.index === destination.index
-      ) 
-        return;
-  
+    // soltou fora de qualquer área, ou em algo que não é um projeto
+    if (!destination || !destination.droppableId.startsWith('project-')) return;
 
-  const labelingId = Number(draggableId);
-  const destinationId = destination.droppableId;
-  
-  if (destinationId.startsWith('project-')) {
-    const projectId = Number(destinationId.replace('project-', ''));
-    console.log({
-      labelingId,
-      projectId,
-    });
+    const labelingId = Number(draggableId.replace('labeling-', ''));
+    const projectId = Number(destination.droppableId.replace('project-', ''));
+
+    assignLabeling.mutate(
+      { labelingId, projectId },
+      {
+        onError: (err) => toast.error(getApiErrorMessage(err, t('labelings.manage.createError'))),
+      }
+    );
   }
   
-  }
-  
+
 
   
   if (hasBothSections) {
@@ -191,11 +198,12 @@ export default function LabelingsPage() {
   if (showProjects) {
     projects.items.forEach((project, index) => {
       gridChildren.push(
-      <Droppable droppableId={`project-${project.id}`}>
+      <Droppable  key={`project-${project.id}`} droppableId={`project-${project.id}`}>
         {(provided) => (
           <div
             ref={provided.innerRef}
-            {...provided.droppableProps}>
+            {...provided.droppableProps}       
+>
         <GridItemCard key={`project-${project.id}`} index={index}>
           <IndividualProjectCard
             projectId={project.id}
@@ -224,10 +232,10 @@ export default function LabelingsPage() {
   visibleLabelings.forEach((l, index) => {
     gridChildren.push(
 
-      <Droppable droppableId={String(l.id)} direction="horizontal">
+      <Droppable key = {`labeling-drop-${l.id}`}droppableId={`labeling-drop-${l.id}`} direction="horizontal">
         {(provided) => (
           <div ref={provided.innerRef} {...provided.droppableProps}>
-        <Draggable key={l.id} draggableId={String(l.id)} index={index}>
+        <Draggable draggableId={`labeling-${l.id}`} index={0}>
           {(provided) => (
             <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
           <GridItemCard
@@ -263,6 +271,7 @@ export default function LabelingsPage() {
           </div>
           )}
         </Draggable>
+          {provided.placeholder}
         </div>
         )}
       </Droppable>
@@ -358,3 +367,4 @@ function SectionTitle({ children }: { children: ReactNode }) {
     <h2 className="col-span-full mt-2 text-sm font-semibold uppercase tracking-wide text-gray-500">{children}</h2>
   );
 }
+

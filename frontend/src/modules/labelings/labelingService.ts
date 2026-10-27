@@ -261,3 +261,8 @@ export async function fetchLabelingBackgroundAnswers(labelingId: number, userId?
   });
   return data;
 }
+
+export async function assignLabelingToProject(labelingId: number, projectId: number) {
+  const { data } = await api.patch(`/labelings/${labelingId}/`, { project: projectId });
+  return data;
+}
