@@ -7,7 +7,9 @@ import ReactQueryProvider from '@/lib/ReactQueryProvider';
 const montserrat = Montserrat({
   variable: '--font-montserrat',
   subsets: ['latin', 'latin-ext'],
-  weight: ['300', '400', '500', '600', '700', '800'],
+  // regular / medium / semibold / bold — ver styles/typography.css.
+  // 300 e 800 saíram: nenhuma ocorrência de font-light/font-extrabold no código.
+  weight: ['400', '500', '600', '700'],
 });
 
 export const metadata: Metadata = {

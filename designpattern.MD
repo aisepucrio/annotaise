@@ -416,6 +416,80 @@ Regras da listagem em scroll infinito (`modules/pagination.ts`,
    área rolável fica sempre visível e carrega a lista inteira de uma vez.
 4. Só passe `totalCount` quando o `count` do backend for exato (ver 5.3).
 
+### Estilo visual: 
+
+Spec completa: [frontend/TYPOGRAPHY.md](frontend/TYPOGRAPHY.md).
+
+Três camadas, e cada valor existe em exatamente uma delas:
+
+```
+Token      styles/typography.css   o valor:  14px, 600, rgba(...)
+Papel      classe ou receita       o nome:   text-title-3, surface-card, buttonSize.md
+Componente .tsx                    compõe papéis — nunca valores
+```
+
+5. **O componente nomeia papéis, nunca valores.** `text-title-3`, não
+   `text-lg font-semibold`. Nenhum tamanho, peso, sombra, cor literal ou valor
+   arbitrário (`text-[13px]`) em `className`.
+6. **Papel que falta nasce em `typography.css`**, com um comentário dizendo onde
+   é usado. Não se resolve no componente.
+7. **Um papel de texto já traz tamanho + entrelinha + peso + tracking.** Não se
+   empilha `font-semibold` nem `leading-*` sobre `text-title-*`.
+8. **Cor de texto vem de `text-text-*`.** `text-gray-*` e `text-slate-*` não
+   entram mais. A paleta `metal`/`blueberry` é acessada pelo papel, não direto.
+9. **Título é 600. Sempre.** 700 existe só para número (`text-metric`).
+10. **O tamanho do botão decide padding, altura, texto e ícone** — via
+    `buttonSize`. Nada de `className="px-4 py-2 text-sm"` na chamada.
+11. **Caixa é uma `surface-*`**: raio, sombra, fundo e padding vêm juntos.
+12. **Espaçamento vertical de texto vem de `stack.*`**, não de `mb-*` avulso.
+13. **Variante de cor é classe, não `style` inline.** `Button.tsx` viola isso
+    hoje — pinta por `style` com handlers de `onMouseEnter`/`onMouseLeave`, o que
+    impede `:hover` em CSS, variantes do Tailwind e modo escuro. Dívida
+    conhecida; código novo não repete.
+14. **Papel novo entra na story.**
+    [`src/stories/Typography.stories.tsx`](frontend/src/stories/Typography.stories.tsx)
+    é a referência visual e o teste de que o papel existe.
+
+Os raios ficaram de fora do sistema de propósito, para a introdução não mexer em
+nenhum pixel — ver seção 5 do TYPOGRAPHY.md antes de alterá-los.
+
+#### Como refatorar um arquivo
+
+O mapa de classe-antiga → classe-nova do TYPOGRAPHY.md resolve a maioria dos
+casos, mas **não é substituição cega**. `text-sm` aparece 230 vezes cumprindo ao
+menos cinco papéis diferentes. Pergunte o que o texto *é*:
+
+| O texto é… | Papel |
+| --- | --- |
+| rótulo de um campo | `.t-label` |
+| ajuda abaixo de um campo | `.t-helper` |
+| erro de um campo | `.t-error` |
+| texto dentro de um botão | nada — vem de `buttonSize` |
+| status curto, em caixa alta | `.t-overline` |
+| data, contagem, metadado | `text-caption` |
+| número de métrica | `text-metric` |
+| parágrafo para ler (guia, enunciado) | `text-body-lg` ou `.t-prose` |
+| qualquer outro texto de interface | `text-body` |
+
+Ordem dentro do arquivo:
+
+1. Trocar `<h*>` pelos `text-title-*` e apagar o `font-bold`/`font-semibold`
+   que sobrou.
+2. Trocar cor por `text-text-*`.
+3. Trocar a caixa por `surface-*` e apagar a sombra e o padding soltos.
+4. Tirar os overrides de `className` dos botões; passar `size`.
+5. Trocar os `mb-*`/`space-y-*` por `stack.*`.
+6. Ler a tela no navegador. A escala é 11/12/14/16/18/20/24/30 — se algo ficou
+   num tamanho fora dessa lista, sobrou um valor literal.
+
+```bash
+cd frontend
+grep -rnE "text-(xs|sm|base|lg|xl|[0-9]xl)\b|text-(gray|slate)-|font-bold|\
+text-\[|shadow-(sm|md|lg|xl|2xl)\b" src/
+```
+
+O arquivo refatorado não devolve nada nesse grep.
+
 ---
 
 ## 7. Estratégia de migração
@@ -450,3 +524,8 @@ migra quando for tocado. Não é aceitável adicionar lógica de domínio nova e
 - [ ] Listagem de pessoas passa por `humans()`.
 - [ ] Migration com índice para coluna de ordenação; `makemigrations --check` limpo.
 - [ ] Nenhum `LabelingMembership` criado para registrar acesso.
+- [ ] Nenhum tamanho, peso, sombra ou cor literal em `className`; só papéis
+      de `styles/typography.css`.
+- [ ] Nenhum `text-gray-*` / `text-slate-*`; cor de texto via `text-text-*`.
+- [ ] Botão sem override de padding ou de tamanho de texto — use `size`.
+- [ ] Papel visual novo documentado no TYPOGRAPHY.md e presente na story.
