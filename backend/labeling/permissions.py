@@ -80,3 +80,16 @@ class IsLabelingOwnerPermission(CanEditLabelingPermission):
     """Deleting the labeling is owner-only."""
     message = "Apenas o dono da rotulação pode excluí-la."
     roles = [LabelingMembership.Role.OWNER]
+
+
+class CanManageLabelingAIConfigPermission(IsLabelingOwnerPermission):
+    """Only the labeling owner links/unlinks the AI key used by the tiebreak."""
+    message = "Somente o dono da rotulação pode gerenciar a configuração de IA dela."
+
+
+class IsAICredentialOwnerPermission(BasePermission):
+    """The key library is private: read, edit and delete only your own."""
+    message = "Você só pode gerenciar as credenciais de IA que você mesmo cadastrou."
+
+    def has_object_permission(self, request, view, obj):
+        return obj.owner_id == request.user.id

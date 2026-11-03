@@ -2,8 +2,7 @@ from rest_framework import serializers
 from .models import Project, ProjectMembership
 from user.serializers import AdminUserReadSerializer
 
-LLM_TIEBREAK_USERNAME = "llm_tiebreak_bot"
-LLM_TIEBREAK_EMAIL = "llm_tiebreak_bot@annotaise.local"
+from common.constants import LLM_TIEBREAK_EMAIL, LLM_TIEBREAK_USERNAME
 
 class ProjectSerializer(serializers.ModelSerializer):
     class Meta:

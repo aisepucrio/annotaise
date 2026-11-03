@@ -1,6 +1,5 @@
 from .models import Answer, BackgroundAnswer
-from item.models import ItemMembership, Item
-from user.models import UserGroup
+from item.models import Item
 from .serializers import (
     AnswerSerializer,
     AnswerDashboardSerializer,
@@ -8,7 +7,9 @@ from .serializers import (
 )
 from labeling.models import LabelingElement
 from labeling.models import Labeling, LabelingMembership, LabelingSection
+from common.constants import LLM_TIEBREAK_USERNAME
 from annotaise.pagination import StandardCursorPagination
+from .session_llm_key import pop_user_llm_key
 
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
@@ -17,9 +18,16 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.views import APIView
 from user.permissions import IsAdminAccount
 from django.http import HttpResponse
-from .permissions import CanAnswerLabelingPermission
+from .permissions import CanAnswerLabelingPermission, HasItemReservationPermission
 from labeling.permissions import CanEditLabelingPermission, can_annotate_labeling
-from .services.llm_tiebreak import run_llm_tiebreak_decision
+from .services.exceptions import (
+    BackgroundFormRequired,
+    DecisionInputError,
+    ItemAlreadyFinished,
+    NoGroupSlotAvailable,
+    ReservationMissing,
+)
+from .services.submit_answer import submit_answer
 
 import pandas as pd
 
@@ -27,8 +35,7 @@ from rest_framework.generics import ListAPIView
 from django.db.models import F, Q
 from django.db import transaction
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from django.contrib.auth import get_user_model
-#TODO better to use a permission class to check ItemMembership existence.
+from django.views.decorators.debug import sensitive_variables
 class AnswerViewset(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
     serializer_class = AnswerSerializer
@@ -37,7 +44,7 @@ class AnswerViewset(viewsets.ModelViewSet):
     def get_permissions(self):
 
         if self.action in ['create']:
-            perm = [CanAnswerLabelingPermission()]
+            perm = [CanAnswerLabelingPermission(), HasItemReservationPermission()]
         else:
             perm = [IsAdminAccount()]
         return perm
@@ -60,282 +67,44 @@ class AnswerViewset(viewsets.ModelViewSet):
 
         return qs
 
-    def _get_or_create_llm_tiebreak_user(self):
-        User = get_user_model()
-        username = "llm_tiebreak_bot"
-        email = "llm_tiebreak_bot@annotaise.local"
-
-        user = User.objects.filter(username=username).first()
-        if user:
-            return user
-
-        user = User.objects.filter(email__iexact=email).first()
-        if user:
-            if not user.username:
-                user.username = username
-                user.save(update_fields=["username"])
-            return user
-
-        user = User.objects.create(
-            username=username,
-            email=email,
-            first_name="LLM",
-            last_name="TieBreak",
-            account_type="standard",
-            is_active=True,
-            onboarding_status="active",
-        )
-        user.set_unusable_password()
-        user.save(update_fields=["password"])
-        return user
-
-    def _resolve_vote_winner(self, decision_dict):
-        biggest = 0
-        winner = None
-        tied = False
-        for answer, number_of_appearences in decision_dict.items():
-            if number_of_appearences > biggest:
-                biggest = number_of_appearences
-                winner = answer
-                tied = False
-            elif number_of_appearences == biggest:
-                tied = True
-        return (winner is not None) and (not tied), winner
-
-    def _build_llm_contexts(self, item):
-        payload = item.payload if isinstance(item.payload, dict) else {}
-        contexts = []
-        context_elements = (
-            LabelingElement.objects
-            .filter(
-                labeling_section__labeling=item.labeling,
-                labeling_section__form_type=LabelingSection.FormType.MAIN,
-                question_type=LabelingElement.QuestionType.CONTEXT,
-            )
-            .order_by("labeling_section__order", "order", "id")
-        )
-
-        for element in context_elements:
-            value = None
-            if element.column_name:
-                value = payload.get(element.column_name)
-            if value is None:
-                value = payload.get(str(element.id), payload.get(element.id))
-
-            contexts.append(
-                {
-                    "context_type": element.context_type or "text",
-                    "label": element.text or element.column_name or f"contexto_{element.id}",
-                    "column_name": element.column_name,
-                    "value": value,
-                }
-            )
-
-        return contexts
-
+    @sensitive_variables("session_llm_key")
     def create(self, request, *args, **kwargs):
-        user = request.user
-        data = request.data
+        # Tira a chave de IA da sessão do request antes de qualquer outra coisa.
+        session_llm_key = pop_user_llm_key(request)
 
-        item_id = data.get('item')
-        item = get_object_or_404(Item,pk=item_id)
-
-        # Ensures the user holds a membership for this item. TODO: this really belongs in the permission class... T-T
-        membership = ItemMembership.objects.filter(
-            user=user,
-            item_id=item_id,
-        ).first()
-        if not membership:
-            return Response(
-                {'detail': 'Você não pode responder a esse item da rotulação.'},
-                status=403
-        )
-        # TODO: I think 'finished' should really be part of the enum...
-        if item.status == 'finished':
-            return Response(
-                {'detail': 'Esse item já foi finalizado e não pode mais receber respostas.'},
-                status=403
-        )
-
-        labeling:Labeling = item.labeling
-        if labeling.has_background_form and not BackgroundAnswer.objects.filter(
-            labeling=labeling,
-            answered_by=user,
-        ).exists():
-            return Response(
-                {
-                    "detail": "Você precisa responder o formulário background antes de rotular.",
-                    "code": "BACKGROUND_REQUIRED",
-                },
-                status=403,
-            )
-
-        if labeling.decision == True and labeling.decisive_question is None:
-            return Response(
-                {'detail': 'Rotulação configurada para decisão, mas pergunta decisiva não definida. Contate o dono da rotulação.'},
-                status=400
-        )
-
-
-        serializer = self.get_serializer(data=data, context={'request':request})
+        item = get_object_or_404(Item, pk=request.data.get('item'))
+        serializer = self.get_serializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
-        payload = serializer.validated_data.get("answer_payload", {})
-        decisive_answer = None
-        if labeling.decision == True:
-            decisive_element = labeling.decisive_question
-            decisive_id = decisive_element.id
 
-            # When validation is decision-based, check whether the required number
-            # of answers to finish the labeling has been reached.
-            answer_value = None
-            if isinstance(payload, dict):
-                answer_value = payload.get(str(decisive_id))
-                if answer_value is None:
-                    answer_value = payload.get(decisive_id)
-            if answer_value is None:
-                return Response(
-                    {"detail": "Resposta da pergunta decisiva não encontrada."},
-                    status=400,
-                )
-            decisive_answer = str(answer_value)
-
-        with transaction.atomic():
-            item = (
-                Item.objects
-                .select_for_update()
-                .select_related("labeling")
-                .get(id=item_id)
+        try:
+            result = submit_answer(
+                user=request.user,
+                item=item,
+                answer_payload=serializer.validated_data.get("answer_payload", {}),
+                session_llm_key=session_llm_key,
             )
-            labeling = item.labeling
+        except (ItemAlreadyFinished, BackgroundFormRequired, ReservationMissing) as exc:
+            return self._rejected(exc, status=403)
+        except DecisionInputError as exc:
+            return self._rejected(exc, status=400)
+        except NoGroupSlotAvailable as exc:
+            return self._rejected(exc, status=409)
 
-            # Group quotas are checked at distribution time, but reservations don't
-            # consume slots: between reservation and submission, other answers may
-            # have filled the slots this user could have occupied. Recheck under
-            # the item lock (which serializes concurrent answers) and, if no
-            # compatible slot remains, release the reservation and return a code
-            # for the frontend to fetch another item.
-            if labeling.has_group_quotas:
-                user_group_names = set(
-                    UserGroup.objects
-                    .filter(memberships__user=user)
-                    .values_list('name', flat=True)
-                )
-                if not Item._slot_open(item.remaining_groups(), user_group_names):
-                    membership.delete()
-                    return Response(
-                        {
-                            'detail': 'Os slots restantes deste item são reservados para outros grupos.',
-                            'code': 'NO_GROUP_SLOT',
-                        },
-                        status=409,
-                    )
+        response_data = self.get_serializer(result.answer).data
+        if result.decision_warning:
+            response_data = {**response_data, "decision_warning": result.decision_warning}
 
-            decision_warning = None
-            self.perform_create(serializer)
+        return Response(
+            response_data,
+            status=201,
+            headers=self.get_success_headers(response_data),
+        )
 
-            membership.delete()
-
-            if labeling.decision == True:
-                decision_dict = item.decision_payload or {}
-                fields_to_update = ["decision_payload"]
-
-                decision_dict[decisive_answer] = decision_dict.get(decisive_answer, 0) + 1
-                item.decision_payload = decision_dict
-
-                answer_count = Answer.objects.filter(item_id=item_id).count()
-                if labeling.users_per_item <= answer_count:
-                    has_winner, biggest_answer = self._resolve_vote_winner(decision_dict)
-                    if has_winner:
-                        item.status = "finished"
-                        item.final_decision_source = "human"
-                        item.final_decision_value = biggest_answer
-                        fields_to_update.extend(
-                            ["status", "final_decision_source", "final_decision_value"]
-                        )
-                    elif (
-                        labeling.decision_mode == Labeling.DecisionMode.LLM
-                        and not item.llm_tiebreak_attempted
-                    ):
-                        options = list(
-                            decisive_element.multiple_choice_items.order_by("order", "id").values_list(
-                                "text", flat=True
-                            )
-                        )
-                        try:
-                            llm_result = run_llm_tiebreak_decision(
-                                labeling_guide=labeling.guide,
-                                question_text=decisive_element.text,
-                                options=options,
-                                contexts=self._build_llm_contexts(item),
-                            )
-                        except Exception as exc:
-                            llm_result = {
-                                "models": [],
-                                "vote_count": {},
-                                "winner": None,
-                                "tied": False,
-                                "valid_votes": 0,
-                                "error": str(exc),
-                                "error_message": (
-                                    "Não foi possível executar a decisão por LLM neste item."
-                                ),
-                            }
-                        item.llm_tiebreak_attempted = True
-                        item.llm_tiebreak_result = llm_result
-                        fields_to_update.extend(
-                            ["llm_tiebreak_attempted", "llm_tiebreak_result"]
-                        )
-                        decision_warning = llm_result.get("error_message")
-
-                        llm_winner = llm_result.get("winner")
-                        if llm_winner:
-                            llm_user = self._get_or_create_llm_tiebreak_user()
-                            llm_answer_payload = {str(decisive_element.id): llm_winner}
-                            Answer.objects.create(
-                                item=item,
-                                labeling=labeling,
-                                answered_by=llm_user,
-                                answer_payload=llm_answer_payload,
-                            )
-                            decision_dict[llm_winner] = decision_dict.get(llm_winner, 0) + 1
-                            item.decision_payload = decision_dict
-                            item.status = "finished"
-                            item.final_decision_source = "llm"
-                            item.final_decision_value = llm_winner
-                            fields_to_update.extend(
-                                [
-                                    "status",
-                                    "final_decision_source",
-                                    "final_decision_value",
-                                    "decision_payload",
-                                ]
-                            )
-
-                item.save(update_fields=list(dict.fromkeys(fields_to_update)))
-
-                if not labeling.items.filter(~Q(status='finished')).exists():
-                    labeling.status = 'finished'
-                    labeling.save()
-
-                response_data = dict(serializer.data)
-                if decision_warning:
-                    response_data["decision_warning"] = decision_warning
-                return Response(response_data, status=201)
-
-            else:
-                obj = Item.objects.select_related('labeling').get(id=item_id)
-
-                if not labeling.form_mode and obj.labeling.users_per_item <= Answer.objects.filter(item__id=item_id).count():
-                    obj.status = 'finished'
-                    obj.save()
-
-                headers = self.get_success_headers(serializer.data)
-
-            if not labeling.form_mode and not labeling.items.filter(~Q(status='finished')).exists():
-                labeling.status = 'finished'
-                labeling.save()
-
-            return Response(serializer.data, status=201, headers=headers)
+    def _rejected(self, exc, status):
+        body = {'detail': str(exc)}
+        if exc.code:
+            body['code'] = exc.code
+        return Response(body, status=status)
 
     def _assert_owner_or_admin(self, answer):
         user = self.request.user
@@ -599,7 +368,7 @@ class ExportAnswersView(APIView):
             row["context_id"] = (answer.item.row_index or 0) + 1
             is_llm = (
                 answer.answered_by_id is not None
-                and answer.answered_by.username == "llm_tiebreak_bot"
+                and answer.answered_by.username == LLM_TIEBREAK_USERNAME
             )
             if not answer.answered_by_id:
                 row["user_id"] = "anonymous"

@@ -1,4 +1,4 @@
-from .models import Labeling, LabelingSection, LabelingElement, MultipleChoiceItem, QuestionRange, LabelingMembership
+from .models import Labeling, LabelingSection, LabelingElement, MultipleChoiceItem, QuestionRange, LabelingMembership, AICredential
 
 
 import uuid
@@ -6,8 +6,7 @@ from rest_framework import serializers
 from django.db import transaction
 from django.utils import timezone
 
-LLM_TIEBREAK_USERNAME = "llm_tiebreak_bot"
-LLM_TIEBREAK_EMAIL = "llm_tiebreak_bot@annotaise.local"
+from common.constants import LLM_TIEBREAK_EMAIL, LLM_TIEBREAK_USERNAME
 
 
 class LabelingSerializer(serializers.ModelSerializer):
@@ -407,3 +406,80 @@ class LabelingAgreementSummarySerializer(serializers.Serializer):
     min_agreement = serializers.IntegerField(min_value=2)
     max_min_agreement = serializers.IntegerField(min_value=2)
     questions = LabelingAgreementQuestionSerializer(many=True)
+
+
+class AICredentialSerializer(serializers.ModelSerializer):
+    """Formato da biblioteca de chaves. A escrita mora em services/ai_credentials.
+
+    `api_key` é write_only e não tem contrapartida de leitura: sai só o
+    `key_hint`. No update a chave é opcional, para permitir renomear a
+    credencial sem recolar o segredo.
+    """
+
+    api_key = serializers.CharField(
+        write_only=True, trim_whitespace=True, min_length=8, max_length=4096, required=False
+    )
+    # Anotado por AICredentialQuerySet.with_labelings_count().
+    labelings_count = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = AICredential
+        fields = ['id', 'name', 'provider', 'api_key', 'key_hint', 'labelings_count', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'key_hint', 'created_at', 'updated_at']
+
+    def validate(self, attrs):
+        if self.instance is None and not attrs.get('api_key'):
+            raise serializers.ValidationError({'api_key': 'Informe a chave de API.'})
+        return attrs
+
+
+class LabelingAICredentialLinkSerializer(serializers.Serializer):
+    """Entrada de POST /labelings/<id>/ai-config: qual credencial vincular.
+
+    O queryset do campo é restrito às credenciais de quem está pedindo, então o
+    próprio DRF rejeita apontar a rotulação para a chave de outro admin.
+    """
+
+    credential = serializers.PrimaryKeyRelatedField(
+        queryset=AICredential.objects.none(), allow_null=True
+    )
+
+    def __init__(self, *args, requesting_user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if requesting_user is not None:
+            self.fields['credential'].queryset = AICredential.objects.owned_by(requesting_user)
+
+
+class LabelingAIConfigSerializer(serializers.Serializer):
+    """Saída de /labelings/<id>/ai-config: qual credencial a rotulação usa.
+
+    Recebe a `Labeling` e lê `context['requesting_user']` para dizer se a
+    credencial é de quem está olhando — num lab a rotulação pode estar usando a
+    chave de outro admin, e a tela mostra qual é sem oferecê-la no seletor.
+    """
+
+    def to_representation(self, labeling):
+        credential = labeling.ai_credential
+        if credential is None:
+            return {
+                'is_configured': False,
+                'credential_id': None,
+                'name': None,
+                'provider': None,
+                'key_hint': None,
+                'owned_by_me': False,
+                'updated_at': None,
+            }
+
+        requesting_user = self.context.get('requesting_user')
+        return {
+            'is_configured': True,
+            'credential_id': credential.id,
+            'name': credential.name,
+            'provider': credential.provider,
+            'key_hint': credential.key_hint or None,
+            'owned_by_me': (
+                requesting_user is not None and credential.owner_id == requesting_user.id
+            ),
+            'updated_at': credential.updated_at,
+        }
