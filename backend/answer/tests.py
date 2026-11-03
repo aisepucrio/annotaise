@@ -1,3 +1,6 @@
+import csv
+import io
+
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.utils.timezone import now
@@ -755,3 +758,66 @@ class GroupQuotaAnswerEnforcementTest(TestCase):
         self.assertEqual(answer_a.responded_as, self.group_a)
         self.item.refresh_from_db()
         self.assertEqual(self.item.status, "finished")
+
+
+class ExportRankingAnswerTest(TestCase):
+    """A ranking answer is a list of column names, and the export must keep that order."""
+
+    def setUp(self):
+        User = get_user_model()
+        self.admin = User.objects.create_user(
+            username="ranking_admin", password="123", email="ranking@example.com", account_type="admin"
+        )
+        self.project = Project.objects.create(name="Ranking Project", created_by=self.admin)
+        self.labeling = Labeling.objects.create(
+            title="README completeness",
+            created_by=self.admin,
+            project=self.project,
+            start_date=now().date(),
+            final_date=now().date(),
+        )
+        section = LabelingSection.objects.create(
+            labeling=self.labeling,
+            form_type=LabelingSection.FormType.MAIN,
+            title="Avaliação",
+            order=1,
+        )
+        self.question = LabelingElement.objects.create(
+            labeling_section=section,
+            text="Ordene da mais completa para a menos completa",
+            question_type=LabelingElement.QuestionType.RANKING,
+            order=1,
+        )
+        for order, column in enumerate(["resposta_gpt", "resposta_claude", "resposta_gemini"], start=1):
+            MultipleChoiceItem.objects.create(labeling_element=self.question, text=column, order=order)
+
+        self.item = Item.objects.create(
+            labeling=self.labeling,
+            payload={
+                "resposta_gpt": "Instalação via pip.",
+                "resposta_claude": "Instalação, uso e exemplos.",
+                "resposta_gemini": "Descrição breve.",
+            },
+            row_index=0,
+        )
+
+        self.client = APIClient()
+        self.client.force_authenticate(self.admin)
+
+    def test_export_keeps_the_ranked_order(self):
+        Answer.objects.create(
+            item=self.item,
+            labeling=self.labeling,
+            answered_by=self.admin,
+            answer_payload={str(self.question.id): ["resposta_claude", "resposta_gpt", "resposta_gemini"]},
+        )
+
+        response = self.client.get(reverse("answer-export-by-labeling", args=[self.labeling.id]))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        rows = list(csv.DictReader(io.StringIO(response.content.decode("utf-8"))))
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(
+            rows[0][f"Q : {self.question.text}"],
+            "resposta_claude, resposta_gpt, resposta_gemini",
+        )

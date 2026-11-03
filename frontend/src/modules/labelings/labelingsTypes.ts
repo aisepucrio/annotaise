@@ -45,7 +45,7 @@ export type CreateLabelingWithCsvPayload = {
 };
 
 // Labeling structure (form) - shared types between frontend and backend
-export type QuestionTypeDTO = 'text' | 'number' | 'range' | 'multiple_choice' | 'email' | 'context';
+export type QuestionTypeDTO = 'text' | 'number' | 'range' | 'multiple_choice' | 'email' | 'context' | 'ranking';
 
 // DTOs for creating/editing the labeling structure
 export type MultipleChoiceItemDTO = {

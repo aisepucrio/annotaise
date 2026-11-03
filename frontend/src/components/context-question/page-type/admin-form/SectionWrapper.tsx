@@ -648,6 +648,7 @@ export default function SectionWrapper({
                           <QuestionWrapper
                             element={element}
                             t={t}
+                            columns={columns}
                             onUpdate={(patch) => updateElement(element.id, patch)}
                             onRemove={() => onRemoveElement?.(element.id, 'question')}
                             onDuplicate={onDuplicateElement ? () => onDuplicateElement(element.id, 'question') : undefined}
