@@ -6,7 +6,7 @@ from random import Random
 from unittest import TestCase
 from unittest.mock import patch
 
-from .services import metrics
+from ..services import metrics
 
 
 PERFECT_AGREEMENT = 1.0

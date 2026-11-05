@@ -2,12 +2,12 @@ from django.test import TestCase
 from django.urls import reverse
 from rest_framework import serializers as drf_serializers, status
 from rest_framework.test import APIClient
-from .serializers import LabelingSerializer, LabelingSectionSerializer, LabelingElementSerializer, MultipleChoiceItemSerializer, QuestionRangeSerializer, LabelingMembershipSerializer
-from .models import Labeling, LabelingSection, LabelingElement, MultipleChoiceItem, QuestionRange, LabelingMembership
+from ..serializers import LabelingSerializer, LabelingSectionSerializer, LabelingElementSerializer, MultipleChoiceItemSerializer, QuestionRangeSerializer, LabelingMembershipSerializer
+from ..models import Labeling, LabelingSection, LabelingElement, MultipleChoiceItem, QuestionRange, LabelingMembership
 from project.models import Project, ProjectMembership
 from item.models import Item
 from answer.models import Answer
-from .services import metrics
+from ..services import metrics
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 
@@ -579,18 +579,18 @@ class AnnotateRoleGateTest(TestCase):
             LabelingMembership.objects.create(labeling=self.labeling, user=user, role=role)
 
     def test_viewer_cannot_annotate(self):
-        from .permissions import can_annotate_labeling
+        from ..permissions import can_annotate_labeling
 
         self.assertFalse(can_annotate_labeling(self.viewer, self.labeling.id))
 
     def test_owner_admin_and_annotator_can_annotate(self):
-        from .permissions import can_annotate_labeling
+        from ..permissions import can_annotate_labeling
 
         self.assertTrue(can_annotate_labeling(self.owner, self.labeling.id))
         self.assertTrue(can_annotate_labeling(self.annotator, self.labeling.id))
 
     def test_non_member_cannot_annotate(self):
-        from .permissions import can_annotate_labeling
+        from ..permissions import can_annotate_labeling
 
         outsider = User.objects.create_user(
             username="ar_outsider", password="pass123", email="ar-out@example.com"
