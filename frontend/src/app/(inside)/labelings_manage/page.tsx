@@ -170,7 +170,6 @@ export default function LabelingsPage() {
             labelings_done={project.finished_labelings}
             labelings_pending={project.pending_labelings}
             labelings_late={project.late_labelings}
-            onManage={() => router.push(`/projects/${project.id}`)}
           />
         </GridItemCard>
       );
@@ -203,7 +202,7 @@ export default function LabelingsPage() {
           actionButton={
             <Button
               icon={<Pen size={18} strokeWidth={1.75} />}
-              onClick={() => router.push(`/labelings_manage/${l.id}/form`)}
+              href={`/labelings_manage/${l.id}/form`}
               variant="normal"
               fill={true}
               className="px-4"
