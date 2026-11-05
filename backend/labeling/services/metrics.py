@@ -10,14 +10,25 @@ Returns `None` when there is nothing to measure, never NaN.
 """
 
 from collections import Counter
+from enum import StrEnum
 
 import numpy as np
 
-NOMINAL = "nominal"
-ORDINAL = "ordinal"
-INTERVAL = "interval"
-JACCARD = "jaccard"
-MASI = "masi"
+
+class Distance(StrEnum):
+    """How far apart two answers are, by kind of question.
+
+    NOMINAL: categories, either equal or not (single choice).
+    ORDINAL: ranked values, distance by how many ratings fall between them (range).
+    INTERVAL: numbers, squared difference (number).
+    JACCARD / MASI: sets, overlap-based (multi-select).
+    """
+
+    NOMINAL = "nominal"
+    ORDINAL = "ordinal"
+    INTERVAL = "interval"
+    JACCARD = "jaccard"
+    MASI = "masi"
 
 
 def _comparable(units):
@@ -26,7 +37,7 @@ def _comparable(units):
 
 def _ordered_values(units, distance):
     values = {value for responses in units.values() for value in responses}
-    if distance in (INTERVAL, ORDINAL):
+    if distance in (Distance.INTERVAL, Distance.ORDINAL):
         return sorted(values)
     return sorted(values, key=str)
 
@@ -48,7 +59,7 @@ def _set_similarity(left, right, distance):
     if not union:
         return 1.0
     jaccard = len(left & right) / len(union)
-    if distance == JACCARD:
+    if distance == Distance.JACCARD:
         return jaccard
     # MASI = Jaccard weighted by how nested the two sets are (Passonneau, 2006).
     if not left & right:
@@ -65,7 +76,7 @@ def _set_similarity(left, right, distance):
 def _delta(values, distance):
     """Squared difference between every pair of values. Diagonal is always 0."""
     size = len(values)
-    if distance == NOMINAL:
+    if distance == Distance.NOMINAL:
         return 1.0 - np.eye(size)
 
     matrix = np.zeros((size, size))
@@ -91,7 +102,7 @@ def _numeric_alpha(units, distance):
     """
     sizes = np.fromiter((len(responses) for responses in units.values()), dtype=np.intp)
     ratings = [value for responses in units.values() for value in responses]
-    if distance == ORDINAL:
+    if distance == Distance.ORDINAL:
         _, inverse, counts = np.unique(ratings, return_inverse=True, return_counts=True)
         midpoints = np.cumsum(counts) - counts / 2.0
         points = midpoints[inverse]
@@ -115,13 +126,13 @@ def _numeric_alpha(units, distance):
     return 1.0 - (total - 1) / total * weighted_squares / total_squares
 
 
-def krippendorff_alpha(units, distance=NOMINAL):
+def krippendorff_alpha(units, distance=Distance.NOMINAL):
     """alpha = 1 - Do/De. Handles ragged data and any number of annotators."""
     units = _comparable(units)
     if not units:
         return None
 
-    if distance in (INTERVAL, ORDINAL):
+    if distance in (Distance.INTERVAL, Distance.ORDINAL):
         return _numeric_alpha(units, distance)
 
     values = _ordered_values(units, distance)
@@ -164,7 +175,7 @@ def fleiss_kappa(units):
     if any(len(responses) != raters for responses in units.values()):
         raise ValueError("Fleiss' kappa requires the same number of ratings per item.")
 
-    categories = _ordered_values(units, NOMINAL)
+    categories = _ordered_values(units, Distance.NOMINAL)
     counts = np.array(
         [[Counter(responses)[category] for category in categories] for responses in units.values()],
         dtype=float,

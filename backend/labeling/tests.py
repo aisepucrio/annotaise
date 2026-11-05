@@ -1280,13 +1280,13 @@ class ReliabilityMetricsTest(TestCase):
 
     def test_krippendorff_alpha_matches_published_values(self):
         self.assertAlmostEqual(
-            metrics.krippendorff_alpha(self.krippendorff_units(), metrics.NOMINAL), 0.691, places=3
+            metrics.krippendorff_alpha(self.krippendorff_units(), metrics.Distance.NOMINAL), 0.691, places=3
         )
         self.assertAlmostEqual(
-            metrics.krippendorff_alpha(self.krippendorff_units(True), metrics.INTERVAL), 0.811, places=3
+            metrics.krippendorff_alpha(self.krippendorff_units(True), metrics.Distance.INTERVAL), 0.811, places=3
         )
         self.assertAlmostEqual(
-            metrics.krippendorff_alpha(self.krippendorff_units(True), metrics.ORDINAL), 0.807, places=3
+            metrics.krippendorff_alpha(self.krippendorff_units(True), metrics.Distance.ORDINAL), 0.807, places=3
         )
 
     def test_fleiss_kappa_matches_published_value(self):
@@ -1319,10 +1319,10 @@ class ReliabilityMetricsTest(TestCase):
     def test_bootstrap_ci_brackets_the_estimate(self):
         units = self.krippendorff_units()
         low, high = metrics.bootstrap_ci(
-            lambda u: metrics.krippendorff_alpha(u, metrics.NOMINAL), units, samples=200
+            lambda u: metrics.krippendorff_alpha(u, metrics.Distance.NOMINAL), units, samples=200
         )
-        self.assertLessEqual(low, metrics.krippendorff_alpha(units, metrics.NOMINAL))
-        self.assertGreaterEqual(high, metrics.krippendorff_alpha(units, metrics.NOMINAL))
+        self.assertLessEqual(low, metrics.krippendorff_alpha(units, metrics.Distance.NOMINAL))
+        self.assertGreaterEqual(high, metrics.krippendorff_alpha(units, metrics.Distance.NOMINAL))
 
 
 class LabelingReliabilityViewTest(TestCase):
@@ -1420,7 +1420,7 @@ class LabelingReliabilityViewTest(TestCase):
 
         question = response.data["questions"][0]
         self.assertEqual(question["question_id"], self.question.id)
-        self.assertEqual(question["scale"], metrics.NOMINAL)
+        self.assertEqual(question["scale"], metrics.Distance.NOMINAL)
         self.assertEqual(question["annotators"], 2)
         self.assertEqual(question["items_considered"], 3)
         self.assertEqual(question["excluded_items"], 1)
@@ -1438,8 +1438,8 @@ class LabelingReliabilityViewTest(TestCase):
         self.client.force_authenticate(self.owner)
         ratings = [(1, 2), (3, 3), (5, 4), (9, 9)]
         for question_type, scale, expected in (
-            (LabelingElement.QuestionType.NUMBER, metrics.INTERVAL, 5 / 6),
-            (LabelingElement.QuestionType.RANGE, metrics.ORDINAL, 46 / 51),
+            (LabelingElement.QuestionType.NUMBER, metrics.Distance.INTERVAL, 5 / 6),
+            (LabelingElement.QuestionType.RANGE, metrics.Distance.ORDINAL, 46 / 51),
         ):
             with self.subTest(scale=scale):
                 self.question.question_type = question_type

@@ -24,9 +24,9 @@ from . import metrics
 
 # Only these produce a judgement on a scale; text/email/context have no metric.
 SCALE_BY_QUESTION_TYPE = {
-    LabelingElement.QuestionType.MULTIPLE_CHOICE: metrics.NOMINAL,
-    LabelingElement.QuestionType.RANGE: metrics.ORDINAL,
-    LabelingElement.QuestionType.NUMBER: metrics.INTERVAL,
+    LabelingElement.QuestionType.MULTIPLE_CHOICE: metrics.Distance.NOMINAL,
+    LabelingElement.QuestionType.RANGE: metrics.Distance.ORDINAL,
+    LabelingElement.QuestionType.NUMBER: metrics.Distance.INTERVAL,
 }
 
 #TODO One consequence to be aware of: labeling/services/agreement.py:87 filters role=ANNOTATOR, 
@@ -382,7 +382,7 @@ def _question_reliability(element, responses) -> dict:
     comparable = {item_id: values for item_id, values in units.items() if len(values) >= 2}
     scale = SCALE_BY_QUESTION_TYPE[element.question_type]
     if element.question_type == LabelingElement.QuestionType.MULTIPLE_CHOICE and element.allow_multiple:
-        scale = metrics.MASI
+        scale = metrics.Distance.MASI
 
     return {
         "question_id": element.id,
