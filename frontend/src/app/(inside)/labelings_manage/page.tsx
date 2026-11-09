@@ -21,7 +21,7 @@ import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 
 import { useLabelingDashboardEditQuery } from '@/modules/labelings/labelingQueries';
 import { useProjectDashboardQuery, useProjectQuery } from '@/modules/projects/projectsQueries';
-import type { CreateLabelingWithCsvPayload } from '@/modules/labelings/labelingsTypes';
+import type { CreateLabelingWithCsvPayload } from '@/modules/labelings/labelingTypes';
 import { useCreateLabelingWithCsvMutation, useAssignLabelingToProjectMutation } from '@/modules/labelings/labelingMutations';
 import { useCreateProjectMutation } from '@/modules/projects/projectsMutations';
 import type { ProjectPayload } from '@/modules/projects/projectsTypes';
@@ -160,17 +160,10 @@ export default function LabelingsPage() {
   // Section titles only make sense when both sections actually appear.
   const hasBothSections = showProjects && showLabelings && projects.items.length > 0 && labelings.items.length > 0;
 
-    type AssignLabelingToProjectPayload = {
-    labelingId: number;
-    projectId: number;
-  };
   
 
-
   function onDragEnd(result: DropResult) {
-    console.log('onDragEnd', result);
-    console.log('destination:', result.destination);
-
+   
     const { destination, draggableId } = result;
 
     // soltou fora de qualquer área, ou em algo que não é um projeto
@@ -182,13 +175,11 @@ export default function LabelingsPage() {
     assignLabeling.mutate(
       { labelingId, projectId },
       {
-        onError: (err) => toast.error(getApiErrorMessage(err, t('labelings.manage.createError'))),
+        onError: (err) => toast.error(getApiErrorMessage(err, t('labelings.manage.assignError'))),
       }
     );
   }
   
-
-
   
   if (hasBothSections) {
     gridChildren.push(<SectionTitle key="section-projects">{t('labelings.manage.section.projects')}</SectionTitle>);

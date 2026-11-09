@@ -11,9 +11,6 @@ import { useLabelingDashboardQuery } from '@/modules/labelings/labelingQueries';
 import InfiniteScroll from '@/components/InfiniteScroll';
 import { toast } from 'sonner';
 import { useTranslations } from '@/i18n/use-translations';
-import {Draggable, Droppable, DragDropContext} from '@hello-pangea/dnd';
-import api from '@/lib/fetcher';
-import { useMutation } from '@tanstack/react-query';
 
 export default function LabelingsPage() {
   const { t } = useTranslations();
@@ -42,7 +39,6 @@ export default function LabelingsPage() {
     router.push(mustAnswerBackgroundFirst ? `/labelings/${labelingId}/background` : `/labelings/${labelingId}/answer`);
   };
 
-
   return (
       <PageLayout
         pageTitle={t('labelings.title')}
@@ -70,11 +66,8 @@ export default function LabelingsPage() {
       {labelingsList.map((l, index) => {
         const mustAnswerBackgroundFirst = Boolean(l.background_required && !l.background_answered);
         return (
-          //Vou mexer aqui no conexto do drag
                 <GridItemCard key={l.id} index={index}>
-  
                     <IndividualLabelingCard
-    
                       index={index}
                       title={l.labeling_name}
                       project={l.project_name ?? t('labelings.manage.noProject')}
