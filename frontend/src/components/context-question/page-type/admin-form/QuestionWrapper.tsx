@@ -15,7 +15,6 @@ import { buildQuestionDataTypePatch } from './helpers';
 type AdminQuestionWrapperProps = {
   element: LabelingStructureElement;
   t?: TranslateFn;
-  /** CSV columns of the labeling, forwarded to question types that point at columns. */
   columns?: string[];
   onUpdate: (patch: Partial<LabelingStructureElement>) => void;
   onRemove?: () => void;
