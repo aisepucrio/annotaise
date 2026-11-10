@@ -127,6 +127,7 @@ class LabelingElement(models.Model):
         RANGE = "range", "Faixa"
         EMAIL = "email", "Email"
         CONTEXT = "context", "Contexto"
+        RANKING = "ranking", "Ordenação"
 
     class ContextType(models.TextChoices):
         TEXT = "text", "Texto"

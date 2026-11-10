@@ -15,12 +15,20 @@ import { buildQuestionDataTypePatch } from './helpers';
 type AdminQuestionWrapperProps = {
   element: LabelingStructureElement;
   t?: TranslateFn;
+  columns?: string[];
   onUpdate: (patch: Partial<LabelingStructureElement>) => void;
   onRemove?: () => void;
   onDuplicate?: () => void;
 };
 
-export default function QuestionWrapper({ element, t: tProp, onUpdate, onRemove, onDuplicate }: AdminQuestionWrapperProps) {
+export default function QuestionWrapper({
+  element,
+  t: tProp,
+  columns,
+  onUpdate,
+  onRemove,
+  onDuplicate,
+}: AdminQuestionWrapperProps) {
   const { t: defaultT } = useTranslations();
   const t = tProp ?? defaultT;
   const dataType = getQuestionDataType(element);
@@ -105,6 +113,7 @@ export default function QuestionWrapper({ element, t: tProp, onUpdate, onRemove,
               element,
               t,
               onUpdate,
+              columns,
             },
           })}
         </div>

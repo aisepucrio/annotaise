@@ -6,7 +6,7 @@ import { HelpCircle } from 'lucide-react';
 import type { TranslateFn } from '@/i18n/types';
 import { useTranslations } from '@/i18n/use-translations';
 import type { AnswerResponse, LabelingAgreementQuestionSummary } from '@/modules/labelings/labelingsTypes';
-import type { LabelingStructureElement, UserAnswerMap } from '../../types';
+import type { LabelingStructureElement, QuestionDataType, UserAnswerMap } from '../../types';
 import MarkdownContent from '../../MarkdownContent';
 import { renderQuestionModule } from '../../question-modules';
 import { getQuestionDataType, resolveElementLabel } from '../../utils';
@@ -135,7 +135,7 @@ export default function QuestionWrapper({
   );
 }
 
-function resolveQuestionTypeLabel(type: 'text' | 'number' | 'linear-scale' | 'multiple-choice' | 'email', t: TranslateFn): string {
+function resolveQuestionTypeLabel(type: QuestionDataType, t: TranslateFn): string {
   switch (type) {
     case 'number':
       return t('labelings.create.question.type.number');
@@ -145,6 +145,8 @@ function resolveQuestionTypeLabel(type: 'text' | 'number' | 'linear-scale' | 'mu
       return t('labelings.create.question.type.multipleChoice');
     case 'email':
       return t('labelings.create.question.type.email');
+    case 'ranking':
+      return t('labelings.create.question.type.ranking');
     case 'text':
     default:
       return t('labelings.create.question.type.text');

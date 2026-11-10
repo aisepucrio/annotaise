@@ -359,6 +359,7 @@ function questionLabel(dataType: QuestionDataType): string {
     'linear-scale': 'Linear scale',
     'multiple-choice': 'Multiple choice',
     email: 'Email',
+    ranking: 'Ranking',
   };
   return labels[dataType];
 }
