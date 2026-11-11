@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import './globals.css';
+import '@/styles/globals.css';
 import { Montserrat } from 'next/font/google';
 import { Toaster } from '@/components/ui/sonner';
 import { LanguageProvider } from '@/i18n/language-context';
