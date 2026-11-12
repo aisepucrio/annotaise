@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { TranslateFn } from '@/i18n/types';
-import type { AnswerResponse, LabelingStructureSection } from '@/modules/labelings/labelingsTypes';
+import type { AnswerResponse, LabelingStructureSection } from '@/modules/labelings/labelingTypes';
 import { ResponseVisualizationSectionWrapper } from '@/components/context-question';
 import { type AgreementQuestionSummary, buildAgreementSections } from './item-agreement-utils';
 

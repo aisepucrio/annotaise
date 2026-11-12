@@ -1,195 +1,101 @@
-/* 
- * Fonte única de verdade para texto, botões e caixas.
- * Spec e mapa de migração: frontend/TYPOGRAPHY.md
- *
- * Regra geral: nenhum componente escolhe tamanho, peso, raio ou sombra na mão.
- * Escolhe-se um PAPEL (`text-title-2`, `surface-card`, `buttonClasses.md`).
- * Se um papel não existe para o que você precisa, ele entra aqui primeiro.
- *
- * Importado por src/app/globals.css.
+/*
+ * Tokens e utilities de tipografia. Documentação em frontend/TYPOGRAPHY.md.
+ * Importado em src/styles/globals.css.
  */
 
 @theme {
-  /* 
-   * 1. FAMÍLIAS
-   * `--font-sans` continua definido em globals.css (@theme inline), apontando
-   * para a variável que next/font injeta. Aqui só acrescentamos a monoespaçada,
-   * que hoje não existe no projeto e é usada por código/CSV/IDs.
-  */
+  /* --font-sans vem do globals.css (next/font). */
   --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, 'Liberation Mono', monospace;
 
-  /*
-   * 2. PESOS
-   * Montserrat carrega 4 pesos (400/500/600/700). 300 e 800 foram removidos:
-   * não havia uma única ocorrência de font-light/font-extrabold no código.
-   *
-   *   regular   400  corpo de texto
-   *   medium    500  rótulos, botões, ênfase dentro da UI
-   *   semibold  600  TODOS os títulos — nunca 700
-   *   bold      700  exclusivo de números/métricas
-    */
+  /* Pesos. Títulos usam 600; 700 fica para números (text-metric). */
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
 
-  /* 
-   * 3. ESCALA TIPOGRÁFICA
-   * Cada passo carrega tamanho + entrelinha + peso + tracking. Usar
-   * `text-title-1` já entrega os quatro — não se acrescenta font-semibold
-   * nem leading-* em cima.
-   *
-   * Base da UI é 14px (`text-body`): era o tamanho de 236 das 374 ocorrências
-   * de texto no projeto, então a escala foi ancorada nele em vez dos 16px
-   * padrão do Tailwind.
-   * */
+  /* Escala. Cada token já define tamanho, entrelinha, peso e tracking, então
+   * não precisa somar font-* ou leading-*. A base é 14px (text-body). */
 
-  /* display — 30/38 · 600 · tela de autenticação, estado vazio hero.
-   * Um por tela, e só em tela sem cabeçalho azul. */
+  /* 30/38 — telas de login e estados vazios */
   --text-display: 1.875rem;
   --text-display--line-height: 2.375rem;
   --text-display--font-weight: 600;
   --text-display--letter-spacing: -0.012em;
 
-  /* title-1 — 24/32 · 600 · <h1> do PageHeader. Um por tela, sempre dentro
-   * da faixa blueberry-700. */
+  /* 24/32 — h1 do PageHeader */
   --text-title-1: 1.5rem;
   --text-title-1--line-height: 2rem;
   --text-title-1--font-weight: 600;
   --text-title-1--letter-spacing: -0.01em;
 
-  /* title-2 — 20/28 · 600 · <h2> de modal, cabeçalho interno (InnerPageHeader,
-   * LabelingHeader), título de aba. */
+  /* 20/28 — h2: modais, InnerPageHeader, LabelingHeader */
   --text-title-2: 1.25rem;
   --text-title-2--line-height: 1.75rem;
   --text-title-2--font-weight: 600;
   --text-title-2--letter-spacing: -0.006em;
 
-  /* title-3 — 18/26 · 600 · <h3> de card e de seção de formulário.
-   * Substitui as 9 ocorrências de `font-bold text-lg mb-2`. */
+  /* 18/26 — h3: cards e seções de formulário */
   --text-title-3: 1.125rem;
   --text-title-3--line-height: 1.625rem;
   --text-title-3--font-weight: 600;
   --text-title-3--letter-spacing: 0em;
 
-  /* title-4 — 16/24 · 600 · <h4> de subseção, rótulo de grupo de campos,
-   * título de bloco dentro de card. */
+  /* 16/24 — h4: subseções, grupos de campos */
   --text-title-4: 1rem;
   --text-title-4--line-height: 1.5rem;
   --text-title-4--font-weight: 600;
   --text-title-4--letter-spacing: 0em;
 
-  /* body-lg — 16/26 · 400 · texto para LER: guia, markdown, enunciado de
-   * questão, contexto de item. Entrelinha maior de propósito. */
+  /* 16/26 — texto corrido: guia, markdown, enunciado da questão */
   --text-body-lg: 1rem;
   --text-body-lg--line-height: 1.625rem;
   --text-body-lg--font-weight: 400;
   --text-body-lg--letter-spacing: 0em;
 
-  /* body — 14/20 · 400 · PADRÃO DA INTERFACE. Parágrafo de UI, célula de
-   * tabela, opção de select, item de lista, texto de botão. */
+  /* 14/20 — padrão da interface */
   --text-body: 0.875rem;
   --text-body--line-height: 1.25rem;
   --text-body--font-weight: 400;
   --text-body--letter-spacing: 0em;
 
-  /* caption — 12/16 · 400 · metadado, texto de apoio, mensagem de erro,
-   * contador, data, legenda de gráfico. Nunca para conteúdo essencial. */
+  /* 12/16 — metadados, datas, contadores, texto de apoio */
   --text-caption: 0.75rem;
   --text-caption--line-height: 1rem;
   --text-caption--font-weight: 400;
   --text-caption--letter-spacing: 0.004em;
 
-  /* overline — 11/14 · 600 · MAIÚSCULAS · badge de status, eyebrow,
-   * cabeçalho de coluna. Use a utility `.t-overline`, que já aplica o
-   * text-transform. Piso tipográfico do projeto: nada abaixo de 11px.
-   * (substitui text-[11px], text-[10px] e text-[0.7rem]) */
+  /* 11/14 — badges e cabeçalhos de coluna. Use .t-overline (aplica o
+   * uppercase). Menor tamanho da escala. */
   --text-overline: 0.6875rem;
   --text-overline--line-height: 0.875rem;
   --text-overline--font-weight: 600;
   --text-overline--letter-spacing: 0.06em;
 
-  /* metric — 20/20 · 700 · o NÚMERO de um StatPill, KPI ou contador de
-   * dashboard. Único lugar onde 700 é permitido. */
+  /* 20/20 — número de StatPill e KPIs */
   --text-metric: 1.25rem;
   --text-metric--line-height: 1.25rem;
   --text-metric--font-weight: 700;
   --text-metric--letter-spacing: -0.015em;
 
-  /* metric-lg — 30/32 · 700 · número de destaque em painel de dashboard. */
+  /* 30/32 — número em destaque no dashboard */
   --text-metric-lg: 1.875rem;
   --text-metric-lg--line-height: 2rem;
   --text-metric-lg--font-weight: 700;
   --text-metric-lg--letter-spacing: -0.02em;
 
-  /* code — 13/20 · 400 · monoespaçada: trecho de código, ID, nome de coluna
-   * de CSV, token. Use a utility `.t-code`, que já troca a família. */
+  /* 13/20 — código, IDs, colunas de CSV. Use .t-code (troca a família). */
   --text-code: 0.8125rem;
   --text-code--line-height: 1.25rem;
   --text-code--font-weight: 400;
   --text-code--letter-spacing: 0em;
-
-  /* 
-   * 4. CORES DE TEXTO SEMÂNTICAS
-   * 234 usos de cinza genérico do Tailwind (text-gray-600
-   * aparece 102 vezes) contra 115 usos da paleta própria. Estes papéis existem
-   * para que `text-gray-*` e `text-slate-*` nunca mais sejam escritos.
-   *  */
-  --color-text-primary: var(--metal-900);     /* título e texto principal   */
-  --color-text-secondary: var(--metal-700);   /* corpo secundário, rótulo   */
-  --color-text-muted: var(--metal-500);       /* metadado, apoio, helper    */
-  --color-text-disabled: var(--metal-400);    /* placeholder, desabilitado  */
-  --color-text-inverse: var(--metal-50);      /* sobre fundo blueberry      */
-  --color-text-brand: var(--blueberry-700);   /* link, ação, ênfase de marca*/
-  --color-text-brand-strong: var(--blueberry-900);
-  --color-text-danger: var(--red-blueberry);  /* erro de domínio, atraso    */
-  --color-text-success: var(--green-blueberry);
-  --color-text-warning: var(--orange-blueberry);
-
-  /* 
-   * 5. RAIOS — deliberadamente NÃO definidos aqui
-   *
-   * A escala proposta era 2/4/6/8/12/16px. Ficou de fora para não mudar o
-   * visual atual: os tokens herdados do shadcn em globals.css derivam de
-   * `--radius: 0.625rem` e hoje valem sm 6 · md 8 · lg 10 · xl 14px.
-   * As `surface-*` abaixo usam esses valores, então as caixas saem iguais
-   * ao que já está na tela.
-   *
-   * Para adotar a escala proposta mais tarde: apague as quatro linhas
-   * `--radius-sm/md/lg/xl` do `@theme inline` de globals.css e descomente
-   * o bloco abaixo. Afeta ~110 usos existentes (66 rounded-lg, 25 md, 16 xl).
-   *
-   *   --radius-xs:  0.125rem;  2px   checkbox, barra de progresso
-   *   --radius-sm:  0.25rem;   4px   badge, pill pequeno, campo de busca
-   *   --radius-md:  0.375rem;  6px   campo de formulário, StatPill
-   *   --radius-lg:  0.5rem;    8px   botão, menu, dropdown, tooltip
-   *   --radius-xl:  0.75rem;  12px   card
-   *   --radius-2xl: 1rem;     16px   modal, painel, faixa de cabeçalho
-   *  */
-
-
-  /* 
-   * 6. SOMBRAS
-   * Quatro níveis, por elevação. Tingidas de metal-900 em vez de preto puro,
-   * para não cinzar a paleta blueberry.
-   *  */
-  --shadow-card: 0 1px 2px rgba(31, 33, 41, 0.05), 0 2px 8px rgba(31, 33, 41, 0.06);
-  --shadow-raised: 0 2px 4px rgba(31, 33, 41, 0.06), 0 8px 20px rgba(31, 33, 41, 0.1);
-  --shadow-overlay: 0 8px 24px rgba(31, 33, 41, 0.12), 0 24px 48px rgba(31, 33, 41, 0.1);
-  --shadow-header: 0 2px 8px rgba(14, 24, 98, 0.18);
 }
 
-/* 
- * 7. PADRÕES DE ELEMENTO
- * Markup sem classe já nasce certo. Vale para conteúdo vindo de react-markdown,
- * do guia e de qualquer HTML que não passe pelas utilities.
- *  */
+/* Estilo padrão de elementos sem classe (ex.: conteúdo do react-markdown). */
 @layer base {
   body {
     font-size: var(--text-body);
     line-height: var(--text-body--line-height);
     font-weight: var(--font-weight-regular);
-    color: var(--color-text-primary);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
@@ -242,12 +148,8 @@
   }
 }
 
-/* 
- * 8. UTILITIES DE TEXTO
- * Só para papéis que um token de escala não consegue expressar sozinho.
- */
+/* Utilities para casos que o token sozinho não cobre. */
 
-/** Badge de status, eyebrow, cabeçalho de coluna. Aplica o uppercase. */
 @utility t-overline {
   font-size: var(--text-overline);
   line-height: var(--text-overline--line-height);
@@ -256,7 +158,6 @@
   text-transform: uppercase;
 }
 
-/** Código, ID, nome de coluna. Aplica a família monoespaçada. */
 @utility t-code {
   font-family: var(--font-mono);
   font-size: var(--text-code);
@@ -264,97 +165,33 @@
   font-weight: var(--font-weight-regular);
 }
 
-/** Números tabulares: alinha colunas de métrica e evita o número "pular"
- *  quando um contador atualiza. Combine com text-metric. */
+/* Números com largura fixa, para colunas e contadores não "pularem". */
 @utility t-tabular {
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum';
 }
 
-/** Rótulo de campo de formulário: 14/20 em medium, cor secundária. */
 @utility t-label {
   font-size: var(--text-body);
   line-height: var(--text-body--line-height);
   font-weight: var(--font-weight-medium);
-  color: var(--color-text-secondary);
 }
 
-/** Texto de apoio abaixo de um campo. */
 @utility t-helper {
   font-size: var(--text-caption);
   line-height: var(--text-caption--line-height);
   font-weight: var(--font-weight-regular);
-  color: var(--color-text-muted);
 }
 
-/** Mensagem de erro de campo. */
 @utility t-error {
   font-size: var(--text-caption);
   line-height: var(--text-caption--line-height);
   font-weight: var(--font-weight-medium);
-  color: var(--red-400);
 }
 
-/** Bloco de texto longo para leitura: limita a medida a ~70 caracteres,
- *  que é onde Montserrat para de cansar. Guia, markdown, enunciado. */
+/* Texto longo; largura limitada para facilitar a leitura. */
 @utility t-prose {
   font-size: var(--text-body-lg);
   line-height: var(--text-body-lg--line-height);
-  color: var(--color-text-secondary);
   max-width: 68ch;
-}
-
-/* 
- * 9. UTILITIES DE SUPERFÍCIE ("caixas")
- * Cada caixa = raio + sombra + fundo + padding, numa classe. Evita as 7
- * combinações distintas de raio e as 4 de sombra que existem hoje.
- *  */
-
-/** Card de grade e de conteúdo. Padding 16px. */
-@utility surface-card {
-  background-color: var(--full-white);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-card);
-  padding: 1rem;
-}
-
-/** Modal e diálogo. Padding 24px. */
-@utility surface-modal {
-  background-color: var(--full-white);
-  border-radius: var(--radius-2xl);
-  box-shadow: var(--shadow-overlay);
-  padding: 1.5rem;
-}
-
-/** Painel lateral, bloco de formulário, área de conteúdo com borda.
- *  Sem sombra: delimita sem elevar. */
-@utility surface-panel {
-  background-color: var(--full-white);
-  border: 1px solid var(--metal-100);
-  border-radius: var(--radius-xl);
-  padding: 1.5rem;
-}
-
-/** Bloco recuado dentro de um card: resumo, citação, pré-visualização. */
-@utility surface-inset {
-  background-color: var(--metal-50);
-  border-radius: var(--radius-md);
-  padding: 0.75rem 1rem;
-}
-
-/** Menu, dropdown, popover. */
-@utility surface-menu {
-  background-color: var(--full-white);
-  border: 1px solid var(--metal-100);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-overlay);
-  padding: 0.25rem;
-}
-
-/** Faixa de cabeçalho azul (PageHeader, InnerPageHeader). */
-@utility surface-header {
-  background-color: var(--blueberry-700);
-  color: var(--color-text-inverse);
-  box-shadow: var(--shadow-header);
-  padding: 1.25rem;
 }

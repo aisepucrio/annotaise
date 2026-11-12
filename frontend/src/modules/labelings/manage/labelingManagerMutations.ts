@@ -10,7 +10,7 @@ import {
   addItemsCsvToLabeling,
   exportImportedLabelingCsv,
 } from '../labelingService';
-import type { LabelingPayload, SectionDTO, LabelingMembershipRole } from '@/modules/labelings/labelingsTypes';
+import type { LabelingPayload, SectionDTO, LabelingMembershipRole } from '@/modules/labelings/labelingTypes';
 
 export function useDeleteLabelingMutation() {
   const qc = useQueryClient();

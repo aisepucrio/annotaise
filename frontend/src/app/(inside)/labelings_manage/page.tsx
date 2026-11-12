@@ -27,7 +27,8 @@ import { useCreateProjectMutation } from '@/modules/projects/projectsMutations';
 import type { ProjectPayload } from '@/modules/projects/projectsTypes';
 
 import { useTranslations } from '@/i18n/use-translations';
-import { DragDropContext, Draggable, Droppable, DropResult } from '@hello-pangea/dnd';
+import { DndContext, DragOverlay, PointerSensor, useDraggable, useDroppable, useSensor, useSensors, type DragEndEvent, type DragStartEvent,
+} from '@dnd-kit/core';
 
 
 // 'labelings' flattens every folder away (no `project`/`ungrouped` filter reaches the
@@ -36,6 +37,41 @@ import { DragDropContext, Draggable, Droppable, DropResult } from '@hello-pangea
 type ManageFilter = 'all' | 'labelings' | 'projects';
 const MANAGE_FILTER_STORAGE_KEY = 'labelings_manage.filter';
 const MANAGE_FILTERS: ManageFilter[] = ['all', 'labelings', 'projects'];
+
+
+function DraggableLabeling({ labelingId, children }: { labelingId: number; children: ReactNode }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `labeling-${labelingId}`,
+    data: { labelingId },
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      style={{ opacity: isDragging ? 0.4 : 1, touchAction: 'none' }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function DroppableProject({ projectId, children }: { projectId: number; children: ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: `project-${projectId}`,
+    data: { projectId },
+  });
+
+  return (
+    <div ref={setNodeRef} className={`rounded-xl transition-shadow duration-150 ${
+        isOver ? 'shadow-[0_6px_20px_rgba(0,0,0,0.3)]' : ''
+      }`}>
+      {children}
+    </div>
+  );
+}
+
 
 export default function LabelingsPage() {
   const { t } = useTranslations();
@@ -48,6 +84,8 @@ export default function LabelingsPage() {
   const [filter, setFilter] = useState<ManageFilter>('all');
   const [filterMenuOpen, setFilterMenuOpen] = useState(false);
   const filterMenuRef = useRef<HTMLDivElement>(null);
+  const [activeLabelingId, setActiveLabelingId] = useState<number | null>(null);
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
   useEffect(() => {
     const stored = localStorage.getItem(MANAGE_FILTER_STORAGE_KEY);
@@ -149,8 +187,7 @@ export default function LabelingsPage() {
         key="back"
         type="button"
         onClick={() => router.push('/labelings_manage')}
-        className="col-span-full flex w-fit items-center gap-1 text-sm text-gray-500 transition-colors cursor-pointer hover:text-gray-800"
-      >
+        className="col-span-full flex w-fit items-center gap-1 text-body text-gray-500 transition-colors cursor-pointer hover:text-gray-800"      >
         <ArrowLeft size={16} />
         {t('labelings.manage.backToRoot')}
       </button>
@@ -162,15 +199,17 @@ export default function LabelingsPage() {
 
   
 
-  function onDragEnd(result: DropResult) {
-   
-    const { destination, draggableId } = result;
+  function handleDragStart(event: DragStartEvent) {
+    setActiveLabelingId(event.active.data.current?.labelingId ?? null);
+  }
+
+  function handleDragEnd({ active, over }: DragEndEvent) {
+    setActiveLabelingId(null);
 
     // soltou fora de qualquer área, ou em algo que não é um projeto
-    if (!destination || !destination.droppableId.startsWith('project-')) return;
-
-    const labelingId = Number(draggableId.replace('labeling-', ''));
-    const projectId = Number(destination.droppableId.replace('project-', ''));
+    const labelingId = active.data.current?.labelingId;
+    const projectId = over?.data.current?.projectId;
+    if (labelingId == null || projectId == null) return;
 
     assignLabeling.mutate(
       { labelingId, projectId },
@@ -186,16 +225,11 @@ export default function LabelingsPage() {
   }
 
   
-  if (showProjects) {
-    projects.items.forEach((project, index) => {
-      gridChildren.push(
-      <Droppable  key={`project-${project.id}`} droppableId={`project-${project.id}`}>
-        {(provided) => (
-          <div
-            ref={provided.innerRef}
-            {...provided.droppableProps}       
->
-        <GridItemCard key={`project-${project.id}`} index={index}>
+if (showProjects) {
+  projects.items.forEach((project, index) => {
+    gridChildren.push(
+      <DroppableProject key={`project-${project.id}`} projectId={project.id}>
+        <GridItemCard index={index}>
           <IndividualProjectCard
             projectId={project.id}
             title={project.name}
@@ -206,71 +240,67 @@ export default function LabelingsPage() {
             onManage={() => router.push(`/projects/${project.id}`)}
           />
         </GridItemCard>
-            {provided.placeholder}
-    </div>
-      )}
-    </Droppable>
-      );
-    });
-  }
+      </DroppableProject>
+    );
+  });
+}
 
   if (hasBothSections) {
     gridChildren.push(<SectionTitle key="section-ungrouped">{t('labelings.manage.section.ungrouped')}</SectionTitle>);
   }
 
-  const visibleLabelings = showLabelings ? labelings.items : [];
+ const visibleLabelings = showLabelings ? labelings.items : [];
+type LabelingItem = (typeof labelings.items)[number];
 
-  visibleLabelings.forEach((l, index) => {
-    gridChildren.push(
+const renderLabelingCard = (l: LabelingItem, index: number) => (
+  <GridItemCard
+    index={index}
+    borderColor={getLabelingCardBorderColor(l.days_passed, l.total_days, l.items_done, l.total_items)}
+  >
+    <IndividualLabelingCard
+      title={l.labeling_name}
+      project={l.project_name ?? t('labelings.manage.noProject')}
+      daysPassed={l.days_passed}
+      daysTotal={l.total_days}
+      labelingsDone={l.items_done}
+      labelingsPending={Math.max((l.total_items ?? 0) - (l.items_done ?? 0), 0)}
+      formMode={l.form_mode}
+      answersCollected={l.answers_collected}
+      index={index}
+      variant="manage"
+      actionButton={
+        <Button
+          icon={<Pen size={18} strokeWidth={1.75} />}
+          onClick={() => router.push(`/labelings_manage/${l.id}/form`)}
+          variant="normal"
+          fill={true}
+          className="px-4"
+          ariaLabel={t('labelings.manage.action.manageAria')}
+        >
+          {t('labelings.manage.action.manage')}
+        </Button>
+      }
+    />
+  </GridItemCard>
+);
 
-      <Droppable key = {`labeling-drop-${l.id}`}droppableId={`labeling-drop-${l.id}`} direction="horizontal">
-        {(provided) => (
-          <div ref={provided.innerRef} {...provided.droppableProps}>
-        <Draggable draggableId={`labeling-${l.id}`} index={0}>
-          {(provided) => (
-            <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
-          <GridItemCard
-            key={`labeling-${l.id}`}
-            index={index}
-            borderColor={getLabelingCardBorderColor(l.days_passed, l.total_days, l.items_done, l.total_items)}
-          >
-            <IndividualLabelingCard
-              title={l.labeling_name}
-              project={l.project_name ?? t('labelings.manage.noProject')}
-              daysPassed={l.days_passed}
-              daysTotal={l.total_days}
-              labelingsDone={l.items_done}
-              labelingsPending={Math.max((l.total_items ?? 0) - (l.items_done ?? 0), 0)}
-              formMode={l.form_mode}
-              answersCollected={l.answers_collected}
-              index={index}
-              variant="manage"
-              actionButton={
-                <Button
-                  icon={<Pen size={18} strokeWidth={1.75} />}
-                  onClick={() => router.push(`/labelings_manage/${l.id}/form`)}
-                  variant="normal"
-                  fill={true}
-                  className="px-4"
-                  ariaLabel={t('labelings.manage.action.manageAria')}
-                >
-                  {t('labelings.manage.action.manage')}
-                </Button>
-              }
-            />
-          </GridItemCard>
-          </div>
-          )}
-        </Draggable>
-          {provided.placeholder}
-        </div>
-        )}
-      </Droppable>
-    );
-  });
+visibleLabelings.forEach((l, index) => {
+  gridChildren.push(
+    <DraggableLabeling key={`labeling-${l.id}`} labelingId={l.id}>
+      {renderLabelingCard(l, index)}
+    </DraggableLabeling>
+  );
+});
+
+const activeLabelingIndex = visibleLabelings.findIndex((l) => l.id === activeLabelingId);
+const activeLabeling = activeLabelingIndex >= 0 ? visibleLabelings[activeLabelingIndex] : null;
 
   return (
-    <DragDropContext onDragEnd={onDragEnd}>
+      <DndContext id="labelings-manage-dnd"
+          sensors={sensors}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          onDragCancel={() => setActiveLabelingId(null)}>
       <PageLayout
         pageTitle={isRoot ? t('labelings.manage.title') : (openProject?.name ?? t('labelings.manage.title'))}
         tooltip={t('labelings.manage.tooltip')}
@@ -293,8 +323,7 @@ export default function LabelingsPage() {
                     setFilter(option);
                     setFilterMenuOpen(false);
                   }}
-                  className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-metal-50"
-                >
+                  className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-body text-gray-700 hover:bg-metal-50"                >
                   {t(`labelings.manage.filter.${option}`)}
                   {filter === option && <Check size={16} className="text-blueberry-700" />}
                 </button>
@@ -313,8 +342,8 @@ export default function LabelingsPage() {
               onClick={() => setOpenCreateProjectModal(true)}
               variant="normal"
               fill={false}
-              className="px-4 py-2 shadow-md text-sm"
-            >
+              className="px-4 py-2 shadow-md"            
+              >
               {t('projects.createButton')}
             </Button>
           ) : null
@@ -349,13 +378,14 @@ export default function LabelingsPage() {
       >
         {gridChildren}
       </PageLayout>
-    </DragDropContext>
+        <DragOverlay>{activeLabeling ? renderLabelingCard(activeLabeling, activeLabelingIndex) : null}</DragOverlay>
+    </DndContext>
   );
 }
 
 function SectionTitle({ children }: { children: ReactNode }) {
   return (
-    <h2 className="col-span-full mt-2 text-sm font-semibold uppercase tracking-wide text-gray-500">{children}</h2>
+  <h2 className="t-overline col-span-full mt-2 text-gray-500">{children}</h2>
   );
 }
 

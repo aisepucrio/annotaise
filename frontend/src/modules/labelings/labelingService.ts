@@ -16,7 +16,7 @@ import type {
   AnswerPayload,
   AnswerResponse,
   BackgroundAnswerResponse,
-} from './labelingsTypes';
+} from './labelingTypes';
 
 // Labeling functions
 

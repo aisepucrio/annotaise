@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createLabeling, importLabelingItemsCsv, assignLabelingToProject } from './labelingService';
-import type { CreateLabelingWithCsvPayload, LabelingPayload } from './labelingsTypes';
+import type { CreateLabelingWithCsvPayload, LabelingPayload } from './labelingTypes';
 
 
 export function useCreateLabelingMutation() {
@@ -36,7 +36,7 @@ export function useAssignLabelingToProjectMutation() {
     onSuccess: () => {
       // a rotulação sai da lista "sem projeto" e os contadores do projeto mudam
       qc.invalidateQueries({ queryKey: ['labelings'] });
-      qc.invalidateQueries({ queryKey: ['projects'] }); // ajuste para a queryKey real de projetos
+      qc.invalidateQueries({ queryKey: ['projects'] }); 
     },
   });
 }

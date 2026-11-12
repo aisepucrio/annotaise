@@ -18,7 +18,7 @@ import type {
   LabelingMembershipDashboard,
   LabelingStructureSection,
   LabelingElementSummary,
-} from '@/modules/labelings/labelingsTypes';
+} from '@/modules/labelings/labelingTypes';
 
 export function useLabelingHeaderQuery(labelingId: number) {
   const enabled = !Number.isNaN(labelingId);

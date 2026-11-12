@@ -6,7 +6,7 @@ import type {
   LabelingAgreementQuestionSummary,
   LabelingStructureElement,
   LabelingStructureSection,
-} from '@/modules/labelings/labelingsTypes';
+} from '@/modules/labelings/labelingTypes';
 
 export type { ElementDTO, LabelingStructureElement, LabelingStructureSection };
 

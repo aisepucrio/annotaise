@@ -6,7 +6,7 @@ import {
   AdminFormQuestionWrapper,
   AdminFormSectionWrapper,
 } from '@/components/context-question';
-import type { LabelingStructureElement, LabelingStructureSection } from '@/modules/labelings/labelingsTypes';
+import type { LabelingStructureElement, LabelingStructureSection } from '@/modules/labelings/labelingTypes';
 import { contextStoryColumns, createContextElement, createQuestionElement, StoryPanel } from '../story-fixtures';
 
 const meta = {
