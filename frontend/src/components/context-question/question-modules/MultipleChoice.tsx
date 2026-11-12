@@ -14,7 +14,7 @@ import type {
   LabelingAgreementQuestionSummary,
   LabelingStructureElement,
   MultipleChoiceItemDTO,
-} from '@/modules/labelings/labelingsTypes';
+} from '@/modules/labelings/labelingTypes';
 import type {
   AdminQuestionModuleProps,
   QuestionDataType,

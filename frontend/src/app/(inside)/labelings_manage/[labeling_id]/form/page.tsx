@@ -9,7 +9,7 @@ import { useLabelingHeaderQuery, useLabelingStructureQueryByType } from '@/modul
 import { useSaveLabelingStructureMutation } from '@/modules/labelings/manage/labelingManagerMutations';
 import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 import { AdminFormBuilder, normalizeAdminSections, sanitizeAdminSectionsForSave } from '@/components/context-question';
-import type { LabelingStructureSection } from '@/modules/labelings/labelingsTypes';
+import type { LabelingStructureSection } from '@/modules/labelings/labelingTypes';
 import { useInvitationAssignmentOptionsQuery } from '@/modules/user/userQueries';
 
 type FormTabProps = {

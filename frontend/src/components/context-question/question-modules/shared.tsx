@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { TranslateFn } from '@/i18n/types';
-import type { AnswerResponse, QuestionRangeDTO } from '@/modules/labelings/labelingsTypes';
+import type { AnswerResponse, QuestionRangeDTO } from '@/modules/labelings/labelingTypes';
 
 export type SummaryStats = {
   min: number;

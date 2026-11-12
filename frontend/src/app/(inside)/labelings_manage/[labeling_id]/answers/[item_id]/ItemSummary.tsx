@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import type { TranslateFn } from '@/i18n/types';
-import type { AnswerResponse, LabelingStructureSection } from '@/modules/labelings/labelingsTypes';
+import type { AnswerResponse, LabelingStructureSection } from '@/modules/labelings/labelingTypes';
 import { ResponseVisualizationSectionWrapper } from '@/components/context-question';
 
 type ItemSummaryProps = {

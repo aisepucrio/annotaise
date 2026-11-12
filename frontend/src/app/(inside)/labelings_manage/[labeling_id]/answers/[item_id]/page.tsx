@@ -5,7 +5,7 @@ import GridItemCard from '@/components/grid/GridItemCard';
 import GridLayout from '@/components/grid/GridLayout';
 import Button from '@/components/button/Button';
 import InfiniteScroll from '@/components/InfiniteScroll';
-import type { AnswerResponse, LabelingStructureSection } from '@/modules/labelings/labelingsTypes';
+import type { AnswerResponse, LabelingStructureSection } from '@/modules/labelings/labelingTypes';
 import { useTranslations } from '@/i18n/use-translations';
 import ItemTab from './ItemTab';
 import { resolveItemLabel } from '../answer-utils';

@@ -6,7 +6,7 @@ import type {
   LabelingStructureSection,
   MultipleChoiceItemDTO,
   SectionDTO,
-} from '@/modules/labelings/labelingsTypes';
+} from '@/modules/labelings/labelingTypes';
 import { questionModules } from '../../question-modules';
 import { createTemporaryId, getQuestionDataType, questionDataTypeToDto } from '../../utils';
 import type { QuestionDataType } from '../../types';

@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createLabeling, importLabelingItemsCsv } from './labelingService';
-import type { CreateLabelingWithCsvPayload, LabelingPayload } from './labelingsTypes';
+import { createLabeling, importLabelingItemsCsv, assignLabelingToProject } from './labelingService';
+import type { CreateLabelingWithCsvPayload, LabelingPayload } from './labelingTypes';
+
 
 export function useCreateLabelingMutation() {
   const qc = useQueryClient();
@@ -25,11 +26,29 @@ export function useImportLabelingItemsCsvMutation() {
   });
 }
 
+
+export function useAssignLabelingToProjectMutation() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ labelingId, projectId }: { labelingId: number; projectId: number }) =>
+      assignLabelingToProject(labelingId, projectId),
+    onSuccess: () => {
+      // a rotulação sai da lista "sem projeto" e os contadores do projeto mudam
+      qc.invalidateQueries({ queryKey: ['labelings'] });
+      qc.invalidateQueries({ queryKey: ['projects'] }); 
+    },
+  });
+}
+
+
+
 export function useCreateLabelingWithCsvMutation() {
   const qc = useQueryClient();
   const createLabeling = useCreateLabelingMutation();
   const importCsv = useImportLabelingItemsCsvMutation();
-
+  
+    
   return useMutation({
     mutationFn: async ({ payload, file }: CreateLabelingWithCsvPayload) => {
       const labeling = await createLabeling.mutateAsync(payload);

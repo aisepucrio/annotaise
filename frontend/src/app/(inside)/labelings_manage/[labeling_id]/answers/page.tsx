@@ -18,7 +18,7 @@ import {
 import { exportLabelingAnswersCsv } from '@/modules/labelings/labelingService';
 import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 import type { User } from '@/modules/user/userTypes';
-import type { AnswerResponse } from '@/modules/labelings/labelingsTypes';
+import type { AnswerResponse } from '@/modules/labelings/labelingTypes';
 
 type AnswerTabProps = {
   labelingId: number;

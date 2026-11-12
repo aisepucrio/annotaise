@@ -22,7 +22,7 @@ import {
   useExportImportedLabelingCsvMutation,
   useUpdateLabelingMutation,
 } from '@/modules/labelings/manage/labelingManagerMutations';
-import type { LabelingPayload } from '@/modules/labelings/labelingsTypes';
+import type { LabelingPayload } from '@/modules/labelings/labelingTypes';
 
 import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 

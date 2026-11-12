@@ -15,7 +15,7 @@ import {
 } from '@/components/context-question';
 import { useTranslations } from '@/i18n/use-translations';
 import { fetchLabelingById, fetchNextAnswer, submitAnswer } from '@/modules/labelings/labelingService';
-import type { LabelingStructureSection } from '@/modules/labelings/labelingsTypes';
+import type { LabelingStructureSection } from '@/modules/labelings/labelingTypes';
 
 import InnerPageHeader from '@/components/InnerPageHeader';
 import Button from '@/components/button/Button';
