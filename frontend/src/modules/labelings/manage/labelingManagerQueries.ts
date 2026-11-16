@@ -3,6 +3,7 @@ import { useCursorQuery } from '@/modules/pagination';
 import type { CursorQuery } from '@/modules/pagination';
 import {
   fetchLabeling,
+  fetchLabelingDependencies,
   fetchLabelingAnswerItems,
   fetchLabelingStructure,
   fetchLabelingMemberships,
@@ -21,6 +22,14 @@ import type {
   LabelingStructureSection,
   LabelingElementSummary,
 } from '@/modules/labelings/labelingsTypes';
+
+export function useLabelingDependenciesQuery(labelingId: number) {
+  return useQuery({
+    queryKey: ['labelings', labelingId, 'dependencies'],
+    enabled: Number.isInteger(labelingId) && labelingId > 0,
+    queryFn: () => fetchLabelingDependencies(labelingId),
+  });
+}
 
 export function useLabelingHeaderQuery(labelingId: number) {
   const enabled = !Number.isNaN(labelingId);

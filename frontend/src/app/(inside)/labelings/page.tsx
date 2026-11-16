@@ -5,7 +5,7 @@ import PageLayout from '@/components/inside-pages-layout/PageLayout';
 import IndividualLabelingCard from '@/components/IndividualLabelingCard';
 import GridItemCard from '@/components/grid/GridItemCard';
 import Button from '@/components/button/Button';
-import { Tag } from 'lucide-react';
+import { Lock, Tag } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useLabelingDashboardQuery } from '@/modules/labelings/labelingQueries';
 import InfiniteScroll from '@/components/InfiniteScroll';
@@ -72,15 +72,23 @@ export default function LabelingsPage() {
             labelingsDone={l.items_done}
             formMode={l.form_mode}
             answersCollected={l.answers_collected}
+            locked={l.blocked_by_dependencies}
             variant="labelings"
             actionButton={
               <Button
-                icon={<Tag size={20} strokeWidth={1.75} />}
+                icon={
+                  l.blocked_by_dependencies ? (
+                    <Lock size={20} strokeWidth={1.75} />
+                  ) : (
+                    <Tag size={20} strokeWidth={1.75} />
+                  )
+                }
                 onClick={() => handleOpenLabeling(l.id)}
                 variant="normal"
+                disabled={l.blocked_by_dependencies}
                 ariaLabel={t('labelings.action.answerAria')}
               >
-                {t('labelings.action.answer')}
+                {l.blocked_by_dependencies ? t('labelings.locked.action') : t('labelings.action.answer')}
               </Button>
             }
           />

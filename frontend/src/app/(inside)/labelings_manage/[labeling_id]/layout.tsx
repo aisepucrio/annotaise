@@ -30,9 +30,10 @@ type LayoutProps = {
   children: ReactNode;
 };
 
-type HeaderTabKey = 'form' | 'assign' | 'groups' | 'answers' | 'guide' | 'decision';
+type HeaderTabKey = 'form' | 'options' | 'assign' | 'groups' | 'answers' | 'guide' | 'decision';
 
 function getActiveTabFromPath(pathname: string): HeaderTabKey {
+  if (pathname.includes('/options')) return 'options';
   if (pathname.includes('/groups')) return 'groups';
   if (pathname.includes('/assign')) return 'assign';
   if (pathname.includes('/answers')) return 'answers';
@@ -165,6 +166,7 @@ export default function LabelingsManageLayout({ children }: LayoutProps) {
   const tabs = useMemo(() => {
     const base = [
       { key: 'form', label: t('labelings.create.tabs.form') },
+      { key: 'options', label: t('labelings.create.tabs.options') },
       { key: 'assign', label: t('labelings.create.tabs.assign') },
       ...(hasGroups ? [{ key: 'groups', label: t('labelings.create.tabs.groups') }] : []),
       { key: 'answers', label: t('labelings.create.tabs.answers') },

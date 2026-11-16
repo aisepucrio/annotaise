@@ -3,6 +3,8 @@ import { fetchCursorPage } from '@/modules/pagination';
 import type { CursorRequest, CursorSearchRequest } from '@/modules/pagination';
 import type {
   Labeling,
+  LabelingDependency,
+  LabelingDependencyPayload,
   LabelingPayload,
   LabelingStructureSection,
   LabelingStructurePayload,
@@ -19,6 +21,22 @@ import type {
 } from './labelingsTypes';
 
 // Labeling functions
+
+export async function fetchLabelingDependencies(labelingId: number): Promise<LabelingDependency[]> {
+  const { data } = await api.get<LabelingDependency[]>('/labeling-dependencies/', {
+    params: { labeling: labelingId },
+  });
+  return data;
+}
+
+export async function createLabelingDependency(payload: LabelingDependencyPayload): Promise<LabelingDependency> {
+  const { data } = await api.post<LabelingDependency>('/labeling-dependencies/', payload);
+  return data;
+}
+
+export async function deleteLabelingDependency(id: number): Promise<void> {
+  await api.delete(`/labeling-dependencies/${id}/`);
+}
 
 export function fetchLabelingDashboard(params: CursorSearchRequest) {
   return fetchCursorPage<LabelingDashboard>('/labelings/dashboard/', params);

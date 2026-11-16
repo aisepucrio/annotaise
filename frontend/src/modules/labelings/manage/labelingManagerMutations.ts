@@ -1,6 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   deleteLabeling,
+  createLabelingDependency,
+  deleteLabelingDependency,
   updateLabeling,
   duplicateLabeling,
   saveLabelingStructure,
@@ -11,6 +13,22 @@ import {
   exportImportedLabelingCsv,
 } from '../labelingService';
 import type { LabelingPayload, SectionDTO, LabelingMembershipRole } from '@/modules/labelings/labelingsTypes';
+
+export function useCreateDependencyMutation(labelingId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (dependsOn: number) => createLabelingDependency({ labeling: labelingId, depends_on: dependsOn }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['labelings', labelingId, 'dependencies'] }),
+  });
+}
+
+export function useDeleteDependencyMutation(labelingId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: deleteLabelingDependency,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['labelings', labelingId, 'dependencies'] }),
+  });
+}
 
 export function useDeleteLabelingMutation() {
   const qc = useQueryClient();
