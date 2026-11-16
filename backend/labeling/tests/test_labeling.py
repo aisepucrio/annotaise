@@ -3,7 +3,7 @@ from django.urls import reverse
 from rest_framework import serializers as drf_serializers, status
 from rest_framework.test import APIClient
 from ..serializers import LabelingSerializer, LabelingSectionSerializer, LabelingElementSerializer, MultipleChoiceItemSerializer, QuestionRangeSerializer, LabelingMembershipSerializer
-from ..models import Labeling, LabelingSection, LabelingElement, MultipleChoiceItem, QuestionRange, LabelingMembership
+from ..models import Labeling, LabelingSection, LabelingElement, MultipleChoiceItem, QuestionRange, LabelingMembership, DependsOn
 from project.models import Project, ProjectMembership
 from item.models import Item
 from answer.models import Answer
@@ -1481,3 +1481,132 @@ class LabelingReliabilityViewTest(TestCase):
         self.assertIsNone(question["krippendorff_alpha"]["value"])
         self.assertIsNone(question["percent_agreement"]["value"])
         self.assertIsNone(question["fleiss_kappa"])
+
+
+class DependsOnViewSetTest(TestCase):
+    """The dependency graph must stay acyclic and admin/owner-only."""
+
+    def setUp(self):
+        User = get_user_model()
+        self.owner = User.objects.create_user(
+            username="dep_owner", password="pass123", email="dep-owner@example.com",
+            account_type="admin",
+        )
+        self.annotator = User.objects.create_user(
+            username="dep_annotator", password="pass123", email="dep-annotator@example.com",
+            account_type="admin",
+        )
+        self.outsider = User.objects.create_user(
+            username="dep_outsider", password="pass123", email="dep-outsider@example.com",
+            account_type="admin",
+        )
+        self.project = Project.objects.create(
+            name="Dep Project", description="", created_by=self.owner
+        )
+        self.a, self.b, self.c = [
+            Labeling.objects.create(
+                project=self.project,
+                title=title,
+                created_by=self.owner,
+                start_date=timezone.now().date(),
+                final_date=timezone.now().date(),
+            )
+            for title in ("A", "B", "C")
+        ]
+        for labeling in (self.a, self.b, self.c):
+            LabelingMembership.objects.create(labeling=labeling, user=self.owner, role="owner")
+            LabelingMembership.objects.create(
+                labeling=labeling, user=self.annotator, role="annotator"
+            )
+
+        self.client = APIClient()
+        self.url = reverse("labeling-dependencies-list")
+
+    def detail_url(self, relation):
+        return reverse("labeling-dependencies-detail", args=[relation.id])
+
+    def test_owner_creates_dependency(self):
+        self.client.force_authenticate(self.owner)
+        response = self.client.post(self.url, {"labeling": self.a.id, "depends_on": self.b.id})
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(DependsOn.objects.filter(labeling=self.a, depends_on=self.b).exists())
+
+    def test_rejects_self_dependency(self):
+        self.client.force_authenticate(self.owner)
+        response = self.client.post(self.url, {"labeling": self.a.id, "depends_on": self.a.id})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_rejects_indirect_cycle(self):
+        """A -> B -> C already exists; C -> A would close the loop."""
+        DependsOn.objects.create(labeling=self.a, depends_on=self.b)
+        DependsOn.objects.create(labeling=self.b, depends_on=self.c)
+
+        self.client.force_authenticate(self.owner)
+        response = self.client.post(self.url, {"labeling": self.c.id, "depends_on": self.a.id})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(DependsOn.objects.filter(labeling=self.c, depends_on=self.a).exists())
+
+    def test_rejects_duplicate(self):
+        DependsOn.objects.create(labeling=self.a, depends_on=self.b)
+        self.client.force_authenticate(self.owner)
+        response = self.client.post(self.url, {"labeling": self.a.id, "depends_on": self.b.id})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_annotator_cannot_create_or_delete(self):
+        relation = DependsOn.objects.create(labeling=self.a, depends_on=self.b)
+        self.client.force_authenticate(self.annotator)
+
+        self.assertEqual(
+            self.client.post(
+                self.url, {"labeling": self.a.id, "depends_on": self.c.id}
+            ).status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+        # 404, not 403: get_queryset already hides rows the user can't edit,
+        # so the endpoint doesn't leak that the relation exists.
+        self.assertEqual(
+            self.client.delete(self.detail_url(relation)).status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_outsider_cannot_create_on_someone_elses_labeling(self):
+        """The labeling comes from the payload now: the permission has to read it there."""
+        self.client.force_authenticate(self.outsider)
+        response = self.client.post(self.url, {"labeling": self.a.id, "depends_on": self.b.id})
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(DependsOn.objects.exists())
+
+    def test_list_is_scoped_to_editable_labelings_and_filters_by_labeling(self):
+        relation = DependsOn.objects.create(labeling=self.a, depends_on=self.b)
+        other = DependsOn.objects.create(labeling=self.c, depends_on=self.b)
+
+        self.client.force_authenticate(self.owner)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            sorted(row["id"] for row in response.data), sorted([relation.id, other.id])
+        )
+
+        filtered = self.client.get(self.url, {"labeling": self.a.id})
+        self.assertEqual([row["id"] for row in filtered.data], [relation.id])
+
+        self.client.force_authenticate(self.annotator)
+        self.assertEqual(self.client.get(self.url).data, [])
+
+    def test_moving_a_dependency_is_not_routed(self):
+        """Repointing an edge is delete + create, so PATCH never reaches the viewset."""
+        relation = DependsOn.objects.create(labeling=self.a, depends_on=self.b)
+        self.client.force_authenticate(self.owner)
+        response = self.client.patch(self.detail_url(relation), {"depends_on": self.c.id})
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        relation.refresh_from_db()
+        self.assertEqual(relation.depends_on, self.b)
+
+    def test_owner_deletes(self):
+        relation = DependsOn.objects.create(labeling=self.a, depends_on=self.b)
+        self.client.force_authenticate(self.owner)
+        self.assertEqual(
+            self.client.delete(self.detail_url(relation)).status_code,
+            status.HTTP_204_NO_CONTENT,
+        )
+        self.assertFalse(DependsOn.objects.filter(pk=relation.pk).exists())

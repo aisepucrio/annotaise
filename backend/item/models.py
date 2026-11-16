@@ -2,10 +2,13 @@ from django.db import models
 from django.db.models import Count
 from django.contrib.auth import get_user_model
 from user.models import UserGroup
+from .querysets import ItemQuerySet
 
 
 User = get_user_model()
 class Item(models.Model):
+    objects = ItemQuerySet.as_manager()
+
     class Status(models.TextChoices):
         PENDING = "pending", "Pendente"
         LABELED = "labeled", "Rotulado"
