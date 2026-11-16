@@ -15,7 +15,7 @@ class LabelingSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Labeling
-        fields = ['id', 'project', 'title', 'created_at','status','column_names','start_date','final_date','users_per_item','block_section_back','has_background_form','guide','decision','decision_mode','decisive_question','distribution_strategy','form_mode','anonymous_token','anonymous_url','items_per_group']
+        fields = ['id', 'project', 'title', 'created_at','status','column_names','start_date','final_date','users_per_item','block_section_back','guide','decision','decision_mode','decisive_question','distribution_strategy','form_mode','anonymous_token','anonymous_url','items_per_group']
         read_only_fields = ['id', 'created_at','created_by','column_names','status','anonymous_token','anonymous_url']
 
     def create(self, validated_data):
@@ -371,8 +371,6 @@ class LabelingDashboardSerializer(serializers.Serializer):
 
     items_done = serializers.IntegerField()
     total_items = serializers.IntegerField(required=False, allow_null=True)
-    background_required = serializers.BooleanField(required=False)
-    background_answered = serializers.BooleanField(required=False)
     form_mode = serializers.BooleanField(required=False)
     answers_collected = serializers.IntegerField(required=False, allow_null=True)
 #TODO add per-field validation on each serializer, so bad input doesn't surface as an internal server error
@@ -385,7 +383,6 @@ class LabelingMembershipDashboardSerializer(serializers.Serializer):
     last_name = serializers.CharField(allow_blank=True, allow_null=True)
     email = serializers.EmailField()
     role = serializers.CharField()
-    background_answered = serializers.BooleanField(required=False)
     items_done = serializers.IntegerField(required=False)
 
     joined_at = serializers.DateTimeField()

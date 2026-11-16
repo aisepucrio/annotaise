@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { ClipboardCheck, Copy, Users } from 'lucide-react';
 import { toast } from 'sonner';
@@ -23,11 +23,8 @@ import SearchableSelect from '@/components/form/SearchableSelect';
 import Button from '@/components/button/Button';
 import DeleteIconButton from '@/components/button/DeleteIconButton';
 import InfiniteScroll from '@/components/InfiniteScroll';
-import BackgroundModal, { type BackgroundModalHandle } from './BackgroundModal';
 
 type AssignTabProps = {
-  labelingId: number;
-  hasBackgroundForm: boolean;
   isAnonymous: boolean;
   anonymousUrl: string | null;
   memberships: LabelingMembershipDashboard[];
@@ -49,8 +46,6 @@ type AssignTabProps = {
 };
 
 function AssignTabView({
-  labelingId,
-  hasBackgroundForm,
   isAnonymous,
   anonymousUrl,
   memberships,
@@ -71,7 +66,6 @@ function AssignTabView({
   onRemoveMember,
 }: AssignTabProps) {
   const { t } = useTranslations();
-  const backgroundModalRef = useRef<BackgroundModalHandle>(null);
   // Record (not Partial) on purpose: a new LabelingMembershipRole fails the build
   // here instead of silently rendering the raw backend value.
   const roleLabels: Record<LabelingMembershipRole, string> = {
@@ -79,10 +73,6 @@ function AssignTabView({
     admin: t('roles.admin'),
     viewer: t('roles.viewer'),
     annotator: t('roles.annotator'),
-  };
-
-  const handleInspectBackground = async (membership: LabelingMembershipDashboard) => {
-    await backgroundModalRef.current?.open(membership);
   };
 
   const handleCopyAnonymousUrl = async () => {
@@ -130,136 +120,119 @@ function AssignTabView({
   }
 
   return (
-    <>
-      <div className="w-[80%] mx-auto flex h-full min-h-0 flex-col gap-4 pt-2">
-        <div className=" border-b-3 border-gray-300 p-3 space-y-3">
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-sm font-medium text-gray-900">{t('labelings.create.assign.addTitle')}</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-            <SearchableSelect
-              value={newMemberId}
-              onChange={onChangeNewMemberId}
-              disabled={membershipSaving}
-              options={availableUsers.map((user) => {
-                const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
-                return {
-                  value: String(user.id),
-                  label: fullName || user.email,
-                  // Only show the email as a sub-line when it isn't already the label.
-                  description: fullName ? user.email : undefined,
-                };
-              })}
-              placeholder={t('labelings.create.assign.selectUser')}
-            />
-            <Select
-              value={newMemberRole}
-              onChange={(e) => onChangeNewMemberRole(e.target.value as LabelingMembershipRole)}
-              disabled={membershipSaving}
-              options={roleOptions.map((opt) => ({
-                value: opt,
-                label: roleLabels[opt] ?? opt,
-              }))}
-            />
-            <Button type="button" onClick={onAddMember} disabled={!newMemberId || membershipSaving} variant="normal">
-              {membershipSaving ? t('labelings.create.assign.adding') : t('labelings.create.assign.add')}
-            </Button>
-          </div>
+    <div className="w-[80%] mx-auto flex h-full min-h-0 flex-col gap-4 pt-2">
+      <div className=" border-b-3 border-gray-300 p-3 space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm font-medium text-gray-900">{t('labelings.create.assign.addTitle')}</p>
         </div>
-
-        {membershipLoading ? (
-          <p className="text-sm text-gray-500">{t('labelings.create.assign.loading')}</p>
-        ) : memberships.length === 0 ? (
-          <p className="text-sm text-gray-600">{t('labelings.create.assign.empty')}</p>
-        ) : (
-          <div className="flex min-h-0 flex-1 flex-col w-[98%] mx-auto">
-            <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-2">
-              {memberships.map((membership) => {
-                const fullName = `${membership.first_name || ''} ${membership.last_name || ''}`.trim();
-                const canInspectBackground = hasBackgroundForm && membership.role === 'annotator';
-                // Roles outside roleOptions (owner, viewer) are not assignable here. A <Select>
-                // without a matching option falls back to showing the browser's first one — the
-                // owner appeared as "Annotator", and any click would actually demote them.
-                const isAssignableRole = roleOptions.includes(membership.role);
-                const itemsDone = membership.items_done ?? 0;
-
-                return (
-                  <div
-                    key={membership.id}
-                    className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 rounded-lg border border-gray-200 p-3"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Users size={16} className="text-blue-900" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{fullName || membership.email}</p>
-                        <p className="text-xs text-gray-500">{membership.email}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 flex-wrap md:flex-nowrap md:justify-end">
-                      {isAssignableRole ? (
-                        <Select
-                          value={membership.role}
-                          onChange={(e) => onChangeRole(membership, e.target.value as LabelingMembershipRole)}
-                          disabled={membershipSaving}
-                          options={roleOptions.map((opt) => ({
-                            value: opt,
-                            label: roleLabels[opt] ?? opt,
-                          }))}
-                          containerClassName="w-auto min-w-[150px]"
-                        />
-                      ) : (
-                        <span className="min-w-[150px] whitespace-nowrap rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-center text-sm font-medium text-gray-900">
-                          {roleLabels[membership.role] ?? membership.role}
-                        </span>
-                      )}
-
-                      <span
-                        title={t('labelings.create.assign.itemsDoneTooltip', { count: itemsDone })}
-                        className="flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700"
-                      >
-                        <ClipboardCheck size={16} className="text-blue-900" />
-                        <span className="text-gray-500">{t('labelings.create.assign.itemsDone')}:</span>
-                        <span className="font-medium text-gray-900">{itemsDone}</span>
-                      </span>
-
-                      {canInspectBackground ? (
-                        <Button
-                          type="button"
-                          onClick={() => void handleInspectBackground(membership)}
-                          variant="normal"
-                          fill={false}
-                          className="px-4"
-                        >
-                          {t('labelings.create.assign.background.button')}
-                        </Button>
-                      ) : null}
-
-                      <DeleteIconButton
-                        onClick={() => onRemoveMember(membership)}
-                        disabled={membershipSaving}
-                        ariaLabel={t('labelings.create.assign.remove')}
-                      ></DeleteIconButton>
-                    </div>
-                  </div>
-                );
-              })}
-
-              {/* Inside the scrollable area: this is what makes the sentinel only fire
-                  when the user reaches the end of the list. */}
-              <InfiniteScroll
-                hasNextPage={hasMoreMemberships}
-                isFetchingNextPage={loadingMoreMemberships}
-                onLoadMore={onLoadMoreMemberships}
-                loadedCount={memberships.length}
-                totalCount={membershipsCount}
-              />
-            </div>
-          </div>
-        )}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+          <SearchableSelect
+            value={newMemberId}
+            onChange={onChangeNewMemberId}
+            disabled={membershipSaving}
+            options={availableUsers.map((user) => {
+              const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+              return {
+                value: String(user.id),
+                label: fullName || user.email,
+                // Only show the email as a sub-line when it isn't already the label.
+                description: fullName ? user.email : undefined,
+              };
+            })}
+            placeholder={t('labelings.create.assign.selectUser')}
+          />
+          <Select
+            value={newMemberRole}
+            onChange={(e) => onChangeNewMemberRole(e.target.value as LabelingMembershipRole)}
+            disabled={membershipSaving}
+            options={roleOptions.map((opt) => ({
+              value: opt,
+              label: roleLabels[opt] ?? opt,
+            }))}
+          />
+          <Button type="button" onClick={onAddMember} disabled={!newMemberId || membershipSaving} variant="normal">
+            {membershipSaving ? t('labelings.create.assign.adding') : t('labelings.create.assign.add')}
+          </Button>
+        </div>
       </div>
 
-      <BackgroundModal ref={backgroundModalRef} labelingId={labelingId} />
-    </>
+      {membershipLoading ? (
+        <p className="text-sm text-gray-500">{t('labelings.create.assign.loading')}</p>
+      ) : memberships.length === 0 ? (
+        <p className="text-sm text-gray-600">{t('labelings.create.assign.empty')}</p>
+      ) : (
+        <div className="flex min-h-0 flex-1 flex-col w-[98%] mx-auto">
+          <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-2">
+            {memberships.map((membership) => {
+              const fullName = `${membership.first_name || ''} ${membership.last_name || ''}`.trim();
+              // Roles outside roleOptions (owner, viewer) are not assignable here. A <Select>
+              // without a matching option falls back to showing the browser's first one — the
+              // owner appeared as "Annotator", and any click would actually demote them.
+              const isAssignableRole = roleOptions.includes(membership.role);
+              const itemsDone = membership.items_done ?? 0;
+
+              return (
+                <div
+                  key={membership.id}
+                  className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 rounded-lg border border-gray-200 p-3"
+                >
+                  <div className="flex items-center gap-2">
+                    <Users size={16} className="text-blue-900" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{fullName || membership.email}</p>
+                      <p className="text-xs text-gray-500">{membership.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap md:flex-nowrap md:justify-end">
+                    {isAssignableRole ? (
+                      <Select
+                        value={membership.role}
+                        onChange={(e) => onChangeRole(membership, e.target.value as LabelingMembershipRole)}
+                        disabled={membershipSaving}
+                        options={roleOptions.map((opt) => ({
+                          value: opt,
+                          label: roleLabels[opt] ?? opt,
+                        }))}
+                        containerClassName="w-auto min-w-[150px]"
+                      />
+                    ) : (
+                      <span className="min-w-[150px] whitespace-nowrap rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-center text-sm font-medium text-gray-900">
+                        {roleLabels[membership.role] ?? membership.role}
+                      </span>
+                    )}
+
+                    <span
+                      title={t('labelings.create.assign.itemsDoneTooltip', { count: itemsDone })}
+                      className="flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700"
+                    >
+                      <ClipboardCheck size={16} className="text-blue-900" />
+                      <span className="text-gray-500">{t('labelings.create.assign.itemsDone')}:</span>
+                      <span className="font-medium text-gray-900">{itemsDone}</span>
+                    </span>
+
+                    <DeleteIconButton
+                      onClick={() => onRemoveMember(membership)}
+                      disabled={membershipSaving}
+                      ariaLabel={t('labelings.create.assign.remove')}
+                    ></DeleteIconButton>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Inside the scrollable area: this is what makes the sentinel only fire
+                when the user reaches the end of the list. */}
+            <InfiniteScroll
+              hasNextPage={hasMoreMemberships}
+              isFetchingNextPage={loadingMoreMemberships}
+              onLoadMore={onLoadMoreMemberships}
+              loadedCount={memberships.length}
+              totalCount={membershipsCount}
+            />
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -283,7 +256,6 @@ export default function AssignPage() {
 
   const memberships = membershipsQuery.items;
   const availableUsers = useMemo(() => usersQuery.data ?? [], [usersQuery.data]);
-  const hasBackgroundForm = Boolean(labeling?.has_background_form);
 
   const createMembershipMutation = useCreateMembershipMutation();
   const updateMembershipMutation = useUpdateMembershipMutation();
@@ -353,8 +325,6 @@ export default function AssignPage() {
 
   return (
     <AssignTabView
-      labelingId={labelingId}
-      hasBackgroundForm={hasBackgroundForm}
       isAnonymous={isAnonymous}
       anonymousUrl={anonymousUrl}
       memberships={memberships}

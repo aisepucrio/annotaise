@@ -51,11 +51,10 @@ export function useSaveLabelingStructureMutation() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, sections, formType }: { id: number; sections: SectionDTO[]; formType?: 'main' | 'background' }) =>
-      saveLabelingStructure(id, { sections }, formType ?? 'main'),
-    onSuccess: (_data, { id, formType }) => {
+    mutationFn: ({ id, sections }: { id: number; sections: SectionDTO[] }) => saveLabelingStructure(id, { sections }),
+    onSuccess: (_data, { id }) => {
       qc.invalidateQueries({
-        queryKey: ['labelings', id, 'structure', formType ?? 'main'],
+        queryKey: ['labelings', id, 'structure'],
       });
     },
   });

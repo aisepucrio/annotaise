@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Answer, BackgroundAnswer
+from .models import Answer
 from item.serializers import ItemSerializer
 
 
@@ -87,49 +87,6 @@ class AnswerSerializer(serializers.ModelSerializer):
 
 class LabelingAnswerDashboardSerializer(serializers.Serializer):
     pass
-
-
-class BackgroundAnswerSerializer(serializers.ModelSerializer):
-    answer_payload = serializers.DictField()
-    user_first_name = serializers.CharField(
-        source="answered_by.first_name",
-        read_only=True,
-    )
-    user_last_name = serializers.CharField(
-        source="answered_by.last_name",
-        read_only=True,
-    )
-    user_email = serializers.EmailField(
-        source="answered_by.email",
-        read_only=True,
-    )
-
-    class Meta:
-        model = BackgroundAnswer
-        fields = [
-            "id",
-            "labeling",
-            "answered_by",
-            "user_first_name",
-            "user_last_name",
-            "user_email",
-            "answer_payload",
-            "created_at",
-            "updated_at",
-        ]
-        read_only_fields = [
-            "id",
-            "answered_by",
-            "created_at",
-            "updated_at",
-            "user_first_name",
-            "user_last_name",
-            "user_email",
-        ]
-
-    def create(self, validated_data):
-        user = self.context["request"].user
-        return super().create({**validated_data, "answered_by": user})
 
 
 class AnswerDashboardSerializer(serializers.Serializer):

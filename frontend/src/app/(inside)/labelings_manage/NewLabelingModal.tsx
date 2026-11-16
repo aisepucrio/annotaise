@@ -59,7 +59,6 @@ function createInitialState(defaultProjectId: number | null = null): CreateLabel
       block_section_back: true,
       decision: false,
       decision_mode: 'manual',
-      has_background_form: false,
       distribution_strategy: 'auto',
       form_mode: false,
     },
@@ -611,32 +610,6 @@ export default function NewLabelingModal({ open, onClose, onConfirm, defaultProj
                       />
                     </div>
                   ) : null}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 rounded-lg border border-metal-200 bg-metal-50 px-3 py-2">
-                <Checkbox
-                  id="csv-background-form"
-                  checked={draft.payload.has_background_form ?? false}
-                  onChange={(value) =>
-                    setDraft((prev) => ({
-                      ...prev,
-                      payload: {
-                        ...prev.payload,
-                        has_background_form: value,
-                      },
-                    }))
-                  }
-                  variant="square"
-                  hoverColor="var(--metal-500)"
-                  checkedColor="var(--metal-700)"
-                  className="shrink-0"
-                />
-                <div className="flex items-center gap-1">
-                  <label htmlFor="csv-background-form" className="cursor-pointer text-sm font-medium text-metal-900">
-                    {t('labelings.upload.backgroundFormLabel')}
-                  </label>
-                  <Tooltip content={t('labelings.upload.backgroundFormTooltip')} color="var(--metal-700)" size="sm" />
                 </div>
               </div>
             </div>

@@ -1,7 +1,7 @@
 from .models import Item, ItemMembership
 from .serializers import UploadItemCSVSerializer, ItemSerializer, NextItemResponseSerializer
 from labeling.models import Labeling, LabelingMembership, LabelingSection
-from answer.models import Answer, BackgroundAnswer
+from answer.models import Answer
 from user.models import UserGroup
 from user.permissions import IsAdminAccount
 from labeling.permissions import CanEditLabelingPermission, can_annotate_labeling
@@ -478,26 +478,11 @@ class NextItemView(RetrieveAPIView):
         labeling = get_object_or_404(Labeling, id=kwargs['labeling_id'])
         user = request.user
 
-        if not LabelingSection.objects.filter(
-            labeling=labeling,
-            form_type=LabelingSection.FormType.MAIN,
-        ).exists():
+        if not LabelingSection.objects.filter(labeling=labeling).exists():
             return Response({'detail':'o formulário dessa rotulação está vazio','code':'EMPTY_FORM'},status=403)
 
         if not can_annotate_labeling(user, labeling.id):
             return Response('Você não faz parte dessa rotulação',status=403)
-
-        if labeling.has_background_form and not BackgroundAnswer.objects.filter(
-            labeling=labeling,
-            answered_by=user,
-        ).exists():
-            return Response(
-                {
-                    'detail': 'Você precisa responder o formulário background antes de rotular.',
-                    'code': 'BACKGROUND_REQUIRED',
-                },
-                status=403,
-            )
 
         item = self.get_next_item_for_user(labeling, user)
         if isinstance(item, Response):
@@ -539,10 +524,7 @@ class AnonymousNextItemView(RetrieveAPIView):
                 status=400,
             )
 
-        if not LabelingSection.objects.filter(
-            labeling=labeling,
-            form_type=LabelingSection.FormType.MAIN,
-        ).exists():
+        if not LabelingSection.objects.filter(labeling=labeling).exists():
             return Response({'detail': 'o formulário dessa rotulação está vazio', 'code': 'EMPTY_FORM'}, status=403)
 
         # With no user to distinguish requesters, we simply return the next pending item.

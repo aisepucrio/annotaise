@@ -8,7 +8,6 @@ export type Labeling = {
   title: string;
   project: number;
   status: LabelingStatus;
-  has_background_form?: boolean;
   decision: boolean;
   decision_mode?: DecisionMode;
   decisive_question?: number | null;
@@ -155,7 +154,6 @@ export type LabelingMembershipDashboard = {
   email: string;
   role: LabelingMembershipRole;
   joined_at: string;
-  background_answered?: boolean;
   items_done?: number;
 };
 
@@ -169,8 +167,6 @@ export type LabelingDashboard = {
   days_passed: number;
   items_done: number;
   total_items?: number;
-  background_required?: boolean;
-  background_answered?: boolean;
   form_mode?: boolean;
   answers_collected?: number;
 };
@@ -217,23 +213,6 @@ export type AnswerResponse = AnswerPayload & {
   created_at: string;
   item_detail?: ItemStructure;
   decision_warning?: string;
-};
-
-export type BackgroundAnswerPayload = {
-  labeling: number;
-  answer_payload: Record<string, unknown>;
-};
-
-export type BackgroundAnswerResponse = {
-  id: number;
-  labeling: number;
-  answered_by: number;
-  user_first_name?: string;
-  user_last_name?: string;
-  user_email?: string;
-  answer_payload: Record<string, unknown>;
-  created_at: string;
-  updated_at: string;
 };
 
 export type LabelingAgreementOptionSummary = {

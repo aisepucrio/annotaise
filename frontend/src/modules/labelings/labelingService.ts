@@ -16,7 +16,6 @@ import type {
   AnswerStructure,
   AnswerPayload,
   AnswerResponse,
-  BackgroundAnswerResponse,
 } from './labelingsTypes';
 
 // Labeling functions
@@ -125,13 +124,8 @@ export async function exportImportedLabelingCsv(labelingId: number): Promise<{ b
 
 // Labeling structure functions
 
-export async function fetchLabelingStructure(
-  id: number,
-  formType: 'main' | 'background' = 'main'
-): Promise<LabelingStructureSection[]> {
-  const { data } = await api.get<LabelingStructureSection[]>(`/labelings/${id}/structure`, {
-    params: { form_type: formType },
-  });
+export async function fetchLabelingStructure(id: number): Promise<LabelingStructureSection[]> {
+  const { data } = await api.get<LabelingStructureSection[]>(`/labelings/${id}/structure`);
   return data;
 }
 
@@ -140,14 +134,8 @@ export async function fetchLabelingElements(labelingId: number, params?: { type?
   return data;
 }
 
-export async function saveLabelingStructure(
-  id: number,
-  payload: LabelingStructurePayload,
-  formType: 'main' | 'background' = 'main'
-): Promise<void> {
-  await api.put(`/labelings/${id}/structure`, payload, {
-    params: { form_type: formType },
-  });
+export async function saveLabelingStructure(id: number, payload: LabelingStructurePayload): Promise<void> {
+  await api.put(`/labelings/${id}/structure`, payload);
 }
 
 // Membership functions
@@ -243,27 +231,5 @@ export async function fetchMyAnswers(labelingId: number): Promise<AnswerResponse
 
 export async function updateAnswer(id: number, payload: Pick<AnswerPayload, 'answer_payload'>): Promise<AnswerResponse> {
   const { data } = await api.patch<AnswerResponse>(`/answers/${id}/`, payload);
-  return data;
-}
-
-export async function fetchMyBackgroundAnswer(labelingId: number): Promise<BackgroundAnswerResponse | null> {
-  const { data } = await api.get<BackgroundAnswerResponse | null>(`/labelings/${labelingId}/background-answer/`);
-  return data;
-}
-
-export async function submitBackgroundAnswer(payload: {
-  labeling: number;
-  answer_payload: Record<string, unknown>;
-}): Promise<BackgroundAnswerResponse> {
-  const { data } = await api.put<BackgroundAnswerResponse>(`/labelings/${payload.labeling}/background-answer/`, {
-    answer_payload: payload.answer_payload,
-  });
-  return data;
-}
-
-export async function fetchLabelingBackgroundAnswers(labelingId: number, userId?: number): Promise<BackgroundAnswerResponse[]> {
-  const { data } = await api.get<BackgroundAnswerResponse[]>(`/labelings/${labelingId}/background-answers/`, {
-    params: userId ? { user_id: userId } : undefined,
-  });
   return data;
 }

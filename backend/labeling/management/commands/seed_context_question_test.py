@@ -9,7 +9,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
 
-from answer.models import Answer, BackgroundAnswer
+from answer.models import Answer
 from item.models import Item
 from labeling.models import (
     Labeling,
@@ -247,7 +247,6 @@ class Command(BaseCommand):
 
             self._replace_structure(labeling)
             items_count = self._replace_items(labeling)
-            background_count = self._seed_background_answers(labeling, [admin_user, *annotators])
             answers_count = self._seed_demo_answers(labeling, annotators)
 
         self.stdout.write(
@@ -256,7 +255,6 @@ class Command(BaseCommand):
                 f"- Project: {project.name} (id={project.id})\n"
                 f"- Labeling: {labeling.title} (id={labeling.id})\n"
                 f"- Created items: {items_count}\n"
-                f"- Prefilled backgrounds: {background_count}\n"
                 f"- Prefilled main answers: {answers_count}\n"
                 f"- Owner/admin: {admin_user.email}\n"
                 "- Command: python manage.py seed_context_question_test "
@@ -391,7 +389,6 @@ class Command(BaseCommand):
             "guide": LABELING_GUIDE_MARKDOWN,
             "users_per_item": 3,
             "block_section_back": True,
-            "has_background_form": True,
             "column_names": COLUMN_NAMES,
             "status": Labeling.Status.ACTIVE,
             "decisive_question": None,
@@ -431,7 +428,6 @@ class Command(BaseCommand):
         LabelingSection.objects.filter(labeling=labeling).delete()
 
         self._follow_up_order = 10000
-        self._create_background_section(labeling)
         self._create_context_section(labeling)
         self._create_question_section(labeling)
         decision_question = self._create_follow_up_section(labeling)
@@ -439,59 +435,9 @@ class Command(BaseCommand):
         labeling.decisive_question = decision_question
         labeling.save(update_fields=["decisive_question"])
 
-    def _create_background_section(self, labeling: Labeling):
-        section = LabelingSection.objects.create(
-            labeling=labeling,
-            form_type=LabelingSection.FormType.BACKGROUND,
-            title="Test background",
-            order=1,
-        )
-
-        self._create_text_question(
-            section=section,
-            order=1,
-            text="Describe your profile for this test",
-            required=True,
-        )
-        self._create_number_question(
-            section=section,
-            order=2,
-            text="Years of QA experience",
-            required=True,
-            start=0,
-            end=40,
-        )
-        self._create_range_question(
-            section=section,
-            order=3,
-            text="Comfort evaluating multimodal content",
-            required=True,
-            start=0,
-            end=10,
-            start_label="Low",
-            end_label="High",
-        )
-        self._create_multiple_choice_question(
-            section=section,
-            order=4,
-            text="Which blocks do you want to review?",
-            options=["Contexts", "Questions", "Follow-ups", "Summaries"],
-            allow_multiple=True,
-            required=True,
-        )
-        self._create_multiple_choice_question(
-            section=section,
-            order=5,
-            text="Test agreement",
-            options=["I agree", "I do not agree"],
-            allow_multiple=False,
-            required=True,
-        )
-
     def _create_context_section(self, labeling: Labeling):
         section = LabelingSection.objects.create(
             labeling=labeling,
-            form_type=LabelingSection.FormType.MAIN,
             title="1 - All context types",
             order=1,
         )
@@ -509,7 +455,6 @@ class Command(BaseCommand):
     def _create_question_section(self, labeling: Labeling):
         section = LabelingSection.objects.create(
             labeling=labeling,
-            form_type=LabelingSection.FormType.MAIN,
             title="2 - Basic questions",
             order=2,
         )
@@ -566,7 +511,6 @@ class Command(BaseCommand):
     def _create_follow_up_section(self, labeling: Labeling) -> LabelingElement:
         section = LabelingSection.objects.create(
             labeling=labeling,
-            form_type=LabelingSection.FormType.MAIN,
             title="3 - Follow-ups and decision",
             order=3,
         )
@@ -819,7 +763,6 @@ class Command(BaseCommand):
         return self._follow_up_order
 
     def _replace_items(self, labeling: Labeling) -> int:
-        BackgroundAnswer.objects.filter(labeling=labeling).delete()
         Answer.objects.filter(labeling=labeling).delete()
         Item.objects.filter(labeling=labeling).delete()
 
@@ -837,38 +780,8 @@ class Command(BaseCommand):
         Item.objects.bulk_create(items_to_create)
         return len(items_to_create)
 
-    def _seed_background_answers(self, labeling: Labeling, users: list[Any]) -> int:
-        questions = self._main_questions_by_text(labeling, form_type=LabelingSection.FormType.BACKGROUND)
-        payloads = []
-
-        for index, user in enumerate(users):
-            payload = {
-                str(questions["Describe your profile for this test"].id): (
-                    f"Seeded profile for {user.email}"
-                ),
-                str(questions["Years of QA experience"].id): 2 + index,
-                str(questions["Comfort evaluating multimodal content"].id): min(10, 6 + index),
-                str(questions["Which blocks do you want to review?"].id): [
-                    "Contexts",
-                    "Questions",
-                    "Follow-ups",
-                    "Summaries",
-                ],
-                str(questions["Test agreement"].id): "I agree",
-            }
-            payloads.append(
-                BackgroundAnswer(
-                    labeling=labeling,
-                    answered_by=user,
-                    answer_payload=payload,
-                )
-            )
-
-        BackgroundAnswer.objects.bulk_create(payloads)
-        return len(payloads)
-
     def _seed_demo_answers(self, labeling: Labeling, annotators: list[Any]) -> int:
-        questions = self._main_questions_by_text(labeling, form_type=LabelingSection.FormType.MAIN)
+        questions = self._main_questions_by_text(labeling)
         finished_items = list(Item.objects.filter(labeling=labeling).order_by("row_index")[:5])
 
         if len(finished_items) != 5:
@@ -1020,11 +933,10 @@ class Command(BaseCommand):
         item = parent.multiple_choice_items.get(text=option_text)
         return f"followup_{parent.id}_{item.id}"
 
-    def _main_questions_by_text(self, labeling: Labeling, form_type: str) -> dict[str, LabelingElement]:
+    def _main_questions_by_text(self, labeling: Labeling) -> dict[str, LabelingElement]:
         questions = (
             LabelingElement.objects.filter(
                 labeling_section__labeling=labeling,
-                labeling_section__form_type=form_type,
             )
             .exclude(question_type=LabelingElement.QuestionType.CONTEXT)
             .order_by("labeling_section__order", "order")
