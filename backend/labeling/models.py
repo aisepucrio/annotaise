@@ -1,9 +1,13 @@
 from django.db import models
+from django.db.models.functions import Greatest, Least
 from django.utils import timezone
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from .querysets import DependsOnQuerySet, LabelingQuerySet
 
 class Labeling(models.Model):
+    objects = LabelingQuerySet.as_manager()
+
     class Status(models.TextChoices):
         DRAFT = "draft", "Rascunho"
         ACTIVE = "active", "Ativa"
@@ -247,3 +251,28 @@ class LabelingMembership(models.Model):
 
     def __str__(self):
         return f"{self.user} {self.labeling} {self.role} {self.items_done}"
+
+class DependsOn(models.Model):
+    """`labeling` only opens after `depends_on` is done. The graph must stay acyclic;
+    the cycle check lives in `services/dependencies.py`, since it spans several rows."""
+
+    objects = DependsOnQuerySet.as_manager()
+
+    labeling = models.ForeignKey(Labeling, on_delete=models.CASCADE, related_name="dependencies")
+    depends_on = models.ForeignKey(Labeling, on_delete=models.CASCADE, related_name="dependents")
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                Least("labeling", "depends_on"),
+                Greatest("labeling", "depends_on"),
+                name="unique_labeling_dependency_pair",
+            ),
+            models.CheckConstraint(
+                condition=~models.Q(labeling=models.F("depends_on")),
+                name="dependency_not_self",
+            ),
+        ]
+
+    def __str__(self):
+        return f"relation {self.labeling} depends on {self.depends_on}"

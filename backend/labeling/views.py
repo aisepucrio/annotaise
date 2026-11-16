@@ -1,13 +1,14 @@
-from .models import Labeling, LabelingMembership, LabelingSection, LabelingElement, MultipleChoiceItem, QuestionRange
+from .models import Labeling, LabelingMembership, LabelingSection, LabelingElement, MultipleChoiceItem, QuestionRange, DependsOn
 from .serializers import (LabelingSerializer, LabelingMembershipSerializer,
 LabelingSectionsBulkCreateSerializer, LabelingSectionSerializer, LabelingDashboardSerializer, LabelingMembershipDashboardSerializer, LabelingAgreementSummarySerializer,
-LabelingReliabilitySerializer)
+LabelingReliabilitySerializer, DependsOnSerializer)
 from user.permissions import IsAdminAccount
-from .permissions import CanEditLabelingPermission, IsLabelingOwnerPermission, EDIT_ROLES, ANNOTATE_ROLES
+from .permissions import CanEditLabelingPermission, CanManageDependencyPermission, IsLabelingOwnerPermission, EDIT_ROLES, ANNOTATE_ROLES
 from item.models import Item
 from user.models import UserGroup
 from .serializers import LabelingElementSerializer
 from .services.agreement import build_agreement_summary, build_reliability_report, parse_min_agreement
+from .services.dependencies import create_dependency, labeling_blocked_for
 
 from django.shortcuts import render, get_object_or_404
 from django.db import models, transaction
@@ -304,6 +305,10 @@ class LabelingViewSet(viewsets.ModelViewSet):
                     "items_done" : element.done_labelings,
                     "form_mode": bool(element.form_mode),
                     "answers_collected": element.answers_collected,
+                    # Shown as a locked card instead of being hidden: the user
+                    # still has work left in some prerequisite (per user, not
+                    # per campaign).
+                    "blocked_by_dependencies": labeling_blocked_for(element, request.user),
                 })
             return rows
 
@@ -599,3 +604,39 @@ class CreateReadLabelingStructureView(APIView):
 
         return Response(out, status=status.HTTP_200_OK)
         
+
+
+class DependsOnViewSet(viewsets.ModelViewSet):
+    """Dependencies between labelings: which ones must come before which.
+
+    Filter one labeling's dependencies with `?labeling=<id>`.
+    """
+
+    serializer_class = DependsOnSerializer
+    permission_classes = [IsAdminAccount, CanManageDependencyPermission]
+    queryset = DependsOn.objects.select_related('labeling', 'depends_on')
+    # No PATCH: an edge has nothing to edit but its two ends, so changing a
+    # prerequisite is a delete plus a create.
+    http_method_names = ['get', 'post', 'delete']
+
+    def get_queryset(self):
+        user = getattr(self.request, "user", None)
+        if not user or not getattr(user, "is_authenticated", False):
+            return self.queryset.none()
+
+        qs = self.queryset.filter(
+            labeling__memberships__user=user,
+            labeling__memberships__role__in=EDIT_ROLES,
+        ).distinct()
+
+        labeling_id = self.request.query_params.get("labeling")
+        if labeling_id and labeling_id.isdigit():
+            qs = qs.filter(labeling_id=int(labeling_id))
+
+        return qs
+
+    def perform_create(self, serializer):
+        serializer.instance = create_dependency(
+            serializer.validated_data['labeling'],
+            serializer.validated_data['depends_on'],
+        )

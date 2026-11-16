@@ -1,4 +1,4 @@
-from .models import Labeling, LabelingSection, LabelingElement, MultipleChoiceItem, QuestionRange, LabelingMembership
+from .models import Labeling, LabelingSection, LabelingElement, MultipleChoiceItem, QuestionRange, LabelingMembership, DependsOn
 
 
 import uuid
@@ -373,6 +373,7 @@ class LabelingDashboardSerializer(serializers.Serializer):
     total_items = serializers.IntegerField(required=False, allow_null=True)
     form_mode = serializers.BooleanField(required=False)
     answers_collected = serializers.IntegerField(required=False, allow_null=True)
+    blocked_by_dependencies = serializers.BooleanField(required=False)
 #TODO add per-field validation on each serializer, so bad input doesn't surface as an internal server error
 
 class LabelingMembershipDashboardSerializer(serializers.Serializer):
@@ -432,3 +433,15 @@ class LabelingReliabilityQuestionSerializer(serializers.Serializer):
 
 class LabelingReliabilitySerializer(serializers.Serializer):
     questions = LabelingReliabilityQuestionSerializer(many=True)
+
+
+class DependsOnSerializer(serializers.ModelSerializer):
+    """`labeling` is the dependent one; CanEditLabelingPermission authorizes it from the payload."""
+
+    labeling_title = serializers.CharField(source="labeling.title", read_only=True)
+    depends_on_title = serializers.CharField(source="depends_on.title", read_only=True)
+
+    class Meta:
+        model = DependsOn
+        fields = ["id", "labeling", "labeling_title", "depends_on", "depends_on_title"]
+        read_only_fields = ["id"]

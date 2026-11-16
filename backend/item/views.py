@@ -5,6 +5,7 @@ from answer.models import Answer
 from user.models import UserGroup
 from user.permissions import IsAdminAccount
 from labeling.permissions import CanEditLabelingPermission, can_annotate_labeling
+from labeling.services.dependencies import ensure_dependencies_satisfied
 
 from datetime import timedelta
 import csv
@@ -484,6 +485,7 @@ class NextItemView(RetrieveAPIView):
         if not can_annotate_labeling(user, labeling.id):
             return Response('Você não faz parte dessa rotulação',status=403)
 
+        ensure_dependencies_satisfied(labeling, user)
         item = self.get_next_item_for_user(labeling, user)
         if isinstance(item, Response):
             return item
@@ -518,6 +520,7 @@ class AnonymousNextItemView(RetrieveAPIView):
             distribution_strategy=Labeling.DistributionStrategy.ANONYMOUS_MODE,
         )
 
+        ensure_dependencies_satisfied(labeling, request.user)
         if labeling.status == "finished":
             return Response(
                 {"detail": "Essa rotulação já foi finalizada", "code": "ROTULACAO_FINALIZADA"},
@@ -538,4 +541,3 @@ class AnonymousNextItemView(RetrieveAPIView):
             return Response({'detail': 'Não há mais itens para rotular.', 'code': 'NO_LABELINGS_TO_ANSWER'}, status=400)
 
         return self.serialize_and_return(item)
-

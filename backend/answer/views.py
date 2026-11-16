@@ -7,6 +7,7 @@ from .serializers import (
 )
 from labeling.models import LabelingElement
 from labeling.models import Labeling
+from labeling.services.dependencies import ensure_dependencies_satisfied
 from annotaise.pagination import StandardCursorPagination
 
 from django.shortcuts import get_object_or_404
@@ -192,6 +193,7 @@ class AnswerViewset(viewsets.ModelViewSet):
                 .get(id=item_id)
             )
             labeling = item.labeling
+            ensure_dependencies_satisfied(labeling, user)
 
             # Group quotas are checked at distribution time, but reservations don't
             # consume slots: between reservation and submission, other answers may
@@ -369,6 +371,7 @@ class AnonymousSubmitAnswerView(APIView):
             distribution_strategy=Labeling.DistributionStrategy.ANONYMOUS_MODE,
         )
 
+        ensure_dependencies_satisfied(labeling, request.user)
         if labeling.status == "finished":
             return Response(
                 {"detail": "Essa rotulação já foi finalizada", "code": "ROTULACAO_FINALIZADA"},
