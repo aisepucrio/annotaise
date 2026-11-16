@@ -300,6 +300,59 @@ Use this seed to create an extensive test case for frontend modules.
 ```bash
 docker compose exec api uv run manage.py seed_context_question_test
 ```
+
+
+### General Workflow QA
+
+Create a broader manual QA suite with **8 projects and 5 labelings per project**.
+Each labeling has a text context, an optional multiple-choice question, and an
+optional text question. Empty answers are valid.
+
+```bash
+docker compose exec api uv run manage.py seed_workflow_qa
+# Non-interactive, using an existing administrator:
+docker compose exec -T api uv run manage.py seed_workflow_qa --admin-email a@g.com --no-input
+```
+
+| Project (prefixed with `QA Geral - `) | What to test |
+| --- | --- |
+| Forms anônimos | Public forms, repeated submissions, no login |
+| Forms identificados | One form submission per participant |
+| Rotulações anônimas | Three items, one anonymous answer per item |
+| Rotulações sem grupo | Three items, automatic distribution without group quotas |
+| Rotulações com grupo | Named group quotas, residual `any` slots, multiple answers per item |
+| Por pessoa | One item for the administrator and each of three demo annotators |
+| Com dependência | Blocked/unlocked labelings, chains, multiple prerequisites |
+| Forms anônimos com dependência | The same dependency checks through public form links |
+
+The command enrolls the administrator as owner and creates three standard demo
+accounts: Group A, Group B, and an annotator outside those groups. The
+administrator also joins the seed's Group A. Emails are scoped to the
+administrator's ID. Random login passwords are printed **only when accounts are
+created**; `--demo-password` optionally sets a password for newly created demo
+accounts. Existing accounts and passwords are preserved. Public links are
+printed at the end and are also available in the labeling management screen.
+
+Each form contains one item; other labelings contain three, except per-person
+labelings, which contain four. `Rotulações sem grupo 04` starts finished with
+three demo answers. In both dependency projects:
+
+- 01 waits for `Rotulações sem grupo 01`.
+- 02 waits for 01 of its own project (a chain).
+- 03 waits for both `Rotulações sem grupo 02` and `03`.
+- 04 is already unlocked because `Rotulações sem grupo 04` is finished.
+- 05 waits for `Rotulações sem grupo 05`; its other prerequisite, 04, is finished.
+
+Complete the prerequisites and check that the dependent labelings become
+available. In labeling options, try duplicates, reverse dependencies and longer
+cycles: each must be rejected. For anonymous dependency forms, the chain's first
+form must be marked finished in management because forms remain open after
+submissions.
+
+Re-running the command creates missing scenarios without resetting existing
+labelings, responses, reservations, or public tokens. It does not send invitations
+or call an LLM. Decision modes and the unsupported specified distribution strategy
+are outside this suite; all questions here remain optional.
 ## Uninstalling
 
 To stop AnnotAISE and remove the Docker resources created during installation:
