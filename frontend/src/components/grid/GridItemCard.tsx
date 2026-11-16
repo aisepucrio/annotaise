@@ -20,10 +20,10 @@ export default function GridItemCard({ children, index, borderColor, className =
   return (
     <div
       className={`
-        relative rounded-br-xl rounded-ss-3xl bg-white shadow-card p-4
+        relative rounded-br-xl rounded-ss-3xl bg-white shadow-md p-3
         border-t-6
         border-l-6
-        hover:shadow-raised
+        hover:shadow-lg
         transition-all duration-300 ease-in-out
         ${className}
       `}

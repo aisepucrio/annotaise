@@ -1,5 +1,4 @@
 import React from 'react';
-import { buttonBase, buttonSize, type ButtonSize } from '@/styles/typography';
 
 type ButtonVariant = 'normal' | 'light' | 'red' | 'green' | 'disabled' | 'white' | 'muted';
 
@@ -9,6 +8,7 @@ type ButtonProps = {
   icon?: React.ReactNode;
   onClick?: () => void;
   variant?: ButtonVariant;
+  bold?: boolean;
   disabled?: boolean;
   /** Fills available width when true. Default: true. */
   fill?: boolean;
@@ -16,11 +16,8 @@ type ButtonProps = {
   ariaLabel?: string;
   /** Default: "button"; use "submit" to submit forms. */
   type?: 'button' | 'submit' | 'reset';
-  /**
-   * Button size. Defines height, padding, text and weight — see `buttonSize`
-   * in styles/typography.ts. Do not pass `className="px-4 py-2 text-sm"`.
-   */
-  size?: ButtonSize;
+  /** Controls base padding size. */
+  size?: 'normal' | 'icon';
 };
 
 export default function Button({
@@ -28,16 +25,14 @@ export default function Button({
   icon,
   onClick,
   variant = 'normal',
+  bold = false,
   disabled = false,
   className = '',
   fill = true,
   ariaLabel,
-  size = 'md',
+  size = 'normal',
   type = 'button',
 }: ButtonProps) {
-  // Colors by variant or disabled state.
-  // Known debt (see TYPOGRAPHY.md §4): variants are still painted via inline
-  // `style` with hover handlers. Replacing them with classes is a separate refactor.
   const getColors = () => {
     if (disabled || variant === 'disabled') {
       return {
@@ -90,12 +85,22 @@ export default function Button({
   };
 
   const colors = getColors();
+  const fontWeight = bold ? 'font-bold' : 'font-normal';
+  const paddingClasses = size === 'icon' ? 'p-2 ' : 'px-4 py-2';
 
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`${buttonBase} ${buttonSize[size]} ${fill ? 'w-full' : 'w-auto'} ${className}`}
+      className={`
+        inline-flex items-center justify-center ${children ? 'gap-2' : ''} 
+        rounded-lg ${paddingClasses}
+        transition-colors text-sm cursor-pointer
+        ${fill ? 'w-full' : 'w-auto'}
+        disabled:cursor-not-allowed
+        ${fontWeight}
+        ${className}
+      `}
       style={{
         backgroundColor: colors.bg,
         color: colors.text,
@@ -116,7 +121,7 @@ export default function Button({
           {icon}
         </span>
       )}
-      {children && <span className="truncate">{children}</span>}
+      <span className="truncate">{children}</span>
     </button>
   );
 }

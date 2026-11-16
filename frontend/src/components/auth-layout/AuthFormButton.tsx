@@ -9,7 +9,7 @@ type AuthFormButtonProps = {
 /** Standardized submit button for authentication forms, with consistent style and layout. */
 export default function AuthFormButton({ icon, text }: AuthFormButtonProps) {
   return (
-    <Button type="submit" icon={icon} size="lg" className="mt-8">
+    <Button type="submit" icon={icon} className="mt-8 text-[1rem] py-3">
       {text}
     </Button>
   );

@@ -13,14 +13,14 @@ export default function InnerPageHeader({ onBack, children }: InnerPageHeaderPro
   const { t } = useTranslations();
 
   return (
-    <header className="surface-header flex items-center">
+    <header className="flex items-center bg-blueberry-700 px-6 py-4 text-white shadow-md">
       <div className="flex items-center gap-3 w-full">
         <Button
           variant="light"
           fill={false}
-          size="icon-lg"
+          size="icon"
           onClick={onBack}
-          className="bg-white/20 hover:bg-white/30"
+          className="flex items-center justify-center bg-white/20 hover:bg-white/30"
           aria-label={t('common.back')}
         >
           <ArrowLeft size={22} />
