@@ -1,136 +1,135 @@
-# Tipografia — Annotaise
+# Typography — Annotaise
 
-Requisitos de tipografia do frontend: família, peso, tamanho, entrelinha e
-as classes que os compõem. **Cor não faz parte deste sistema.** Complementa a
-[seção 6 do designpattern.md](../designpattern.md#6-frontend-o-padrão-já-existe-mantenha),
-que cobre a arquitetura de módulos e a listagem em scroll infinito.
+Typography requirements for the frontend: family, weight, size, line-height and
+the classes that compose them. **Color is not part of this system.** Supplements
+[section 6 of designpattern.MD](../designpattern.MD#6-frontend-o-padrão-já-existe-mantenha),
+which covers module architecture and infinite-scroll lists.
 
-Código novo nasce assim; código antigo migra quando é tocado.
+New code is written this way; existing code is migrated when touched.
 
-Arquivos:
+Files:
 
 - [`src/styles/typography.css`](src/styles/typography.css) — tokens (`@theme`),
-  padrões de elemento, utilities.
-- [`src/styles/typography.ts`](src/styles/typography.ts) — receitas de classe
-  para componentes, no padrão de `components/form/base/formFieldClasses.ts`.
+  element defaults, utilities.
+- [`src/styles/typography.ts`](src/styles/typography.ts) — class recipes for
+  components, following the pattern of `components/form/base/formFieldClasses.ts`.
 - [`src/stories/Typography.stories.tsx`](src/stories/Typography.stories.tsx) —
-  referência visual (`npm run storybook`, em *Design System/Tipografia*).
+  visual reference (`npm run storybook`, under *Design System/Typography*).
 
 ---
 
-## O padrão
+## The pattern
 
-Três camadas, e cada valor existe em exatamente uma delas:
+Three layers, and each value lives in exactly one of them:
 
 ```
-Token      styles/typography.css   o valor:  14px, 600, 1.25rem
-Papel      classe ou receita       o nome:   text-title-3, t-label, text-caption
-Componente .tsx                    compõe papéis — nunca valores
+Token      styles/typography.css   the value:  14px, 600, 1.25rem
+Role       class or recipe         the name:   text-title-3, t-label, text-caption
+Component  .tsx                    composes roles — never values
 ```
 
-**O componente nomeia papéis, nunca valores.** `text-lg font-semibold` deixa
-de existir; no lugar entra `text-title-3`, que já carrega 18px, entrelinha 26 e
-peso 600.
+**The component names roles, never values.** `text-lg font-semibold` no longer
+exists; it becomes `text-title-3`, which already carries 18px, line-height 26
+and weight 600.
 
-Papel que falta nasce em `typography.css`, com um comentário dizendo onde é
-usado. Não se resolve com `text-[13px]` no componente.
+A missing role is born in `typography.css`, with a comment saying where it is
+used. It is not solved with `text-[13px]` in the component.
 
-Consequência prática: **`text-sm`, `text-lg` e `font-bold` não aparecem em
-código novo.**
+Practical consequence: **`text-sm`, `text-lg` and `font-bold` do not appear in
+new code.**
 
 ---
 
-## Por que esta escala
+## Why this scale
 
-Auditoria do `frontend/src/` no estado atual deste branch:
+Audit of `frontend/src/` at the time this branch started:
 
-| O que | Situação encontrada |
+| What | Situation found |
 | --- | --- |
-| Tamanhos de texto | 14 valores distintos, incluindo `text-[0.95rem]`, `text-[0.7rem]`, `text-[10px]` |
-| Base da interface | `text-sm` em 230 de 364 ocorrências — a UI já era 14px, sem nunca ter sido declarado |
-| Pesos | `font-semibold` 72× · `font-medium` 31× · `font-bold` 22×, sem critério entre 600 e 700 |
-| Títulos | 21 combinações distintas de `className` em `<h1>`–`<h6>` |
-| `text-md` | 6 usos — **a classe não existe no Tailwind**, então os 6 não aplicam nada |
-| Pesos de fonte baixados | 6 (300–800); 300 e 800 nunca usados — dois arquivos de fonte por nada |
-| `@fontsource/montserrat` | instalado e nunca importado; `next/font` já traz a mesma fonte |
+| Text sizes | 14 distinct values, including `text-[0.95rem]`, `text-[0.7rem]`, `text-[10px]` |
+| UI base | `text-sm` in 230 of 364 occurrences — the UI was already 14px, never formally declared |
+| Weights | `font-semibold` 72× · `font-medium` 31× · `font-bold` 22×, with no rule between 600 and 700 |
+| Headings | 21 distinct `className` combinations across `<h1>`–`<h6>` |
+| `text-md` | 6 usages — **this class does not exist in Tailwind**, so all 6 apply nothing |
+| Downloaded font weights | 6 (300–800); 300 and 800 never used — two font files for nothing |
+| `@fontsource/montserrat` | installed but never imported; `next/font` already provides the same font |
 
-A escala foi ancorada em **14px**, não nos 16px padrão do Tailwind, porque era
-o que o projeto já praticava.
+The scale was anchored at **14px**, not Tailwind's default 16px, because that
+was what the project already used in practice.
 
 ---
 
-## 1. Fonte
+## 1. Font
 
 | | |
 | --- | --- |
-| Família | **Montserrat**, via `next/font/google` (`--font-montserrat`) |
-| Monoespaçada | pilha do sistema (`--font-mono`) — sem download novo |
-| Pesos baixados | 400, 500, 600, 700 |
+| Family | **Montserrat**, via `next/font/google` (`--font-montserrat`) |
+| Monospace | system stack (`--font-mono`) — no new download |
+| Downloaded weights | 400, 500, 600, 700 |
 
-Aplicada no `<body>`. Ninguém escreve `font-sans` nem `fontFamily`.
+Applied on `<body>`. Nobody writes `font-sans` or `fontFamily`.
 
-### Pesos — quando usar cada um
+### Weights — when to use each
 
-| Token | Valor | Uso | Classe |
+| Token | Value | Use | Class |
 | --- | --- | --- | --- |
-| regular | 400 | corpo de texto, metadado | `font-regular` |
-| medium | 500 | rótulo, botão, ênfase em UI | `font-medium` |
-| semibold | 600 | **todos os títulos** | `font-semibold` |
-| bold | 700 | **só números e métricas** | `font-bold` |
+| regular | 400 | body text, metadata | `font-regular` |
+| medium | 500 | label, button, UI emphasis | `font-medium` |
+| semibold | 600 | **all headings** | `font-semibold` |
+| bold | 700 | **numbers and metrics only** | `font-bold` |
 
-Título em 700 é bug. Os 22 `font-bold` atuais em `<h*>` viram 600.
+A heading in 700 is a bug. The 22 existing `font-bold` on `<h*>` become 600.
 
 ---
 
-## 2. Escala de texto
+## 2. Text scale
 
-Cada token carrega tamanho + entrelinha + peso + tracking. Usar `text-title-1`
-já entrega os quatro — **não se acrescenta `font-semibold` nem `leading-*` em
-cima**.
+Each token carries size + line-height + weight + tracking. Using `text-title-1`
+already delivers all four — **do not add `font-semibold` or `leading-*` on top**.
 
-| Classe | px / entrelinha | Peso | Onde usar |
+| Class | px / line-height | Weight | Where to use |
 | --- | --- | --- | --- |
-| `text-display` | 30 / 38 | 600 | título de tela de autenticação, estado vazio hero |
-| `text-title-1` | 24 / 32 | 600 | `<h1>` do `PageHeader`, dentro da faixa blueberry |
-| `text-title-2` | 20 / 28 | 600 | `<h2>` de modal, `InnerPageHeader`, `LabelingHeader`, título de aba |
-| `text-title-3` | 18 / 26 | 600 | `<h3>` de card, seção de formulário |
-| `text-title-4` | 16 / 24 | 600 | `<h4>` de subseção, rótulo de grupo de campos |
-| `text-body-lg` | 16 / 26 | 400 | texto para **ler**: guia, markdown, enunciado de questão |
-| `text-body` | 14 / 20 | 400 | **padrão da interface** |
-| `text-caption` | 12 / 16 | 400 | metadado, data, contador, legenda |
-| `.t-overline` | 11 / 14 | 600 | MAIÚSCULAS: badge de status, eyebrow, cabeçalho de coluna |
-| `text-metric` | 20 / 20 | 700 | número de `StatPill`, KPI, contador |
-| `text-metric-lg` | 30 / 32 | 700 | número de destaque de dashboard |
-| `.t-code` | 13 / 20 | 400 | mono: código, ID, nome de coluna de CSV |
+| `text-display` | 30 / 38 | 600 | auth screen title, empty-state hero |
+| `text-title-1` | 24 / 32 | 600 | `<h1>` in `PageHeader`, inside the blueberry band |
+| `text-title-2` | 20 / 28 | 600 | `<h2>` of modal, `InnerPageHeader`, `LabelingHeader`, tab title |
+| `text-title-3` | 18 / 26 | 600 | `<h3>` of card, form section |
+| `text-title-4` | 16 / 24 | 600 | `<h4>` of subsection, field-group label |
+| `text-body-lg` | 16 / 26 | 400 | text meant to be **read**: guide, markdown, question statement |
+| `text-body` | 14 / 20 | 400 | **UI default** |
+| `text-caption` | 12 / 16 | 400 | metadata, date, counter, legend |
+| `.t-overline` | 11 / 14 | 600 | UPPERCASE: status badge, eyebrow, column header |
+| `text-metric` | 20 / 20 | 700 | number in `StatPill`, KPI, counter |
+| `text-metric-lg` | 30 / 32 | 700 | highlight number in dashboard |
+| `.t-code` | 13 / 20 | 400 | mono: code, ID, CSV column name |
 
-**11px é o piso.** Nada menor. Isso aposenta `text-[10px]` e `text-[0.7rem]`.
+**11px is the floor.** Nothing smaller. This retires `text-[10px]` and `text-[0.7rem]`.
 
-### Utilities de apoio
+### Support utilities
 
-| Classe | O que é |
+| Class | What it is |
 | --- | --- |
-| `.t-label` | rótulo de campo — 14/20, medium |
-| `.t-helper` | texto de ajuda sob um campo — 12/16 |
-| `.t-error` | erro de campo — 12/16, medium |
-| `.t-prose` | bloco de leitura — 16/26 e **medida limitada a 68ch** |
-| `.t-tabular` | números tabulares; combine com `text-metric` para a coluna não dançar |
+| `.t-label` | form field label — 14/20, medium |
+| `.t-helper` | help text below a field — 12/16 |
+| `.t-error` | field error — 12/16, medium |
+| `.t-prose` | reading block — 16/26 and **width capped at 68ch** |
+| `.t-tabular` | tabular numbers; combine with `text-metric` so counters don't shift |
 
 ---
 
-## 3. Mapa de migração
+## 3. Migration map
 
-A coluna de ocorrências é a contagem neste branch.
+The occurrence count is from the state of the branch before migration started.
 
-> **Não é substituição cega.** `text-sm` aparece 230 vezes cumprindo ao menos
-> cinco papéis diferentes: rótulo de campo, texto de botão, metadado, erro e
-> parágrafo de UI. A tabela abaixo dá o destino mais comum; a tabela de decisão
-> em [designpattern.md](../designpattern.md#estilo-visual-papéis-não-valores)
-> dá o certo. O mesmo vale para `text-xs`, que é `text-caption` quando é
-> metadado e `.t-overline` quando é status em caixa alta.
+> **This is not a blind replacement.** `text-sm` appears 230 times filling at
+> least five different roles: field label, button text, metadata, error and UI
+> paragraph. The table below gives the most common destination; the decision
+> table in [designpattern.MD](../designpattern.MD#estilo-visual-papéis-não-valores)
+> gives the right one. The same applies to `text-xs`, which is `text-caption`
+> when it is metadata and `.t-overline` when it is an uppercase status.
 
-### Texto
+### Text
 
-| Hoje | Vira | Ocorrências |
+| Before | Becomes | Occurrences |
 | --- | --- | --- |
 | `text-3xl font-semibold` | `text-display` | 2 |
 | `text-xl md:text-2xl font-semibold` | `text-title-1` | 1 |
@@ -139,33 +138,33 @@ A coluna de ocorrências é a contagem neste branch.
 | `text-xl font-semibold` | `text-title-2` | 14 |
 | `font-bold text-lg mb-2` | `text-title-3 mb-2` | 9 |
 | `text-lg font-semibold` | `text-title-3` | 26 |
-| `text-base` / `text-[1rem]` / `text-[0.95rem]` | `text-title-4` ou `text-body-lg` | 8 |
-| `text-md` *(não existe)* | `text-title-4` | 6 |
-| `text-sm` | `text-body` *(ver aviso acima)* | 230 |
-| `text-xs` | `text-caption` ou `.t-overline` | 74 |
+| `text-base` / `text-[1rem]` / `text-[0.95rem]` | `text-title-4` or `text-body-lg` | 8 |
+| `text-md` *(does not exist)* | `text-title-4` | 6 |
+| `text-sm` | `text-body` *(see warning above)* | 230 |
+| `text-xs` | `text-caption` or `.t-overline` | 74 |
 | `text-[11px] font-semibold uppercase tracking-wide` | `.t-overline` | 4 |
-| `text-[10px]` / `text-[0.7rem]` / `text-[0.75rem]` | `text-caption` ou `.t-overline` | 5 |
+| `text-[10px]` / `text-[0.7rem]` / `text-[0.75rem]` | `text-caption` or `.t-overline` | 5 |
 | `text-lg font-bold leading-none` (StatPill) | `text-metric` | 1 |
 
 ---
 
-## 4. Ordem sugerida de adoção
+## 4. Suggested adoption order
 
-Nada quebra enquanto a migração não acontece: os tokens são aditivos e as
-classes antigas continuam funcionando.
+Nothing breaks while migration is pending: tokens are additive and old classes
+keep working.
 
-1. **`PageHeader`, `InnerPageHeader`, `Modal`, `GridItemCard`, `StatPill`** —
-   cinco arquivos que definem a moldura de praticamente toda tela.
-2. **`formFieldClasses.ts` + `FormFieldBase`** — label e erro para `.t-label`
-   e `.t-error`.
-3. **Títulos** — `<h*>` passam a usar só `text-title-*`.
-4. **Telas**, conforme forem tocadas.
+1. ~~**`PageHeader`, `InnerPageHeader`, `Modal`, `GridItemCard`, `StatPill`** —
+   the five files that frame almost every screen.~~ ✓ done
+2. **`formFieldClasses.ts` + `FormFieldBase`** — label and error to `.t-label`
+   and `.t-error`.
+3. **Headings** — `<h*>` to use only `text-title-*`.
+4. **Screens**, as they are touched.
 
-Verificação ao final de cada arquivo:
+Verification after each file:
 
 ```bash
 cd frontend
 grep -rnE "text-(xs|sm|base|lg|xl|[0-9]xl)\b|font-bold|text-\[" src/
 ```
 
-O arquivo refatorado não devolve nada nesse grep.
+A refactored file returns nothing from this grep.

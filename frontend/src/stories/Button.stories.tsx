@@ -10,7 +10,7 @@ const meta = {
     children: 'Botão',
     variant: 'normal',
     fill: true,
-    size: 'normal',
+    size: 'md',
   },
   parameters: {
     layout: 'centered',
@@ -30,7 +30,7 @@ export const Playground: StoryObj<typeof Button> = {
         story: `
 Botão base editável.
 
-Use os controles para testar **variant**, **size**, **fill**, **bold** e **icon**.
+Use os controles para testar **variant**, **size**, **fill** e **icon**.
 Este exemplo não impõe nenhuma largura.
         `,
       },
@@ -80,13 +80,25 @@ export const FillBehavior: StoryObj<typeof Button> = {
 export const Sizes: StoryObj<typeof Button> = {
   render: () => (
     <div className="flex flex-col items-center gap-4 w-64">
-      <Button size="normal" fill={false}>
-        tx
+      <Button size="sm" fill={false}>
+        Small
+      </Button>
+      <Button size="md" fill={false}>
+        Medium
+      </Button>
+      <Button size="lg" fill={false}>
+        Large
       </Button>
 
+      {/* Botões apenas com ícone */}
+      <Button size="icon-sm" ariaLabel="Adicionar" fill={false}>
+        <Plus size={16} />
+      </Button>
       <Button size="icon" ariaLabel="Adicionar" fill={false}>
-        {' '}
-        <Plus size={16} />{' '}
+        <Plus size={18} />
+      </Button>
+      <Button size="icon-lg" ariaLabel="Adicionar" fill={false}>
+        <Plus size={22} />
       </Button>
     </div>
   ),
@@ -96,26 +108,16 @@ export const Sizes: StoryObj<typeof Button> = {
         story: `
 ### Propriedade \`size\`
 
-- **normal**: Padding padrão para botões com texto
-- **icon**: Padding para botões de ícone (fill = false recomendado)
+Altura, padding, texto, peso e tamanho de ícone vêm do tamanho — nunca de
+\`className\`. Ver \`buttonSize\` em \`styles/typography.ts\`.
+
+- **sm / md / lg**: botões com texto (md é o padrão)
+- **icon-sm / icon / icon-lg**: quadrados, só ícone (fill = false recomendado)
 
         `,
       },
     },
   },
-};
-
-/* =======================
-   FONT WEIGHT
-======================= */
-
-export const FontWeight: StoryObj<typeof Button> = {
-  render: () => (
-    <div className="flex flex-col items-center gap-3 w-64">
-      <Button>Texto normal</Button>
-      <Button bold>Texto em destaque</Button>
-    </div>
-  ),
 };
 
 /* =======================

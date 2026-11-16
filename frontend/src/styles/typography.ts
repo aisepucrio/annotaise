@@ -1,59 +1,59 @@
 /**
- * Combinações de classes de tipografia prontas para usar nos componentes.
- * Tokens em styles/typography.css; documentação em frontend/TYPOGRAPHY.md.
+ * Ready-to-use typography class combinations for components.
+ * Tokens live in styles/typography.css; docs in frontend/TYPOGRAPHY.md.
  */
 export const text = {
-  /** Telas de login e estados vazios. */
+  /** Login screens and empty states. */
   display: 'text-display',
 
-  /** h1 da página. */
+  /** h1 of the page. */
   pageTitle: 'text-title-1',
 
-  /** h2: modais e cabeçalhos internos. */
+  /** h2: modals and inner headers. */
   sectionTitle: 'text-title-2',
 
-  /** h3: cards e seções de formulário. */
+  /** h3: cards and form sections. */
   cardTitle: 'text-title-3',
 
-  /** h4: subseções. */
+  /** h4: subsections. */
   subTitle: 'text-title-4',
 
-  /** Subtítulo abaixo de um título. */
+  /** Descriptive subtitle below a heading. */
   subtitle: 'text-title-4 font-regular',
 
-  /** Texto corrido: guia, markdown, enunciado. */
+  /** Running text: guide, markdown, question statement. */
   prose: 't-prose',
 
-  /** Texto padrão. */
+  /** Default UI text. */
   body: 'text-body',
 
-  /** Texto padrão com ênfase. */
+  /** Default UI text with emphasis. */
   bodyStrong: 'text-body font-medium',
 
-  /** Rótulo de campo. */
+  /** Form field label. */
   label: 't-label',
 
-  /** Texto de botão. */
+  /** Button text. */
   button: 'text-body font-medium',
 
-  /** Metadados, datas, contadores. */
+  /** Metadata, dates, counters. */
   caption: 'text-caption',
 
-  /** Ajuda abaixo de um campo. */
+  /** Help text below a field. */
   helper: 't-helper',
 
-  /** Erro de campo. */
+  /** Field error. */
   error: 't-error',
 
-  /** Badges e cabeçalhos de coluna (uppercase). */
+  /** Badges and column headers (uppercase). */
   overline: 't-overline',
 
-  /** Números de StatPill e KPIs. */
+  /** Numbers in StatPill and KPIs. */
   metric: 'text-metric t-tabular',
 
-  /** Número em destaque no dashboard. */
+  /** Highlight number in dashboard. */
   metricLarge: 'text-metric-lg t-tabular',
 
-  /** Código, IDs, colunas de CSV. */
+  /** Code, IDs, CSV column names. */
   code: 't-code',
 } as const;

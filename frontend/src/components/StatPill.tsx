@@ -33,14 +33,14 @@ export default function StatPill({ label, value, color, cut }: StatPillProps) {
 
   return (
     <div
-      className={`flex flex-wrap items-center gap-1 ${cutClass} px-3 py-2 text-sm w-full`}
+      className={`flex flex-wrap items-center gap-1 ${cutClass} px-3 py-2 text-caption w-full`}
       style={{
         color: textColor,
         backgroundColor: backgroundColor,
       }}
     >
-      <span className="text-lg font-bold leading-none">{value}</span>
-      <span className="leading-tight">{label}</span>
+      <span className="text-metric t-tabular">{value}</span>
+      <span>{label}</span>
     </div>
   );
 }

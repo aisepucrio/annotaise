@@ -66,12 +66,11 @@ export default function Modal({
 
       <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div
-          className={`w-full ${maxWidthClasses[maxWidth]} rounded-2xl shadow-2xl flex flex-col max-h-[90vh] p-5 ${className}`}
-          style={{ backgroundColor: 'var(--full-white)' }}
+          className={`surface-modal w-full ${maxWidthClasses[maxWidth]} flex flex-col max-h-[90vh] ${className}`}
           onClick={(e) => e.stopPropagation()}
         >
           <div className="relative shrink-0">
-            <h2 className="text-xl font-semibold text-left" style={{ color: 'var(--metal-900)' }}>
+            <h2 className="text-title-2 text-text-primary text-left">
               {title}
             </h2>
             {!hideCloseButton && (
@@ -95,17 +94,13 @@ export default function Modal({
 
           {subtitle && (
             <div className="py-3 text-left shrink-0">
-              <div className="text-md font-medium" style={{ color: 'var(--metal-700)' }}>
-                {subtitle}
-              </div>
+              <div className="text-title-4 font-regular text-text-secondary">{subtitle}</div>
             </div>
           )}
 
           {description && (
             <div className=" py-2 text-left shrink-0">
-              <div className="text-sm" style={{ color: 'var(--metal-500)' }}>
-                {description}
-              </div>
+              <div className="text-body text-text-muted">{description}</div>
             </div>
           )}
 
