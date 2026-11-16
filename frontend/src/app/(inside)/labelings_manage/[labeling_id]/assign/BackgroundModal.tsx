@@ -7,7 +7,7 @@ import {
   type BackgroundAnswerResponse,
   type LabelingMembershipDashboard,
   type LabelingStructureSection,
-} from '@/modules/labelings/labelingsTypes';
+} from '@/modules/labelings/labelingTypes';
 import { useTranslations } from '@/i18n/use-translations';
 import { fetchLabelingBackgroundAnswers, fetchLabelingStructure } from '@/modules/labelings/labelingService';
 

@@ -1,4 +1,4 @@
-import type { LabelingStructureElement, LabelingStructureSection } from '@/modules/labelings/labelingsTypes';
+import type { LabelingStructureElement, LabelingStructureSection } from '@/modules/labelings/labelingTypes';
 import { CONTEXT_DATA_TYPES, type ContextDataType, type QuestionDataType } from './types';
 
 let nextTemporaryId = -1;

@@ -16,7 +16,7 @@ import type {
   AnswerPayload,
   AnswerResponse,
   BackgroundAnswerResponse,
-} from './labelingsTypes';
+} from './labelingTypes';
 
 // Labeling functions
 
@@ -259,5 +259,10 @@ export async function fetchLabelingBackgroundAnswers(labelingId: number, userId?
   const { data } = await api.get<BackgroundAnswerResponse[]>(`/labelings/${labelingId}/background-answers/`, {
     params: userId ? { user_id: userId } : undefined,
   });
+  return data;
+}
+
+export async function assignLabelingToProject(labelingId: number, projectId: number) {
+  const { data } = await api.patch(`/labelings/${labelingId}/`, { project: projectId });
   return data;
 }

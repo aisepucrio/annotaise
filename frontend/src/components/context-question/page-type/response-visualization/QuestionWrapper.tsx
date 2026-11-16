@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 import { HelpCircle } from 'lucide-react';
 import type { TranslateFn } from '@/i18n/types';
 import { useTranslations } from '@/i18n/use-translations';
-import type { AnswerResponse, LabelingAgreementQuestionSummary } from '@/modules/labelings/labelingsTypes';
+import type { AnswerResponse, LabelingAgreementQuestionSummary } from '@/modules/labelings/labelingTypes';
 import type { LabelingStructureElement, UserAnswerMap } from '../../types';
 import MarkdownContent from '../../MarkdownContent';
 import { renderQuestionModule } from '../../question-modules';

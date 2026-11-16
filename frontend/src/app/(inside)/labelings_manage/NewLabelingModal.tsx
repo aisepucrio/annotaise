@@ -21,8 +21,8 @@ import Tooltip from '@/components/Tooltip';
 import { useTranslations } from '@/i18n/use-translations';
 import { csvFileHasEmptyFields, isCsvFileName } from '@/lib/csvUtils';
 
-import type { CreateLabelingWithCsvPayload, LabelingPayload } from '@/modules/labelings/labelingsTypes';
-import type { DecisionMode, DistributionStrategy } from '@/modules/labelings/labelingsTypes';
+import type { CreateLabelingWithCsvPayload, LabelingPayload } from '@/modules/labelings/labelingTypes';
+import type { DecisionMode, DistributionStrategy } from '@/modules/labelings/labelingTypes';
 
 type NewLabelingModalProps = {
   open: boolean;

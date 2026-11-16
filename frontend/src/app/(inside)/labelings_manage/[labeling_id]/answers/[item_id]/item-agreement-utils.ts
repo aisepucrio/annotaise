@@ -1,5 +1,5 @@
 import type { TranslateFn } from '@/i18n/types';
-import type { AnswerResponse, LabelingStructureElement, LabelingStructureSection } from '@/modules/labelings/labelingsTypes';
+import type { AnswerResponse, LabelingStructureElement, LabelingStructureSection } from '@/modules/labelings/labelingTypes';
 
 export type AgreementOptionSummary = {
   label: string;

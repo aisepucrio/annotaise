@@ -3,6 +3,7 @@
 
 # dependencies
 /node_modules
+node_modules/@hello-pangea/dnd/
 /.pnp
 .pnp.*
 .yarn/*

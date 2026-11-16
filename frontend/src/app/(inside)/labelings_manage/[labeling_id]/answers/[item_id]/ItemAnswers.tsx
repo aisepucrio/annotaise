@@ -3,7 +3,7 @@
 import { type ReactNode } from 'react';
 import type { TranslateFn } from '@/i18n/types';
 import { ResponseVisualizationSectionWrapper } from '@/components/context-question';
-import type { LabelingStructureSection } from '@/modules/labelings/labelingsTypes';
+import type { LabelingStructureSection } from '@/modules/labelings/labelingTypes';
 
 type ItemAnswersProps = {
   answerEntries: Array<[string, unknown]>;

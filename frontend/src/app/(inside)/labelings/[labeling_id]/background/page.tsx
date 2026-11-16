@@ -21,7 +21,7 @@ import {
   fetchMyBackgroundAnswer,
   submitBackgroundAnswer,
 } from '@/modules/labelings/labelingService';
-import type { LabelingStructureSection } from '@/modules/labelings/labelingsTypes';
+import type { LabelingStructureSection } from '@/modules/labelings/labelingTypes';
 
 export default function LabelingBackgroundPage() {
   const { t } = useTranslations();

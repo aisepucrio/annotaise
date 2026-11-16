@@ -21,12 +21,15 @@ import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 
 import { useLabelingDashboardEditQuery } from '@/modules/labelings/labelingQueries';
 import { useProjectDashboardQuery, useProjectQuery } from '@/modules/projects/projectsQueries';
-import type { CreateLabelingWithCsvPayload } from '@/modules/labelings/labelingsTypes';
-import { useCreateLabelingWithCsvMutation } from '@/modules/labelings/labelingMutations';
+import type { CreateLabelingWithCsvPayload } from '@/modules/labelings/labelingTypes';
+import { useCreateLabelingWithCsvMutation, useAssignLabelingToProjectMutation } from '@/modules/labelings/labelingMutations';
 import { useCreateProjectMutation } from '@/modules/projects/projectsMutations';
 import type { ProjectPayload } from '@/modules/projects/projectsTypes';
 
 import { useTranslations } from '@/i18n/use-translations';
+import { DndContext, DragOverlay, PointerSensor, useDraggable, useDroppable, useSensor, useSensors, type DragEndEvent, type DragStartEvent,
+} from '@dnd-kit/core';
+
 
 // 'labelings' flattens every folder away (no `project`/`ungrouped` filter reaches the
 // API, so the backend returns every labeling the user can edit); 'projects' hides that
@@ -34,6 +37,41 @@ import { useTranslations } from '@/i18n/use-translations';
 type ManageFilter = 'all' | 'labelings' | 'projects';
 const MANAGE_FILTER_STORAGE_KEY = 'labelings_manage.filter';
 const MANAGE_FILTERS: ManageFilter[] = ['all', 'labelings', 'projects'];
+
+
+function DraggableLabeling({ labelingId, children }: { labelingId: number; children: ReactNode }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `labeling-${labelingId}`,
+    data: { labelingId },
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      style={{ opacity: isDragging ? 0.4 : 1, touchAction: 'none' }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function DroppableProject({ projectId, children }: { projectId: number; children: ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: `project-${projectId}`,
+    data: { projectId },
+  });
+
+  return (
+    <div ref={setNodeRef} className={`rounded-xl transition-shadow duration-150 ${
+        isOver ? 'shadow-[0_6px_20px_rgba(0,0,0,0.3)]' : ''
+      }`}>
+      {children}
+    </div>
+  );
+}
+
 
 export default function LabelingsPage() {
   const { t } = useTranslations();
@@ -46,6 +84,8 @@ export default function LabelingsPage() {
   const [filter, setFilter] = useState<ManageFilter>('all');
   const [filterMenuOpen, setFilterMenuOpen] = useState(false);
   const filterMenuRef = useRef<HTMLDivElement>(null);
+  const [activeLabelingId, setActiveLabelingId] = useState<number | null>(null);
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
   useEffect(() => {
     const stored = localStorage.getItem(MANAGE_FILTER_STORAGE_KEY);
@@ -106,6 +146,7 @@ export default function LabelingsPage() {
 
   const createLabelingWithCsv = useCreateLabelingWithCsvMutation();
   const createProject = useCreateProjectMutation();
+  const assignLabeling = useAssignLabelingToProjectMutation();
 
   useEffect(() => {
     if (error) {
@@ -134,6 +175,8 @@ export default function LabelingsPage() {
     return isComplete ? 'var(--green-blueberry)' : isLate ? 'var(--red-blueberry)' : undefined;
   };
 
+  
+
   // Built as a flat list (not fragments) because GridLayout counts children
   // to decide the number of columns.
   const gridChildren: ReactNode[] = [];
@@ -144,8 +187,7 @@ export default function LabelingsPage() {
         key="back"
         type="button"
         onClick={() => router.push('/labelings_manage')}
-        className="col-span-full flex w-fit items-center gap-1 text-sm text-gray-500 transition-colors cursor-pointer hover:text-gray-800"
-      >
+        className="col-span-full flex w-fit items-center gap-1 text-body text-gray-500 transition-colors cursor-pointer hover:text-gray-800"      >
         <ArrowLeft size={16} />
         {t('labelings.manage.backToRoot')}
       </button>
@@ -155,14 +197,39 @@ export default function LabelingsPage() {
   // Section titles only make sense when both sections actually appear.
   const hasBothSections = showProjects && showLabelings && projects.items.length > 0 && labelings.items.length > 0;
 
+  
+
+  function handleDragStart(event: DragStartEvent) {
+    setActiveLabelingId(event.active.data.current?.labelingId ?? null);
+  }
+
+  function handleDragEnd({ active, over }: DragEndEvent) {
+    setActiveLabelingId(null);
+
+    // soltou fora de qualquer área, ou em algo que não é um projeto
+    const labelingId = active.data.current?.labelingId;
+    const projectId = over?.data.current?.projectId;
+    if (labelingId == null || projectId == null) return;
+
+    assignLabeling.mutate(
+      { labelingId, projectId },
+      {
+        onError: (err) => toast.error(getApiErrorMessage(err, t('labelings.manage.assignError'))),
+      }
+    );
+  }
+  
+  
   if (hasBothSections) {
     gridChildren.push(<SectionTitle key="section-projects">{t('labelings.manage.section.projects')}</SectionTitle>);
   }
 
-  if (showProjects) {
-    projects.items.forEach((project, index) => {
-      gridChildren.push(
-        <GridItemCard key={`project-${project.id}`} index={index}>
+  
+if (showProjects) {
+  projects.items.forEach((project, index) => {
+    gridChildren.push(
+      <DroppableProject key={`project-${project.id}`} projectId={project.id}>
+        <GridItemCard index={index}>
           <IndividualProjectCard
             projectId={project.id}
             title={project.name}
@@ -173,134 +240,152 @@ export default function LabelingsPage() {
             onManage={() => router.push(`/projects/${project.id}`)}
           />
         </GridItemCard>
-      );
-    });
-  }
+      </DroppableProject>
+    );
+  });
+}
 
   if (hasBothSections) {
     gridChildren.push(<SectionTitle key="section-ungrouped">{t('labelings.manage.section.ungrouped')}</SectionTitle>);
   }
 
-  const visibleLabelings = showLabelings ? labelings.items : [];
+ const visibleLabelings = showLabelings ? labelings.items : [];
+type LabelingItem = (typeof labelings.items)[number];
 
-  visibleLabelings.forEach((l, index) => {
-    gridChildren.push(
-      <GridItemCard
-        key={`labeling-${l.id}`}
-        index={index}
-        borderColor={getLabelingCardBorderColor(l.days_passed, l.total_days, l.items_done, l.total_items)}
-      >
-        <IndividualLabelingCard
-          title={l.labeling_name}
-          project={l.project_name ?? t('labelings.manage.noProject')}
-          daysPassed={l.days_passed}
-          daysTotal={l.total_days}
-          labelingsDone={l.items_done}
-          labelingsPending={Math.max((l.total_items ?? 0) - (l.items_done ?? 0), 0)}
-          formMode={l.form_mode}
-          answersCollected={l.answers_collected}
-          variant="manage"
-          actionButton={
-            <Button
-              icon={<Pen size={18} strokeWidth={1.75} />}
-              onClick={() => router.push(`/labelings_manage/${l.id}/form`)}
-              variant="normal"
-              fill={true}
-              className="px-4"
-              ariaLabel={t('labelings.manage.action.manageAria')}
-            >
-              {t('labelings.manage.action.manage')}
-            </Button>
-          }
-        />
-      </GridItemCard>
-    );
-  });
+const renderLabelingCard = (l: LabelingItem, index: number) => (
+  <GridItemCard
+    index={index}
+    borderColor={getLabelingCardBorderColor(l.days_passed, l.total_days, l.items_done, l.total_items)}
+  >
+    <IndividualLabelingCard
+      title={l.labeling_name}
+      project={l.project_name ?? t('labelings.manage.noProject')}
+      daysPassed={l.days_passed}
+      daysTotal={l.total_days}
+      labelingsDone={l.items_done}
+      labelingsPending={Math.max((l.total_items ?? 0) - (l.items_done ?? 0), 0)}
+      formMode={l.form_mode}
+      answersCollected={l.answers_collected}
+      index={index}
+      variant="manage"
+      actionButton={
+        <Button
+          icon={<Pen size={18} strokeWidth={1.75} />}
+          onClick={() => router.push(`/labelings_manage/${l.id}/form`)}
+          variant="normal"
+          fill={true}
+          className="px-4"
+          ariaLabel={t('labelings.manage.action.manageAria')}
+        >
+          {t('labelings.manage.action.manage')}
+        </Button>
+      }
+    />
+  </GridItemCard>
+);
+
+visibleLabelings.forEach((l, index) => {
+  gridChildren.push(
+    <DraggableLabeling key={`labeling-${l.id}`} labelingId={l.id}>
+      {renderLabelingCard(l, index)}
+    </DraggableLabeling>
+  );
+});
+
+const activeLabelingIndex = visibleLabelings.findIndex((l) => l.id === activeLabelingId);
+const activeLabeling = activeLabelingIndex >= 0 ? visibleLabelings[activeLabelingIndex] : null;
 
   return (
-    <PageLayout
-      pageTitle={isRoot ? t('labelings.manage.title') : (openProject?.name ?? t('labelings.manage.title'))}
-      tooltip={t('labelings.manage.tooltip')}
-      description={isRoot ? t('labelings.manage.description') : t('labelings.manage.folderDescription')}
-      searchPlaceholder={t('labelings.manage.searchPlaceholder')}
-      onSearch={setSearchQuery}
-      filterButtonText={t('filterBar.filterButton')}
-      onFilterClick={() => setFilterMenuOpen((open) => !open)}
-      filterMenu={
-        filterMenuOpen ? (
-          <div
-            ref={filterMenuRef}
-            className="absolute right-0 top-full z-10 mt-2 w-56 rounded-lg border border-metal-200 bg-white py-1 shadow-lg"
-          >
-            {MANAGE_FILTERS.map((option) => (
-              <button
-                key={option}
-                type="button"
-                onClick={() => {
-                  setFilter(option);
-                  setFilterMenuOpen(false);
-                }}
-                className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-metal-50"
+      <DndContext id="labelings-manage-dnd"
+          sensors={sensors}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          onDragCancel={() => setActiveLabelingId(null)}>
+      <PageLayout
+        pageTitle={isRoot ? t('labelings.manage.title') : (openProject?.name ?? t('labelings.manage.title'))}
+        tooltip={t('labelings.manage.tooltip')}
+        description={isRoot ? t('labelings.manage.description') : t('labelings.manage.folderDescription')}
+        searchPlaceholder={t('labelings.manage.searchPlaceholder')}
+        onSearch={setSearchQuery}
+        filterButtonText={t('filterBar.filterButton')}
+        onFilterClick={() => setFilterMenuOpen((open) => !open)}
+        filterMenu={
+          filterMenuOpen ? (
+            <div
+              ref={filterMenuRef}
+              className="absolute right-0 top-full z-10 mt-2 w-56 rounded-lg border border-metal-200 bg-white py-1 shadow-lg"
+            >
+              {MANAGE_FILTERS.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => {
+                    setFilter(option);
+                    setFilterMenuOpen(false);
+                  }}
+                  className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-body text-gray-700 hover:bg-metal-50"                >
+                  {t(`labelings.manage.filter.${option}`)}
+                  {filter === option && <Check size={16} className="text-blueberry-700" />}
+                </button>
+              ))}
+            </div>
+          ) : undefined
+        }
+        hasButton
+        buttonText={t('labelings.manage.newButton')}
+        onButtonClick={() => setopenCreateLabelingModal(true)}
+        secondaryButton={
+          // Folders only exist at the root, so that is the only place creating one makes sense.
+          isRoot ? (
+            <Button
+              icon={<FolderPlus size={16} strokeWidth={2.5} />}
+              onClick={() => setOpenCreateProjectModal(true)}
+              variant="normal"
+              fill={false}
+              className="px-4 py-2 shadow-md"            
               >
-                {t(`labelings.manage.filter.${option}`)}
-                {filter === option && <Check size={16} className="text-blueberry-700" />}
-              </button>
-            ))}
-          </div>
-        ) : undefined
-      }
-      hasButton
-      buttonText={t('labelings.manage.newButton')}
-      onButtonClick={() => setopenCreateLabelingModal(true)}
-      secondaryButton={
-        // Folders only exist at the root, so that is the only place creating one makes sense.
-        isRoot ? (
-          <Button
-            icon={<FolderPlus size={16} strokeWidth={2.5} />}
-            onClick={() => setOpenCreateProjectModal(true)}
-            variant="normal"
-            fill={false}
-            className="px-4 py-2 shadow-md text-sm"
-          >
-            {t('projects.createButton')}
-          </Button>
-        ) : null
-      }
-      isLoading={isLoading}
-      message={!isLoading && loadedCount === 0 ? t('labelings.manage.empty') : undefined}
-      minColumnWidth="420px"
-      footer={
-        <InfiniteScroll
-          hasNextPage={hasNextPage}
-          isFetchingNextPage={projects.isFetchingNextPage || labelings.isFetchingNextPage}
-          onLoadMore={loadMore}
-          loadedCount={loadedCount}
-          totalCount={totalCount}
-        />
-      }
-      modal={
-        <>
-          <NewLabelingModal
-            open={openCreateLabelingModal}
-            onClose={() => setopenCreateLabelingModal(false)}
-            onConfirm={handleConfirmCreateNewLabeling}
-            defaultProjectId={openProjectId}
+              {t('projects.createButton')}
+            </Button>
+          ) : null
+        }
+        isLoading={isLoading}
+        message={!isLoading && loadedCount === 0 ? t('labelings.manage.empty') : undefined}
+        minColumnWidth="420px"
+        footer={
+          <InfiniteScroll
+            hasNextPage={hasNextPage}
+            isFetchingNextPage={projects.isFetchingNextPage || labelings.isFetchingNextPage}
+            onLoadMore={loadMore}
+            loadedCount={loadedCount}
+            totalCount={totalCount}
           />
-          <NewProjectModal
-            open={openCreateProjectModal}
-            onClose={() => setOpenCreateProjectModal(false)}
-            onSubmit={handleCreateProject}
-          />
-        </>
-      }
-    >
-      {gridChildren}
-    </PageLayout>
+        }
+        modal={
+          <>
+            <NewLabelingModal
+              open={openCreateLabelingModal}
+              onClose={() => setopenCreateLabelingModal(false)}
+              onConfirm={handleConfirmCreateNewLabeling}
+              defaultProjectId={openProjectId}
+            />
+            <NewProjectModal
+              open={openCreateProjectModal}
+              onClose={() => setOpenCreateProjectModal(false)}
+              onSubmit={handleCreateProject}
+            />
+          </>
+        }
+      >
+        {gridChildren}
+      </PageLayout>
+        <DragOverlay>{activeLabeling ? renderLabelingCard(activeLabeling, activeLabelingIndex) : null}</DragOverlay>
+    </DndContext>
   );
 }
 
 function SectionTitle({ children }: { children: ReactNode }) {
   return (
-    <h2 className="col-span-full mt-2 text-sm font-semibold uppercase tracking-wide text-gray-500">{children}</h2>
+  <h2 className="t-overline col-span-full mt-2 text-gray-500">{children}</h2>
   );
 }
+

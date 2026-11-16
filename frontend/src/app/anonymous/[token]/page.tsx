@@ -16,7 +16,7 @@ import {
 } from '@/components/context-question';
 import { useTranslations } from '@/i18n/use-translations';
 import { fetchNextAnonymousAnswer, submitAnonymousAnswer } from '@/modules/labelings/labelingService';
-import type { LabelingStructureSection } from '@/modules/labelings/labelingsTypes';
+import type { LabelingStructureSection } from '@/modules/labelings/labelingTypes';
 
 import Button from '@/components/button/Button';
 import GuidePanel from '@/components/answer/GuidePanel';

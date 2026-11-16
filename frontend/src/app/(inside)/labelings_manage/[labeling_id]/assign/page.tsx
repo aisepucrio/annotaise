@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { ClipboardCheck, Copy, Users } from 'lucide-react';
 import { toast } from 'sonner';
-import { type LabelingMembershipDashboard, type LabelingMembershipRole } from '@/modules/labelings/labelingsTypes';
+import { type LabelingMembershipDashboard, type LabelingMembershipRole } from '@/modules/labelings/labelingTypes';
 import { type User } from '@/modules/user/userTypes';
 import { useTranslations } from '@/i18n/use-translations';
 import { getApiErrorMessage } from '@/lib/getApiErrorMessage';

@@ -6,7 +6,7 @@ import {
   UserLabelingQuestionWrapper,
   UserLabelingSectionWrapper,
 } from '@/components/context-question';
-import type { LabelingStructureSection } from '@/modules/labelings/labelingsTypes';
+import type { LabelingStructureSection } from '@/modules/labelings/labelingTypes';
 import { contextValues, createContextElement, createQuestionElement, SAMPLE_IMAGE, StoryPanel } from '../story-fixtures';
 
 const meta = {

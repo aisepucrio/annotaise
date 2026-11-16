@@ -2,7 +2,7 @@ import { fetchLabelingDashboard, fetchLabelingDashboardEdit } from './labelingSe
 import type { LabelingDashboardEditFilters } from './labelingService';
 import { useCursorQuery } from '@/modules/pagination';
 import type { CursorQuery, CursorSearchQuery } from '@/modules/pagination';
-import type { LabelingDashboard } from './labelingsTypes';
+import type { LabelingDashboard } from './labelingTypes';
 
 export function useLabelingDashboardQuery(params: CursorSearchQuery) {
   return useCursorQuery<CursorSearchQuery, LabelingDashboard>({

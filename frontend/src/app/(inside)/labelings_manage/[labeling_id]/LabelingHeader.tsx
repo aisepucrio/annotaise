@@ -3,7 +3,7 @@ import { ArrowLeft, Download, Edit, Calendar, Save, Upload, Copy } from 'lucide-
 import Button from '@/components/button/Button';
 import DeleteIconButton from '@/components/button/DeleteIconButton';
 import { useTranslations } from '@/i18n/use-translations';
-import type { Labeling } from '@/modules/labelings/labelingsTypes';
+import type { Labeling } from '@/modules/labelings/labelingTypes';
 import type { Project } from '@/modules/projects/projectsTypes';
 
 type HeaderTab = { key: string; label: string };

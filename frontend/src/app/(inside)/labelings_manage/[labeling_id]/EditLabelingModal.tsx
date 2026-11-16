@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Copy } from 'lucide-react';
 import { toast } from 'sonner';
-import type { Labeling, LabelingPayload } from '@/modules/labelings/labelingsTypes';
+import type { Labeling, LabelingPayload } from '@/modules/labelings/labelingTypes';
 import type { Project } from '@/modules/projects/projectsTypes';
 import Modal from '@/components/Modal';
 import Input from '@/components/form/Input';

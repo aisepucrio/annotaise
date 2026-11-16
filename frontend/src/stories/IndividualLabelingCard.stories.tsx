@@ -21,6 +21,7 @@ const meta = {
     layout: 'centered',
   },
   args: {
+    index: 0,
     title: 'Revisao de tickets de suporte',
     project: 'Projeto Atlas',
     daysPassed: 4,

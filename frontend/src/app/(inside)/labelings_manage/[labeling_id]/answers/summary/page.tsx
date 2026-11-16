@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import type { AnswerResponse, LabelingStructureSection } from '@/modules/labelings/labelingsTypes';
+import type { AnswerResponse, LabelingStructureSection } from '@/modules/labelings/labelingTypes';
 import { useTranslations } from '@/i18n/use-translations';
 import { ResponseVisualizationSectionWrapper } from '@/components/context-question';
 import { useLabelingAgreementSummaryQuery } from '@/modules/labelings/manage/labelingManagerQueries';

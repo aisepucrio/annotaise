@@ -3,7 +3,7 @@
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import Button from '@/components/button/Button';
 import type { TranslateFn } from '@/i18n/types';
-import type { AnswerResponse, LabelingStructureSection } from '@/modules/labelings/labelingsTypes';
+import type { AnswerResponse, LabelingStructureSection } from '@/modules/labelings/labelingTypes';
 import { useTranslations } from '@/i18n/use-translations';
 import TwoOptionSelector from '../../TwoOptionSelector';
 import { resolveItemLabel } from '../answer-utils';

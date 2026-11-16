@@ -9,7 +9,7 @@ import {
   UserLabelingQuestionWrapper,
 } from '@/components/context-question';
 import type { ContextDataType, QuestionDataType } from '@/components/context-question/types';
-import type { AnswerResponse, LabelingAgreementQuestionSummary, LabelingStructureElement } from '@/modules/labelings/labelingsTypes';
+import type { AnswerResponse, LabelingAgreementQuestionSummary, LabelingStructureElement } from '@/modules/labelings/labelingTypes';
 
 export const contextStoryColumns = ['value', 'title', 'media_url'];
 

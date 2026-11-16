@@ -1,0 +1,197 @@
+/*
+ * Tokens e utilities de tipografia. Documentação em frontend/TYPOGRAPHY.md.
+ * Importado em src/styles/globals.css.
+ */
+
+@theme {
+  /* --font-sans vem do globals.css (next/font). */
+  --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+
+  /* Pesos. Títulos usam 600; 700 fica para números (text-metric). */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Escala. Cada token já define tamanho, entrelinha, peso e tracking, então
+   * não precisa somar font-* ou leading-*. A base é 14px (text-body). */
+
+  /* 30/38 — telas de login e estados vazios */
+  --text-display: 1.875rem;
+  --text-display--line-height: 2.375rem;
+  --text-display--font-weight: 600;
+  --text-display--letter-spacing: -0.012em;
+
+  /* 24/32 — h1 do PageHeader */
+  --text-title-1: 1.5rem;
+  --text-title-1--line-height: 2rem;
+  --text-title-1--font-weight: 600;
+  --text-title-1--letter-spacing: -0.01em;
+
+  /* 20/28 — h2: modais, InnerPageHeader, LabelingHeader */
+  --text-title-2: 1.25rem;
+  --text-title-2--line-height: 1.75rem;
+  --text-title-2--font-weight: 600;
+  --text-title-2--letter-spacing: -0.006em;
+
+  /* 18/26 — h3: cards e seções de formulário */
+  --text-title-3: 1.125rem;
+  --text-title-3--line-height: 1.625rem;
+  --text-title-3--font-weight: 600;
+  --text-title-3--letter-spacing: 0em;
+
+  /* 16/24 — h4: subseções, grupos de campos */
+  --text-title-4: 1rem;
+  --text-title-4--line-height: 1.5rem;
+  --text-title-4--font-weight: 600;
+  --text-title-4--letter-spacing: 0em;
+
+  /* 16/26 — texto corrido: guia, markdown, enunciado da questão */
+  --text-body-lg: 1rem;
+  --text-body-lg--line-height: 1.625rem;
+  --text-body-lg--font-weight: 400;
+  --text-body-lg--letter-spacing: 0em;
+
+  /* 14/20 — padrão da interface */
+  --text-body: 0.875rem;
+  --text-body--line-height: 1.25rem;
+  --text-body--font-weight: 400;
+  --text-body--letter-spacing: 0em;
+
+  /* 12/16 — metadados, datas, contadores, texto de apoio */
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1rem;
+  --text-caption--font-weight: 400;
+  --text-caption--letter-spacing: 0.004em;
+
+  /* 11/14 — badges e cabeçalhos de coluna. Use .t-overline (aplica o
+   * uppercase). Menor tamanho da escala. */
+  --text-overline: 0.6875rem;
+  --text-overline--line-height: 0.875rem;
+  --text-overline--font-weight: 600;
+  --text-overline--letter-spacing: 0.06em;
+
+  /* 20/20 — número de StatPill e KPIs */
+  --text-metric: 1.25rem;
+  --text-metric--line-height: 1.25rem;
+  --text-metric--font-weight: 700;
+  --text-metric--letter-spacing: -0.015em;
+
+  /* 30/32 — número em destaque no dashboard */
+  --text-metric-lg: 1.875rem;
+  --text-metric-lg--line-height: 2rem;
+  --text-metric-lg--font-weight: 700;
+  --text-metric-lg--letter-spacing: -0.02em;
+
+  /* 13/20 — código, IDs, colunas de CSV. Use .t-code (troca a família). */
+  --text-code: 0.8125rem;
+  --text-code--line-height: 1.25rem;
+  --text-code--font-weight: 400;
+  --text-code--letter-spacing: 0em;
+}
+
+/* Estilo padrão de elementos sem classe (ex.: conteúdo do react-markdown). */
+@layer base {
+  body {
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    font-weight: var(--font-weight-regular);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1 {
+    font-size: var(--text-title-1);
+    line-height: var(--text-title-1--line-height);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--text-title-1--letter-spacing);
+  }
+
+  h2 {
+    font-size: var(--text-title-2);
+    line-height: var(--text-title-2--line-height);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--text-title-2--letter-spacing);
+  }
+
+  h3 {
+    font-size: var(--text-title-3);
+    line-height: var(--text-title-3--line-height);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  h4,
+  h5,
+  h6 {
+    font-size: var(--text-title-4);
+    line-height: var(--text-title-4--line-height);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  strong,
+  b {
+    font-weight: var(--font-weight-semibold);
+  }
+
+  small {
+    font-size: var(--text-caption);
+    line-height: var(--text-caption--line-height);
+  }
+
+  code,
+  kbd,
+  samp,
+  pre {
+    font-family: var(--font-mono);
+    font-size: var(--text-code);
+    line-height: var(--text-code--line-height);
+  }
+}
+
+/* Utilities para casos que o token sozinho não cobre. */
+
+@utility t-overline {
+  font-size: var(--text-overline);
+  line-height: var(--text-overline--line-height);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--text-overline--letter-spacing);
+  text-transform: uppercase;
+}
+
+@utility t-code {
+  font-family: var(--font-mono);
+  font-size: var(--text-code);
+  line-height: var(--text-code--line-height);
+  font-weight: var(--font-weight-regular);
+}
+
+/* Números com largura fixa, para colunas e contadores não "pularem". */
+@utility t-tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+@utility t-label {
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  font-weight: var(--font-weight-medium);
+}
+
+@utility t-helper {
+  font-size: var(--text-caption);
+  line-height: var(--text-caption--line-height);
+  font-weight: var(--font-weight-regular);
+}
+
+@utility t-error {
+  font-size: var(--text-caption);
+  line-height: var(--text-caption--line-height);
+  font-weight: var(--font-weight-medium);
+}
+
+/* Texto longo; largura limitada para facilitar a leitura. */
+@utility t-prose {
+  font-size: var(--text-body-lg);
+  line-height: var(--text-body-lg--line-height);
+  max-width: 68ch;
+}
