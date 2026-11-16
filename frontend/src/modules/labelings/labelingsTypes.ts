@@ -2,6 +2,16 @@ export type LabelingStatus = 'draft' | 'active' | 'archived' | 'finished';
 export type DistributionStrategy = 'auto' | 'specified' | 'per_person' | 'anonymous_mode';
 export type DecisionMode = 'manual' | 'llm';
 
+export type LabelingDependency = {
+  id: number;
+  labeling: number;
+  labeling_title: string;
+  depends_on: number;
+  depends_on_title: string;
+};
+
+export type LabelingDependencyPayload = Pick<LabelingDependency, 'labeling' | 'depends_on'>;
+
 // Fields returned by the backend for a labeling
 export type Labeling = {
   id: number;
@@ -169,6 +179,8 @@ export type LabelingDashboard = {
   total_items?: number;
   form_mode?: boolean;
   answers_collected?: number;
+  // Some prerequisite labeling still has items this user can answer.
+  blocked_by_dependencies?: boolean;
 };
 
 // Item- and answer-related types

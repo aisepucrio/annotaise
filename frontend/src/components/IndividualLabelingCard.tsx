@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { Lock } from 'lucide-react';
 import ProgressBar from './ProgressBar';
 import StatPill from './StatPill';
 import { useTranslations } from '@/i18n/use-translations';
@@ -16,6 +17,8 @@ type IndividualManageLabelingCardProps = {
   actionButton: ReactNode;
   formMode?: boolean;
   answersCollected?: number;
+  /** Prerequisite labelings still pending: shows a lock and the reason. */
+  locked?: boolean;
   colors?: {
     normal: {
       bg: string;
@@ -35,6 +38,7 @@ export default function IndividualLabelingCard({
   actionButton,
   formMode,
   answersCollected,
+  locked = false,
   colors,
 }: IndividualManageLabelingCardProps) {
   const { t } = useTranslations();
@@ -72,6 +76,16 @@ export default function IndividualLabelingCard({
 
   return (
     <>
+      {locked && (
+        <span
+          className="absolute top-4 right-4 text-gray-500"
+          title={t('labelings.locked.tooltip')}
+          aria-label={t('labelings.locked.tooltip')}
+        >
+          <Lock size={18} strokeWidth={1.75} />
+        </span>
+      )}
+
       <h3
         className={`${
           isComplete ? 'text-green-blueberry' : isLate ? 'text-red-blueberry' : 'text-black'
@@ -120,6 +134,10 @@ export default function IndividualLabelingCard({
           rounded="right"
           className="-ml-3"
         />
+
+        {locked && (
+          <p className="text-sm text-gray-500 leading-tight">{t('labelings.locked.tooltip')}</p>
+        )}
 
         <div className="flex items-center justify-center mt-2">{actionButton}</div>
       </div>
