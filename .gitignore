@@ -210,5 +210,8 @@ __marimo__/
 # Stray version marker files (e.g., "=0.28.0" from tooling)
 =*
 
+# Node dependencies (the frontend's live in frontend/node_modules)
+node_modules/
+
 .codex
 .claude
