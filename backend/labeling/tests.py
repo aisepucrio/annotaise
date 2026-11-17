@@ -905,6 +905,43 @@ class LabelingStructureViewTest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(LabelingSection.objects.filter(labeling=self.labeling).count(), 0)
 
+    def test_put_saves_ranking_question_columns_in_order(self):
+        # A ranking points at CSV columns through multiple_choice_items, and their order is the
+        # position the annotator sees before dragging, so it must survive the round-trip.
+        self.client.force_authenticate(self.owner_admin)
+        payload = {
+            "sections": [
+                {
+                    "title": "Avaliação",
+                    "order": 1,
+                    "elements": [
+                        {
+                            "order": 1,
+                            "text": "Ordene da resposta mais completa para a menos completa",
+                            "required": True,
+                            "question_type": "ranking",
+                            "multiple_choice_items": [
+                                {"text": "resposta_gpt", "order": 1},
+                                {"text": "resposta_claude", "order": 2},
+                                {"text": "resposta_gemini", "order": 3},
+                            ],
+                            "question_range": None,
+                        }
+                    ],
+                }
+            ]
+        }
+
+        response = self.client.put(self.structure_url, payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        element = LabelingElement.objects.get(labeling_section__labeling=self.labeling)
+        self.assertEqual(element.question_type, LabelingElement.QuestionType.RANKING)
+        self.assertEqual(
+            list(element.multiple_choice_items.order_by("order").values_list("text", flat=True)),
+            ["resposta_gpt", "resposta_claude", "resposta_gemini"],
+        )
+
 
 class LabelingAgreementSummaryViewTest(TestCase):
     def setUp(self):
