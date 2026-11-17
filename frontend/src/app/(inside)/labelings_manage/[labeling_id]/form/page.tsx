@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useImperativeHandle, forwardRef, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
+import axios from 'axios';
 import { toast } from 'sonner';
 import SegmentedSelector from '../SegmentedSelector';
 import { useTranslations } from '@/i18n/use-translations';
+import type { TranslateFn } from '@/i18n/types';
 import { useLabelingHeaderQuery, useLabelingStructureQueryByType } from '@/modules/labelings/manage/labelingManagerQueries';
 import { useSaveLabelingStructureMutation } from '@/modules/labelings/manage/labelingManagerMutations';
 import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
@@ -29,6 +31,28 @@ export type FormTabHandle = {
 
 const AUTO_SAVE_INTERVAL_MS = 30000;
 
+// Index of the first section whose title is blank, or -1. The backend rejects these, so the
+// screen checks first instead of sending a save that is bound to fail.
+function findUntitledSectionIndex(sections: LabelingStructureSection[]): number {
+  return sections.findIndex((section) => (section.title ?? '').trim() === '');
+}
+
+// Turns the INVALID_FORM_STRUCTURE field errors into a message that names the section,
+// falling back to the generic text when the reason is something else.
+function getSaveErrorMessage(error: unknown, t: TranslateFn): string {
+  if (axios.isAxiosError(error) && error.response?.data?.code === 'INVALID_FORM_STRUCTURE') {
+    const sectionErrors: unknown = error.response.data.errors?.sections;
+    if (Array.isArray(sectionErrors)) {
+      const untitledIndex = sectionErrors.findIndex((sectionError) => sectionError?.title);
+      if (untitledIndex !== -1) {
+        return t('labelings.create.errors.sectionTitleRequired', { index: untitledIndex + 1 });
+      }
+    }
+    return t('labelings.create.errors.invalidFormStructure');
+  }
+  return getApiErrorMessage(error, t('labelings.create.errors.saveStructure'));
+}
+
 const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgroundForm, isFormOnly }, ref) => {
   const { t } = useTranslations();
   const [activeFormType, setActiveFormType] = useState<FormType>('main');
@@ -43,6 +67,7 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgr
   const pendingSaveRef = useRef<Promise<boolean> | null>(null);
   const saveCurrentStructureRef = useRef<(reason?: SaveReason) => Promise<boolean>>(async () => true);
   const sectionsRef = useRef(sections);
+  const lastAutoSaveErrorRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!hasBackgroundForm && activeFormType === 'background') {
@@ -88,6 +113,15 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgr
       }
     }
 
+    const untitledIndex = findUntitledSectionIndex(sectionsRef.current);
+    if (untitledIndex !== -1) {
+      // Auto-save stays quiet here: the title field itself already shows what is missing.
+      if (reason === 'manual') {
+        toast.error(t('labelings.create.errors.sectionTitleRequired', { index: untitledIndex + 1 }));
+      }
+      return false;
+    }
+
     const savedVersion = unsavedChangesRef.current.version;
     const payload = sanitizeAdminSectionsForSave(sectionsRef.current);
 
@@ -98,13 +132,21 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgr
         if (unsavedChangesRef.current.version === savedVersion) {
           unsavedChangesRef.current.hasChanges = false;
         }
+        lastAutoSaveErrorRef.current = null;
 
         toast.success(
           reason === 'auto' ? t('labelings.create.success.formAutoSaved') : t('labelings.create.success.formSaved')
         );
         return true;
       } catch (error) {
-        toast.error(getApiErrorMessage(error, t('labelings.create.errors.saveStructure')));
+        const message = getSaveErrorMessage(error, t);
+        // Auto-save retries every 30s; show the same failure once instead of on every retry.
+        if (reason === 'manual' || lastAutoSaveErrorRef.current !== message) {
+          toast.error(message);
+        }
+        if (reason === 'auto') {
+          lastAutoSaveErrorRef.current = message;
+        }
         return false;
       }
     })();
@@ -137,6 +179,13 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgr
       }
 
       if (unsavedChangesRef.current.hasChanges) {
+        // The switch is blocked until the save goes through, so say why when a title is missing.
+        const untitledIndex = findUntitledSectionIndex(sectionsRef.current);
+        if (untitledIndex !== -1) {
+          toast.error(t('labelings.create.errors.sectionTitleRequired', { index: untitledIndex + 1 }));
+          return;
+        }
+
         const didSave = await saveCurrentStructureRef.current('auto');
         if (!didSave) {
           return;
@@ -145,7 +194,7 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgr
 
       setActiveFormType(nextFormType);
     },
-    [activeFormType]
+    [activeFormType, t]
   );
 
   useEffect(() => {

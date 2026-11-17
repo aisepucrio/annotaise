@@ -1,3 +1,5 @@
+import copy
+
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework import serializers as drf_serializers, status
@@ -942,6 +944,18 @@ class LabelingStructureViewTest(TestCase):
             list(element.multiple_choice_items.order_by("order").values_list("text", flat=True)),
             ["resposta_gpt", "resposta_claude", "resposta_gemini"],
         )
+
+    def test_put_invalid_structure_reports_field_errors(self):
+        self.client.force_authenticate(self.contributor_admin)
+        payload = copy.deepcopy(self.valid_payload)
+        payload["sections"][1]["title"] = ""
+
+        response = self.client.put(self.structure_url, payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["code"], "INVALID_FORM_STRUCTURE")
+        self.assertIn("title", response.data["errors"]["sections"][1])
+        self.assertEqual(LabelingSection.objects.filter(labeling=self.labeling).count(), 0)
 
 
 class LabelingAgreementSummaryViewTest(TestCase):
