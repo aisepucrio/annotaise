@@ -144,7 +144,6 @@ With the project created, go to the "Manage annotation tasks" tab to prepare the
 - **Automatic decision:** enable it so that the system automatically resolves ties in the responses. You can choose whether that decision is made manually or by LLM.
 - **Annotations per record:** defines how many people must annotate the same data record for it to be considered complete.
 - **Assign groups:** lets you attach existing groups to the annotation task and set how many data records each user in each group should annotate.
-- **Background questionnaire:** enable it to include a profile survey collecting information about the annotator, such as experience level, education, or familiarity with the topic.
 
 ![New annotation task dialog, showing the validation and consensus fields](/docs/img/nova-rotulacao-config1-eng.png)
 

@@ -1,13 +1,12 @@
-from .models import Answer, BackgroundAnswer
+from .models import Answer
 from item.models import ItemMembership, Item
 from user.models import UserGroup
 from .serializers import (
     AnswerSerializer,
     AnswerDashboardSerializer,
-    BackgroundAnswerSerializer,
 )
 from labeling.models import LabelingElement
-from labeling.models import Labeling, LabelingMembership, LabelingSection
+from labeling.models import Labeling
 from annotaise.pagination import StandardCursorPagination
 
 from django.shortcuts import get_object_or_404
@@ -18,7 +17,6 @@ from rest_framework.views import APIView
 from user.permissions import IsAdminAccount
 from django.http import HttpResponse
 from .permissions import CanAnswerLabelingPermission
-from labeling.permissions import CanEditLabelingPermission, can_annotate_labeling
 from .services.llm_tiebreak import run_llm_tiebreak_decision
 
 import pandas as pd
@@ -26,7 +24,7 @@ import pandas as pd
 from rest_framework.generics import ListAPIView
 from django.db.models import F, Q
 from django.db import transaction
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import AllowAny
 from django.contrib.auth import get_user_model
 #TODO better to use a permission class to check ItemMembership existence.
 class AnswerViewset(viewsets.ModelViewSet):
@@ -109,7 +107,6 @@ class AnswerViewset(viewsets.ModelViewSet):
             LabelingElement.objects
             .filter(
                 labeling_section__labeling=item.labeling,
-                labeling_section__form_type=LabelingSection.FormType.MAIN,
                 question_type=LabelingElement.QuestionType.CONTEXT,
             )
             .order_by("labeling_section__order", "order", "id")
@@ -158,18 +155,6 @@ class AnswerViewset(viewsets.ModelViewSet):
         )
 
         labeling:Labeling = item.labeling
-        if labeling.has_background_form and not BackgroundAnswer.objects.filter(
-            labeling=labeling,
-            answered_by=user,
-        ).exists():
-            return Response(
-                {
-                    "detail": "Você precisa responder o formulário background antes de rotular.",
-                    "code": "BACKGROUND_REQUIRED",
-                },
-                status=403,
-            )
-
         if labeling.decision == True and labeling.decisive_question is None:
             return Response(
                 {'detail': 'Rotulação configurada para decisão, mas pergunta decisiva não definida. Contate o dono da rotulação.'},
@@ -463,98 +448,6 @@ class AnswersDashboardView(ListAPIView):
         return qs.order_by("row_index", "id")
 
 
-class LabelingBackgroundAnswerView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def _get_labeling(self, labeling_id):
-        return get_object_or_404(Labeling, id=labeling_id)
-
-    def _can_view_labeling(self, user, labeling):
-        if LabelingMembership.objects.filter(labeling=labeling, user=user).exists():
-            return True
-        perm = CanEditLabelingPermission()
-        return perm.can_edit_labeling(user, labeling.id)
-
-    def get(self, request, labeling_id, **kwargs):
-        labeling = self._get_labeling(labeling_id)
-        if not self._can_view_labeling(request.user, labeling):
-            raise PermissionDenied("Você não tem acesso a essa rotulação.")
-
-        if not labeling.has_background_form:
-            return Response(None, status=200)
-
-        answer = BackgroundAnswer.objects.filter(
-            labeling=labeling,
-            answered_by=request.user,
-        ).first()
-        if not answer:
-            return Response(None, status=200)
-
-        return Response(BackgroundAnswerSerializer(answer).data, status=200)
-
-    def put(self, request, labeling_id, **kwargs):
-        labeling = self._get_labeling(labeling_id)
-        if not can_annotate_labeling(request.user, labeling.id):
-            raise PermissionDenied("Você não tem acesso a essa rotulação.")
-
-        if not labeling.has_background_form:
-            return Response(
-                {
-                    "detail": "Esta rotulação não possui formulário background.",
-                    "code": "BACKGROUND_DISABLED",
-                },
-                status=400,
-            )
-
-        if not LabelingSection.objects.filter(
-            labeling=labeling,
-            form_type=LabelingSection.FormType.BACKGROUND,
-        ).exists():
-            return Response(
-                {
-                    "detail": "Formulário background vazio.",
-                    "code": "EMPTY_BACKGROUND_FORM",
-                },
-                status=400,
-            )
-
-        payload = request.data.get("answer_payload")
-        if not isinstance(payload, dict):
-            return Response(
-                {
-                    "detail": "answer_payload deve ser um objeto.",
-                    "code": "INVALID_BACKGROUND_PAYLOAD",
-                },
-                status=400,
-            )
-
-        answer, created = BackgroundAnswer.objects.update_or_create(
-            labeling=labeling,
-            answered_by=request.user,
-            defaults={"answer_payload": payload},
-        )
-        serializer = BackgroundAnswerSerializer(answer)
-        return Response(serializer.data, status=201 if created else 200)
-
-
-class LabelingBackgroundAnswersView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, labeling_id, **kwargs):
-        labeling = get_object_or_404(Labeling, id=labeling_id)
-        perm = CanEditLabelingPermission()
-        if not perm.can_edit_labeling(request.user, labeling.id):
-            raise PermissionDenied("Você não tem permissão para visualizar essas respostas.")
-
-        qs = BackgroundAnswer.objects.filter(labeling=labeling).select_related("answered_by")
-        user_id = request.query_params.get("user_id")
-        if user_id and user_id.isdigit():
-            qs = qs.filter(answered_by_id=int(user_id))
-
-        data = BackgroundAnswerSerializer(qs, many=True).data
-        return Response(data, status=200)
-
-
 class ExportAnswersView(APIView):
     permission_classes = [IsAdminAccount]
 
@@ -568,7 +461,6 @@ class ExportAnswersView(APIView):
         )
         questions_qs = LabelingElement.objects.filter(
             labeling_section__labeling_id=labeling_id,
-            labeling_section__form_type=LabelingSection.FormType.MAIN,
         ).exclude(question_type="context").values('id','text')
 
         questions = {int(q["id"]): q["text"] for q in questions_qs}

@@ -1022,7 +1022,6 @@ class LabelingAgreementSummaryViewTest(TestCase):
 
         main_section = LabelingSection.objects.create(
             labeling=self.labeling,
-            form_type=LabelingSection.FormType.MAIN,
             title="Smells",
             order=1,
         )
@@ -1396,7 +1395,7 @@ class LabelingReliabilityViewTest(TestCase):
         )
 
         section = LabelingSection.objects.create(
-            labeling=self.labeling, form_type=LabelingSection.FormType.MAIN, title="Main", order=1
+            labeling=self.labeling, title="Main", order=1
         )
         self.question = LabelingElement.objects.create(
             labeling_section=section,

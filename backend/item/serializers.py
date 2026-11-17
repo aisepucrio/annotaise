@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from .models import Item
 from labeling.serializers import LabelingSectionSerializer
-from labeling.models import LabelingSection
 
 class ItemSerializer(serializers.ModelSerializer):
     payload = serializers.DictField()
@@ -33,5 +32,5 @@ class NextItemResponseSerializer(serializers.Serializer):
     guide = serializers.CharField(source='labeling.guide', read_only=True)
 
     def get_sections(self, item):
-        sections = item.labeling.sections.filter(form_type=LabelingSection.FormType.MAIN)
+        sections = item.labeling.sections.all()
         return LabelingSectionSerializer(sections, many=True).data

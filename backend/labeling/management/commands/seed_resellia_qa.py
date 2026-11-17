@@ -9,7 +9,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
 
-from answer.models import Answer, BackgroundAnswer
+from answer.models import Answer
 from item.models import Item
 from labeling.models import (
     Labeling,
@@ -43,9 +43,8 @@ LABELING_GUIDE_MARKDOWN = dedent(
     - If evidence is missing, mark that.
 
     ## Flow
-    1) Background
-    2) Session 1 - First impression (text)
-    3) Session 2 - Evidence review (photos + technical specs + chat)
+    1) Session 1 - First impression (text)
+    2) Session 2 - Evidence review (photos + technical specs + chat)
 
     After moving forward, you cannot go back.
 
@@ -349,7 +348,7 @@ SAMPLE_ROWS: list[dict[str, Any]] = [
 
 class Command(BaseCommand):
     help = (
-        "Creates the ReSellia QA seed with project, labeling, background, form "
+        "Creates the ReSellia QA seed with project, labeling, form "
         "sessions, and items."
     )
 
@@ -486,7 +485,6 @@ class Command(BaseCommand):
                 guide=LABELING_GUIDE_MARKDOWN,
                 users_per_item=1,
                 block_section_back=True,
-                has_background_form=True,
                 column_names=COLUMN_NAMES,
                 status=Labeling.Status.ACTIVE,
             )
@@ -502,7 +500,6 @@ class Command(BaseCommand):
             "guide": LABELING_GUIDE_MARKDOWN,
             "users_per_item": 1,
             "block_section_back": True,
-            "has_background_form": True,
             "column_names": COLUMN_NAMES,
             "status": Labeling.Status.ACTIVE,
         }
@@ -530,67 +527,12 @@ class Command(BaseCommand):
     def _replace_structure(self, labeling: Labeling):
         LabelingSection.objects.filter(labeling=labeling).delete()
 
-        self._create_background_section(labeling)
         self._create_session_1_section(labeling)
         self._create_session_2_section(labeling)
-
-    def _create_background_section(self, labeling: Labeling):
-        section = LabelingSection.objects.create(
-            labeling=labeling,
-            form_type=LabelingSection.FormType.BACKGROUND,
-            title="Background",
-            order=1,
-        )
-
-        self._create_number_question(
-            section=section,
-            order=1,
-            text="Age",
-            required=True,
-            start=0,
-            end=120,
-        )
-        self._create_range_question(
-            section=section,
-            order=2,
-            text="Familiarity with online buying/selling",
-            start=0,
-            end=10,
-            required=True,
-            start_label="Not familiar",
-            end_label="Very familiar",
-        )
-        self._create_multiple_choice_question(
-            section=section,
-            order=3,
-            text="Categories you feel comfortable evaluating",
-            options=[
-                "Electronics",
-                "Computers",
-                "Fashion (sneakers/clothing)",
-                "Bikes",
-                "Musical instruments",
-                "Photography",
-            ],
-            allow_multiple=True,
-            required=True,
-        )
-        self._create_multiple_choice_question(
-            section=section,
-            order=4,
-            text="Commitment",
-            options=[
-                "I will label only with what appears here (no outside search)",
-                "I do not agree",
-            ],
-            allow_multiple=False,
-            required=True,
-        )
 
     def _create_session_1_section(self, labeling: Labeling):
         section = LabelingSection.objects.create(
             labeling=labeling,
-            form_type=LabelingSection.FormType.MAIN,
             title="1 - First impression",
             order=1,
         )
@@ -678,7 +620,6 @@ class Command(BaseCommand):
     def _create_session_2_section(self, labeling: Labeling):
         section = LabelingSection.objects.create(
             labeling=labeling,
-            form_type=LabelingSection.FormType.MAIN,
             title="2 - Evidence review",
             order=2,
         )
@@ -906,79 +847,8 @@ class Command(BaseCommand):
         return len(items_to_create)
 
     def _seed_creator_answers(self, labeling: Labeling, admin_user) -> int:
-        background_section = (
-            LabelingSection.objects.filter(
-                labeling=labeling,
-                form_type=LabelingSection.FormType.BACKGROUND,
-            )
-            .order_by("order")
-            .first()
-        )
-        if background_section:
-            background_questions = list(
-                background_section.elements.exclude(
-                    question_type=LabelingElement.QuestionType.CONTEXT
-                ).order_by("order")
-            )
-            background_payload: dict[str, Any] = {}
-
-            for question in background_questions:
-                question_key = str(question.id)
-                question_text = (question.text or "").strip().lower()
-
-                if question.question_type == LabelingElement.QuestionType.NUMBER:
-                    background_payload[question_key] = 32
-                    continue
-
-                if question.question_type == LabelingElement.QuestionType.RANGE:
-                    background_payload[question_key] = 8
-                    continue
-
-                if question.question_type == LabelingElement.QuestionType.TEXT:
-                    background_payload[question_key] = "Background answer"
-                    continue
-
-                if question.question_type == LabelingElement.QuestionType.MULTIPLE_CHOICE:
-                    options = list(
-                        question.multiple_choice_items.order_by("order").values_list(
-                            "text", flat=True
-                        )
-                    )
-                    if not options:
-                        continue
-
-                    if question.allow_multiple:
-                        preferred = ["Electronics", "Computers", "Photography"]
-                        selected = [option for option in preferred if option in options]
-                        background_payload[question_key] = selected or options[:2]
-                        continue
-
-                    preferred_single = "I will label only with what appears here (no outside search)"
-                    if preferred_single in options:
-                        background_payload[question_key] = preferred_single
-                    else:
-                        background_payload[question_key] = options[0]
-                    continue
-
-                if "age" in question_text:
-                    background_payload[question_key] = 32
-                elif "familiarity" in question_text:
-                    background_payload[question_key] = 8
-                else:
-                    background_payload[question_key] = ""
-
-            if background_payload:
-                BackgroundAnswer.objects.update_or_create(
-                    labeling=labeling,
-                    answered_by=admin_user,
-                    defaults={"answer_payload": background_payload},
-                )
-
         main_sections = list(
-            LabelingSection.objects.filter(
-                labeling=labeling,
-                form_type=LabelingSection.FormType.MAIN,
-            ).order_by("order")
+            LabelingSection.objects.filter(labeling=labeling).order_by("order")
         )
         if len(main_sections) < 2:
             raise CommandError(

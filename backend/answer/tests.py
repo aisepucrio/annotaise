@@ -131,7 +131,6 @@ class AnswerViewsetCreateTest(TestCase):
 
         self.section = LabelingSection.objects.create(
             labeling=self.labeling,
-            form_type=LabelingSection.FormType.MAIN,
             title="Main",
             order=1,
         )
@@ -274,7 +273,6 @@ class AutomaticDecisionTest(TestCase):
         )
         self.section = LabelingSection.objects.create(
             labeling=self.labeling,
-            form_type=LabelingSection.FormType.MAIN,
             title="Main Section",
             order=1,
         )
@@ -380,7 +378,6 @@ class LLMDecisionTieBreakTest(TestCase):
         )
         self.section = LabelingSection.objects.create(
             labeling=self.labeling,
-            form_type=LabelingSection.FormType.MAIN,
             title="Main Section",
             order=1,
         )
@@ -607,7 +604,6 @@ class LabelingCompletionTest(TestCase):
         )
         self.section = LabelingSection.objects.create(
             labeling=self.labeling,
-            form_type=LabelingSection.FormType.MAIN,
             title="Main Section",
             order=1,
         )
@@ -696,7 +692,6 @@ class GroupQuotaAnswerEnforcementTest(TestCase):
         )
         self.section = LabelingSection.objects.create(
             labeling=self.labeling,
-            form_type=LabelingSection.FormType.MAIN,
             title="Main",
             order=1,
         )

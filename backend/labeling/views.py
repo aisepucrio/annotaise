@@ -17,7 +17,6 @@ from rest_framework import viewsets, status
 
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied, ValidationError
-from project.models import Project
 from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
@@ -26,7 +25,7 @@ from django.db.models.functions import Coalesce
 from drf_spectacular.utils import extend_schema
 from datetime import datetime, timedelta, timezone as dt_timezone
 import json
-from answer.models import BackgroundAnswer, Answer
+from answer.models import Answer
 from collections import defaultdict
 from annotaise.pagination import StandardCursorPagination, paginated_response
 
@@ -106,7 +105,6 @@ class LabelingViewSet(viewsets.ModelViewSet):
             for section in sections:
                 new_section = LabelingSection.objects.create(
                     labeling=copy,
-                    form_type=section.form_type,
                     title=section.title,
                     order=section.order,
                 )
@@ -182,9 +180,6 @@ class LabelingViewSet(viewsets.ModelViewSet):
             .exclude(user__email__iexact=LLM_TIEBREAK_EMAIL)
             .select_related('user')
         )
-        background_users = set(
-            BackgroundAnswer.objects.filter(labeling=labeling).values_list("answered_by_id", flat=True)
-        )
 
         answers_done = dict(
             Answer.objects.filter(labeling=labeling).done_count_by_user()
@@ -199,7 +194,6 @@ class LabelingViewSet(viewsets.ModelViewSet):
                 "email": membership.user.email,
                 "role": membership.role,
                 "joined_at": membership.joined_at,
-                "background_answered": membership.user_id in background_users,
                 "items_done": answers_done.get(membership.user_id, 0),
             } for membership in page]
 
@@ -282,13 +276,6 @@ class LabelingViewSet(viewsets.ModelViewSet):
             )
 
         def build_rows(page):
-            labeling_ids = [element.id for element in page]
-            background_answered_ids = set(
-                BackgroundAnswer.objects.filter(
-                    answered_by=request.user,
-                    labeling_id__in=labeling_ids,
-                ).values_list("labeling_id", flat=True)
-            )
             # User's groups, pre-computed once to evaluate group eligibility
             # without a per-item query.
             user_group_names = set(
@@ -308,10 +295,6 @@ class LabelingViewSet(viewsets.ModelViewSet):
                     element, request.user, user_group_names
                 ):
                     continue
-                background_answered = (
-                    not element.has_background_form
-                    or element.id in background_answered_ids
-                )
                 rows.append({
                     "id" : element.id,
                     "labeling_name" : element.title,
@@ -319,8 +302,6 @@ class LabelingViewSet(viewsets.ModelViewSet):
                     "total_days" : (element.final_date - element.start_date).days,
                     "days_passed" : (today - element.start_date).days,
                     "items_done" : element.done_labelings,
-                    "background_required": bool(element.has_background_form),
-                    "background_answered": background_answered,
                     "form_mode": bool(element.form_mode),
                     "answers_collected": element.answers_collected,
                 })
@@ -330,7 +311,7 @@ class LabelingViewSet(viewsets.ModelViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         '''Opening a labeling always goes through here — both the answer screen
-        (answer/background/guide) and the management screens fetch this detail
+        (answer/guide) and the management screens fetch this detail
         before rendering. That's why this is where an "open" gets recorded,
         instead of a separate endpoint: it covers deep links, refreshes, and any
         new route for free.
@@ -368,7 +349,6 @@ class LabelingViewSet(viewsets.ModelViewSet):
 
         qs = LabelingElement.objects.filter(
             labeling_section__labeling_id=labeling_id,
-            labeling_section__form_type=LabelingSection.FormType.MAIN,
         )
 
         type_qp = request.query_params.get("type")
@@ -443,21 +423,6 @@ class LabelingMembershipViewSet(viewsets.ModelViewSet):
         )
 
 class CreateReadLabelingStructureView(APIView):
-    def _resolve_form_type(self, request):
-        form_type = request.query_params.get("form_type", LabelingSection.FormType.MAIN)
-        allowed = {
-            LabelingSection.FormType.MAIN,
-            LabelingSection.FormType.BACKGROUND,
-        }
-        if form_type not in allowed:
-            raise ValidationError(
-                detail={
-                    "detail": "form_type inválido. Use 'main' ou 'background'.",
-                    "code": "INVALID_FORM_TYPE",
-                }
-            )
-        return form_type
-
     def get_permissions(self):
         if self.request.method in ['GET']:# TODO this should be removed, but I think it'll break the frontend
             return [IsAuthenticated()]
@@ -468,13 +433,7 @@ class CreateReadLabelingStructureView(APIView):
         examples=None)    
     def get(self, request, labeling_id):
         labeling = get_object_or_404(Labeling, id=labeling_id)
-        form_type = self._resolve_form_type(request)
-        if (
-            form_type == LabelingSection.FormType.BACKGROUND
-            and not labeling.has_background_form
-        ):
-            return Response([], status=status.HTTP_200_OK)
-        sections = LabelingSection.objects.filter(labeling=labeling, form_type=form_type)
+        sections = LabelingSection.objects.filter(labeling=labeling)
         out = LabelingSectionSerializer(sections, many=True).data
         return Response(out, status=status.HTTP_200_OK)
 
@@ -485,19 +444,6 @@ class CreateReadLabelingStructureView(APIView):
     @transaction.atomic # so a failure mid-write doesn't delete what already existed
     def put(self, request, labeling_id):
         labeling = get_object_or_404(Labeling, id=labeling_id)
-        form_type = self._resolve_form_type(request)
-        if (
-            form_type == LabelingSection.FormType.BACKGROUND
-            and not labeling.has_background_form
-        ):
-            return Response(
-                {
-                    "detail": "Esta rotulação não está configurada com formulário background.",
-                    "code": "BACKGROUND_DISABLED",
-                },
-                status=400,
-            )
-
         perm = CanEditLabelingPermission()
         if not perm.can_edit_labeling(request.user, labeling_id):
             raise PermissionDenied(detail=perm.message)
@@ -519,7 +465,6 @@ class CreateReadLabelingStructureView(APIView):
 
         existing_sections_qs = LabelingSection.objects.filter(
             labeling=labeling,
-            form_type=form_type,
         ).prefetch_related(
             "elements__multiple_choice_items", "elements__question_range"
         )
@@ -554,7 +499,6 @@ class CreateReadLabelingStructureView(APIView):
             else:
                 section = LabelingSection.objects.create(
                     labeling=labeling,
-                    form_type=form_type,
                     order=section_order,
                     **section_data
                 )

@@ -144,7 +144,6 @@ Com o projeto criado, acesse a aba "Gerenciar Rotulações" para preparar o ambi
 - **Decisão automática:** ative para que o sistema resolva automaticamente casos de empate nas respostas. É possível escolher se essa decisão será feita manualmente ou por LLM.
 - **Usuários por item:** define quantas pessoas devem responder ao mesmo item para que seja considerado válido.
 - **Atribuir grupos:** permite atribuir grupos já criados à rotulação e definir a quantidade de itens que cada usuário de cada grupo deve responder.
-- **Formulário de background:** ative para incluir um questionário de perfil e coletar informações sobre o rotulador, como nível de experiência, formação ou familiaridade com o tema.
 
 ![Modal de nova rotulação, com os campos de validação e consenso](/docs/img/nova-rotulacao-config1.png)
 

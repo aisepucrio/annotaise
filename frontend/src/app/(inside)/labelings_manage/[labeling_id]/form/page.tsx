@@ -3,9 +3,8 @@
 import { useCallback, useEffect, useMemo, useImperativeHandle, forwardRef, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { toast } from 'sonner';
-import SegmentedSelector from '../SegmentedSelector';
 import { useTranslations } from '@/i18n/use-translations';
-import { useLabelingHeaderQuery, useLabelingStructureQueryByType } from '@/modules/labelings/manage/labelingManagerQueries';
+import { useLabelingStructureQuery } from '@/modules/labelings/manage/labelingManagerQueries';
 import { useSaveLabelingStructureMutation } from '@/modules/labelings/manage/labelingManagerMutations';
 import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
 import { AdminFormBuilder, normalizeAdminSections, sanitizeAdminSectionsForSave } from '@/components/context-question';
@@ -14,12 +13,8 @@ import { useInvitationAssignmentOptionsQuery } from '@/modules/user/userQueries'
 
 type FormTabProps = {
   labelingId: number;
-  hasBackgroundForm: boolean;
-  isFormOnly: boolean; //either has or not csv file
-
 };
 
-type FormType = 'main' | 'background';
 type SaveReason = 'manual' | 'auto';
 
 export type FormTabHandle = {
@@ -29,26 +24,18 @@ export type FormTabHandle = {
 
 const AUTO_SAVE_INTERVAL_MS = 30000;
 
-const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgroundForm, isFormOnly }, ref) => {
+const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId }, ref) => {
   const { t } = useTranslations();
-  const [activeFormType, setActiveFormType] = useState<FormType>('main');
   const [sections, setSections] = useState<LabelingStructureSection[]>([]);
 
-  const structureQuery = useLabelingStructureQueryByType(labelingId, activeFormType);
+  const structureQuery = useLabelingStructureQuery(labelingId);
   const saveMutation = useSaveLabelingStructureMutation();
 
-  const allowContext = activeFormType === 'main' && !isFormOnly; //if is only a form, allowContext won't be "allowed" //therefore, we wont have "AddContext" button
   const unsavedChangesRef = useRef({ hasChanges: false, version: 0 });
   const loadedSnapshotRef = useRef<string | null>(null);
   const pendingSaveRef = useRef<Promise<boolean> | null>(null);
   const saveCurrentStructureRef = useRef<(reason?: SaveReason) => Promise<boolean>>(async () => true);
   const sectionsRef = useRef(sections);
-
-  useEffect(() => {
-    if (!hasBackgroundForm && activeFormType === 'background') {
-      setActiveFormType('main');
-    }
-  }, [activeFormType, hasBackgroundForm]);
 
   useEffect(() => {
     sectionsRef.current = sections;
@@ -59,14 +46,14 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgr
       return;
     }
 
-    const snapshotKey = `${activeFormType}:${structureQuery.dataUpdatedAt}`;
+    const snapshotKey = String(structureQuery.dataUpdatedAt);
     if (loadedSnapshotRef.current === snapshotKey || unsavedChangesRef.current.hasChanges) {
       return;
     }
 
-    setSections(normalizeAdminSections(structureQuery.data.structure, { allowContext, t }));
+    setSections(normalizeAdminSections(structureQuery.data.structure, { allowContext: true, t }));
     loadedSnapshotRef.current = snapshotKey;
-  }, [activeFormType, allowContext, structureQuery.data?.structure, structureQuery.dataUpdatedAt, t]);
+  }, [structureQuery.data?.structure, structureQuery.dataUpdatedAt, t]);
 
   const columns = structureQuery.data?.columns ?? [];
 
@@ -93,7 +80,7 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgr
 
     const savePromise = (async () => {
       try {
-        await saveMutation.mutateAsync({ id: labelingId, sections: payload, formType: activeFormType });
+        await saveMutation.mutateAsync({ id: labelingId, sections: payload });
 
         if (unsavedChangesRef.current.version === savedVersion) {
           unsavedChangesRef.current.hasChanges = false;
@@ -116,7 +103,7 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgr
     }
 
     return didSave;
-  }, [activeFormType, labelingId, saveMutation, t]);
+  }, [labelingId, saveMutation, t]);
 
   useEffect(() => {
     saveCurrentStructureRef.current = handleSaveStructure;
@@ -129,24 +116,6 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgr
     };
     setSections(nextSections);
   }, []);
-
-  const handleFormTypeChange = useCallback(
-    async (nextFormType: FormType) => {
-      if (nextFormType === activeFormType) {
-        return;
-      }
-
-      if (unsavedChangesRef.current.hasChanges) {
-        const didSave = await saveCurrentStructureRef.current('auto');
-        if (!didSave) {
-          return;
-        }
-      }
-
-      setActiveFormType(nextFormType);
-    },
-    [activeFormType]
-  );
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -201,33 +170,11 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgr
   return (
   <div className="relative min-h-full w-full">
     <div className="mx-auto w-[80%]">
-      {hasBackgroundForm ? (
-        <div className="mx-auto mt-2">
-          <SegmentedSelector
-            value={activeFormType}
-            onChange={(nextFormType) => void handleFormTypeChange(nextFormType)}
-            ariaLabel={t('labelings.create.formType.ariaLabel')}
-            options={[
-              {
-                value: 'main',
-                label: t('labelings.create.formType.mainLabel'),
-                tooltip: t('labelings.create.formType.mainTooltip'),
-              },
-              {
-                value: 'background',
-                label: t('labelings.create.formType.backgroundLabel'),
-                tooltip: t('labelings.create.formType.backgroundTooltip'),
-              },
-            ]}
-          />
-        </div>
-      ) : null}
-
       <div className="mt-2 space-y-6">
         <AdminFormBuilder
           sections={sections}
           columns={columns}
-          allowContext={allowContext}
+          allowContext
           onChange={handleSectionsChange}
         />
       </div>
@@ -242,13 +189,6 @@ export { FormTab };
 export default function FormPage() {
   const params = useParams<{ labeling_id: string }>();
   const labelingId = useMemo(() => Number(params?.labeling_id), [params]);
-  const headerQuery = useLabelingHeaderQuery(labelingId);
 
-    return(
-   <FormTab labelingId={labelingId} hasBackgroundForm={Boolean(headerQuery.data?.labeling?.has_background_form)} 
-   isFormOnly={Boolean(headerQuery.data?.labeling?.form_mode)}
-    />
-  );
-
-
+  return <FormTab labelingId={labelingId} />;
 }

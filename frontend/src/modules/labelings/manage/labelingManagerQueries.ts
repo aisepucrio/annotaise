@@ -38,17 +38,13 @@ export function useLabelingHeaderQuery(labelingId: number) {
 }
 
 export function useLabelingStructureQuery(labelingId: number) {
-  return useLabelingStructureQueryByType(labelingId, 'main');
-}
-
-export function useLabelingStructureQueryByType(labelingId: number, formType: 'main' | 'background') {
   const enabled = !Number.isNaN(labelingId);
 
   return useQuery({
-    queryKey: ['labelings', labelingId, 'structure', formType],
+    queryKey: ['labelings', labelingId, 'structure'],
     enabled,
     queryFn: async () => {
-      const [labeling, structure] = await Promise.all([fetchLabeling(labelingId), fetchLabelingStructure(labelingId, formType)]);
+      const [labeling, structure] = await Promise.all([fetchLabeling(labelingId), fetchLabelingStructure(labelingId)]);
 
       // Prefer CSV columns; fall back to columns derived from the structure.
       const csvColumns = Array.isArray(labeling.column_names) ? labeling.column_names : [];

@@ -18,7 +18,7 @@ from collections import Counter, defaultdict
 from rest_framework.exceptions import ValidationError
 
 from answer.models import Answer
-from ..models import LabelingElement, LabelingMembership, LabelingSection
+from ..models import LabelingElement, LabelingMembership
 from ..serializers import LLM_TIEBREAK_EMAIL, LLM_TIEBREAK_USERNAME
 from . import metrics
 
@@ -94,7 +94,6 @@ def build_agreement_summary(labeling, min_agreement: int) -> dict:
         LabelingElement.objects
         .filter(
             labeling_section__labeling=labeling,
-            labeling_section__form_type=LabelingSection.FormType.MAIN,
             question_type=LabelingElement.QuestionType.MULTIPLE_CHOICE,
         )
         .prefetch_related("multiple_choice_items")
@@ -334,7 +333,6 @@ def build_reliability_report(labeling) -> dict:
         LabelingElement.objects
         .filter(
             labeling_section__labeling=labeling,
-            labeling_section__form_type=LabelingSection.FormType.MAIN,
             question_type__in=SCALE_BY_QUESTION_TYPE.keys(),
         )
         .prefetch_related("multiple_choice_items")

@@ -35,8 +35,8 @@ export default function LabelingsPage() {
 
   // Dashboard ordering follows "last opened", recorded on the backend when the
   // destination screen fetches the labeling detail — nothing to do here.
-  const handleOpenLabeling = (labelingId: number, mustAnswerBackgroundFirst: boolean) => {
-    router.push(mustAnswerBackgroundFirst ? `/labelings/${labelingId}/background` : `/labelings/${labelingId}/answer`);
+  const handleOpenLabeling = (labelingId: number) => {
+    router.push(`/labelings/${labelingId}/answer`);
   };
 
   return (
@@ -62,33 +62,30 @@ export default function LabelingsPage() {
         />
       }
     >
-      {labelingsList.map((l, index) => {
-        const mustAnswerBackgroundFirst = Boolean(l.background_required && !l.background_answered);
-        return (
-          <GridItemCard key={l.id} index={index}>
-            <IndividualLabelingCard
-              title={l.labeling_name}
-              project={l.project_name ?? t('labelings.manage.noProject')}
-              daysPassed={l.days_passed}
-              daysTotal={l.total_days}
-              labelingsDone={l.items_done}
-              formMode={l.form_mode}
-              answersCollected={l.answers_collected}
-              variant="labelings"
-              actionButton={
-                <Button
-                  icon={<Tag size={20} strokeWidth={1.75} />}
-                  onClick={() => handleOpenLabeling(l.id, mustAnswerBackgroundFirst)}
-                  variant="normal"
-                  ariaLabel={t('labelings.action.answerAria')}
-                >
-                  {mustAnswerBackgroundFirst ? 'BACKGROUND' : t('labelings.action.answer')}
-                </Button>
-              }
-            />
-          </GridItemCard>
-        );
-      })}
+      {labelingsList.map((l, index) => (
+        <GridItemCard key={l.id} index={index}>
+          <IndividualLabelingCard
+            title={l.labeling_name}
+            project={l.project_name ?? t('labelings.manage.noProject')}
+            daysPassed={l.days_passed}
+            daysTotal={l.total_days}
+            labelingsDone={l.items_done}
+            formMode={l.form_mode}
+            answersCollected={l.answers_collected}
+            variant="labelings"
+            actionButton={
+              <Button
+                icon={<Tag size={20} strokeWidth={1.75} />}
+                onClick={() => handleOpenLabeling(l.id)}
+                variant="normal"
+                ariaLabel={t('labelings.action.answerAria')}
+              >
+                {t('labelings.action.answer')}
+              </Button>
+            }
+          />
+        </GridItemCard>
+      ))}
     </PageLayout>
   );
 }
