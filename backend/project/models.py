@@ -19,7 +19,7 @@ class Project(models.Model):
         ordering = ["-created_at", "name"]
 
     def __str__(self):
-        return f"project {self.name} created by {self.created_by}"
+        return f"project {self.name} "
 
 
 class ProjectMembership(models.Model):
