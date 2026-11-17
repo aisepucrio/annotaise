@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2, Plus, TriangleAlert, Upload, Users } from 'lucide-react';
+import { Edit, Loader2, Plus, TriangleAlert, Upload, Users } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { toast } from 'sonner';
@@ -36,7 +36,9 @@ type NewLabelingModalProps = {
 // The residual "any" slot is computed by the backend, so it never appears as a row here.
 type GroupQuotaRow = { group: string; count: number | '' };
 
-type Step = 'upload' | 'details';
+// Screens of the creation flow. Which ones exist depends on the choices made along the way:
+// "anotadores" only when items come from a CSV, "grupos" only on the automatic strategy.
+type Step = 'origem' | 'estrategia' | 'anotadores' | 'grupos' | 'identificacao' | 'revisao';
 type DetailFormField = 'title' | 'projectId' | 'startDate' | 'finalDate' | 'usersPerItem';
 type DetailFormErrors = Partial<Record<DetailFormField, string>>;
 type CreateLabelingWithCsvDraft = {
@@ -73,7 +75,7 @@ export default function NewLabelingModal({ open, onClose, onConfirm, defaultProj
 
   const [draft, setDraft] = useState<CreateLabelingWithCsvDraft>(() => createInitialState(defaultProjectId));
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [step, setStep] = useState<Step>('upload');
+  const [stepIndex, setStepIndex] = useState(0);
   const [hasEmptyFields, setHasEmptyFields] = useState(false);
   const [isAnalyzingFile, setIsAnalyzingFile] = useState(false);
   const [formErrors, setFormErrors] = useState<DetailFormErrors>({});
@@ -90,7 +92,7 @@ export default function NewLabelingModal({ open, onClose, onConfirm, defaultProj
       setIsAnalyzingFile(false);
       setFormErrors({});
       setGroupRows([]);
-      setStep('upload');
+      setStepIndex(0);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   }, [open, defaultProjectId]);
@@ -137,6 +139,22 @@ export default function NewLabelingModal({ open, onClose, onConfirm, defaultProj
   const remainingForAny = usersPerItem - assignedToGroups;
   const exceedsUsersPerItem = remainingForAny < 0;
   const hasIncompleteGroupRow = groupRows.some((row) => !row.group || !(Number(row.count) > 0));
+
+  // The path adapts to the choices: form mode has no items to distribute, so it skips
+  // both the annotator and the group screens; the other strategies skip only the groups.
+  const steps = useMemo<Step[]>(() => {
+    const path: Step[] = ['origem', 'estrategia'];
+    if (!draft.payload.form_mode) path.push('anotadores');
+    if (showGroups) path.push('grupos');
+    path.push('identificacao', 'revisao');
+    return path;
+  }, [draft.payload.form_mode, showGroups]);
+
+  // A choice can shorten the path while the user is past its end (e.g. switching to form
+  // mode after the annotator screen), so the index is read through a clamp.
+  const currentIndex = Math.min(stepIndex, steps.length - 1);
+  const currentStep = steps[currentIndex];
+  const isLastStep = currentIndex === steps.length - 1;
 
   const handleAddGroupRow = () => setGroupRows((prev) => [...prev, { group: '', count: 1 }]);
   const handleRemoveGroupRow = (index: number) =>
@@ -270,18 +288,165 @@ export default function NewLabelingModal({ open, onClose, onConfirm, defaultProj
     [draft.file, isAnalyzingFile, isFormMode],
   );
 
-  function handleContinueFromUpload() {
-    if (!isFormMode && !draft.file) {
-      toast.error(t('labelings.upload.error.continueMissingFile'));
-      return;
+  // "Por pessoa" distributes items across people, which form mode has none of.
+  const strategyOptions = useMemo<Array<{ value: DistributionStrategy; label: string }>>(() => {
+    const options: Array<{ value: DistributionStrategy; label: string }> = [
+      { value: 'auto', label: t('labelings.upload.distributionStrategy.auto') },
+    ];
+    if (!isFormMode) {
+      options.push({ value: 'per_person', label: t('labelings.upload.distributionStrategy.per_person') });
     }
-    setFormErrors({});
-    setStep('details');
+    options.push({ value: 'anonymous_mode', label: t('labelings.upload.distributionStrategy.anonymous_mode') });
+    return options;
+  }, [isFormMode, t]);
+
+  // Summary shown on the last screen. Every label reuses the one from the field it mirrors,
+  // so the review never introduces wording of its own.
+  const reviewRows = useMemo(() => {
+    const strategy = draft.payload.distribution_strategy ?? 'auto';
+    const strategyLabels: Record<DistributionStrategy, string> = {
+      auto: t('labelings.upload.distributionStrategy.auto'),
+      specified: t('labelings.upload.distributionStrategy.specified'),
+      per_person: t('labelings.upload.distributionStrategy.per_person'),
+      anonymous_mode: t('labelings.upload.distributionStrategy.anonymous_mode'),
+    };
+    const yesNo = (value: boolean) => (value ? t('common.yes') : t('common.no'));
+    const project = (projects ?? []).find((p) => p.id === draft.payload.project);
+
+    // `step` is where the edit button sends the user back to.
+    const rows: Array<{ label: string; value: string; step: Step }> = [
+      { label: t('labelings.upload.formModeLabel'), value: yesNo(isFormMode), step: 'origem' },
+    ];
+
+    if (!isFormMode) {
+      rows.push({ label: t('labelings.upload.button'), value: draft.file?.name ?? '—', step: 'origem' });
+    }
+
+    rows.push({
+      label: t('labelings.upload.distributionStrategyLabel'),
+      value: strategyLabels[strategy],
+      step: 'estrategia',
+    });
+
+    if (!isFormMode) {
+      rows.push({
+        label: t('labelings.upload.usersPerItemLabel'),
+        value: String(draft.payload.users_per_item ?? ''),
+        step: 'anotadores',
+      });
+      rows.push({ label: t('labelings.upload.decisionLabel'), value: yesNo(draft.payload.decision), step: 'anotadores' });
+      if (draft.payload.decision) {
+        rows.push({
+          label: t('labelings.upload.decisionModeLabel'),
+          value:
+            draft.payload.decision_mode === 'llm'
+              ? t('labelings.upload.decisionMode.llm')
+              : t('labelings.upload.decisionMode.manual'),
+          step: 'anotadores',
+        });
+      }
+      rows.push({
+        label: t('labelings.upload.backgroundFormLabel'),
+        value: yesNo(draft.payload.has_background_form ?? false),
+        step: 'anotadores',
+      });
+    }
+
+    if (showGroups && groupRows.length > 0) {
+      rows.push({
+        label: t('labelings.create.groups.listTitle'),
+        value: groupRows
+          .filter((row) => row.group && Number(row.count) > 0)
+          .map((row) => `${row.group}: ${row.count}`)
+          .join(' · '),
+        step: 'grupos',
+      });
+    }
+
+    rows.push({ label: t('labelings.upload.titleLabel'), value: draft.payload.title || '—', step: 'identificacao' });
+    rows.push({
+      label: t('labelings.upload.projectLabel'),
+      value: project?.name ?? t('labelings.upload.noProjectOption'),
+      step: 'identificacao',
+    });
+    rows.push({
+      label: t('labelings.upload.startDateLabel'),
+      value: draft.payload.start_date || '—',
+      step: 'identificacao',
+    });
+    rows.push({
+      label: t('labelings.upload.finalDateLabel'),
+      value: draft.payload.final_date || '—',
+      step: 'identificacao',
+    });
+
+    return rows;
+  }, [draft, groupRows, isFormMode, projects, showGroups, t]);
+
+  // Each screen checks only what it collects. handleConfirm still validates everything
+  // before sending, so a field can never reach the backend unchecked.
+  function validateStep(stepToCheck: Step): boolean {
+    if (stepToCheck === 'origem' && !isFormMode && !draft.file) {
+      toast.error(t('labelings.upload.error.continueMissingFile'));
+      return false;
+    }
+
+    if (stepToCheck === 'anotadores') {
+      const perItem = draft.payload.users_per_item;
+      if (perItem === null || !Number.isInteger(perItem) || perItem <= 0) {
+        setFormErrors((prev) => ({ ...prev, usersPerItem: t('labelings.upload.error.invalidUsersPerItem') }));
+        return false;
+      }
+    }
+
+    if (stepToCheck === 'grupos') {
+      if (hasIncompleteGroupRow) {
+        toast.error(t('labelings.create.groups.incompleteRow'));
+        return false;
+      }
+      if (exceedsUsersPerItem) {
+        toast.error(t('labelings.create.groups.exceeds', { assigned: assignedToGroups, total: usersPerItem }));
+        return false;
+      }
+    }
+
+    if (stepToCheck === 'identificacao') {
+      const nextFormErrors: DetailFormErrors = {};
+      if (!draft.payload.title.trim()) {
+        nextFormErrors.title = t('labelings.upload.error.missingTitle');
+      }
+      if (!draft.payload.final_date.trim()) {
+        nextFormErrors.finalDate = t('labelings.upload.error.missingFinalDate');
+      }
+      if (draft.payload.start_date && draft.payload.final_date && draft.payload.start_date > draft.payload.final_date) {
+        nextFormErrors.finalDate = t('labelings.upload.error.invalidDates');
+      }
+      if (Object.keys(nextFormErrors).length > 0) {
+        setFormErrors(nextFormErrors);
+        return false;
+      }
+    }
+
+    return true;
   }
 
-  function handleBackToUpload() {
+  function handleNextStep() {
+    if (!validateStep(currentStep)) return;
     setFormErrors({});
-    setStep('upload');
+    setStepIndex(Math.min(currentIndex + 1, steps.length - 1));
+  }
+
+  function handlePreviousStep() {
+    setFormErrors({});
+    setStepIndex(Math.max(currentIndex - 1, 0));
+  }
+
+  // Used by the review screen to jump straight back to the screen holding a given field.
+  function handleEditStep(target: Step) {
+    const targetIndex = steps.indexOf(target);
+    if (targetIndex < 0) return;
+    setFormErrors({});
+    setStepIndex(targetIndex);
   }
 
   function validateFile(file: File) {
@@ -332,18 +497,40 @@ export default function NewLabelingModal({ open, onClose, onConfirm, defaultProj
 
   if (!open) return null;
 
+  // Only the first screen keeps a description: the existing "details" text lists fields that
+  // now live on different screens, so showing it anywhere would be inaccurate.
   const modalDescription =
-    step === 'upload' ? (
+    currentStep === 'origem' ? (
       <p>
         {t('labelings.upload.description.uploadPrefix')} <strong>.CSV</strong> {t('labelings.upload.description.uploadSuffix')}
       </p>
-    ) : (
-      <p>{t('labelings.upload.description.details')}</p>
-    );
+    ) : undefined;
 
   return (
     <Modal open={open} onClose={onClose} title={t('labelings.upload.title')} description={modalDescription} maxWidth="lg">
-      {step === 'upload' ? (
+      {/* Progress is shown as filled segments rather than "x of N": the path length changes
+          with the choices made on the first two screens, and a ratio that shifts under the
+          user reads as a glitch. Naming the steps instead would need product vocabulary the
+          system has not settled (usuários / rotuladores / anotadores all appear today). */}
+      <div className="mb-5 flex items-center gap-1.5" aria-hidden="true">
+        {steps.map((stepName, index) => (
+          <span
+            key={stepName}
+            className={`h-1 flex-1 rounded-full transition-colors ${
+              index <= currentIndex ? 'bg-blueberry-700' : 'bg-metal-200'
+            }`}
+          />
+        ))}
+      </div>
+
+      {/* Screens render one at a time, driven by `steps`. They are laid out below in the file
+          in their original order, not in flow order: origem, identificacao, estrategia,
+          anotadores, grupos, revisao. The flow order is the one in `steps`.
+          Each screen sizes to its own content: a minimum height was tried and left a visible
+          gap under the shorter ones. The select opens over the modal, so it needs no room.
+          The right padding keeps the content off the modal's scrollbar. */}
+      <div className="pr-2">
+      {currentStep === 'origem' && (
         <div>
           {/* Form mode toggle: skips CSV import and creates the labeling without items */}
           <div className="mb-4 flex items-center gap-2 rounded-lg border border-metal-200 bg-metal-50 px-3 py-2">
@@ -428,15 +615,11 @@ export default function NewLabelingModal({ open, onClose, onConfirm, defaultProj
             </div>
           )}
 
-          <div className="mt-6 flex justify-between gap-3 w-[70%] mx-auto">
-            <Button onClick={handleContinueFromUpload} disabled={!canContinueUploadStep}>
-              {t('labelings.upload.continue')}
-            </Button>
-          </div>
         </div>
-      ) : (
-        <div>
-          <div className="space-y-5">
+      )}
+
+      {currentStep === 'identificacao' && (
+        <div className="space-y-5">
             <Input
               id="csv-title"
               label={t('labelings.upload.titleLabel')}
@@ -519,36 +702,49 @@ export default function NewLabelingModal({ open, onClose, onConfirm, defaultProj
                 }}
               />
             </div>
+        </div>
+      )}
 
-            <Select
-              id="csv-distribution-strategy"
-              label={t('labelings.upload.distributionStrategyLabel')}
-              options={
-                isFormMode
-                  ? [
-                      { value: 'auto', label: t('labelings.upload.distributionStrategy.auto') },
-                      { value: 'anonymous_mode', label: t('labelings.upload.distributionStrategy.anonymous_mode') },
-                    ]
-                  : [
-                      { value: 'auto', label: t('labelings.upload.distributionStrategy.auto') },
-                      { value: 'per_person', label: t('labelings.upload.distributionStrategy.per_person') },
-                      { value: 'anonymous_mode', label: t('labelings.upload.distributionStrategy.anonymous_mode') },
-                    ]
-              }
-              value={draft.payload.distribution_strategy ?? 'auto'}
-              onChange={(e) =>
-                setDraft((prev) => ({
-                  ...prev,
-                  payload: {
-                    ...prev.payload,
-                    distribution_strategy: (e.target as HTMLSelectElement).value as DistributionStrategy,
-                  },
-                }))
-              }
-              tooltip={t('labelings.upload.distributionStrategyTooltip')}
-            />
+      {currentStep === 'estrategia' && (
+        <div className="space-y-3">
+          {/* Cards instead of a select: the options are few and fixed, and an open dropdown
+              covered the footer buttons in a modal this short. */}
+          <div>
+            <p className="text-sm font-medium text-metal-900">{t('labelings.upload.distributionStrategyLabel')}</p>
+            <p className="mt-1 text-xs text-metal-500">{t('labelings.upload.distributionStrategyTooltip')}</p>
+          </div>
 
-            {!isFormMode && (<>
+          {strategyOptions.map((option) => {
+            const isSelected = (draft.payload.distribution_strategy ?? 'auto') === option.value;
+            return (
+              <label
+                key={option.value}
+                className={`flex cursor-pointer items-center gap-3 rounded-lg border-[0.12rem] px-4 py-3 transition-colors ${
+                  isSelected ? 'border-blueberry-700 bg-blueberry-700-15' : 'border-metal-200 hover:border-metal-500'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="csv-distribution-strategy"
+                  value={option.value}
+                  checked={isSelected}
+                  onChange={() =>
+                    setDraft((prev) => ({
+                      ...prev,
+                      payload: { ...prev.payload, distribution_strategy: option.value },
+                    }))
+                  }
+                  className="h-4 w-4 shrink-0 accent-blueberry-700"
+                />
+                <span className="text-sm font-medium text-metal-900">{option.label}</span>
+              </label>
+            );
+          })}
+        </div>
+      )}
+
+      {currentStep === 'anotadores' && (
+        <div className="space-y-5">
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <div className="rounded-lg border border-metal-200 bg-metal-50 px-3 py-2">
                 <div className="w-full">
@@ -579,6 +775,11 @@ export default function NewLabelingModal({ open, onClose, onConfirm, defaultProj
                       <Tooltip content={t('labelings.upload.decisionTooltip')} color="var(--metal-700)" size="sm" />
                     </div>
                   </div>
+
+                  {/* Without this, the field just greys out and the user is left guessing. */}
+                  {forcesSingleAnswer && (
+                    <p className="mt-1.5 text-xs text-blueberry-700">{t('labelings.upload.onlyAutoStrategy')}</p>
+                  )}
 
                   {draft.payload.decision && !forcesSingleAnswer ? (
                     <div className="mt-2 rounded-md border border-metal-200 bg-white p-2">
@@ -663,10 +864,16 @@ export default function NewLabelingModal({ open, onClose, onConfirm, defaultProj
               placeholder="1"
               tooltip={t('labelings.upload.usersPerItemTooltip')}
             />
-            </>)}
 
-            {/* Per-group quotas — set at creation only, since they cannot be changed afterwards. */}
-            {showGroups && (
+            {forcesSingleAnswer && (
+              <p className="-mt-3 text-xs text-blueberry-700">{t('labelings.upload.onlyAutoStrategy')}</p>
+            )}
+        </div>
+      )}
+
+      {/* Per-group quotas — set at creation only, since they cannot be changed afterwards. */}
+      {currentStep === 'grupos' && (
+        <div className="space-y-5">
               <div className="rounded-xl border border-metal-200 bg-metal-50 px-4 py-4 space-y-4">
                 <div>
                   <div className="flex items-center gap-1">
@@ -742,26 +949,61 @@ export default function NewLabelingModal({ open, onClose, onConfirm, defaultProj
                   </div>
                 )}
               </div>
-            )}
-          </div>
-
-          <div className="mt-6 flex justify-between gap-3">
-            <Button type="button" variant="white" fill={true} onClick={handleBackToUpload} disabled={isSubmitting}>
-              {t('common.back')}
-            </Button>
-            <Button onClick={handleConfirm} disabled={isSubmitting}>
-              {isSubmitting ? (
-                <span className="inline-flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {t('labelings.upload.processing')}
-                </span>
-              ) : (
-                t('labelings.upload.create')
-              )}
-            </Button>
-          </div>
         </div>
       )}
+
+      {currentStep === 'revisao' && (
+        <div className="divide-y divide-metal-200 rounded-xl border border-metal-200">
+          {reviewRows.map((row) => (
+            <div key={row.label} className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5">
+              <span className="text-sm text-metal-700">{row.label}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-metal-900">{row.value}</span>
+                <button
+                  type="button"
+                  onClick={() => handleEditStep(row.step)}
+                  disabled={isSubmitting}
+                  className="p-1 rounded-md text-metal-500 hover:bg-metal-100 hover:text-metal-700 cursor-pointer transition-colors"
+                  aria-label={t('common.edit')}
+                >
+                  <Edit size={16} />
+                </button>
+              </div>
+            </div>
+          ))}
+          {showGroups && groupRows.length > 0 && (
+            <p className="px-4 py-2.5 text-xs text-metal-700">{t('labelings.create.groups.readonlyNote')}</p>
+          )}
+        </div>
+      )}
+      </div>
+
+      <div className="mt-6 flex items-center justify-between gap-3">
+        {currentIndex > 0 ? (
+          <Button type="button" variant="white" fill={true} onClick={handlePreviousStep} disabled={isSubmitting}>
+            {t('common.back')}
+          </Button>
+        ) : (
+          <span />
+        )}
+
+        {isLastStep ? (
+          <Button onClick={handleConfirm} disabled={isSubmitting}>
+            {isSubmitting ? (
+              <span className="inline-flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {t('labelings.upload.processing')}
+              </span>
+            ) : (
+              t('labelings.upload.create')
+            )}
+          </Button>
+        ) : (
+          <Button onClick={handleNextStep} disabled={currentStep === 'origem' && !canContinueUploadStep}>
+            {t('labelings.upload.continue')}
+          </Button>
+        )}
+      </div>
     </Modal>
   );
 }

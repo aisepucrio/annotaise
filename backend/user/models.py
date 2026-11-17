@@ -1,5 +1,6 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser
+from .querysets import UserQuerySet
+from django.contrib.auth.models import AbstractUser, UserManager
 from django.conf import settings
 from django.utils import timezone
 from django.core.exceptions import ValidationError
@@ -7,8 +8,12 @@ from django.core.exceptions import ValidationError
 import uuid
 from datetime import timedelta
 
+class CustomUserManager(UserManager.from_queryset(UserQuerySet)):
+    pass
+
 class CustomUser(AbstractUser):
     '''a pk do usuario é o email. o username é um id aleatorio.'''
+    objects = CustomUserManager()
 
     class AccountType(models.TextChoices):
         STANDARD = "standard", "Padrao"
@@ -33,6 +38,8 @@ class CustomUser(AbstractUser):
         choices=OnboardingStatus.choices,
         default=OnboardingStatus.ACTIVE,
     )
+
+
 
     def save(self, *args, **kwargs):
         if self.is_superuser:
