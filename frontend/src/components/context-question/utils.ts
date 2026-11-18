@@ -24,6 +24,8 @@ export function getQuestionDataType(element: Pick<LabelingStructureElement, 'que
       return 'multiple-choice';
     case 'email':
       return 'email';
+    case 'ranking':
+      return 'ranking';
     case 'text':
     default:
       return 'text';
@@ -40,6 +42,8 @@ export function questionDataTypeToDto(dataType: QuestionDataType): LabelingStruc
       return 'multiple_choice';
     case 'email':
       return 'email';
+    case 'ranking':
+      return 'ranking';
     case 'text':
     default:
       return 'text';

@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('labeling', '0039_alter_labeling_project_alter_labelingmembership_role'),
+        ('labeling', '0040_alter_labelingelement_question_type'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

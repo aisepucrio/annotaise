@@ -46,6 +46,7 @@ export default function SectionWrapper({ section, payload, answers, onAnswerChan
                       element={question}
                       value={value}
                       answers={answers}
+                      payload={payload}
                       t={t}
                       onChange={(nextValue) => onAnswerChange(question.id ?? questionIndex, nextValue)}
                       onAnswerChange={onAnswerChange}

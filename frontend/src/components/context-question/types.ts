@@ -12,8 +12,8 @@ export type { ElementDTO, LabelingStructureElement, LabelingStructureSection };
 
 export type ContextDataType = 'text' | 'number' | 'date' | 'category' | 'code' | 'image' | 'audio' | 'video' | 'pdf';
 export const CONTEXT_DATA_TYPES: ContextDataType[] = ['text', 'number', 'date', 'category', 'code', 'image', 'audio', 'video', 'pdf'];
-export type QuestionDataType = 'text' | 'number' | 'linear-scale' | 'multiple-choice' | 'email';
-export const QUESTION_DATA_TYPES: QuestionDataType[] = ['text', 'number', 'linear-scale', 'multiple-choice', 'email'];
+export type QuestionDataType = 'text' | 'number' | 'linear-scale' | 'multiple-choice' | 'email' | 'ranking';
+export const QUESTION_DATA_TYPES: QuestionDataType[] = ['text', 'number', 'linear-scale', 'multiple-choice', 'email', 'ranking'];
 
 export type ContextQuestionCommonProps = {
   t: TranslateFn;
@@ -68,6 +68,8 @@ export type AdminQuestionModuleData = ContextQuestionCommonProps & {
   onUpdate: AdminElementUpdate;
   compact?: boolean;
   allowFollowUp?: boolean;
+  /** CSV columns of the labeling. Only questions that point at columns (ranking) read it. */
+  columns?: string[];
 };
 
 export type UserQuestionModuleData = ContextQuestionCommonProps & {
@@ -77,6 +79,8 @@ export type UserQuestionModuleData = ContextQuestionCommonProps & {
   allowFollowUp?: boolean;
   onChange: (value: unknown) => void;
   onAnswerChange?: (questionId: string | number, value: unknown) => void;
+  /** Values of the item's CSV row. Only questions that show column content (ranking) read it. */
+  payload?: Record<string, unknown>;
 };
 
 export type ResponseQuestionModuleData = ContextQuestionCommonProps & {

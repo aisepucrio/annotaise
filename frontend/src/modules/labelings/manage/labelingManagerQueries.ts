@@ -11,12 +11,14 @@ import {
   fetchLabelingAgreementSummary,
   fetchLabelingAIConfig,
   fetchAICredentials,
+  fetchLabelingReliability,
 } from '../labelingService';
 import { fetchProject } from '@/modules/projects/projectService';
 import { fetchUsers } from '@/modules/user/userService';
 import type {
   AnswerResponse,
   LabelingAgreementSummary,
+  LabelingReliabilityReport,
   LabelingMembershipDashboard,
   LabelingStructureSection,
   LabelingElementSummary,
@@ -141,6 +143,16 @@ export function useLabelingAgreementSummaryQuery(labelingId: number, minAgreemen
         max_min_agreement: 2,
         questions: [],
       })),
+  });
+}
+
+export function useLabelingReliabilityQuery(labelingId: number, shouldFetch = true) {
+  const enabled = !Number.isNaN(labelingId) && shouldFetch;
+
+  return useQuery({
+    queryKey: ['labelings', labelingId, 'reliability'],
+    enabled,
+    queryFn: async (): Promise<LabelingReliabilityReport> => fetchLabelingReliability(labelingId),
   });
 }
 

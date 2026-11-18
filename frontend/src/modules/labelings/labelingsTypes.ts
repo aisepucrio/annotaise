@@ -81,7 +81,7 @@ export type CreateLabelingWithCsvPayload = {
 };
 
 // Labeling structure (form) - shared types between frontend and backend
-export type QuestionTypeDTO = 'text' | 'number' | 'range' | 'multiple_choice' | 'email' | 'context';
+export type QuestionTypeDTO = 'text' | 'number' | 'range' | 'multiple_choice' | 'email' | 'context' | 'ranking';
 
 // DTOs for creating/editing the labeling structure
 export type MultipleChoiceItemDTO = {
@@ -288,4 +288,30 @@ export type LabelingAgreementSummary = {
   min_agreement: number;
   max_min_agreement: number;
   questions: LabelingAgreementQuestionSummary[];
+};
+
+// Chance-corrected agreement (GET /labelings/{id}/reliability/).
+// Answers a different question from LabelingAgreementSummary above, which
+// counts operational consensus per option rather than reliability.
+export type LabelingReliabilityEstimate = {
+  value: number | null;
+  ci_low: number | null;
+  ci_high: number | null;
+};
+
+export type LabelingReliabilityQuestion = {
+  question_id: number;
+  question_type: string;
+  scale: string;
+  annotators: number;
+  items_considered: number;
+  excluded_items: number;
+  has_unknown_options: boolean;
+  krippendorff_alpha: LabelingReliabilityEstimate;
+  percent_agreement: LabelingReliabilityEstimate;
+  fleiss_kappa: (LabelingReliabilityEstimate & { items_used: number; ratings_per_item: number }) | null;
+};
+
+export type LabelingReliabilityReport = {
+  questions: LabelingReliabilityQuestion[];
 };

@@ -5,7 +5,7 @@ import Button from '@/components/button/Button';
 import type { TranslateFn } from '@/i18n/types';
 import type { AnswerResponse, LabelingStructureSection } from '@/modules/labelings/labelingsTypes';
 import { useTranslations } from '@/i18n/use-translations';
-import TwoOptionSelector from '../../TwoOptionSelector';
+import SegmentedSelector from '../../SegmentedSelector';
 import { resolveItemLabel } from '../answer-utils';
 import ItemSummary from './ItemSummary';
 import ItemAnswers from './ItemAnswers';
@@ -113,7 +113,7 @@ export default function ItemTab({ itemGroup, itemGroups, onBack, onSelectItem, g
             </div>
 
             <div className="w-full overflow-hidden ">
-              <TwoOptionSelector<DetailTab>
+              <SegmentedSelector<DetailTab>
                 value={activeTab}
                 onChange={setActiveTab}
                 ariaLabel={t('labelings.create.answers.modal.tabUserAnswer')}

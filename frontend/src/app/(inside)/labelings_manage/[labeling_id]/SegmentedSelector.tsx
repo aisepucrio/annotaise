@@ -8,29 +8,35 @@ type SelectorOption<TValue extends string> = {
   tooltip?: string;
 };
 
-type TwoOptionSelectorProps<TValue extends string> = {
+type SegmentedSelectorProps<TValue extends string> = {
   value: TValue;
   onChange: (nextValue: TValue) => void;
   ariaLabel: string;
-  options: readonly [SelectorOption<TValue>, SelectorOption<TValue>];
+  options: readonly SelectorOption<TValue>[];
 };
 
-export default function TwoOptionSelector<TValue extends string>({
+export default function SegmentedSelector<TValue extends string>({
   value,
   onChange,
   ariaLabel,
   options,
-}: TwoOptionSelectorProps<TValue>) {
-  const activeIndex = options.findIndex((option) => option.value === value);
-  const normalizedActiveIndex = activeIndex === 1 ? 1 : 0;
+}: SegmentedSelectorProps<TValue>) {
+  const activeIndex = Math.max(0, options.findIndex((option) => option.value === value));
+  // Tailwind can't generate widths from a runtime count, so the sliding
+  // highlight is sized and moved inline.
+  const segmentWidth = `${100 / options.length}%`;
 
   return (
-    <div role="tablist" aria-label={ariaLabel} className="relative grid h-11 w-full grid-cols-2 overflow-hidden bg-white">
+    <div
+      role="tablist"
+      aria-label={ariaLabel}
+      className="relative grid h-11 w-full overflow-hidden bg-white"
+      style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
+    >
       <span
         aria-hidden="true"
-        className={`pointer-events-none absolute inset-y-0 left-0 w-1/2 bg-blueberry-700 transition-transform duration-300 ease-out ${
-          normalizedActiveIndex === 1 ? 'translate-x-full' : 'translate-x-0'
-        }`}
+        className="pointer-events-none absolute inset-y-0 left-0 bg-blueberry-700 transition-transform duration-300 ease-out"
+        style={{ width: segmentWidth, transform: `translateX(${activeIndex * 100}%)` }}
       />
 
       {options.map((option) => {

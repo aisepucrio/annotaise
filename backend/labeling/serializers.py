@@ -483,3 +483,31 @@ class LabelingAIConfigSerializer(serializers.Serializer):
             ),
             'updated_at': credential.updated_at,
         }
+
+
+class LabelingReliabilityEstimateSerializer(serializers.Serializer):
+    value = serializers.FloatField(allow_null=True)
+    ci_low = serializers.FloatField(allow_null=True)
+    ci_high = serializers.FloatField(allow_null=True)
+
+
+class LabelingReliabilityFleissSerializer(LabelingReliabilityEstimateSerializer):
+    items_used = serializers.IntegerField(min_value=0)
+    ratings_per_item = serializers.IntegerField(min_value=0)
+
+
+class LabelingReliabilityQuestionSerializer(serializers.Serializer):
+    question_id = serializers.IntegerField()
+    question_type = serializers.CharField()
+    scale = serializers.CharField()
+    annotators = serializers.IntegerField(min_value=0)
+    items_considered = serializers.IntegerField(min_value=0)
+    excluded_items = serializers.IntegerField(min_value=0)
+    has_unknown_options = serializers.BooleanField()
+    krippendorff_alpha = LabelingReliabilityEstimateSerializer()
+    percent_agreement = LabelingReliabilityEstimateSerializer()
+    fleiss_kappa = LabelingReliabilityFleissSerializer(allow_null=True)
+
+
+class LabelingReliabilitySerializer(serializers.Serializer):
+    questions = LabelingReliabilityQuestionSerializer(many=True)
