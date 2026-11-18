@@ -54,6 +54,8 @@ export function getUserLlmKey(labelingId: number): UserLlmKey | null {
   }
 }
 
+// Retorna true/false pra dizer se a chave foi salva. Às vezes o navegador não
+// deixa salvar (aba anônima, memória cheia), e aí a tela avisa o usuário.
 export function setUserLlmKey(labelingId: number, value: UserLlmKey): boolean {
   const storage = getStorage();
   if (!storage || !Number.isFinite(labelingId)) return false;
@@ -73,6 +75,8 @@ export function clearUserLlmKey(labelingId: number): void {
   try {
     storage.removeItem(storageKeyFor(labelingId));
   } catch {
+    // Se o navegador der erro ao apagar, tudo bem. a chave some sozinha
+    // quando a aba fecha.
   }
 }
 
@@ -88,6 +92,8 @@ export function clearAllUserLlmKeys(): void {
     const keys = Object.keys(storage).filter((key) => key.startsWith(PREFIX));
     keys.forEach((key) => storage.removeItem(key));
   } catch {
+    // Se o navegador der erro ao apagar, tudo bem. as chaves somem sozinhas
+    // quando a aba fecha.
   }
 }
 

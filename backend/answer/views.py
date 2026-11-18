@@ -48,7 +48,12 @@ class AnswerViewset(viewsets.ModelViewSet):
         else:
             perm = [IsAdminAccount()]
         return perm
-        
+
+    def initial(self, request, *args, **kwargs):
+        if self.action == 'create':
+            self._session_llm_key = pop_user_llm_key(request)
+        super().initial(request, *args, **kwargs)
+
     def get_queryset(self):
         user = getattr(self.request, "user", None)
 
@@ -69,8 +74,7 @@ class AnswerViewset(viewsets.ModelViewSet):
 
     @sensitive_variables("session_llm_key")
     def create(self, request, *args, **kwargs):
-        # Tira a chave de IA da sessão do request antes de qualquer outra coisa.
-        session_llm_key = pop_user_llm_key(request)
+        session_llm_key = self._session_llm_key
 
         item = get_object_or_404(Item, pk=request.data.get('item'))
         serializer = self.get_serializer(data=request.data, context={'request': request})
