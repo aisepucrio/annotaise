@@ -11,8 +11,7 @@ from django.db.models import Count, Q
 from .permissions import IsProjectOwnerPermission
 from annotaise.pagination import StandardCursorPagination, paginated_response
 
-LLM_TIEBREAK_USERNAME = "llm_tiebreak_bot"
-LLM_TIEBREAK_EMAIL = "llm_tiebreak_bot@annotaise.local"
+from common.constants import LLM_TIEBREAK_EMAIL, LLM_TIEBREAK_USERNAME
 
 class ProjectViewSet(viewsets.ModelViewSet):
     serializer_class = ProjectSerializer

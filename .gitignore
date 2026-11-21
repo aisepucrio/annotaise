@@ -139,6 +139,7 @@ celerybeat.pid
 .env.save
 .envrc
 .venv
+.venv-win
 env/
 venv/
 ENV/

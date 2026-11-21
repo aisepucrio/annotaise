@@ -7,8 +7,12 @@ import Button from '@/components/button/Button';
 import { toast } from 'sonner';
 import { useTranslations } from '@/i18n/use-translations';
 import { getApiErrorMessage } from '@/lib/getApiErrorMessage';
-import { useLabelingDecisionQuestionsQuery, useLabelingHeaderQuery } from '@/modules/labelings/manage/labelingManagerQueries';
+import {
+  useLabelingDecisionQuestionsQuery,
+  useLabelingHeaderQuery,
+} from '@/modules/labelings/manage/labelingManagerQueries';
 import { useUpdateLabelingMutation } from '@/modules/labelings/manage/labelingManagerMutations';
+import AIConfigSection from './AIConfigSection';
 
 type DecisionTabProps = {
   labelingId: number;
@@ -111,15 +115,19 @@ function DecisionPageView() {
   const headerQuery = useLabelingHeaderQuery(labelingId);
 
   return (
-    <DecisionTab
-      labelingId={labelingId}
-      decisiveQuestionId={headerQuery.data?.labeling?.decisive_question ?? null}
-      onDecisiveQuestionChange={() => {
-        void headerQuery.refetch();
-      }}
-    />
+    <>
+      <DecisionTab
+        labelingId={labelingId}
+        decisiveQuestionId={headerQuery.data?.labeling?.decisive_question ?? null}
+        onDecisiveQuestionChange={() => {
+          void headerQuery.refetch();
+        }}
+      />
+      <div className="max-w-4xl mx-auto mt-6">
+        <AIConfigSection labelingId={labelingId} isLlmMode={headerQuery.data?.labeling?.decision_mode === 'llm'} />
+      </div>
+    </>
   );
 }
 
-export { DecisionTab };
-export { DecisionPageView as default };
+export default DecisionPageView;

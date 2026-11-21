@@ -352,9 +352,12 @@ class NextItemView(RetrieveAPIView):
                 remaining_by_item.get(candidate.id, {}), user_group_names
             ):
                 continue
+            # skip_locked: record_answer locks the item and then the reservation,
+            # so waiting here while holding reservation locks could deadlock.
+            # A locked item is being answered right now, not worth stealing.
             item = (
                 Item.objects
-                .select_for_update()
+                .select_for_update(skip_locked=True)
                 .filter(pk=candidate.pk)
                 .first()
             )
