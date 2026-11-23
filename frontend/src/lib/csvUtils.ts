@@ -2,8 +2,7 @@ export function isCsvFileName(fileName: string): boolean {
   return fileName.toLowerCase().endsWith('.csv');
 }
 
-// Splits CSV content into rows of cells. Commas and line breaks inside quoted values stay part
-// of the cell, so a multi-line text cell is not mistaken for several incomplete rows.
+// Splits CSV content into rows while preserving commas and line breaks inside quoted values.
 export function parseCsvRows(content: string): string[][] {
   const rows: string[][] = [];
   let cells: string[] = [];

@@ -31,14 +31,10 @@ export type FormTabHandle = {
 
 const AUTO_SAVE_INTERVAL_MS = 30000;
 
-// Index of the first section whose title is blank, or -1. The backend rejects these, so the
-// screen checks first instead of sending a save that is bound to fail.
 function findUntitledSectionIndex(sections: LabelingStructureSection[]): number {
   return sections.findIndex((section) => (section.title ?? '').trim() === '');
 }
 
-// Turns the INVALID_FORM_STRUCTURE field errors into a message that names the section,
-// falling back to the generic text when the reason is something else.
 function getSaveErrorMessage(error: unknown, t: TranslateFn): string {
   if (axios.isAxiosError(error) && error.response?.data?.code === 'INVALID_FORM_STRUCTURE') {
     const sectionErrors: unknown = error.response.data.errors?.sections;
@@ -115,7 +111,6 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgr
 
     const untitledIndex = findUntitledSectionIndex(sectionsRef.current);
     if (untitledIndex !== -1) {
-      // Auto-save stays quiet here: the title field itself already shows what is missing.
       if (reason === 'manual') {
         toast.error(t('labelings.create.errors.sectionTitleRequired', { index: untitledIndex + 1 }));
       }
@@ -140,7 +135,6 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgr
         return true;
       } catch (error) {
         const message = getSaveErrorMessage(error, t);
-        // Auto-save retries every 30s; show the same failure once instead of on every retry.
         if (reason === 'manual' || lastAutoSaveErrorRef.current !== message) {
           toast.error(message);
         }
@@ -179,7 +173,6 @@ const FormTab = forwardRef<FormTabHandle, FormTabProps>(({ labelingId, hasBackgr
       }
 
       if (unsavedChangesRef.current.hasChanges) {
-        // The switch is blocked until the save goes through, so say why when a title is missing.
         const untitledIndex = findUntitledSectionIndex(sectionsRef.current);
         if (untitledIndex !== -1) {
           toast.error(t('labelings.create.errors.sectionTitleRequired', { index: untitledIndex + 1 }));

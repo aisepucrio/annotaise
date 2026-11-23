@@ -512,8 +512,6 @@ class CreateReadLabelingStructureView(APIView):
         )
         
         if not serializer.is_valid():
-            # "errors" keeps the per-field reasons (e.g. sections[1].title blank) so the screen can
-            # point at the field instead of showing only the generic message.
             return Response(
                 {
                     "detail": "estrutura do form inválida. cheque possiveis erros ou campos vazios",
