@@ -3,9 +3,9 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { toast } from 'sonner';
-import AnswersTab from './[item_id]/page';
-import SummaryTab from './summary/page';
-import AgreementTab from './agreement/page';
+import AnswersTab from './AnswersTab';
+import SummaryTab from './SummaryTab';
+import AgreementTab from './AgreementTab';
 import AnswerTabHeader, { type AnswerView } from './AnswerTabHeader';
 import { useTranslations } from '@/i18n/use-translations';
 import {

@@ -512,7 +512,14 @@ class CreateReadLabelingStructureView(APIView):
         )
         
         if not serializer.is_valid():
-            return Response({"detail":"estrutura do form inválida. cheque possiveis erros ou campos vazios","code":"INVALID_FORM_STRUCTURE"},status=400)
+            return Response(
+                {
+                    "detail": "estrutura do form inválida. cheque possiveis erros ou campos vazios",
+                    "code": "INVALID_FORM_STRUCTURE",
+                    "errors": serializer.errors,
+                },
+                status=400,
+            )
     
 
         sections_data = serializer.validated_data.get("sections", [])

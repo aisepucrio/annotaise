@@ -601,6 +601,7 @@ export default function SectionWrapper({
               rows={2}
               className="text-sm font-semibold text-blue-900"
               placeholder={t('labelings.create.section.titlePlaceholder')}
+              error={(section.title ?? '').trim() === '' ? t('labelings.create.section.titleRequired') : undefined}
               value={section.title ?? ''}
               onChange={(event) => updateSection({ title: event.target.value })}
             />

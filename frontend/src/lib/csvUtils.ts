@@ -2,16 +2,17 @@ export function isCsvFileName(fileName: string): boolean {
   return fileName.toLowerCase().endsWith('.csv');
 }
 
-// Splits a CSV row while preserving commas inside quoted values.
-export function parseCsvLine(line: string): string[] {
-  const cells: string[] = [];
+// Splits CSV content into rows while preserving commas and line breaks inside quoted values.
+export function parseCsvRows(content: string): string[][] {
+  const rows: string[][] = [];
+  let cells: string[] = [];
   let current = '';
   let inQuotes = false;
 
-  for (let i = 0; i < line.length; i += 1) {
-    const char = line[i];
+  for (let i = 0; i < content.length; i += 1) {
+    const char = content[i];
     if (char === '"') {
-      const nextChar = line[i + 1];
+      const nextChar = content[i + 1];
       if (inQuotes && nextChar === '"') {
         current += '"';
         i += 1;
@@ -21,28 +22,36 @@ export function parseCsvLine(line: string): string[] {
     } else if (char === ',' && !inQuotes) {
       cells.push(current);
       current = '';
+    } else if ((char === '\n' || char === '\r') && !inQuotes) {
+      if (char === '\r' && content[i + 1] === '\n') {
+        i += 1;
+      }
+      cells.push(current);
+      rows.push(cells);
+      cells = [];
+      current = '';
     } else {
       current += char;
     }
   }
 
   cells.push(current);
-  return cells;
+  rows.push(cells);
+  return rows;
 }
 
 // Checks whether a CSV file contains missing values in any non-empty data row.
 export async function csvFileHasEmptyFields(file: File): Promise<boolean> {
   const content = await file.text();
-  const lines = content.split(/\r?\n/).filter((line) => line.trim() !== '');
+  const rows = parseCsvRows(content).filter((cells) => !(cells.length === 1 && cells[0].trim() === ''));
 
-  if (lines.length <= 1) {
+  if (rows.length <= 1) {
     return false;
   }
 
-  const headers = parseCsvLine(lines[0]);
+  const headers = rows[0];
 
-  return lines.slice(1).some((line) => {
-    const cells = parseCsvLine(line);
+  return rows.slice(1).some((cells) => {
     if (cells.length < headers.length) return true;
     return cells.some((cell) => cell.trim() === '');
   });
