@@ -3,7 +3,6 @@ from item.models import ItemMembership, Item
 from user.models import UserGroup
 from .serializers import (
     AnswerSerializer,
-    AnswerDashboardSerializer,
     BackgroundAnswerSerializer,
 )
 from labeling.models import LabelingElement
@@ -17,7 +16,7 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.views import APIView
 from user.permissions import IsAdminAccount
 from django.http import HttpResponse
-from .permissions import CanAnswerLabelingPermission
+from .permissions import CanAnswerLabelingPermission, HasItemMembership
 from labeling.permissions import CanEditLabelingPermission, can_annotate_labeling
 from .services.llm_tiebreak import run_llm_tiebreak_decision
 
@@ -28,19 +27,20 @@ from django.db.models import F, Q
 from django.db import transaction
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.contrib.auth import get_user_model
+from .services.submit_answer import NoGroupSlot, submit_anonymous_answer, LabelingFinished, ItemNotFound, ItemAlreadyFinished, submit_answer
+
 #TODO better to use a permission class to check ItemMembership existence.
+
 class AnswerViewset(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
     serializer_class = AnswerSerializer
     permission_classes = [IsAdminAccount]
 
     def get_permissions(self):
+        if self.action == "create":
+            return [CanAnswerLabelingPermission(), HasItemMembership()]
+        return [IsAdminAccount()]
 
-        if self.action in ['create']:
-            perm = [CanAnswerLabelingPermission()]
-        else:
-            perm = [IsAdminAccount()]
-        return perm
         
     def get_queryset(self):
         user = getattr(self.request, "user", None)
@@ -48,16 +48,13 @@ class AnswerViewset(viewsets.ModelViewSet):
         if not user or not getattr(user, "is_authenticated", False):
             return Answer.objects.none()
 
-        qs = (
-            Answer.objects
-            .select_related("item", "labeling")
-            .distinct()
-        )
+        qs = Answer.objects.with_item()       
 
         labeling_id = self.request.query_params.get("labeling")
         if labeling_id and labeling_id.isdigit():
-            qs = qs.filter(labeling_id=int(labeling_id))
-
+            qs = qs.for_labeling(int(labeling_id))
+            #tudo de filter estará sendo migrado para querysets.py
+            #Um arquivo novo por app. Filtro, anotação e ordenação de listagem viram métodos encadeáveis e nomeados.
         return qs
 
     def _get_or_create_llm_tiebreak_user(self):
@@ -158,10 +155,7 @@ class AnswerViewset(viewsets.ModelViewSet):
         )
 
         labeling:Labeling = item.labeling
-        if labeling.has_background_form and not BackgroundAnswer.objects.filter(
-            labeling=labeling,
-            answered_by=user,
-        ).exists():
+        if labeling.has_background_form and not BackgroundAnswer.objects.for_labeling(labeling.id).by_user(user.id).exists():
             return Response(
                 {
                     "detail": "Você precisa responder o formulário background antes de rotular.",
@@ -199,143 +193,27 @@ class AnswerViewset(viewsets.ModelViewSet):
                 )
             decisive_answer = str(answer_value)
 
-        with transaction.atomic():
-            item = (
-                Item.objects
-                .select_for_update()
-                .select_related("labeling")
-                .get(id=item_id)
+        try:
+            result = submit_answer(
+                user=user,
+                item_id=item.id,
+                membership=request.item_membership,
+                create_answer=serializer.save,
+                decisive_answer=decisive_answer,
             )
-            labeling = item.labeling
+        except NoGroupSlot:
+            return Response(
+                {
+                    "detail": "Os slots restantes deste item são reservados para outros grupos.",
+                    "code": "NO_GROUP_SLOT",
+                },
+                status=409,
+            )
 
-            # Group quotas are checked at distribution time, but reservations don't
-            # consume slots: between reservation and submission, other answers may
-            # have filled the slots this user could have occupied. Recheck under
-            # the item lock (which serializes concurrent answers) and, if no
-            # compatible slot remains, release the reservation and return a code
-            # for the frontend to fetch another item.
-            if labeling.has_group_quotas:
-                user_group_names = set(
-                    UserGroup.objects
-                    .filter(memberships__user=user)
-                    .values_list('name', flat=True)
-                )
-                if not Item._slot_open(item.remaining_groups(), user_group_names):
-                    membership.delete()
-                    return Response(
-                        {
-                            'detail': 'Os slots restantes deste item são reservados para outros grupos.',
-                            'code': 'NO_GROUP_SLOT',
-                        },
-                        status=409,
-                    )
-
-            decision_warning = None
-            self.perform_create(serializer)
-
-            membership.delete()
-
-            if labeling.decision == True:
-                decision_dict = item.decision_payload or {}
-                fields_to_update = ["decision_payload"]
-
-                decision_dict[decisive_answer] = decision_dict.get(decisive_answer, 0) + 1
-                item.decision_payload = decision_dict
-
-                answer_count = Answer.objects.filter(item_id=item_id).count()
-                if labeling.users_per_item <= answer_count:
-                    has_winner, biggest_answer = self._resolve_vote_winner(decision_dict)
-                    if has_winner:
-                        item.status = "finished"
-                        item.final_decision_source = "human"
-                        item.final_decision_value = biggest_answer
-                        fields_to_update.extend(
-                            ["status", "final_decision_source", "final_decision_value"]
-                        )
-                    elif (
-                        labeling.decision_mode == Labeling.DecisionMode.LLM
-                        and not item.llm_tiebreak_attempted
-                    ):
-                        options = list(
-                            decisive_element.multiple_choice_items.order_by("order", "id").values_list(
-                                "text", flat=True
-                            )
-                        )
-                        try:
-                            llm_result = run_llm_tiebreak_decision(
-                                labeling_guide=labeling.guide,
-                                question_text=decisive_element.text,
-                                options=options,
-                                contexts=self._build_llm_contexts(item),
-                            )
-                        except Exception as exc:
-                            llm_result = {
-                                "models": [],
-                                "vote_count": {},
-                                "winner": None,
-                                "tied": False,
-                                "valid_votes": 0,
-                                "error": str(exc),
-                                "error_message": (
-                                    "Não foi possível executar a decisão por LLM neste item."
-                                ),
-                            }
-                        item.llm_tiebreak_attempted = True
-                        item.llm_tiebreak_result = llm_result
-                        fields_to_update.extend(
-                            ["llm_tiebreak_attempted", "llm_tiebreak_result"]
-                        )
-                        decision_warning = llm_result.get("error_message")
-
-                        llm_winner = llm_result.get("winner")
-                        if llm_winner:
-                            llm_user = self._get_or_create_llm_tiebreak_user()
-                            llm_answer_payload = {str(decisive_element.id): llm_winner}
-                            Answer.objects.create(
-                                item=item,
-                                labeling=labeling,
-                                answered_by=llm_user,
-                                answer_payload=llm_answer_payload,
-                            )
-                            decision_dict[llm_winner] = decision_dict.get(llm_winner, 0) + 1
-                            item.decision_payload = decision_dict
-                            item.status = "finished"
-                            item.final_decision_source = "llm"
-                            item.final_decision_value = llm_winner
-                            fields_to_update.extend(
-                                [
-                                    "status",
-                                    "final_decision_source",
-                                    "final_decision_value",
-                                    "decision_payload",
-                                ]
-                            )
-
-                item.save(update_fields=list(dict.fromkeys(fields_to_update)))
-
-                if not labeling.items.filter(~Q(status='finished')).exists():
-                    labeling.status = 'finished'
-                    labeling.save()
-
-                response_data = dict(serializer.data)
-                if decision_warning:
-                    response_data["decision_warning"] = decision_warning
-                return Response(response_data, status=201)
-
-            else:
-                obj = Item.objects.select_related('labeling').get(id=item_id)
-
-                if not labeling.form_mode and obj.labeling.users_per_item <= Answer.objects.filter(item__id=item_id).count():
-                    obj.status = 'finished'
-                    obj.save()
-
-                headers = self.get_success_headers(serializer.data)
-
-            if not labeling.form_mode and not labeling.items.filter(~Q(status='finished')).exists():
-                labeling.status = 'finished'
-                labeling.save()
-
-            return Response(serializer.data, status=201, headers=headers)
+        data = dict(serializer.data)
+        if result.decision_warning:
+            data["decision_warning"] = result.decision_warning
+        return Response(data, status=201, headers=self.get_success_headers(serializer.data))
 
     def _assert_owner_or_admin(self, answer):
         user = self.request.user
@@ -367,16 +245,11 @@ class AnonymousSubmitAnswerView(APIView):
     Public/anonymous answer submission for labelings in anonymous mode.
 
     Identifies the labeling by the URL token and skips authentication and
-    user/membership checks. The answer is stored without an author
-    (answered_by=None). Since anonymous mode assumes users_per_item=1 (each
-    visitor answers an item exactly once), the item is marked finished as
-    soon as it receives an answer — except in form_mode, where items stay
-    open.
+    user/membership checks. The rules live in submit_anonymous_answer.
     """
     permission_classes = [AllowAny]
     authentication_classes = []
 
-    @transaction.atomic
     def post(self, request, token):
         labeling = get_object_or_404(
             Labeling,
@@ -384,46 +257,31 @@ class AnonymousSubmitAnswerView(APIView):
             distribution_strategy=Labeling.DistributionStrategy.ANONYMOUS_MODE,
         )
 
-        if labeling.status == "finished":
-            return Response(
-                {"detail": "Essa rotulação já foi finalizada", "code": "ROTULACAO_FINALIZADA"},
-                status=400,
-            )
-
-        item = (
-            Item.objects
-            .select_for_update()
-            .filter(pk=request.data.get("item"), labeling=labeling)
-            .first()
-        )
-        if item is None:
-            return Response({"detail": "Item não encontrado para esta rotulação.", "item": "Item é obrigatório."}, status=400)
-
-        if not labeling.form_mode and item.status == "finished":
-            return Response(
-                {"detail": "Esse item já foi finalizado e não pode mais receber respostas."},
-                status=403,
-            )
-
         answer_payload = request.data.get("answer_payload", {})
         if not isinstance(answer_payload, dict):
             return Response({"answer_payload": "Formato inválido."}, status=400)
 
-        answer = Answer.objects.create(
-            item=item,
-            labeling=labeling,
-            answered_by=None,
-            answer_payload=answer_payload,
-        )
-
-        # users_per_item == 1 in anonymous mode: a single answer already finishes the item.
-        if not labeling.form_mode:
-            item.status = "finished"
-            item.save(update_fields=["status"])
-
-            if not labeling.items.filter(~Q(status="finished")).exists():
-                labeling.status = "finished"
-                labeling.save(update_fields=["status"])
+        try:
+            answer = submit_anonymous_answer(
+                labeling=labeling,
+                item_id=request.data.get("item"),
+                answer_payload=answer_payload,
+            )
+        except LabelingFinished:
+            return Response(
+                {"detail": "Essa rotulação já foi finalizada", "code": "ROTULACAO_FINALIZADA"},
+                status=400,
+            )
+        except ItemNotFound:
+            return Response(
+                {"detail": "Item não encontrado para esta rotulação.", "item": "Item é obrigatório."},
+                status=400,
+            )
+        except ItemAlreadyFinished:
+            return Response(
+                {"detail": "Esse item já foi finalizado e não pode mais receber respostas."},
+                status=403,
+            )
 
         return Response(
             {
@@ -449,18 +307,16 @@ class AnswersDashboardView(ListAPIView):
 
     def get_queryset(self):
         labeling_id = self.kwargs.get("labeling_id")
-        qs = (
-            Answer.objects
-            .filter(labeling_id=labeling_id)
-            .select_related("item", "answered_by", "responded_as")
-            .annotate(row_index=F("item__row_index"))
-        )
 
+        qs = (Answer.objects.for_labeling(labeling_id)
+            .with_dashboard_relations().with_row_index())
+        
         answered_by = self.request.query_params.get("answered_by")
-        if answered_by and answered_by.isdigit():
-            qs = qs.filter(answered_by_id=int(answered_by))
 
-        return qs.order_by("row_index", "id")
+        if answered_by and answered_by.isdigit():
+            qs = qs.answered_by(int(answered_by))
+
+        return qs.in_row_order()
 
 
 class LabelingBackgroundAnswerView(APIView):
@@ -483,10 +339,7 @@ class LabelingBackgroundAnswerView(APIView):
         if not labeling.has_background_form:
             return Response(None, status=200)
 
-        answer = BackgroundAnswer.objects.filter(
-            labeling=labeling,
-            answered_by=request.user,
-        ).first()
+        answer = BackgroundAnswer.objects.for_labeling(labeling.id).by_user(request.user.id).first()
         if not answer:
             return Response(None, status=200)
 
@@ -546,10 +399,11 @@ class LabelingBackgroundAnswersView(APIView):
         if not perm.can_edit_labeling(request.user, labeling.id):
             raise PermissionDenied("Você não tem permissão para visualizar essas respostas.")
 
-        qs = BackgroundAnswer.objects.filter(labeling=labeling).select_related("answered_by")
+        qs = BackgroundAnswer.objects.for_labeling(labeling.id).with_author()
         user_id = request.query_params.get("user_id")
         if user_id and user_id.isdigit():
-            qs = qs.filter(answered_by_id=int(user_id))
+            qs = qs.by_user(int(user_id))
+
 
         data = BackgroundAnswerSerializer(qs, many=True).data
         return Response(data, status=200)
@@ -560,12 +414,10 @@ class ExportAnswersView(APIView):
 
     def get(self, request, **kwargs):
         labeling_id = kwargs.get("labeling_id")
-        labeling = Labeling.objects.get(id=labeling_id)
-        answers = (
-            Answer.objects.filter(labeling_id=labeling_id)
-            .select_related("item", "answered_by")
-            .order_by("item__row_index", "id")
-        )
+        
+        labeling = get_object_or_404(Labeling, id=labeling_id)
+        answers = Answer.objects.for_labeling(labeling_id).for_export()
+
         questions_qs = LabelingElement.objects.filter(
             labeling_section__labeling_id=labeling_id,
             labeling_section__form_type=LabelingSection.FormType.MAIN,
@@ -576,6 +428,7 @@ class ExportAnswersView(APIView):
         # build follow-up label map: "followup_103_144" -> "Q : parent text > follow-up text"
         follow_up_labels = {}
         from labeling.models import MultipleChoiceItem
+
         follow_up_items = (
             MultipleChoiceItem.objects
             .filter(
@@ -584,6 +437,7 @@ class ExportAnswersView(APIView):
             )
             .select_related("labeling_element", "follow_up_question")
         )
+        
         for mc_item in follow_up_items:
             key = f"followup_{mc_item.labeling_element_id}_{mc_item.id}"
             parent_text = questions.get(mc_item.labeling_element_id, "?")

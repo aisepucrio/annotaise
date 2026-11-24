@@ -1,7 +1,6 @@
 from django.db import models
 from django.conf import settings
-
-from .querysets import AnswerQuerySet
+from .querysets import AnswerQuerySet, BackgroundAnswerQuerySet
 
 class Answer(models.Model):
     '''Architecture: one answer per item; the payload maps question id to response.'''
@@ -51,6 +50,8 @@ class BackgroundAnswer(models.Model):
     answer_payload = models.JSONField(default=dict)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    objects = BackgroundAnswerQuerySet.as_manager()
 
     class Meta:
         ordering = ["-updated_at"]

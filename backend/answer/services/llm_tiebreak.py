@@ -4,7 +4,7 @@ import os
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
-from urllib import error, request
+from urllib import request
 
 
 OLLAMA_MODELS_CODE = [
